@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - site.lhs</title>
+<link rel="stylesheet" type="text/css" href="./css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="./index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="./index.html">Home</a>
+    <a href="./about.html">About</a>
+    <a href="./contact.html">Contact</a>
+    <a href="./archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>site.lhs</h1>
+<!-- BEGIN BODY -->
+<p>It is traditional for sites built with Hakyll to provide the code used to generate them. I borrowed heavily from Hakyll’s default example and from other sites to cobble this together; maybe someone else will find it useful.</p>
+<p><strong>Frontmatter</strong></p>
+<p>As usual we begin with some pragmas and imports. The OverloadedStrings pragma allows us to define globs as ordinary strings.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mappend)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span> (insert)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Pandoc.Options</span> 
+<span class="ot">&gt;</span>   ( <span class="dt">Extension</span>(<span class="dt">Ext_tex_math_dollars</span>
+<span class="ot">&gt;</span>     , <span class="dt">Ext_tex_math_double_backslash</span>
+<span class="ot">&gt;</span>     , <span class="dt">Ext_latex_macros</span>)
+<span class="ot">&gt;</span>   , writerExtensions
+<span class="ot">&gt;</span>   , writerHTMLMathMethod
+<span class="ot">&gt;</span>   , <span class="dt">HTMLMathMethod</span>(<span class="dt">MathJax</span>) )</code></pre></div>
+<p><strong>The Main Function</strong></p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   match <span class="st">&quot;site.lhs&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> defaultContext
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;LICENSE&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   idRoute
+<span class="ot">&gt;</span>     compile copyFileCompiler
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;images/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   idRoute
+<span class="ot">&gt;</span>     compile copyFileCompiler
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;pdf/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   idRoute
+<span class="ot">&gt;</span>     compile copyFileCompiler
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   idRoute
+<span class="ot">&gt;</span>     compile compressCssCompiler
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match (fromList [<span class="st">&quot;about.md&quot;</span>, <span class="st">&quot;contact.md&quot;</span>]) <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route   <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> defaultContext
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;classes/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/macros.html&quot;</span>  postCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/post.html&quot;</span>    postCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   create [<span class="st">&quot;archive.html&quot;</span>] <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route idRoute
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll <span class="st">&quot;posts/*&quot;</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> archiveCtx <span class="fu">=</span>
+<span class="ot">&gt;</span>             listField <span class="st">&quot;posts&quot;</span> postCtx (return posts) <span class="ot">`mappend`</span>
+<span class="ot">&gt;</span>             constField <span class="st">&quot;title&quot;</span> <span class="st">&quot;Archives&quot;</span>            <span class="ot">`mappend`</span>
+<span class="ot">&gt;</span>             defaultContext
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       makeItem <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/archive.html&quot;</span> archiveCtx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> archiveCtx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;index.md&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> defaultContext
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span> compile templateCompiler</code></pre></div>
+<p><strong>Compilers</strong></p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; postCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> postCtx <span class="fu">=</span>
+<span class="ot">&gt;</span>   dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%B %e, %Y&quot;</span> <span class="ot">`mappend`</span>
+<span class="ot">&gt;</span>   defaultContext
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; pandocMathCompiler ::</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
+<span class="ot">&gt;</span> pandocMathCompiler <span class="fu">=</span> pandocCompilerWith defaultHakyllReaderOptions opts
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     mathExtensions <span class="fu">=</span> 
+<span class="ot">&gt;</span>       [ <span class="dt">Ext_tex_math_dollars</span>
+<span class="ot">&gt;</span>       , <span class="dt">Ext_tex_math_double_backslash</span>
+<span class="ot">&gt;</span>       , <span class="dt">Ext_latex_macros</span>
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     defaultExtensions <span class="fu">=</span> writerExtensions defaultHakyllWriterOptions
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     opts <span class="fu">=</span> defaultHakyllWriterOptions 
+<span class="ot">&gt;</span>       { writerExtensions <span class="fu">=</span>
+<span class="ot">&gt;</span>           foldr S.insert defaultExtensions mathExtensions
+<span class="ot">&gt;</span>       , writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>       }</code></pre></div>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
