@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: copy, charcount, linecount</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: copy, charcount, linecount</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2016-02-11 by nbloomf
+</div>
+
+<!-- LaTeX Macros -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{t}}\)
+\(\newcommand{\bfalse}{\mathsf{f}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+</div>
+<!-- End LaTeX Macros -->
+
+<p>This post is part of the <a href="../posts/2016-02-10-software-tools-in-haskell.html">Software Tools in Haskell</a> series.</p>
+<p><a name="copy"></a></p>
+<h2 id="copy-copy-characters-from-stdin-to-stdout"><code>copy</code>: copy characters from stdin to stdout</h2>
+<p>Many simple tools are designed to act as <em>filters</em>: programs which take a stream of data, manipulate it in some way, and send it along. The <code>copy</code> program is the simplest possible example of a filter – the identity filter. This is even simpler than <code>cat</code>, which at least catenates files.</p>
+<p>This program copies characters from stdin to stdout until EOF is encountered, whereupon it exits. Any other error causes the program to fail. In an imperative language this pattern (read a character, write a character, repeat) would be written with a loop. In Haskell we instead use recursion.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">System.IO</span> (getChar, putChar)
+<span class="kw">import </span><span class="dt">System.IO.Error</span> (isEOFError, catchIOError)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> catchIOError getChar handler <span class="fu">&gt;&gt;=</span> putChar <span class="fu">&gt;&gt;</span> main
+
+<span class="ot">handler ::</span> IOError <span class="ot">-&gt;</span> <span class="dt">IO</span> a
+handler err
+  <span class="fu">|</span> isEOFError err <span class="fu">=</span> exitSuccess
+  <span class="fu">|</span> otherwise      <span class="fu">=</span> exitFailure</code></pre></div>
+<p>IO actions can throw IO errors, which (unlike other error handling strategies in Haskell) can be silently, and thus accidentally, ignored. These errors are caught using <code>catchIOError</code>, which takes an action to be attempted and an error handler. Here, the IO action <code>getChar</code> may fail. In fact it will fail once the recursion reaches the end of the input.</p>
+<p><a name="charcount"></a></p>
+<h2 id="charcount-count-characters-on-stdin"><code>charcount</code>: count characters on stdin</h2>
+<p>The <code>charcount</code> program counts the characters on stdin until EOF is reached.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span> (putStrLn <span class="fu">.</span> show <span class="fu">.</span> count)
+
+<span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
+  <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
+<p>The <code>getContents</code> function reads stdin lazily, meaning that characters are only read as needed, and also handles EOF for us. Here we’ve written <code>count</code> as a <code>foldl'</code> to force strictness and avoid blowing out the stack. The <code>foldl</code> function is lazy by default, meaning that it would generate a stack of unevaluated additions to be carried out only once EOF is reached.</p>
+<p><a name="linecount"></a></p>
+<h2 id="linecount-count-lines-on-stdin"><code>linecount</code>: count lines on stdin</h2>
+<p>The <code>linecount</code> program counts lines on stdin until EOF is reached. Now while the definition of “character” is reasonably clear (unicode notwithstanding), we have to think more carefully about what a “line” is.</p>
+<p>By custom on unix systems the “newline” character, denoted <code>\n</code> signals the end of a line. To a first approximation we can march down the sequence of characters on stdin and count the <code>\n</code>s. But is every line necessarily terminated by a newline? What if there are <em>no</em> newlines? It seems wrong to say that a sequence of characters containing no newlines consists of zero lines. More generally, if a sequence of characters does not terminate in a newline, then the characters between the last <code>\n</code> and EOF should comprise a line. For example, the sequence of characters</p>
+<pre><code>foo\nbar\nbaz</code></pre>
+<p>should have three lines, not two. On the other hand, if there are <em>no</em> characters on stdin, then there are no lines. So our logic for counting lines is as follows.</p>
+<ul>
+<li>The empty sequence consists of zero lines.</li>
+<li>Given a nonempty sequence, let <span class="math inline">\(k\)</span> denote the number of times <code>\n</code> appears. Then the number of lines in this sequence is <span class="math inline">\(k\)</span> if the last character is <code>\n</code>, and is <span class="math inline">\(k+1\)</span> otherwise.</li>
+</ul>
+<p>This logic is captured by the <code>getNewlines</code> function, which extracts the <code>\n</code>s from a sequence of characters (adding one at the end if necessary). We reuse the <code>count</code> function from <code>charcount</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
+<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
+        (getNewlines <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)
+
+<span class="ot">getNewlines ::</span> [<span class="dt">Char</span>] <span class="ot">-&gt;</span> [<span class="dt">Char</span>]
+getNewlines []     <span class="fu">=</span> []
+getNewlines [_]    <span class="fu">=</span> [<span class="ch">'\n'</span>]
+getNewlines (x<span class="fu">:</span>xs)
+  <span class="fu">|</span> x <span class="fu">==</span> <span class="ch">'\n'</span> <span class="fu">=</span> <span class="ch">'\n'</span> <span class="fu">:</span> getNewlines xs
+  <span class="fu">|</span> otherwise <span class="fu">=</span> getNewlines xs
+
+<span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
+  <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
+<p>One more change from <code>charcount</code> is that we’ve used the <code>&gt;&gt;&gt;</code> operator from <code>Control.Arrow</code>. This is a standard library operator which (used here) is simply reversed function composition; it allows us to read the definition of <code>main</code> as if data flows from left to right, following the arrows. Compare this notation to the <code>main</code> function in <code>charcount</code>, where we used ordinary function composition.</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
