@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: wordcount, sentcount</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: wordcount, sentcount</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2016-02-22 by nbloomf
+</div>
+
+<!-- LaTeX Macros -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{t}}\)
+\(\newcommand{\bfalse}{\mathsf{f}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+</div>
+<!-- End LaTeX Macros -->
+
+<p>This post is part of the <a href="../posts/2016-02-10-software-tools-in-haskell.html">Software Tools in Haskell</a> series.</p>
+<p><a name="wordcount"></a></p>
+<h2 id="wordcount-count-words-on-stdin"><code>wordcount</code>: count words on stdin</h2>
+<p>This program takes an expansive view of what a “word” is: maximal substrings not containing any whitespace characters (space, <code>\n</code>, <code>\t</code>, <code>\r</code>, <code>\v</code>, or any other unicode character which the standard <code>isSpace</code> function detects).</p>
+<p>For this function we used <code>getContents</code> and reused <code>count</code>. The <code>getWords</code> function takes a string and splits it into a list of words, with delimiting spaces removed. There is a standard library function in <code>Data.List</code>, called (appropriately enough) <code>words</code>, that does this. But the whole point of this exercise is reinventing wheels, and besides <code>wc</code> does all this better anyway. :)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.Char</span> (isSpace)
+<span class="kw">import </span><span class="dt">Data.List</span> (break, unfoldr)
+<span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
+<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
+  (getWords <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)
+
+<span class="ot">getWords ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+getWords <span class="fu">=</span> unfoldr firstWord
+  <span class="kw">where</span>
+<span class="ot">    firstWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+    firstWord xs <span class="fu">=</span> <span class="kw">case</span> dropWhile isSpace xs <span class="kw">of</span>
+      <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+      ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys
+
+<span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
+  <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
+<p>Both <code>getWords</code> and <code>count</code> use standard library recursion operators, <code>unfoldr</code> and <code>foldl'</code>. Recursion is how functional languages handle iterated computation (a.k.a. “loops”). But much like structured programming replaced arbitrary GOTOs with a small number of control-flow statements, in functional languages we can get a lot of mileage out of a small number of recursion patterns.</p>
+<p><a name="sentcount"></a></p>
+<h2 id="sentcount-count-sentences-on-stdin"><code>sentcount</code>: count sentences on stdin</h2>
+<p>This program is an exercise in <em>Software Tools</em>, rather than a main example.</p>
+<p>If we don’t think about it very long, counting sentences seems simple enough; much like we did when counting words, simply decide what strings of characters mark the boundaries between “sentences” and “non-sentences” and keep track of the number of state changes. Sentences are usually terminated by periods, with some exclamation points and question marks: done.</p>
+<p>“But wait,” you ask, “what about quoted sentences?” (I hadn’t thought of that. Or parenthetical sentences, for that matter. (Much less nested parenthetical sentences.)) There’s also the issue of short parenthetical asides at the end of a sentence (like this one). Even periods cannot be relied upon to denote sentence ends, since they serve double (triple?) duty as ellipses and as parts of words as in abbreviations. What about the beginnings of sentences? mRNA is a proper noun whose first letter should not be capitalized, which breaks the usual rule that sentences start with a capital letter. Interjections, like POW! and BZZT!, look like sentence enders but may not be. And of course some forms like poetry or mathematical notation throw some rules out the window. (Is “<span class="math inline">\(ax^2 + bx + c = 0\)</span>” a sentence? It sounds like one if read aloud.) Upon further reflection, it appears that English sentences are extremely complicated.</p>
+<p>I will go out on a limb and say that the full problem of deciding whether a given list of characters is a (standard English) sentence is probably AI-complete, in that any algorithm which could do this with 100% accuracy (if that even makes sense) would need to “understand” the <em>meaning</em> of the text. At the very least, approaching 100% accuracy likely requires a large dictionary of things like proper nouns and abbreviations, to handle special cases.</p>
+<p>The point of all this waffling is that <strong>this problem is extremely hard</strong> and therefore <strong>we cannot find a complete solution</strong>. The best we can hope for is an approximate solution that is not terribly wrong most of the time. To that end, our sentence-counting program will make some simplifying assumptions.</p>
+<ol style="list-style-type: decimal">
+<li>We only consider standard English prose. Other languages, or other forms of text, are assumed to give meaningless sentence counts.</li>
+<li>In standard English prose, the end of a sentence is almost always signified by the appearance of one of three punctuation marks: period, exclamation point, or question mark. There may be other punctuation involved, but one of these three should be present.</li>
+<li>We assume that every <em>sentence</em> boundary is also a <em>word</em> boundary.</li>
+</ol>
+<p>Our basic strategy is this: first split our text into words, using the <code>getWords</code> function from <code>wordcount</code>. Then use some heuristics to decide which word boundaries are also sentence boundaries. These heuristics will be allowed to look only at the words immediatey on either side of a word boundary. (This is probably too restrictive in general, but reasonable.) For instance, a string like</p>
+<pre><code>harpoons. After</code></pre>
+<p>consists of two words (by our reckoning), and we will say it is likely to be a sentence boundary. Other examples are similar.</p>
+<pre><code>ever.&quot; She
+
+casserole! (Gumbo</code></pre>
+<p>Again, any small set of heuristics is probably going to have both false positives and false negatives. But we’re not aiming for perfection here, just reasonable first approximations.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.Char</span> (isSpace, isUpper)
+<span class="kw">import </span><span class="dt">Data.List</span> (break, unfoldr, isPrefixOf, intercalate)
+<span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
+<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
+  (getSentences <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)
+
+<span class="ot">getSentences ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+getSentences <span class="fu">=</span> map (intercalate <span class="st">&quot; &quot;</span>) <span class="fu">.</span> unfoldr firstSentence <span class="fu">.</span> getWords
+  <span class="kw">where</span>
+<span class="ot">    firstSentence ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> ([<span class="dt">String</span>],[<span class="dt">String</span>])
+    firstSentence [] <span class="fu">=</span> <span class="dt">Nothing</span>
+    firstSentence xs <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> break2 isBoundary xs
+
+<span class="ot">break2 ::</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([a],[a])
+break2 p xs <span class="fu">=</span> foo [] xs
+  <span class="kw">where</span>
+    foo acc []  <span class="fu">=</span> (reverse acc, [])
+    foo acc [y] <span class="fu">=</span> (reverse (y<span class="fu">:</span>acc), [])
+    foo acc (y1<span class="fu">:</span>y2<span class="fu">:</span>ys) <span class="fu">=</span> <span class="kw">if</span> p y1 y2
+      <span class="kw">then</span> (reverse (y1<span class="fu">:</span>acc), y2<span class="fu">:</span>ys)
+      <span class="kw">else</span> foo (y1<span class="fu">:</span>acc) (y2<span class="fu">:</span>ys)
+
+<span class="ot">isBoundary ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+isBoundary xs ys
+  <span class="fu">|</span> or [ (xs <span class="ot">`endsWith`</span> <span class="st">&quot;.&quot;</span>)   <span class="fu">&amp;&amp;</span> (xs <span class="ot">`notEndsWith`</span> <span class="st">&quot;...&quot;</span>)
+       , (xs <span class="ot">`endsWith`</span> <span class="st">&quot;.\&quot;&quot;</span>) <span class="fu">&amp;&amp;</span> (xs <span class="ot">`notEndsWith`</span> <span class="st">&quot;...\&quot;&quot;</span>)
+       , (xs <span class="ot">`endsWith`</span> <span class="st">&quot;.'&quot;</span>)  <span class="fu">&amp;&amp;</span> (xs <span class="ot">`notEndsWith`</span> <span class="st">&quot;...'&quot;</span>)
+       , (xs <span class="ot">`endsWith`</span> <span class="st">&quot;.)&quot;</span>)  <span class="fu">&amp;&amp;</span> (xs <span class="ot">`notEndsWith`</span> <span class="st">&quot;...)&quot;</span>)
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;!&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;!\&quot;&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;!'&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;!)&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;?&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;?\&quot;&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;?'&quot;</span>
+       , xs <span class="ot">`endsWith`</span> <span class="st">&quot;?)&quot;</span>
+       ]
+      <span class="fu">&amp;&amp;</span>
+    or [ isCapitalized ys
+       , ys <span class="ot">`startsWith`</span> <span class="st">&quot;\&quot;&quot;</span>
+       , ys <span class="ot">`startsWith`</span> <span class="st">&quot;'&quot;</span>
+       , ys <span class="ot">`startsWith`</span> <span class="st">&quot;(&quot;</span>
+       ]
+    <span class="fu">=</span> <span class="dt">True</span>
+  <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">False</span>
+  <span class="kw">where</span>
+    isCapitalized <span class="st">&quot;&quot;</span>    <span class="fu">=</span> <span class="dt">False</span>
+    isCapitalized (x<span class="fu">:</span>_) <span class="fu">=</span> isUpper x
+ 
+    endsWith as bs <span class="fu">=</span> (reverse bs) <span class="ot">`isPrefixOf`</span> (reverse as)
+    notEndsWith as bs <span class="fu">=</span> not (as <span class="ot">`endsWith`</span> bs)
+
+    startsWith as bs <span class="fu">=</span> bs <span class="ot">`isPrefixOf`</span> as
+    notStartsWith as bs <span class="fu">=</span> not (as <span class="ot">`startsWith`</span> bs)
+
+<span class="ot">getWords ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+getWords <span class="fu">=</span> unfoldr firstWord
+  <span class="kw">where</span>
+<span class="ot">    firstWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+    firstWord xs <span class="fu">=</span> <span class="kw">case</span> dropWhile isSpace xs <span class="kw">of</span>
+      <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+      ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys
+
+<span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
+  <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
+<p>This program uses <code>unfoldr</code> again. We also introduce <code>break2</code>, an extension of the standard library <code>break</code> that focuses on the spaces between list elements rather than list elements themselves. (Note that <code>break p === break2 (\x _ -&gt; p x)</code>.) The heuristics for detecting sentence boundaries are in <code>isBoundary</code>. This function is ugly, but reasonably easy to modify as new special cases are found. We <a href="https://raw.githubusercontent.com/nbloomf/st-haskell/master/test/sentcount/alice.test">test</a> this program on a particularly messy excerpt of <em>Alice in Wonderland</em>. (Even counting by hand I’m not sure how many sentences this example should have!)</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

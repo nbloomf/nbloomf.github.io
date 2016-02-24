@@ -67,7 +67,8 @@ Posted on 2016-02-11 by nbloomf
 <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> catchIOError getChar handler <span class="fu">&gt;&gt;=</span> putChar <span class="fu">&gt;&gt;</span> main
+main <span class="fu">=</span> catchIOError getChar handler
+  <span class="fu">&gt;&gt;=</span> putChar <span class="fu">&gt;&gt;</span> main
 
 <span class="ot">handler ::</span> IOError <span class="ot">-&gt;</span> <span class="dt">IO</span> a
 handler err
@@ -82,7 +83,8 @@ handler err
 <span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span> (putStrLn <span class="fu">.</span> show <span class="fu">.</span> count)
+main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
+  (putStrLn <span class="fu">.</span> show <span class="fu">.</span> count)
 
 <span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
 count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
@@ -98,22 +100,27 @@ count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
 <li>The empty sequence consists of zero lines.</li>
 <li>Given a nonempty sequence of characters, let <span class="math inline">\(k\)</span> denote the number of times <code>\n</code> appears. Then the number of lines in this sequence is <span class="math inline">\(k\)</span> if the last character is <code>\n</code>, and is <span class="math inline">\(k+1\)</span> otherwise.</li>
 </ul>
-<p>This logic is captured by the <code>getNewlines</code> function, which extracts the <code>\n</code>s from a sequence of characters (adding one at the end if necessary). We reuse the <code>count</code> function from <code>charcount</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<p>This logic is captured by the <code>getLines</code> function, which splits a string into lines at <code>\n</code> (taking care of any <code>\n</code>s at the end as necessary). We reuse the <code>count</code> function from <code>charcount</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-linecount: count lines on stdin</span>
 
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">Data.List</span> (break, unfoldr)
 <span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')
 <span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
-        (getNewlines <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)
+  (getLines <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)
 
-<span class="ot">getNewlines ::</span> [<span class="dt">Char</span>] <span class="ot">-&gt;</span> [<span class="dt">Char</span>]
-getNewlines []     <span class="fu">=</span> []
-getNewlines [_]    <span class="fu">=</span> [<span class="ch">'\n'</span>]
-getNewlines (x<span class="fu">:</span>xs)
-  <span class="fu">|</span> x <span class="fu">==</span> <span class="ch">'\n'</span> <span class="fu">=</span> <span class="ch">'\n'</span> <span class="fu">:</span> getNewlines xs
-  <span class="fu">|</span> otherwise <span class="fu">=</span> getNewlines xs
+<span class="ot">getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+getLines <span class="fu">=</span> unfoldr firstLine
+  <span class="kw">where</span>
+<span class="ot">    firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+    firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
+      (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+      (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
+      (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
 
 <span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
 count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
