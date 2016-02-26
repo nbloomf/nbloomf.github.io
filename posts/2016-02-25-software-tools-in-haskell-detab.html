@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: detab</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: detab</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2016-02-25 by nbloomf
+</div>
+
+<!-- LaTeX Macros -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{t}}\)
+\(\newcommand{\bfalse}{\mathsf{f}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+</div>
+<!-- End LaTeX Macros -->
+
+<p>This post is part of the <a href="../posts/2016-02-10-software-tools-in-haskell.html">Software Tools in Haskell</a> series.</p>
+<p><a name="detab"></a></p>
+<h2 id="detab-replace-tabs-on-stdin-with-spaces"><code>detab</code>: replace tabs on stdin with spaces</h2>
+<p>The tab key on modern computer keyboards is a holdover from mechanical typewriters where it allows the typist to advance the carriage to the next of several fixed columns, called <em>tab stops</em>, with a single key press. On many mechanical (and electric!) typewriters the positions of these tab stops are adjustable, which is useful for typing strictly formatted documents like letters and forms. The semantics of tab as a kind of “advance” command have turned out to be useful in other contexts like web browsers (where tab may cycle through the links on a page) and graphical user interfaces (where tab may cycle through manipulable widgets in a gui).</p>
+<p>In a text file, the exact interpretation of <code>\t</code> characters depends on what is doing the interpreting. Most interactive text editors imitate typewriters by implementing tab stops of a fixed (and maybe user-adjustable) width, while spreadsheet editors use tab and newline to delimit tabular data.</p>
+<p>This program allows the user to treat tab stops in a system-independent way (assuming a fixed-width font) by replacing <code>\t</code> characters (which are subjective) with spaces (which are not). It will take a list of tab stop widths at the command line and then replace <code>\t</code>s with however many spaces are needed to advance to the next tab stop.</p>
+<p>For example, invoking <code>detab 10</code> with the file</p>
+<pre><code>hello\tworld
+hola\tmundo
+hela\tvelt</code></pre>
+<p>should produce the output</p>
+<pre><code>hello     world
+hola      mundo
+hela      velt</code></pre>
+<p>As usual we need to make some assumptions. Also as usual, unicode makes things more complicated.</p>
+<ul>
+<li>The input consists of lines, separated by <code>\n</code>s, each of which has several fields, separated by <code>\t</code>s. The final output line will be terminated by a newline, even if the final input line was not.</li>
+<li>Tab stop widths are always positive. If none are provided, all tab stop widths default to 8.</li>
+<li>We will assume that each character (other than tabs and newlines) takes one “character cell”. <strong>This assumption is wrong.</strong> Unicode includes zero-width characters like combining diacritics as well as characters that are typically rendered as double-width, like many CJK characters. Taking this into account would be complicated, so we won’t. (This isn’t <em>so</em> bad. We can write filter programs later that replace combining diacritics with precomposed versions, and which replace halfwidth characters with fullwidth equivalents. Because “most” text files include only characters within one language, these three tools together should be able to handle “most” real text.)</li>
+<li>By default, all tab stops will be eight character cells wide. To avoid making our program unnecessarily opinionated, the user can specify a sequence of tab stop widths at the command line. We then have to decide what to do if a line of input text has more tabs than the user provided tab stop widths. For example, if the user invokes <code>detab 8 10 12</code> on an input line with 5 <code>\t</code>s, what should be the widths of tab stops 4 and 5? I see a few possible ways to resolve this.
+<ol style="list-style-type: decimal">
+<li>Unspecified tab stop widths cause an error. (Maybe not terrible; if the user is specifying individual tab stop widths they probably have very specifically formatted data. But we’d like to avoid failing if possible.)</li>
+<li>Unspecified tab stop widths are ignored, perhaps by leaving the <code>\t</code> characters alone, or by removing them, or even by truncating the input. (Bad; probably violates the user’s intent.)</li>
+<li>Unspecified tab stop widths are some built in constant width, like 8. (Bad for obvious reasons.)</li>
+<li>Unspecified tab stop widths are some user-configurable constant width, say with an extra argument at the command line. (Bad; clutters up the interface.)</li>
+<li>Tab stop widths cycle through the user-supplied values. E.g., <code>detab 4 6 8</code> formats with tab stops of width 4, 6, 8, 4, 6, 8, and so on. (Not great, since it is difficult to imagine that the most useful general solution to this problem has <em>custom</em> tab stop widths that <em>cycle</em>. But this idea is better than the previous in one respect: silently inferring intent is a good idea.)</li>
+<li>If the user provides any tab stop widths as arguments, we treat the <em>last</em> one as if it repeats indefinitely. E.g., <code>detab 4 6 8</code> formats with tab stops of width 4, 6, 8, 8, 8, 8, and so on. <strong>This seems like the Right Thing To Do</strong>. It gives the user total control, requires no special cases for the interface, and also elegantly handles the situation where the user wants all tab stops to have the same width. If we want tab stops of width 10, for instance, we invoke <code>detab 10</code>.</li>
+</ol></li>
+<li>We also need to decide what to do if a given “column” of input text contains no tabs. Or, equivalently, if a given “tab cell” has too many characters. For example, if we interpret the input line <code>helloworld\t</code> using the default tab stop width of 8, in which tab-column is the <code>\t</code>, the first or the second? Here we take inspiration from the typewriter heritage of tab: pressing tab advances to the <em>next</em> tab stop, wherever the carriage happens to be. It is not by default a “cell separator”. So, for instance, invoking <code>detab 4 10 8</code> on <code>hello\tworld</code> puts 9 spaces between <code>hello</code> and <code>world</code>.</li>
+</ul>
+<p>This program is quite a bit more complicated than the ones we’ve written so far because it needs to take command line arguments from the user. That means parsing structured input (here, base 10 natural numbers) and the possibility of input errors. My version of this program is pretty long compared to the <em>Software Tools</em> example, but it does have extra functionality; namely custom tab stop widths.</p>
+<p>First, here is the main program.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitFailure, exitSuccess)
+<span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
+<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span>
+  (getLines, convertTabStops, readPosIntList)
+
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  args <span class="ot">&lt;-</span> getArgs
+
+  <span class="co">-- Read positive integer tabstop arguments.</span>
+  <span class="co">-- Default is [8].</span>
+  ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span>
+    <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]
+    <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks
+    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> errorParsingArgs
+
+  <span class="co">-- Detab a single line ln with tabstops ts.</span>
+  <span class="kw">let</span> detab ln <span class="fu">=</span> <span class="kw">case</span> convertTabStops ts ln <span class="kw">of</span>
+                   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> errorDeTabbing ts ln
+                   <span class="dt">Just</span> cs <span class="ot">-&gt;</span> putStrLn cs
+
+  <span class="co">-- Do it!</span>
+  getContents
+    <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map detab <span class="fu">&gt;&gt;&gt;</span> sequence_)
+    <span class="fu">&gt;&gt;</span> exitSuccess</code></pre></div>
+<p>In order, we (1) get the user-supplied tab stop widths as strings (<code>getArgs</code>), then (2) parse these as positive integers (<code>readPosIntList</code>), which may fail. We have a custom library function (<code>convertTabStops</code>) that does the real work, and here (3) define a throwaway function <code>detab</code> that wraps <code>convertTabStops</code> and handles its error condition (more on that later). Finally, we (4) read from stdin lazily, split the input into lines, and apply <code>detab</code> to each one.</p>
+<p>There are two error conditions: first, the user may provide bad command line arguments. In this case we gently remind the user how to use this program. The second error is more insidious: the <code>convertTabStops</code> function lives in the <code>Maybe</code> monad (more on that later). This usage “should” never return <code>Nothing</code>, and if it does, there is a bug in the program. So we report the line and the tab stop sequence that caused a problem to aid in debugging. In both cases we follow the standard unix practice of writing errors to stderr rather than stdout.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">errorParsingArgs ::</span> <span class="dt">IO</span> a
+errorParsingArgs <span class="fu">=</span> <span class="kw">do</span>
+  name <span class="ot">&lt;-</span> getProgName
+  hPutStrLn stderr <span class="fu">$</span>
+    name <span class="fu">++</span> <span class="st">&quot; error: tab widths must be positive natural numbers in base 10.&quot;</span>
+  exitFailure
+
+
+<span class="co">-- This should not happen.</span>
+<span class="ot">errorDeTabbing ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a
+errorDeTabbing ts ln <span class="fu">=</span> <span class="kw">do</span>
+  name <span class="ot">&lt;-</span> getProgName
+  hPutStrLn stderr <span class="fu">$</span> name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>
+  hPutStrLn stderr <span class="fu">$</span> <span class="st">&quot;LINE: &quot;</span> <span class="fu">++</span> ln
+  hPutStrLn stderr <span class="fu">$</span> <span class="st">&quot;TABS: &quot;</span> <span class="fu">++</span> show ts
+  exitFailure</code></pre></div>
+<p>Okay, that is straightforward enough. But the real work happens in two functions, <code>readPosIntList</code> and <code>convertTabStops</code>. First, reading natural numbers. These functions are general-purpose enough to go in the library.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">readPosIntList ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]
+readPosIntList <span class="fu">=</span>
+  sequence <span class="fu">.</span> map (guardMaybe (<span class="fu">&gt;</span><span class="dv">0</span>)) <span class="fu">.</span> map readDecimalNat
+
+
+<span class="ot">readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span>
+  ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs
+  return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]
+  <span class="kw">where</span>
+<span class="ot">    decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+    decToInt x <span class="fu">=</span> lookup x
+      [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)
+      , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)
+      ]
+
+
+<span class="ot">guardMaybe ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+guardMaybe p x <span class="fu">=</span> <span class="kw">do</span>
+  y <span class="ot">&lt;-</span> x
+  <span class="kw">case</span> p y <span class="kw">of</span>
+    <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">Just</span> y
+    <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
+<p><code>readDecimalNat</code> takes a string of decimal digits and converts it to a natural number (negatives are not handled). Or, rather, converts to a <code>Maybe Int</code>. Conversion will fail if the input string does not consist of only characters 0 through 9; in this case the function returns <code>Nothing</code>. (We don’t see an explicit <code>Nothing</code> in the code because it is implicitly returned by the standard library function <code>lookup</code>.) Then <code>readPosIntList</code> simply applies <code>readDecimalNat</code> to a list of strings, and makes sure the numbers returned are all positive. This is where <code>guardMaybe</code> comes in.</p>
+<p>Next we show <code>convertTabStops</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">convertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
+convertTabStops [] _  <span class="fu">=</span> <span class="dt">Nothing</span>
+convertTabStops ks xs <span class="fu">=</span> accum [] ks xs
+  <span class="kw">where</span>
+    accum zs _   <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> concat <span class="fu">$</span> reverse zs
+    accum zs [t] ys <span class="fu">=</span> <span class="kw">do</span>
+      (as,bs) <span class="ot">&lt;-</span> splitTabStop t ys
+      accum (as<span class="fu">:</span>zs) [t] bs
+    accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span> <span class="kw">do</span>
+      (as,bs) <span class="ot">&lt;-</span> splitTabStop t ys
+      accum (as<span class="fu">:</span>zs) ts bs
+
+<span class="ot">    splitTabStop ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+    splitTabStop k xs
+      <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span>    <span class="fu">=</span> <span class="dt">Nothing</span>
+      <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">do</span>
+          (as,bs) <span class="ot">&lt;-</span> spanAtMostWhile k (<span class="fu">/=</span> <span class="ch">'\t'</span>) xs
+          cs      <span class="ot">&lt;-</span> padToByAfter k <span class="ch">' '</span> as
+          <span class="kw">case</span> bs <span class="kw">of</span>
+            <span class="st">&quot;&quot;</span>      <span class="ot">-&gt;</span> return (cs,<span class="st">&quot;&quot;</span>)
+            <span class="ch">'\t'</span><span class="fu">:</span>ds <span class="ot">-&gt;</span> return (cs,ds)
+            ds      <span class="ot">-&gt;</span> return (cs,ds)
+
+
+<span class="ot">spanAtMostWhile ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> ([a],[a])
+spanAtMostWhile k p xs
+  <span class="fu">|</span> k <span class="fu">&lt;</span> <span class="dv">0</span>     <span class="fu">=</span> <span class="dt">Nothing</span>
+  <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> acc k [] xs
+  <span class="kw">where</span>
+    acc <span class="dv">0</span> as bs <span class="fu">=</span> (reverse as, bs)
+    acc _ as [] <span class="fu">=</span> (reverse as, [])
+    acc t as (b<span class="fu">:</span>bs) <span class="fu">=</span> <span class="kw">if</span> p b
+      <span class="kw">then</span> acc (t<span class="fu">-</span><span class="dv">1</span>) (b<span class="fu">:</span>as) bs
+      <span class="kw">else</span> (reverse as, b<span class="fu">:</span>bs)
+
+
+<span class="ot">padToByAfter ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+padToByAfter k z xs
+  <span class="fu">|</span> k <span class="fu">&lt;</span> <span class="dv">0</span>     <span class="fu">=</span> <span class="dt">Nothing</span>
+  <span class="fu">|</span> otherwise <span class="fu">=</span> acc k [] xs
+  <span class="kw">where</span>
+    acc <span class="dv">0</span> as [] <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> reverse as
+    acc <span class="dv">0</span> _  _  <span class="fu">=</span> <span class="dt">Nothing</span>
+    acc t as [] <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> reverse as <span class="fu">++</span> replicate t z
+    acc t as (b<span class="fu">:</span>bs) <span class="fu">=</span> acc (t<span class="fu">-</span><span class="dv">1</span>) (b<span class="fu">:</span>as) bs</code></pre></div>
+<p>The helper function <code>splitTabStop</code> takes a single tab stop width <code>k</code> and a string <code>xs</code>, and peels of the first <code>k</code> characters of <code>xs</code> unless one of them is a <code>\t</code>. It then returns a pair consisting of the peeled of characters and the remainder of the string. (If the <code>k</code> parameter is negative, we have a problem, so we return <code>Nothing</code> in this case. <strong>This is why we have to handle the second error condition in the main function.</strong> If Haskell had a convenient positive integer type, this could be dealt with differently.) Then <code>convertTabStops</code> simply marches down an entire line with a list of tab stop widths, peeling of tab stops as it goes. This is done using an accumulating parameter function, <code>accum</code>. Once the string is empty, <code>accum</code> reverses the accumulating parameter and returns it (concatenated), otherwise it takes the next tab stop width and repeats.</p>
+<p><code>spanAtMostWhile</code> is a combination of the standard library functions <code>span</code> and <code>take</code>. It peels off up to <code>k</code> elements of a list provided they all satisfy predicate <code>p</code> and returns both the peeled off elements and the remainder of the list. <code>padToByAfter</code> pads lists to a given length with a given character, throwing an error if the given length is already too long. Both of these are general enough to factor out; they also both use the accumulating parameter style to avoid space leaks.</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
