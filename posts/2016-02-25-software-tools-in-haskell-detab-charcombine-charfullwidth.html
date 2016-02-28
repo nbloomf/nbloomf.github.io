@@ -85,7 +85,7 @@ hela      velt</code></pre>
 </ol></li>
 <li>We also need to decide what to do if a given “column” of input text contains no tabs. Or, equivalently, if a given “tab cell” has too many characters. For example, if we interpret the input line <code>helloworld\t</code> using the default tab stop width of 8, in which tab-column is the <code>\t</code>, the first or the second? Here we take inspiration from the typewriter heritage of tab: pressing tab advances to the <em>next</em> tab stop, wherever the carriage happens to be. It is not by default a “cell separator”. So, for instance, invoking <code>detab 4 10 8</code> on <code>hello\tworld</code> puts 9 spaces between <code>hello</code> and <code>world</code>.</li>
 </ul>
-<p>This program is quite a bit more complicated than the ones we’ve written so far because it needs to take command line arguments from the user. That means parsing structured input (here, base 10 natural numbers) and the possibility of input errors. My version of this program is pretty long compared to the <em>Software Tools</em> example, but it does have extra functionality; namely custom tab stop widths.</p>
+<p>This program is quite a bit more complicated than the ones we’ve written so far because it needs to take command line arguments from the user. That means parsing structured input (here, base 10 natural numbers) and the possibility of input errors. My version of this program is pretty long compared to the <em>Software Tools</em> example, but it does have extra functionality; namely custom tab stop widths. (NB: reading further in the text, adding this functionality to <code>detab</code> is Exercise 2-4 in the book. Oops!)</p>
 <p>First, here is the main program.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
@@ -178,11 +178,15 @@ convertTabStops ks xs <span class="fu">=</span> accum [] ks xs
       <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span>    <span class="fu">=</span> <span class="dt">Nothing</span>
       <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">do</span>
           (as,bs) <span class="ot">&lt;-</span> spanAtMostWhile k (<span class="fu">/=</span> <span class="ch">'\t'</span>) xs
-          cs      <span class="ot">&lt;-</span> padToByAfter k <span class="ch">' '</span> as
-          <span class="kw">case</span> bs <span class="kw">of</span>
-            <span class="st">&quot;&quot;</span>      <span class="ot">-&gt;</span> return (cs,<span class="st">&quot;&quot;</span>)
-            <span class="ch">'\t'</span><span class="fu">:</span>ds <span class="ot">-&gt;</span> return (cs,ds)
-            ds      <span class="ot">-&gt;</span> return (cs,ds)
+          <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
+            <span class="kw">then</span> <span class="kw">do</span>
+              <span class="kw">let</span> cs <span class="fu">=</span> reverse <span class="fu">$</span> dropWhile (<span class="fu">==</span><span class="ch">' '</span>) <span class="fu">$</span> reverse as
+              return (cs,<span class="st">&quot;&quot;</span>)
+            <span class="kw">else</span> <span class="kw">do</span>
+              cs <span class="ot">&lt;-</span> padToByAfter k <span class="ch">' '</span> as
+              <span class="kw">case</span> bs <span class="kw">of</span>
+                <span class="ch">'\t'</span><span class="fu">:</span>ds <span class="ot">-&gt;</span> return (cs,ds)
+                ds      <span class="ot">-&gt;</span> return (cs,ds)
 
 
 <span class="ot">spanAtMostWhile ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> ([a],[a])
@@ -206,7 +210,7 @@ padToByAfter k z xs
     acc <span class="dv">0</span> _  _  <span class="fu">=</span> <span class="dt">Nothing</span>
     acc t as [] <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> reverse as <span class="fu">++</span> replicate t z
     acc t as (b<span class="fu">:</span>bs) <span class="fu">=</span> acc (t<span class="fu">-</span><span class="dv">1</span>) (b<span class="fu">:</span>as) bs</code></pre></div>
-<p>The helper function <code>splitTabStop</code> takes a single tab stop width <code>k</code> and a string <code>xs</code>, and peels of the first <code>k</code> characters of <code>xs</code> unless one of them is a <code>\t</code>. It then returns a pair consisting of the peeled of characters and the remainder of the string. (If the <code>k</code> parameter is negative, we have a problem, so we return <code>Nothing</code> in this case. <strong>This is why we have to handle the second error condition in the main function.</strong> If Haskell had a convenient positive integer type, this could be dealt with differently.) Then <code>convertTabStops</code> simply marches down an entire line with a list of tab stop widths, peeling of tab stops as it goes. This is done using an accumulating parameter function, <code>accum</code>. Once the string is empty, <code>accum</code> reverses the accumulating parameter and returns it (concatenated), otherwise it takes the next tab stop width and repeats.</p>
+<p>The helper function <code>splitTabStop</code> takes a single tab stop width <code>k</code> and a string <code>xs</code>, and peels of the first <code>k</code> characters of <code>xs</code> unless one of them is a <code>\t</code>. It then returns a pair consisting of the peeled off characters and the remainder of the string. (If the <code>k</code> parameter is negative, we have a problem, so we return <code>Nothing</code> in this case. <strong>This is why we have to handle the second error condition in the main function.</strong> If Haskell had a convenient positive integer type, this could be dealt with differently.) Then <code>convertTabStops</code> simply marches down an entire line with a list of tab stop widths, peeling off tab stops as it goes. This is done using an accumulating parameter function, <code>accum</code>. Once the string is empty, <code>accum</code> reverses the accumulating parameter and returns it (concatenated), otherwise it takes the next tab stop width and repeats.</p>
 <p><code>spanAtMostWhile</code> is a combination of the standard library functions <code>span</code> and <code>take</code>. It peels off up to <code>k</code> elements of a list provided they all satisfy predicate <code>p</code> and returns both the peeled off elements and the remainder of the list. <code>padToByAfter</code> pads lists to a given length with a given character, throwing an error if the given length is already too long. Both of these are general enough to factor out; they also both use the accumulating parameter style to avoid space leaks.</p>
 <p><a name="charcombine"></a></p>
 <h2 id="charcombine-replace-combining-unicode-characters-with-precomposed-characters"><code>charcombine</code>: replace combining unicode characters with precomposed characters</h2>
