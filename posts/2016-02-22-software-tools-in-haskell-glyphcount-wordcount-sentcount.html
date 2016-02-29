@@ -74,10 +74,13 @@ getGlyphs <span class="fu">=</span> unfoldr firstGlyph
         <span class="kw">let</span> (as,bs) <span class="fu">=</span> break (not <span class="fu">.</span> isMark) xs
         <span class="dt">Just</span> (x<span class="fu">:</span>as, bs)</code></pre></div>
 <p>Now the main function is much like <code>linecount</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-glyphcount: count glyphs on stdin</span>
 
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (count, getGlyphs)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> ((&gt;&gt;&gt;))
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getGlyphs)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
@@ -93,10 +96,13 @@ getWords <span class="fu">=</span> unfoldr firstWord
       <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
       ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys</code></pre></div>
 <p>For this function we used <code>getContents</code> and reused <code>count</code>. The <code>getWords</code> function takes a string and splits it into a list of words, with delimiting spaces removed. There is a standard library function in <code>Data.List</code>, called (appropriately enough) <code>words</code>, that does this. But the whole point of this exercise is reinventing wheels, and besides <code>wc</code> does all this better anyway. :)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-wordcount: count words on stdin</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (count, getWords)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getWords)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
@@ -161,10 +167,16 @@ getSentences <span class="fu">=</span> map (intercalate <span class="st">&quot; 
         isSentenceStart ys <span class="fu">=</span> (isCapitalized ys)
           <span class="fu">||</span> (or <span class="fu">$</span> map (<span class="ot">`isPrefixOf`</span> ys) [<span class="st">&quot;\&quot;&quot;</span>, <span class="st">&quot;'&quot;</span>, <span class="st">&quot;(&quot;</span>])</code></pre></div>
 <p>The <code>break2</code> function is an extension of the standard library function <code>break</code> that focuses on the spaces between list elements rather than list elements themselves. (Note that <code>break p === break2 (\x _ -&gt; p x)</code>.) <code>getSentences</code> does the heavy lifting, splitting a string into sentences using heuristics. The heuristics for detecting sentence boundaries are in <code>isSentenceBoundary</code>. This function is ugly, but reasonably easy to modify as new special cases arise.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-sentcount: count sentences on stdin</span>
 
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (count, getSentences)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  ((<span class="fu">&gt;&gt;&gt;</span>), unfoldr, intercalate,
+   isPrefixOf, isSuffixOf, isUpper)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count, break2)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getWords)
+
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>

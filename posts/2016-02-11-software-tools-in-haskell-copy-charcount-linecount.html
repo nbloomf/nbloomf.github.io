@@ -60,10 +60,12 @@ Posted on 2016-02-11 by nbloomf
 <h2 id="copy-copy-characters-from-stdin-to-stdout"><code>copy</code>: copy characters from stdin to stdout</h2>
 <p>Many simple tools are designed to act as <em>filters</em>: programs which take a stream of data, manipulate it in some way, and send it along. The <code>copy</code> program is the simplest possible example of a filter – the identity filter. This is even simpler than <code>cat</code>, which at least catenates files.</p>
 <p>This program copies characters from stdin to stdout until EOF is encountered, whereupon it exits. Any other error causes the program to fail. In an imperative language this pattern (read a character, write a character, repeat) would be written with a loop. In Haskell we instead use recursion.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-copy: copy characters from stdin to stdout</span>
 
-<span class="kw">import </span><span class="dt">System.IO</span> (getChar, putChar)
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (catchEOF)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (getChar, putChar)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Error</span> (catchEOF)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> catchEOF getChar <span class="fu">&gt;&gt;=</span> putChar <span class="fu">&gt;&gt;</span> main</code></pre></div>
@@ -77,9 +79,11 @@ catchEOF x <span class="fu">=</span> catchIOError x handler
 <p><a name="charcount"></a></p>
 <h2 id="charcount-count-characters-on-stdin"><code>charcount</code>: count characters on stdin</h2>
 <p>The <code>charcount</code> program counts the characters on stdin until EOF is reached. Almost right off the bat we have a problem: with Unicode it is not obvious what a “character” is. For simplicity’s sake I will split this program in two: <code>charcount</code>, which ignores any issues with unicode normalization, like combining diacritics, and <code>glyphcount</code>, which takes these issues into account. So for instance O̰ (capital O, with combining tilde below) counts as two characters but one glyph. Character encodings were much simpler and less useful when <em>Software Tools</em> was written. 🙂</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charcount: count characters on stdin</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (count)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents
@@ -109,10 +113,13 @@ getLines <span class="fu">=</span> unfoldr firstLine
       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)</code></pre></div>
 <p>One more change from <code>charcount</code> is that we’ve used the <code>&gt;&gt;&gt;</code> operator from <code>Control.Arrow</code>. This is a standard library operator which (used here) is simply reversed function composition; it allows us to read the definition of <code>main</code> as if data flows from left to right, following the arrows. Compare this notation to the <code>main</code> function in <code>charcount</code>, where we used ordinary function composition.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-linecount: count lines on stdin</span>
 
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (getLines, count)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> ((&gt;&gt;&gt;))
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getLines)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>

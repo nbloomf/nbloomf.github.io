@@ -60,14 +60,16 @@ Posted on 2016-02-27 by nbloomf
 <h2 id="entab-replace-spaces-on-stdin-with-tabs"><code>entab</code>: replace spaces on stdin with tabs</h2>
 <p>The <code>detab</code> program replaced tab characters with spaces, taking arguments at the command line to let the user specify the width of the tab stops. The <code>entab</code> program reverses this process. It takes input which we assume represents some tabular data where different columns start on specific character columns, chops the input lines into columns, and replaces any trailing spaces in a given column by a single <code>\t</code> character. Just like <code>detab</code>, the default tab stop width is 8, and we allow the user to specify a list of tab stop widths at the command line with the convention that the <em>last</em> user-specified width is assumed to repeat indefinitely.</p>
 <p>The basic structure of this program is nearly identical to that of <code>detab</code> (which is not surprising).</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-entab: replace spaces on stdin with tabs</span>
 
-<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
-<span class="kw">import </span><span class="dt">System.Exit</span> (exitFailure, exitSuccess)
-<span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span>
-  (getLines, insertTabStops, readPosIntList)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, exitFailure, getArgs)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Read</span>  (readPosIntList)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>  (getLines)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>  (spanAtMostWhile, padToByAfter)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Error</span> (reportErrorMsgs)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
@@ -79,17 +81,22 @@ main <span class="fu">=</span> <span class="kw">do</span>
   ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span>
     <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]
     <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks
-    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> errorParsingArgs
+    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
+                 [<span class="st">&quot;tab widths must be positive integers.&quot;</span>
+                 ] <span class="fu">&gt;&gt;</span> exitFailure
 
   <span class="co">-- Entab a single line ln with tabstops ts.</span>
   <span class="kw">let</span> entab ln <span class="fu">=</span> <span class="kw">case</span> insertTabStops ts ln <span class="kw">of</span>
-                   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> errorDeTabbing ts ln
+                   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
+                                [ <span class="st">&quot;LINE: &quot;</span> <span class="fu">++</span> ln
+                                , <span class="st">&quot;TABS: &quot;</span> <span class="fu">++</span> show ts
+                                ] <span class="fu">&gt;&gt;</span> exitFailure
                    <span class="dt">Just</span> cs <span class="ot">-&gt;</span> putStrLn cs
 
   <span class="co">-- Do it!</span>
   getContents
     <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map entab <span class="fu">&gt;&gt;&gt;</span> sequence_)
-    <span class="fu">&gt;&gt;</span> exitSuccess</code></pre></div>
+    <span class="fu">&gt;&gt;</span>  exitSuccess</code></pre></div>
 <p>We reuse the functions for reading lists of nonnegative integers that we wrote for <code>detab</code>. The heavly lifting is done by <code>insertTabStops</code>.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
 insertTabStops [] xs <span class="fu">=</span> <span class="dt">Just</span> xs
@@ -129,14 +136,17 @@ insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
 <h2 id="echo-write-arguments-to-stdout"><code>echo</code>: write arguments to stdout</h2>
 <p>All the programs we’ve written so far are strictly <em>filters</em>: they read data from stdin and write data to stdout. The metaphor here is that small programs are chained together in a larger “pipeline”, and data flows from one end to the other; along the way, each filter changes the data in some way. By reading and writing from stdin and stdout, individual programs do not need to worry about where their data comes from and goes.</p>
 <p><code>echo</code> is the first program we’ve written that <em>produces</em> data without needing to take any from stdin; it is a <em>source</em>. (The converse, a program which consumes data without producing any, is a <em>sink</em>). <code>echo</code> simply takes a list of arguments at the command line and writes them to stdout.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-echo: write arguments to stdout</span>
 
-<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
-<span class="kw">import </span><span class="dt">Data.List</span> (unwords)
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  ((<span class="fu">&gt;&gt;&gt;</span>), getArgs, unwords, exitSuccess)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getArgs <span class="fu">&gt;&gt;=</span> (unwords <span class="fu">&gt;&gt;&gt;</span> putStrLn)</code></pre></div>
+main <span class="fu">=</span> getArgs
+  <span class="fu">&gt;&gt;=</span> (unwords <span class="fu">&gt;&gt;&gt;</span> putStrLn)
+  <span class="fu">&gt;&gt;</span>  exitSuccess</code></pre></div>
 <p>We can now use <code>echo</code> to test our other programs. For instance, using the shell to run</p>
 <pre><code>sth-echo &quot;hello&quot; | sth-charcount</code></pre>
 <p>prints <code>6</code> to the terminal. Woo!</p>
@@ -211,10 +221,16 @@ fromSparseList x ys <span class="fu">=</span> accum <span class="dv">1</span> []
       <span class="dt">GT</span> <span class="ot">-&gt;</span> accum (t<span class="fu">+</span><span class="dv">1</span>) as zs</code></pre></div>
 <p>As an aside: I pulled out <code>maxMonoSubseqsBy</code> and <code>fromSparseList</code> as abstractly as possible. When writing Haskell (this is probably true in other languages as well) writing code with the most general possible type usually makes it <strong>easier</strong> to write. Working with a less specific type means there are fewer meaningful things to say, and when there are fewer paths to choose from the correct one is easier to find. This code, for instance, was nearly written in one pass with no substantial editing needed. Not because I am particularly good but because <strong>there’s essentially only one way to do it</strong>. Pick a type signature and a recursion pattern (here, either <code>unfoldr</code> or accumulating parameter) and the rest practically writes itself.</p>
 <p>After all that, the main program is pretty straightforward.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-overstrike: interpret backspaces using line printer control codes</span>
 
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="kw">import </span><span class="dt">SoftwareTools.FunctionLibrary</span> (getLines, overstrikeLines)
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, sortBy)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>
+  (maxMonoSubseqsBy, fromSparseList)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getLines)
+
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
@@ -224,7 +240,9 @@ main <span class="fu">=</span> <span class="kw">do</span>
                      <span class="fu">&gt;&gt;&gt;</span> sequence_
 
   getContents
-    <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map overstrike <span class="fu">&gt;&gt;&gt;</span> sequence_)</code></pre></div>
+    <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map overstrike <span class="fu">&gt;&gt;&gt;</span> sequence_)
+
+  exitSuccess</code></pre></div>
 
 <!-- END BODY -->
 </div>
