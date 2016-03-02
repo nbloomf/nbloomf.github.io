@@ -59,40 +59,41 @@ Posted on 2016-02-11 by nbloomf
 <p><a name="copy"></a></p>
 <h2 id="copy-copy-characters-from-stdin-to-stdout"><code>copy</code>: copy characters from stdin to stdout</h2>
 <p>Many simple tools are designed to act as <em>filters</em>: programs which take a stream of data, manipulate it in some way, and send it along. The <code>copy</code> program is the simplest possible example of a filter – the identity filter. This is even simpler than <code>cat</code>, which at least catenates files.</p>
-<p>This program copies characters from stdin to stdout until EOF is encountered, whereupon it exits. Any other error causes the program to fail. In an imperative language this pattern (read a character, write a character, repeat) would be written with a loop. In Haskell we instead use recursion.</p>
+<p>With some experience using unix, there is a useful distinction to be made among filter programs: some are <em>character-oriented</em> while others are <em>line-oriented</em>. Roughly speaking, a character-oriented filter applies a map to the entire contents of stdin, while a line-oriented filter first splits the contents of stdin into lines and then applies a map to each one. Of course from this point of view, line-oriented filters are a special case of character-oriented filters, but this is a useful distinction. For instance, line filters are expected to write output which ends in a newline, while character filters should not.</p>
+<p>We will write a general-purpose character-oriented filter program, parameterized on the mapping used to transform the input. <code>charFilter</code> simply reads everything it can from stdin, applies a function to it, and writes out the result. Note that the standard library function <code>getContents</code> reads from stdin lazily, so despite appearances this function does not read all of stdin at once before getting to work.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+charFilter f <span class="fu">=</span> <span class="kw">do</span>
+  xs <span class="ot">&lt;-</span> getContents
+  putStr <span class="fu">$</span> f xs</code></pre></div>
+<p>The <code>copy</code> program is then the simplest possible character filter.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-copy: copy characters from stdin to stdout</span>
+<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (getChar, putChar)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Error</span> (catchEOF)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> catchEOF getChar <span class="fu">&gt;&gt;=</span> putChar <span class="fu">&gt;&gt;</span> main</code></pre></div>
-<p>IO actions can throw IO errors, which (unlike other error handling strategies in Haskell) can be silently, and thus accidentally, ignored. These errors are caught using <code>catchIOError</code>, which takes an action to be attempted and an error handler. Here, the IO action <code>getChar</code> may fail. In fact it will fail once the recursion reaches the end of the input. We will detect IO errors, and exit accordingly, using the <code>catchEOF</code> helper function. We’ll stash this in the library for future use.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">catchEOF ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a
-catchEOF x <span class="fu">=</span> catchIOError x handler
-  <span class="kw">where</span>
-    handler err
-      <span class="fu">|</span> isEOFError err <span class="fu">=</span> exitSuccess
-      <span class="fu">|</span> otherwise      <span class="fu">=</span> exitFailure</code></pre></div>
+main <span class="fu">=</span> charFilter id</code></pre></div>
 <p><a name="charcount"></a></p>
 <h2 id="charcount-count-characters-on-stdin"><code>charcount</code>: count characters on stdin</h2>
 <p>The <code>charcount</code> program counts the characters on stdin until EOF is reached. Almost right off the bat we have a problem: with Unicode it is not obvious what a “character” is. For simplicity’s sake I will split this program in two: <code>charcount</code>, which ignores any issues with unicode normalization, like combining diacritics, and <code>glyphcount</code>, which takes these issues into account. So for instance O̰ (capital O, with combining tilde below) counts as two characters but one glyph. Character encodings were much simpler and less useful when <em>Software Tools</em> was written. 🙂</p>
+<p>We can still think of <code>charcount</code> as a character oriented filter, but this time we want to end the output with a newline.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charcount: count characters on stdin</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter, putNewLine)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getContents
-  <span class="fu">&gt;&gt;=</span> (putStrLn <span class="fu">.</span> show <span class="fu">.</span> count)</code></pre></div>
-<p>The <code>getContents</code> function reads stdin lazily, meaning that characters are only read as needed, and also handles EOF for us.</p>
+main <span class="fu">=</span> <span class="kw">do</span>
+  charFilter (show <span class="fu">.</span> count)
+  putNewLine</code></pre></div>
+<p><code>putNewLine</code> is a synonym for <code>putStrLn &quot;&quot;</code>. The <code>count</code> function is a helper that (you guessed it!) counts the items in a list. We use <code>foldl'</code> to force strictness and avoid a memory leak. The <code>foldl</code> function is lazy by default, meaning that it would generate a stack of unevaluated additions to be carried out only once EOF is reached.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
 count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
   <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
-<p>The <code>count</code> function is a helper that (you guessed it!) counts the items in a list. We use <code>foldl'</code> to force strictness and avoid a memory leak. The <code>foldl</code> function is lazy by default, meaning that it would generate a stack of unevaluated additions to be carried out only once EOF is reached.</p>
 <p><a name="linecount"></a></p>
 <h2 id="linecount-count-lines-on-stdin"><code>linecount</code>: count lines on stdin</h2>
 <p>The <code>linecount</code> program counts lines on stdin until EOF is reached. Now while the definition of “character” is reasonably clear (unicode notwithstanding), we have to think more carefully about what a “line” is.</p>

@@ -61,11 +61,13 @@ Posted on 2016-02-27 by nbloomf
 <p>The <code>detab</code> program replaced tab characters with spaces, taking arguments at the command line to let the user specify the width of the tab stops. The <code>entab</code> program reverses this process. It takes input which we assume represents some tabular data where different columns start on specific character columns, chops the input lines into columns, and replaces any trailing spaces in a given column by a single <code>\t</code> character. Just like <code>detab</code>, the default tab stop width is 8, and we allow the user to specify a list of tab stop widths at the command line with the convention that the <em>last</em> user-specified width is assumed to repeat indefinitely.</p>
 <p>The basic structure of this program is nearly identical to that of <code>detab</code> (which is not surprising).</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-entab: replace spaces on stdin with tabs</span>
+<span class="co">--   line-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
   ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, exitFailure, getArgs)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>    (lineFilter)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.Read</span>  (readPosIntList)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>  (getLines)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>  (spanAtMostWhile, padToByAfter)
@@ -85,46 +87,37 @@ main <span class="fu">=</span> <span class="kw">do</span>
                  [<span class="st">&quot;tab widths must be positive integers.&quot;</span>
                  ] <span class="fu">&gt;&gt;</span> exitFailure
 
-  <span class="co">-- Entab a single line ln with tabstops ts.</span>
-  <span class="kw">let</span> entab ln <span class="fu">=</span> <span class="kw">case</span> insertTabStops ts ln <span class="kw">of</span>
-                   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
-                                [ <span class="st">&quot;LINE: &quot;</span> <span class="fu">++</span> ln
-                                , <span class="st">&quot;TABS: &quot;</span> <span class="fu">++</span> show ts
-                                ] <span class="fu">&gt;&gt;</span> exitFailure
-                   <span class="dt">Just</span> cs <span class="ot">-&gt;</span> putStrLn cs
-
   <span class="co">-- Do it!</span>
-  getContents
-    <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map entab <span class="fu">&gt;&gt;&gt;</span> sequence_)
-    <span class="fu">&gt;&gt;</span>  exitSuccess</code></pre></div>
+  lineFilter (insertTabStops ts)
+  exitSuccess</code></pre></div>
 <p>We reuse the functions for reading lists of nonnegative integers that we wrote for <code>detab</code>. The heavly lifting is done by <code>insertTabStops</code>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
-insertTabStops [] xs <span class="fu">=</span> <span class="dt">Just</span> xs
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+insertTabStops [] xs <span class="fu">=</span> xs
 insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
   <span class="kw">where</span>
-    accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> concat <span class="fu">$</span> reverse zs
-    accum zs [t] ys <span class="fu">=</span> <span class="kw">do</span>
-      (as,bs) <span class="ot">&lt;-</span> splitColumn t ys
+    accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> concat <span class="fu">$</span> reverse zs
+    accum zs [t] ys <span class="fu">=</span>
+      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
       accum (as<span class="fu">:</span>zs) [t] bs
-    accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span> <span class="kw">do</span>
-      (as,bs) <span class="ot">&lt;-</span> splitColumn t ys
+    accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span>
+      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
       accum (as<span class="fu">:</span>zs) ts bs
 
-<span class="ot">    splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">    splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">String</span>)
     splitColumn k xs
-      <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> <span class="dt">Nothing</span>
-      <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> <span class="dt">Nothing</span>
-      <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">do</span>
-          <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitAt k xs
-          <span class="kw">let</span> munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
-          <span class="kw">let</span> cs <span class="fu">=</span> reverse as
-          <span class="kw">let</span> ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
+      <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> (xs,<span class="st">&quot;&quot;</span>)
+      <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)
+      <span class="fu">|</span> otherwise <span class="fu">=</span> (ds,bs)
+          <span class="kw">where</span>
+            (as,bs) <span class="fu">=</span> splitAt k xs
+            munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
+            cs <span class="fu">=</span> reverse as
+            ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
                      <span class="kw">then</span> <span class="kw">let</span> es <span class="fu">=</span> reverse <span class="fu">$</span> munch cs <span class="kw">in</span>
                        <span class="kw">if</span> es <span class="fu">==</span> <span class="st">&quot;&quot;</span> <span class="kw">then</span> <span class="st">&quot;\t&quot;</span> <span class="kw">else</span> es
                      <span class="kw">else</span> <span class="kw">case</span> cs <span class="kw">of</span>
                        <span class="ch">' '</span><span class="fu">:</span>_ <span class="ot">-&gt;</span> reverse (<span class="ch">'\t'</span><span class="fu">:</span>(munch cs))
-                       otherwise <span class="ot">-&gt;</span> as
-          <span class="dt">Just</span> (ds,bs)</code></pre></div>
+                       otherwise <span class="ot">-&gt;</span> as</code></pre></div>
 <p>Even the shape of this function on the page resembles that of its counterpart from <code>detab</code>. Note the use of an accumulating parameter helper function.</p>
 <p>In Exercise 2-2, Kernighan and Plauger ask us to make the simplest change to <code>entab</code> to make it handle tabs correctly. After thinking about this, I’ve decided the right thing to do is <strong>nothing</strong>. Let’s imagine what it means if the user is trying to use <code>entab</code> on data that contains tabs. I can think of two possible situations.</p>
 <ol style="list-style-type: decimal">
@@ -135,18 +128,16 @@ insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
 <p><a name="echo"></a></p>
 <h2 id="echo-write-arguments-to-stdout"><code>echo</code>: write arguments to stdout</h2>
 <p>All the programs we’ve written so far are strictly <em>filters</em>: they read data from stdin and write data to stdout. The metaphor here is that small programs are chained together in a larger “pipeline”, and data flows from one end to the other; along the way, each filter changes the data in some way. By reading and writing from stdin and stdout, individual programs do not need to worry about where their data comes from and goes.</p>
-<p><code>echo</code> is the first program we’ve written that <em>produces</em> data without needing to take any from stdin; it is a <em>source</em>. (The converse, a program which consumes data without producing any, is a <em>sink</em>). <code>echo</code> simply takes a list of arguments at the command line and writes them to stdout.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-echo: write arguments to stdout</span>
+<p><code>echo</code> is the first program we’ve written that <em>produces</em> data without needing to take any from stdin; it is a <em>source</em>. (The converse, a program which consumes data without producing any, is a <em>sink</em>). <code>echo</code> simply takes a list of arguments at the command line and writes them to stdout. Unlike the standard echo, we write the arguments one per line.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-echo: write arguments to stdout, one per line</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
-  ((<span class="fu">&gt;&gt;&gt;</span>), getArgs, unwords, exitSuccess)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (getArgs, exitSuccess)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (putStrLns)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getArgs
-  <span class="fu">&gt;&gt;=</span> (unwords <span class="fu">&gt;&gt;&gt;</span> putStrLn)
-  <span class="fu">&gt;&gt;</span>  exitSuccess</code></pre></div>
+main <span class="fu">=</span> getArgs <span class="fu">&gt;&gt;=</span> putStrLns <span class="fu">&gt;&gt;</span> exitSuccess</code></pre></div>
 <p>We can now use <code>echo</code> to test our other programs. For instance, using the shell to run</p>
 <pre><code>sth-echo &quot;hello&quot; | sth-charcount</code></pre>
 <p>prints <code>6</code> to the terminal. Woo!</p>
@@ -178,7 +169,12 @@ main <span class="fu">=</span> getArgs
 +  fg</code></pre>
 <p>In fact this is a <em>most</em> efficient set of overstrike lines, since 2 is the minimal number of lines required. It isn’t too hard to see that if a given line has at most <span class="math inline">\(k\)</span> characters with the same column index, then <span class="math inline">\(k\)</span> is the minimum number of overstrike lines required to render that line (and there is always a set of <span class="math inline">\(k\)</span> overstrike lines that works). Why? We can think of this as a graph coloring problem. The char-int pairs are vertices (ignoring those where the character is a blank), and two vertices are adjacent if they have the same column index. Colorings of this graph correspond to valid sets of overstrike lines. But this graph is a disjoint union of complete graphs, with one component for each column index. The minimum number of colors required is the size of the largest component.</p>
 <p>To identify a coloring of the char-int graph, we (1) drop all the blanks, (2) sort the list by column index, and (3) split the list into maximal subsequences by column index. (What?) Finally, (4) thinking of these char-int pairs as sparse lists, convert to real actual lists, using space characters for any missing indices.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">overstrikeLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">overstrike ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+overstrike <span class="fu">=</span> overstrikeLines
+  <span class="fu">&gt;&gt;&gt;</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>))
+  <span class="fu">&gt;&gt;&gt;</span> intercalate <span class="st">&quot;\n&quot;</span>
+
+<span class="ot">overstrikeLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
 overstrikeLines <span class="fu">=</span>
   columnIndices
     <span class="fu">&gt;&gt;&gt;</span> filter (\(c,_) <span class="ot">-&gt;</span> c <span class="fu">/=</span> <span class="ch">' '</span>)          <span class="co">-- try omitting</span>
@@ -222,26 +218,23 @@ fromSparseList x ys <span class="fu">=</span> accum <span class="dv">1</span> []
 <p>As an aside: I pulled out <code>maxMonoSubseqsBy</code> and <code>fromSparseList</code> as abstractly as possible. When writing Haskell (this is probably true in other languages as well) writing code with the most general possible type usually makes it <strong>easier</strong> to write. Working with a less specific type means there are fewer meaningful things to say, and when there are fewer paths to choose from the correct one is easier to find. This code, for instance, was nearly written in one pass with no substantial editing needed. Not because I am particularly good but because <strong>there’s essentially only one way to do it</strong>. Pick a type signature and a recursion pattern (here, either <code>unfoldr</code> or accumulating parameter) and the rest practically writes itself.</p>
 <p>After all that, the main program is pretty straightforward.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-overstrike: interpret backspaces using line printer control codes</span>
+<span class="co">--   line-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
-  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, sortBy)
+  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, sortBy, intercalate)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>
+  (lineFilter)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>
   (maxMonoSubseqsBy, fromSparseList)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getLines)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>
+  (getLines)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
-  <span class="kw">let</span> overstrike <span class="fu">=</span> overstrikeLines
-                     <span class="fu">&gt;&gt;&gt;</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>))
-                     <span class="fu">&gt;&gt;&gt;</span> map putStrLn
-                     <span class="fu">&gt;&gt;&gt;</span> sequence_
-
-  getContents
-    <span class="fu">&gt;&gt;=</span> (getLines <span class="fu">&gt;&gt;&gt;</span> map overstrike <span class="fu">&gt;&gt;&gt;</span> sequence_)
-
+  lineFilter overstrike
   exitSuccess</code></pre></div>
 
 <!-- END BODY -->

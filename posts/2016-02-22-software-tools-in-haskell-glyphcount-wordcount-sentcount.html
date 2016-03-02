@@ -78,13 +78,14 @@ getGlyphs <span class="fu">=</span> unfoldr firstGlyph
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> ((&gt;&gt;&gt;))
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter, putNewLine)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getGlyphs)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
-  (getGlyphs <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)</code></pre></div>
+main <span class="fu">=</span> <span class="kw">do</span>
+  charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getGlyphs)
+  putNewLine</code></pre></div>
 <p><a name="wordcount"></a></p>
 <h2 id="wordcount-count-words-on-stdin"><code>wordcount</code>: count words on stdin</h2>
 <p>This program takes an expansive view of what a “word” is: maximal substrings not containing any whitespace characters (space, <code>\n</code>, <code>\t</code>, <code>\r</code>, <code>\v</code>, or any other unicode character which the standard <code>isSpace</code> function detects).</p>
@@ -100,13 +101,13 @@ getWords <span class="fu">=</span> unfoldr firstWord
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getWords)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
-  (getWords <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)</code></pre></div>
+main <span class="fu">=</span> <span class="kw">do</span>
+  charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getWords)
+  putNewLine</code></pre></div>
 <p>Both <code>getWords</code> and <code>count</code> use standard library recursion operators, <code>unfoldr</code> and <code>foldl'</code>. Recursion is how functional languages handle iterated computation (a.k.a. “loops”). But much like structured programming replaced arbitrary GOTOs with a small number of control-flow statements, in functional languages we can get a lot of mileage out of a small number of recursion patterns.</p>
 <p><a name="sentcount"></a></p>
 <h2 id="sentcount-count-sentences-on-stdin"><code>sentcount</code>: count sentences on stdin</h2>
@@ -174,13 +175,15 @@ getSentences <span class="fu">=</span> map (intercalate <span class="st">&quot; 
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
   ((<span class="fu">&gt;&gt;&gt;</span>), unfoldr, intercalate,
    isPrefixOf, isSuffixOf, isUpper)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter, putNewLine)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count, break2)
 <span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getWords)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> getContents <span class="fu">&gt;&gt;=</span>
-  (getSentences <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show <span class="fu">&gt;&gt;&gt;</span> putStrLn)</code></pre></div>
+main <span class="fu">=</span> <span class="kw">do</span>
+  charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getSentences)
+  putNewLine</code></pre></div>
 <p>We <a href="https://raw.githubusercontent.com/nbloomf/st-haskell/master/test/sentcount/alice.test">test</a> this program on a particularly messy excerpt from <em>Alice in Wonderland</em>, courtesy of <a href="http://www.gutenberg.org">Project Gutenberg</a>. (Even counting by hand I’m not sure how many sentences this example should have!)</p>
 <p>The main functions of <code>linecount</code>, <code>glyphcount</code>, <code>wordcount</code>, and <code>sentcount</code> are essentially the same; each one splits the <code>stdin</code> into appropriate chunks and then counts.</p>
 
