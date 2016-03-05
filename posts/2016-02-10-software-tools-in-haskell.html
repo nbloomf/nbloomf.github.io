@@ -55,22 +55,24 @@ Posted on 2016-02-10 by nbloomf
 </div>
 <!-- End LaTeX Macros -->
 
-<p><em>Software Tools</em> is a little book about tool building by Brian Kernighan and P. J. Plauger. It’s a classic, and people far more qualified than me have written very positive reviews of it. The book includes several example programs, which are designed individually to solve simple problems and collectively to work together readily to solve larger problems.</p>
+<p><em>Software Tools</em> is a little book about tool building by Brian Kernighan and P. J. Plauger. It’s a classic, and people far more qualified than me have written very positive reviews of it. The book includes several example programs which are designed individually to solve simple problems and collectively to work together readily to solve larger problems.</p>
 <p>I’ve written some small tools for my own use, the largest of which (by far) is the feivel templating language. But I’m not particularly good at it, and would like to improve. So I will be reading through <em>Software Tools</em> and porting the examples to Haskell. Along the way, I expect to supplement the text’s examples with my own tools.</p>
 <p>Because I enjoy pain, all of this will be done publicly, with code hosted at <a href="http://github.com/nbloomf/st-haskell">GitHub</a> and narrative documentation posted here.</p>
 <h2 id="ground-rules">Ground Rules</h2>
 <blockquote>
 <p>Okay, let’s party. But first, let’s go over the rules, because what is fun without the rules? <cite>Gru in <em>Despicable Me 2</em></cite></p>
 </blockquote>
-<p>The purpose of this project is to learn, and so there are some self-imposed rules.</p>
+<p>The purpose of this project is to learn, and so there are some self-imposed rules. (Subject to change.)</p>
 <ol style="list-style-type: decimal">
 <li>Reproduce the behavior of the original tools. (Maybe with extensions.) (Note: it turns out that this is more complicated than I thought thanks to unicode.)</li>
-<li>Write code which is idiomatic Haskell, but follows the spirit of the originals and doesn’t try to be too clever.</li>
+<li>Write idiomatic Haskell but follow the spirit of the originals. Don’t be clever.</li>
 <li>Produce executable programs which interact with my own working environment.</li>
-<li>Follow established conventions regarding things like command-line arguments and return codes.</li>
+<li>Follow established conventions regarding things like command-line arguments and return codes. (I will prefer GNU-style long options, though not GNU-style with lots of options.)</li>
 <li>Use standard library functions where possible, unless doing so makes the program a one-liner, thus removing all the fun.</li>
 <li>Don’t hesitate to move common code to a library, especially if doing so makes the main program logic more clear. But library functions should be appropriately general to justify this.</li>
 <li>Include tests.</li>
+<li>Think very hard before adding special cases or optional arguments to a tool. These are good candidates for separate tools.</li>
+<li>Programs that don’t need to be interactive or muck with files, shouldn’t. If a program naturally acts as a filter, it should act <em>exclusively</em> as a filter unless there’s a good excuse.</li>
 </ol>
 <p>I will prefix the names of these ports with <code>sth-</code>, to avoid clashing with existing real programs. And of course all should be considered works-in-progress.</p>
 <h2 id="the-posts-chrono-order">The Posts (Chrono Order)</h2>
@@ -80,6 +82,8 @@ Posted on 2016-02-10 by nbloomf
 <li><a href="../posts/2016-02-25-software-tools-in-haskell-detab-charcombine-charfullwidth.html"><code>detab</code>, <code>charcombine</code>, <code>charfullwidth</code></a></li>
 <li><a href="../posts/2016-02-27-software-tools-in-haskell-entab-echo-overstrike.html"><code>entab</code>, <code>echo</code>, <code>overstrike</code></a></li>
 <li><a href="../posts/2016-02-29-software-tools-in-haskell-unescape-charecho.html"><code>unescape</code>, <code>charecho</code></a></li>
+<li><a href="../posts/2016-03-02-software-tools-in-haskell-compress-expand-crypt.html"><code>compress</code>, <code>expand</code>, <code>crypt</code></a></li>
+<li><a href="../posts/2016-03-03-software-tools-in-haskell-translit-charreplace-escape.html"><code>translit</code>, <code>charreplace</code>, <code>escape</code></a></li>
 </ul>
 <h2 id="the-tools-alpha-order">The Tools (Alpha Order)</h2>
 <ul>
@@ -87,14 +91,20 @@ Posted on 2016-02-10 by nbloomf
 <li><a href="../posts/2016-02-11-software-tools-in-haskell-copy-charcount-linecount.html#charcount"><code>charcount</code></a>: count characters on stdin (char to line)</li>
 <li><a href="../posts/2016-02-29-software-tools-in-haskell-unescape-charecho.html#charecho"><code>charecho</code></a>: write arguments to stdout, without trailing newline (char source)</li>
 <li><a href="../posts/2016-02-25-software-tools-in-haskell-detab-charcombine-charfullwidth.html#charfullwidth"><code>charfullwidth</code></a>: replace characters with fullwidth equivalents (char filter)</li>
+<li><a href="../posts/2016-03-03-software-tools-in-haskell-translit-charreplace-escape#charreplace.html"><code>charreplace</code></a>: replace chars by strings on stdin (char filter)</li>
+<li><a href="../posts/2016-03-02-software-tools-in-haskell-compress-expand-crypt.html#compress"><code>compress</code></a>: compress stdin (run length encoding) (char filter)</li>
 <li><a href="../posts/2016-02-11-software-tools-in-haskell-copy-charcount-linecount.html#copy"><code>copy</code></a>: copy characters from stdin to stdout (char filter)</li>
+<li><a href="../posts/2016-03-02-software-tools-in-haskell-compress-expand-crypt.html#crypt"><code>crypt</code></a>: xor stdin with a list of keys (char filter)</li>
 <li><a href="../posts/2016-02-25-software-tools-in-haskell-detab-charcombine-charfullwidth.html#detab"><code>detab</code></a>: replace tabs on stdin with spaces (line filter)</li>
 <li><a href="../posts/2016-02-27-software-tools-in-haskell-entab-echo-overstrike.html#echo"><code>echo</code></a>: write arguments to stdout (line source)</li>
 <li><a href="../posts/2016-02-27-software-tools-in-haskell-entab-echo-overstrike.html#entab"><code>entab</code></a>: replace spaces on stdin with tabs (line filter)</li>
+<li><a href="../posts/2016-03-03-software-tools-in-haskell-translit-charreplace-escape#charreplace.html"><code>escape</code></a>: replace non-printable, non-ascii chars on stdin with c escape sequences (char filter)</li>
+<li><a href="../posts/2016-03-02-software-tools-in-haskell-compress-expand-crypt.html#expand"><code>expand</code></a>: uncompress stdin (run length encoding) (char filter)</li>
 <li><a href="../posts/2016-02-22-software-tools-in-haskell-glyphcount-wordcount-sentcount.html#glyphcount"><code>glyphcount</code></a>: count glyphs on stdin (char to line)</li>
 <li><a href="../posts/2016-02-11-software-tools-in-haskell-copy-charcount-linecount.html#linecount"><code>linecount</code></a>: count lines on stdin (line filter)</li>
 <li><a href="../posts/2016-02-27-software-tools-in-haskell-entab-echo-overstrike.html#overstrike"><code>overstrike</code></a>: interpret backspaces using line printer control codes (line filter)</li>
 <li><a href="../posts/2016-02-22-software-tools-in-haskell-glyphcount-wordcount-sentcount.html#sentcount"><code>sentcount</code></a>: count sentences on stdin (char to line)</li>
+<li><a href="../posts/2016-03-03-software-tools-in-haskell-translit-charreplace-escape.html#translit"><code>translit</code></a>: transliterate or remove chars on stdin (char filter)</li>
 <li><a href="../posts/2016-02-29-software-tools-in-haskell-unescape-charecho.html#unescape"><code>unescape</code></a>: interpret C and ASCII backslash escape codes on stdin (char filter)</li>
 <li><a href="../posts/2016-02-22-software-tools-in-haskell-glyphcount-wordcount-sentcount.html#wordcount"><code>wordcount</code></a>: count words on stdin (char to line)</li>
 </ul>
