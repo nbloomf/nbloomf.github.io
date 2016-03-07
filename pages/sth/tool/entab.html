@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: entab</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: entab</h1>
+<!-- BEGIN BODY -->
+<div class="subtitle">
+<h2>replace spaces on stdin with tabs</h2>
+This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<p>The <a href="../../../pages/sth/tool/detab.html"><code>detab</code></a> program replaced tab characters with spaces, taking arguments at the command line to let the user specify the width of the tab stops. The <code>entab</code> program reverses this process. It takes input which we assume represents some tabular data where different columns start on specific character columns, chops the input lines into columns, and replaces any trailing spaces in a given column by a single <code>\t</code> character. Just like <code>detab</code>, the default tab stop width is 8, and we allow the user to specify a list of tab stop widths at the command line with the convention that the <em>last</em> user-specified width is assumed to repeat indefinitely.</p>
+<p>The basic structure of this program is nearly identical to that of <code>detab</code> (which is not surprising).</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-entab: replace spaces on stdin with tabs</span>
+<span class="co">--   line-oriented</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, exitFailure, getArgs)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>    (lineFilter)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Read</span>  (readPosIntList)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>  (getLines)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>  (spanAtMostWhile, padToByAfter)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Error</span> (reportErrorMsgs)
+
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  args <span class="ot">&lt;-</span> getArgs
+
+  <span class="co">-- Read positive integer tabstop arguments.</span>
+  <span class="co">-- Default is [8].</span>
+  ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span>
+    <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]
+    <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks
+    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
+                 [<span class="st">&quot;tab widths must be positive integers.&quot;</span>
+                 ] <span class="fu">&gt;&gt;</span> exitFailure
+
+  <span class="co">-- Do it!</span>
+  lineFilter (insertTabStops ts)
+  exitSuccess</code></pre></div>
+<p>We reuse the functions for reading lists of nonnegative integers that we wrote for <code>detab</code>. The heavly lifting is done by <code>insertTabStops</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+insertTabStops [] xs <span class="fu">=</span> xs
+insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
+  <span class="kw">where</span>
+    accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> concat <span class="fu">$</span> reverse zs
+    accum zs [t] ys <span class="fu">=</span>
+      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
+      accum (as<span class="fu">:</span>zs) [t] bs
+    accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span>
+      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
+      accum (as<span class="fu">:</span>zs) ts bs
+
+<span class="ot">    splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+    splitColumn k xs
+      <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> (xs,<span class="st">&quot;&quot;</span>)
+      <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)
+      <span class="fu">|</span> otherwise <span class="fu">=</span> (ds,bs)
+          <span class="kw">where</span>
+            (as,bs) <span class="fu">=</span> splitAt k xs
+            munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
+            cs <span class="fu">=</span> reverse as
+            ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
+                     <span class="kw">then</span> <span class="kw">let</span> es <span class="fu">=</span> reverse <span class="fu">$</span> munch cs <span class="kw">in</span>
+                       <span class="kw">if</span> es <span class="fu">==</span> <span class="st">&quot;&quot;</span> <span class="kw">then</span> <span class="st">&quot;\t&quot;</span> <span class="kw">else</span> es
+                     <span class="kw">else</span> <span class="kw">case</span> cs <span class="kw">of</span>
+                       <span class="ch">' '</span><span class="fu">:</span>_ <span class="ot">-&gt;</span> reverse (<span class="ch">'\t'</span><span class="fu">:</span>(munch cs))
+                       otherwise <span class="ot">-&gt;</span> as</code></pre></div>
+<p>Even the shape of this function on the page resembles that of its counterpart from <code>detab</code>. Note the use of an accumulating parameter helper function.</p>
+<p>In Exercise 2-2, Kernighan and Plauger ask us to make the simplest change to <code>entab</code> to make it handle tabs correctly. After thinking about this, I’ve decided the right thing to do is <strong>nothing</strong>. Let’s imagine what it means if the user is trying to use <code>entab</code> on data that contains tabs. I can think of two possible situations.</p>
+<ol style="list-style-type: decimal">
+<li>The tabs are “semantic tabs”, used to delimit data. That is, the input either is already tab-delimited, or contains a mixture of tab-delimited and column-delimited data. In this case the user has other problems. The right thing to do in the first case is nothing, and in the second case depends on the user’s intent. We could assume that a semantic tab means “advance to the next tab stop”, but this now changes the column indices of the characters in the remainder of the line unpredictably, so the intent of any tab stop width input is unclear. It would be better here to run the data through <code>detab</code> first to remove the tabs, then run through <code>entab</code> to put them back.</li>
+<li>The tabs are “literal tabs”, as in the data itself involves tab characters for some reason, and they have a different meaning in whatever context the user cares about. This is, after all, a valid reason to use a column-delimited format. Of course in this case the right thing to do is leave the tabs alone.</li>
+</ol>
+<p>If we ignore tabs altogether, then at best this is the Right Thing and at worst the user has to use <code>detab</code> first (or has other problems). On the other hand, trying to make <code>entab</code> do something useful with tabs would make the program more complicated (and probably clutter the interface) with little benefit.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

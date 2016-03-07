@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: charreplace</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: charreplace</h1>
+<!-- BEGIN BODY -->
+<div class="subtitle">
+<h2>replace chars by strings on stdin</h2>
+This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<p>The program <code>charreplace</code> is a companion to <a href="../../../pages/sth/tool/translit.html"><code>translit</code></a> and requires no new machinery.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charreplace: replace chars with strings on stdin</span>
+<span class="co">--   character-oriented</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (charFilter, bsUnEsc, readCharRange, reportErrorMsgs)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  args <span class="ot">&lt;-</span> getArgs
+
+  (notflag,from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> args <span class="kw">of</span>
+    [as] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
+      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">False</span>, xs, <span class="st">&quot;&quot;</span>)
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+    [<span class="st">&quot;--not&quot;</span>,as] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
+      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">True</span>, xs, <span class="st">&quot;&quot;</span>)
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+    [as,bs] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
+      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">False</span>, xs, bsUnEsc bs)
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+    [<span class="st">&quot;--not&quot;</span>,as,bs] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
+      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">True</span>, xs, bsUnEsc bs)
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+    otherwise          <span class="ot">-&gt;</span> argError
+
+  <span class="kw">let</span>
+    remove <span class="fu">=</span> <span class="kw">case</span> notflag <span class="kw">of</span>
+      <span class="dt">False</span> <span class="ot">-&gt;</span> filter (not <span class="fu">.</span> (<span class="ot">`elem`</span> from))
+      <span class="dt">True</span>  <span class="ot">-&gt;</span> filter (<span class="ot">`elem`</span> from)
+
+  <span class="kw">let</span>
+    replace <span class="fu">=</span> <span class="kw">case</span> notflag <span class="kw">of</span>
+      <span class="dt">False</span> <span class="ot">-&gt;</span> concatMap
+                 (\x <span class="ot">-&gt;</span> <span class="kw">if</span> x<span class="ot">`elem`</span>from <span class="kw">then</span> to <span class="kw">else</span> [x])
+      <span class="dt">True</span>  <span class="ot">-&gt;</span> concatMap
+                 (\x <span class="ot">-&gt;</span> <span class="kw">if</span> x<span class="ot">`elem`</span>from <span class="kw">then</span> [x] <span class="kw">else</span> to)
+
+  <span class="kw">case</span> to <span class="kw">of</span>
+    <span class="st">&quot;&quot;</span>        <span class="ot">-&gt;</span> charFilter remove
+    otherwise <span class="ot">-&gt;</span> charFilter replace
+
+  exitSuccess
+
+
+<span class="ot">argError ::</span> <span class="dt">IO</span> a
+argError <span class="fu">=</span> reportErrorMsgs
+  [ <span class="st">&quot;usage:&quot;</span>
+  , <span class="st">&quot;  charreplace [SOURCE] [TARGET] -- replace each char in SOURCE with TARGET string&quot;</span>
+  , <span class="st">&quot;  charreplace [REMOVE]          -- remove each char in REMOVE string&quot;</span>
+  , <span class="st">&quot;option:&quot;</span>
+  , <span class="st">&quot;  --not  : invert selection (e.g. replace all *except* SOURCE)&quot;</span>
+  ] <span class="fu">&gt;&gt;</span> exitFailure</code></pre></div>
+<p>It may seem like overkill to split the functionality from <code>translit</code> and <code>charreplace</code> just to make the interface more consistent. But note that <code>charreplace</code> naturally does something we couldn’t have done if the two were rolled together, at least not without making the interface even <em>more</em> inconsistent: <code>charreplace</code> naturally replaces characters by <strong>strings</strong>, not just characters. This is not a trivial distinction; for example, if we have a text file which uses unix-style line endings (<code>\n</code>) and want to convert them to Windows-style line endings (<code>\r\n</code>) we can do this with</p>
+<pre><code>charreplace &quot;\n&quot; &quot;\r\n&quot;</code></pre>
+<p>I can’t think of a way to do this with <code>translit</code> alone.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

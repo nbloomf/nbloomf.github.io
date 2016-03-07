@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: expand</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Posts</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: expand</h1>
+<!-- BEGIN BODY -->
+<div class="subtitle">
+<h2>uncompress text on ``stdin`` (run length encoding)</h2>
+This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<p>The companion to <a href="../../../pages/sth/tool/compress.html"><code>compress</code></a> is <code>expand</code>. It reads a string of characters that was run length encoded by <code>compress</code> and uncompresses it. This program has an error condition; the input may not be valid. This can happen for a few reasons; if a repeat count is incorrectly encoded (i.e. includes invalid digits or does not terminate in a sigil), or if the file ends in the middle of a repeat encoding.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-expand: uncompress stdin (run length encoding)</span>
+<span class="co">--   character-oriented</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
+  (exitSuccess, exitFailure)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (rlDecode)
+<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Error</span> (reportErrorMsgs)
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  xs <span class="ot">&lt;-</span> getContents
+
+  ys <span class="ot">&lt;-</span> <span class="kw">case</span> rlDecode <span class="ch">'\BEL'</span> xs <span class="kw">of</span>
+          <span class="dt">Just</span> zs <span class="ot">-&gt;</span> return zs
+          <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
+                       [ <span class="st">&quot;corrupt input&quot;</span>
+                       ] <span class="fu">&gt;&gt;</span> exitFailure
+
+  putStr ys
+  exitSuccess</code></pre></div>
+<p><code>rlDecode</code> does all the work:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">rlDecode ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
+rlDecode sig <span class="fu">=</span> fmap (runLengthDecode sig) <span class="fu">.</span> readRLE sig
+  <span class="kw">where</span>
+<span class="ot">    runLengthDecode ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> [<span class="dt">RLE</span> a] <span class="ot">-&gt;</span> [a]
+    runLengthDecode sig <span class="fu">=</span> concatMap decodeRLE
+      <span class="kw">where</span>
+        decodeRLE (<span class="dt">Chunk</span>  xs)  <span class="fu">=</span> xs
+        decodeRLE (<span class="dt">Repeat</span> k x) <span class="fu">=</span> replicate k x
+        decodeRLE (<span class="dt">Literal</span> k)  <span class="fu">=</span> replicate k sig
+
+<span class="ot">    readRLE ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">RLE</span> <span class="dt">Char</span>]
+    readRLE sig <span class="fu">=</span> unfoldrMaybe readFirstRLE
+      <span class="kw">where</span>
+<span class="ot">        readFirstRLE ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">RLE</span> <span class="dt">Char</span>, <span class="dt">String</span>))
+        readFirstRLE <span class="st">&quot;&quot;</span>  <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span>
+        readFirstRLE [x] <span class="fu">=</span>
+          <span class="kw">if</span> x <span class="fu">==</span> sig <span class="kw">then</span> <span class="dt">Nothing</span> <span class="kw">else</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Chunk</span> [x], <span class="st">&quot;&quot;</span>))
+        readFirstRLE [x,y] <span class="fu">=</span>
+          <span class="kw">if</span> x <span class="fu">==</span> sig <span class="kw">then</span> <span class="dt">Nothing</span> <span class="kw">else</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Chunk</span> [x], [y]))
+        readFirstRLE (x<span class="fu">:</span>y<span class="fu">:</span>z<span class="fu">:</span>xs)
+          <span class="fu">|</span> x <span class="fu">==</span> sig <span class="fu">&amp;&amp;</span> y <span class="fu">==</span> sig <span class="fu">&amp;&amp;</span> z <span class="fu">==</span> sig
+              <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Literal</span> <span class="dv">1</span>, xs))
+          <span class="fu">|</span> x <span class="fu">==</span> sig <span class="fu">&amp;&amp;</span> y <span class="fu">==</span> sig <span class="fu">&amp;&amp;</span> z <span class="fu">/=</span> sig
+              <span class="fu">=</span> <span class="kw">do</span>
+                  <span class="kw">let</span> (as,bs) <span class="fu">=</span> span (<span class="fu">/=</span> sig) (z<span class="fu">:</span>xs)
+                  k <span class="ot">&lt;-</span> readBase86Nat as
+                  <span class="kw">case</span> bs <span class="kw">of</span>
+                    <span class="st">&quot;&quot;</span>     <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Repeat</span> k y, <span class="st">&quot;&quot;</span>))
+                    (_<span class="fu">:</span>cs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Repeat</span> k y, cs))
+          <span class="fu">|</span> x <span class="fu">==</span> sig <span class="fu">&amp;&amp;</span> y <span class="fu">/=</span> sig
+              <span class="fu">=</span> <span class="kw">do</span>
+                  <span class="kw">let</span> (as,bs) <span class="fu">=</span> span (<span class="fu">/=</span> sig) (z<span class="fu">:</span>xs)
+                  k <span class="ot">&lt;-</span> readBase86Nat as
+                  <span class="kw">case</span> bs <span class="kw">of</span>
+                    <span class="st">&quot;&quot;</span>     <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Repeat</span> k y, <span class="st">&quot;&quot;</span>))
+                    (_<span class="fu">:</span>cs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Repeat</span> k y, cs))
+          <span class="fu">|</span> otherwise
+              <span class="fu">=</span> <span class="kw">do</span>
+                  <span class="kw">let</span> (as,bs) <span class="fu">=</span> span (<span class="fu">/=</span> sig) (x<span class="fu">:</span>y<span class="fu">:</span>z<span class="fu">:</span>xs)
+                  <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Chunk</span> as, bs))</code></pre></div>
+<p>One big improvement we could make to <code>expand</code> is to try to handle invalid input more gracefully; we could output the partially expanded text, for instance, or tell the user exactly where the error occurs. The first idea would not be too difficult. (Write the output to stderr.) The second idea, though, while possibly useful, would make the implementation much more complicated. (We’d have to keep track of the position of each character in the original source.) Doable, but until the need is demonstrated I’d prefer to keep the implementation simple.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
