@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -56,12 +57,13 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 <p>But there is a problem here: while correct, having only one printed character per line is extremely inefficient! If two lines do not “overlap”, they can be merged. So a more efficient way to achieve the same effect is with</p>
 <pre><code> abcde
 +  fg</code></pre>
-<p>In fact this is a <em>most</em> efficient set of overstrike lines, since 2 is the minimal number of lines required. It isn’t too hard to see that if a given line has at most <span class="math inline">\(k\)</span> characters with the same column index, then <span class="math inline">\(k\)</span> is the minimum number of overstrike lines required to render that line (and there is always a set of <span class="math inline">\(k\)</span> overstrike lines that works). Why? We can think of this as a graph coloring problem. The char-int pairs are vertices (ignoring those where the character is a blank), and two vertices are adjacent if they have the same column index. Colorings of this graph correspond to valid sets of overstrike lines. But this graph is a disjoint union of complete graphs, with one component for each column index. The minimum number of colors required is the size of the largest component.</p>
+<p>In fact this is a <em>most</em> efficient set of overstrike lines for this example, since 2 is the minimal number of lines required. It isn’t too hard to see that if a given line has at most <span class="math inline">\(k\)</span> characters with the same column index, then <span class="math inline">\(k\)</span> is the minimum number of overstrike lines required to render that line (and there is always a set of <span class="math inline">\(k\)</span> overstrike lines that works). Why? We can think of this as a graph coloring problem. The char-int pairs are vertices (ignoring those where the character is a blank), and two vertices are adjacent if they have the same column index. Colorings of this graph correspond to valid sets of overstrike lines. But this graph is a disjoint union of complete graphs, with one component for each column index. The minimum number of colors required is the size of the largest component.</p>
 <p>To identify a coloring of the char-int graph, we (1) drop all the blanks, (2) sort the list by column index, and (3) split the list into maximal subsequences by column index. (What?) Finally, (4) thinking of these char-int pairs as sparse lists, convert to real actual lists, using space characters for any missing indices.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">overstrike ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 overstrike <span class="fu">=</span> overstrikeLines
   <span class="fu">&gt;&gt;&gt;</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>))
   <span class="fu">&gt;&gt;&gt;</span> intercalate <span class="st">&quot;\n&quot;</span>
+
 
 <span class="ot">overstrikeLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
 overstrikeLines <span class="fu">=</span>
@@ -83,6 +85,7 @@ overstrikeLines <span class="fu">=</span>
           <span class="ch">'\b'</span>      <span class="ot">-&gt;</span> accum zs (max <span class="dv">1</span> (k<span class="fu">-</span><span class="dv">1</span>)) cs
           otherwise <span class="ot">-&gt;</span> accum ((c,k)<span class="fu">:</span>zs) (k<span class="fu">+</span><span class="dv">1</span>) cs
 
+
 <span class="ot">maxMonoSubseqsBy ::</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
 maxMonoSubseqsBy p <span class="fu">=</span> unfoldr maxMonoSubseq
   <span class="kw">where</span>
@@ -94,6 +97,7 @@ maxMonoSubseqsBy p <span class="fu">=</span> unfoldr maxMonoSubseq
     accum (a<span class="fu">:</span>as) bs (z<span class="fu">:</span>zs) <span class="fu">=</span> <span class="kw">if</span> p a z
       <span class="kw">then</span> accum (z<span class="fu">:</span>a<span class="fu">:</span>as) bs zs
       <span class="kw">else</span> accum (a<span class="fu">:</span>as) (z<span class="fu">:</span>bs) zs
+
 
 <span class="ot">fromSparseList ::</span> a <span class="ot">-&gt;</span> [(a,<span class="dt">Int</span>)] <span class="ot">-&gt;</span> [a]
 fromSparseList x [] <span class="fu">=</span> []
@@ -107,18 +111,11 @@ fromSparseList x ys <span class="fu">=</span> accum <span class="dv">1</span> []
 <p>As an aside: I pulled out <code>maxMonoSubseqsBy</code> and <code>fromSparseList</code> as abstractly as possible. When writing Haskell (this is probably true in other languages as well) writing code with the most general possible type usually makes it <strong>easier</strong> to write. Working with a less specific type means there are fewer meaningful things to say, and when there are fewer paths to choose from the correct one is easier to find. This code, for instance, was nearly written in one pass with no substantial editing needed. Not because I am particularly good but because <strong>there’s essentially only one way to do it</strong>. Pick a type signature and a recursion pattern (here, either <code>unfoldr</code> or accumulating parameter) and the rest practically writes itself.</p>
 <p>After all that, the main program is pretty straightforward.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-overstrike: interpret backspaces using line printer control codes</span>
-<span class="co">--   line-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
-  ((<span class="fu">&gt;&gt;&gt;</span>), exitSuccess, sortBy, intercalate)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>
-  (lineFilter)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span>
-  (maxMonoSubseqsBy, fromSparseList)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>
-  (getLines)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span> (lineFilter, overstrike)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()

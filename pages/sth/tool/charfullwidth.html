@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -32,15 +33,13 @@
 This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
 </div>
 
-<p>Replacing “normal” characters with fullwidth forms is much simpler. We reuse the structure of <code>copy</code>, with a filter to map characters.</p>
+<p>Replacing “normal” characters with fullwidth forms is much simpler. We reuse the structure of <code>copy --char</code>, with a filter to map characters.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charfullwidth: replace characters with fullwidth equivalents</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (exitSuccess)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>   (charFilter)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (applyListMap)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span> (charFilter, toFullwidth)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
@@ -49,9 +48,7 @@ main <span class="fu">=</span> <span class="kw">do</span>
   exitSuccess</code></pre></div>
 <p>And the map:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toFullwidth ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Char</span>
-toFullwidth x <span class="fu">=</span> <span class="kw">case</span> lookup x full <span class="kw">of</span>
-  <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y
-  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> x
+toFullwidth <span class="fu">=</span> applyListMap full
   <span class="kw">where</span>
     full <span class="fu">=</span>
       [ (<span class="ch">'!'</span>,<span class="ch">'！'</span>), (<span class="ch">'&quot;'</span>,<span class="ch">'＂'</span>),  (<span class="ch">'#'</span>,<span class="ch">'＃'</span>), (<span class="ch">'$'</span>,<span class="ch">'＄'</span>), (<span class="ch">'%'</span>,<span class="ch">'％'</span>)
@@ -72,9 +69,13 @@ toFullwidth x <span class="fu">=</span> <span class="kw">case</span> lookup x fu
       , (<span class="ch">'l'</span>,<span class="ch">'ｌ'</span>), (<span class="ch">'m'</span>,<span class="ch">'ｍ'</span>),  (<span class="ch">'n'</span>,<span class="ch">'ｎ'</span>), (<span class="ch">'o'</span>,<span class="ch">'ｏ'</span>), (<span class="ch">'p'</span>,<span class="ch">'ｐ'</span>)
       , (<span class="ch">'q'</span>,<span class="ch">'ｑ'</span>), (<span class="ch">'r'</span>,<span class="ch">'ｒ'</span>),  (<span class="ch">'s'</span>,<span class="ch">'ｓ'</span>), (<span class="ch">'t'</span>,<span class="ch">'ｔ'</span>), (<span class="ch">'u'</span>,<span class="ch">'ｕ'</span>)
       , (<span class="ch">'v'</span>,<span class="ch">'ｖ'</span>), (<span class="ch">'w'</span>,<span class="ch">'ｗ'</span>),  (<span class="ch">'x'</span>,<span class="ch">'ｘ'</span>), (<span class="ch">'y'</span>,<span class="ch">'ｙ'</span>), (<span class="ch">'z'</span>,<span class="ch">'ｚ'</span>)
-      , (<span class="ch">'{'</span>,<span class="ch">'｛'</span>), (<span class="ch">'|'</span>,<span class="ch">'｜'</span>),  (<span class="ch">'}'</span>,<span class="ch">'｝'</span>), (<span class="ch">'~'</span>,<span class="ch">'～'</span>)
+      , (<span class="ch">'{'</span>,<span class="ch">'｛'</span>), (<span class="ch">'|'</span>,<span class="ch">'｜'</span>),  (<span class="ch">'}'</span>,<span class="ch">'｝'</span>), (<span class="ch">'~'</span>,<span class="ch">'～'</span>), (<span class="ch">' '</span>,<span class="ch">'　'</span>)
       ]</code></pre></div>
-<p>This probably looks terrible in your browser because unicode coverage.</p>
+<p>This probably looks terrible in your browser because unicode coverage. The <code>applyListMap</code> function treats a list of pairs like a mapping.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">applyListMap ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [(a,a)] <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+applyListMap zs x <span class="fu">=</span> <span class="kw">case</span> lookup x zs <span class="kw">of</span>
+  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> x
+  <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y</code></pre></div>
 <!-- END BODY -->
 </div>
 

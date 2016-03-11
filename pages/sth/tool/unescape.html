@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -32,29 +33,24 @@
 This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
 </div>
 
-<p>While testing the <a href="../../../pages/sth/tool/overstrike.html"><code>overstrike</code></a> program, I ran into an inconvenient problem: I couldn’t find an easy and consistent way to type control characters (namely backspace, but others have the same problem) that works both in my terminal and in my golden test suite. It seems like every program - the terminal, the shell, the test runner - wants to interpret these characters in its own way. This problem is a good candidate for a filter-style program. <code>unescape</code> reads lines from stdin and interprets any C-style escape sequences or ASCII abbreviations it finds. (There is a nice wiki page on <a href="https://en.wikipedia.org/wiki/Escape_sequences_in_C">C-style escape sequences</a>, and the page on <a href="https://en.wikipedia.org/wiki/ASCII#ASCII_control_code_chart">ASCII</a> includes a table of abbreviations.)</p>
+<p>While testing the <a href="../../../pages/sth/tool/overstrike.html"><code>overstrike</code></a> program I ran into an inconvenient problem: I couldn’t find an easy and consistent way to type control characters (namely backspace, but others have the same problem) that works both in my terminal and in my golden test suite. It seems like every program – the terminal, the shell, the test runner – wants to interpret these characters slightly differently. This problem is a good candidate for a filter-style program. <code>unescape</code> reads lines from stdin and interprets any C-style escape sequences or ASCII abbreviations it finds. (There is a nice wiki page on <a href="https://en.wikipedia.org/wiki/Escape_sequences_in_C">C-style escape sequences</a>, and the page on <a href="https://en.wikipedia.org/wiki/ASCII#ASCII_control_code_chart">ASCII</a> includes a table of abbreviations.)</p>
 <p>The main program is simple enough, as it simply munches through the lines on stdin looking for escape codes.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-unescape: interpret C and ASCII backslash escape codes on stdin</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
-  (exitSuccess)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>
-  (charFilter)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span>
-  (backslashUnEscape)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span> (charFilter, bsUnEsc)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
-  charFilter backslashUnEscape
+  charFilter bsUnEsc
   exitSuccess</code></pre></div>
-<p>The real work is done by the library function <code>backslashUnEscape</code>. There’s no nice way to do this, so we pattern match on the prefix of a string looking for escape codes. One gotcha: the ASCII abbreviations are not prefix free; for instance the meaning of the string <code>\SOHello</code> is ambiguous; is it <code>\SO</code> (Shift Out) followed by <code>Hello</code> or <code>\SOH</code> (Start Of Heading) followed by <code>ello</code>? To make sure these are detected correctly, we pattern match <code>\SOH</code> first (since otherwise that string would always match as <code>\SO</code> followed by <code>H</code>) and add one more escape code, <code>\&amp;</code> (taken from Haskell), for those occasions when you <em>really</em> want <code>\SO</code> followed by <code>H</code> not interpreted as <code>\SOH</code>. <code>\&amp;</code> represents the empty string, so we can do this with <code>\SO\&amp;H</code>. So, you know, for all those times you need carefully formatted ASCII control codes.</p>
-<p><code>backslashUnEscape</code> is a library function because it will probably be useful later for parsing command line arguments.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">backslashUnEscape ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-backslashUnEscape <span class="fu">=</span> concat <span class="fu">.</span> unfoldr firstChar
+<p>The real work is done by the library function <code>bsUnEsc</code>. There’s no nice way to do this, so we pattern match on the prefix of a string looking for escape codes. One gotcha: the ASCII abbreviations are not prefix free; for instance the meaning of the string <code>\SOHello</code> is ambiguous; is it <code>\SO</code> (Shift Out) followed by <code>Hello</code> or <code>\SOH</code> (Start Of Heading) followed by <code>ello</code>? To make sure these are detected correctly, we pattern match <code>\SOH</code> first (since otherwise that string would always match as <code>\SO</code> followed by <code>H</code>) and add one more escape code, <code>\&amp;</code> (taken from Haskell), for those occasions when you <em>really</em> want <code>\SO</code> followed by <code>H</code> not interpreted as <code>\SOH</code>. <code>\&amp;</code> represents the empty string, so we can do this with <code>\SO\&amp;H</code>. So, you know, for all those times you need carefully formatted ASCII control codes.</p>
+<p><code>bsUnEsc</code> is a library function because it will probably be useful later for parsing command line arguments.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bsUnEsc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+bsUnEsc <span class="fu">=</span> concat <span class="fu">.</span> unfoldr firstChar
   <span class="kw">where</span>
 <span class="ot">    firstChar ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
     firstChar <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Nothing</span>

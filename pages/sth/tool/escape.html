@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -32,23 +33,30 @@
 This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
 </div>
 
-<p>The <code>escape</code> program is the companion of <a href="../../../pages/sth/tool/unescape.html"><code>unescape</code></a>; it replaces any non-printing, non-ASCII characters with C-style escape sequences using only visible ASCII.</p>
+<p>The <code>escape</code> program is the companion of <a href="../../../pages/sth/tool/unescape.html"><code>unescape</code></a>; it replaces any non-printing, non-ASCII characters with C-style escape sequences using only visible ASCII. We need to be careful about exactly which characters to escape; lined text is delimited by <code>\n</code>s, and converting these to escaped form would destroy the format. Keeping with the convention that line text is the most common, by default we leave newlines alone. The <code>--char</code> flag instructs <code>escape</code> to escape all characters.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-escape: replace non-printable, non-ascii chars on stdin with c escape sequences</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
-<span class="kw">import </span><span class="dt">STH.Lib</span> (charFilter, bsEsc)
+<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (charFilter, lineFilter, bsEsc)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
-  charFilter bsEsc
+  args <span class="ot">&lt;-</span> getArgs
+
+  <span class="kw">case</span> args <span class="kw">of</span>
+    [<span class="st">&quot;--char&quot;</span>] <span class="ot">-&gt;</span> charFilter bsEsc
+    otherwise  <span class="ot">-&gt;</span> lineFilter bsEsc
+
   exitSuccess</code></pre></div>
 <p>The work is done by <code>bsEsc</code>:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">bsEsc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 bsEsc <span class="fu">=</span> concatMap esc
+
 
 <span class="ot">esc ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 esc x

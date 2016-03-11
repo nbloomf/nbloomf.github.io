@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -37,23 +38,26 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 <p>We could make <code>detab</code> aware of this equivalence. This is a bad idea, though, for a few reasons. First, it would make <code>detab</code> more complicated with only marginal benefit. Most of the text that I work with is plain ASCII, and making <code>detab</code> fiddle with unicode issues on such files will slow it down for no reason. We could give <code>detab</code> a command line flag to explicitly enable this feature, but it is important not to clutter up the interface of a program without a good reason. Second, <code>detab</code> is surely not the only program that might need to deal with this unicode issue. If each one solves the problem in its own way there will be lots of duplicated code, and duplicated code (while sometimes justifiable) is a breeding ground for bugs. Moreover the Unicode standard changes every few years, possibly requiring a time consuming edit of all the programs that work with unicode-encoded text. <strong>A far better solution is to make a separate tool, <code>charcombine</code>, to handle this problem.</strong> Because our programs are designed to communicate via stdin and stdout, then we can send text through <code>charcombine</code> before giving it to <code>detab</code>. This way <code>detab</code> can stay simple, and <code>charcombine</code> can be a small, general-purpose tool for replacing combining characters with precomposed characters.</p>
 <p>Since we already have a function, <code>getGlyphs</code>, which splits a stream of characters into noncombining+combining substrings, the main function of <code>charcombine</code> is quite succinct.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charcombine: replace combining unicode chars with precomposed chars</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (exitSuccess)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span>   (charFilter)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getGlyphs)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (charFilter, composeGlyphs)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
-  charFilter (concatMap toPrecomposed <span class="fu">.</span> getGlyphs)
+  charFilter composeGlyphs
   exitSuccess</code></pre></div>
 <p>All that remains is to write a function, <code>composeGlyph</code>, that takes a string of characters and replaces it by an equivalent precomposed character.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toPrecomposed ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-toPrecomposed <span class="st">&quot;&quot;</span>  <span class="fu">=</span> <span class="st">&quot;&quot;</span>
-toPrecomposed [c] <span class="fu">=</span> [c]
-toPrecomposed [x, <span class="ch">'\x0301'</span>] <span class="fu">=</span> <span class="kw">case</span> lookup x acute <span class="kw">of</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">composeGlyphs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+composeGlyphs <span class="fu">=</span> concatMap composeGlyph <span class="fu">.</span> getGlyphs
+
+
+<span class="ot">composeGlyph ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+composeGlyph <span class="st">&quot;&quot;</span>  <span class="fu">=</span> <span class="st">&quot;&quot;</span>
+composeGlyph [c] <span class="fu">=</span> [c]
+composeGlyph [x, <span class="ch">'\x0301'</span>] <span class="fu">=</span> <span class="kw">case</span> lookup x acute <span class="kw">of</span>
   <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y
   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> [x, <span class="ch">'\x0301'</span>]
   <span class="kw">where</span>

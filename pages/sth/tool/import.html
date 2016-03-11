@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: import</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: import</h1>
+<!-- BEGIN BODY -->
+<div class="subtitle">
+<h2>splice contents of a file into stdin</h2>
+This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<p>The <code>import</code> tool takes lines one at a time, writing them back to <code>stdout</code> until it sees one of the form</p>
+<pre><code>import FILENAME</code></pre>
+<p>These lines should instead be replaced by the contents of <code>FILENAME</code> (relative to the working directory). I will make two tweaks: first, this program implicitly imposes a format on its input. To avoid being too opinionated, I will make the import “keyword” a parameter, so that if the user runs</p>
+<pre><code>import --with &quot;go-go-gadget&quot;</code></pre>
+<p>then the program will instead look for lines of the form</p>
+<pre><code>go-go-gadget FILENAME</code></pre>
+<p>This is because the text being filtered may have some other implicit format, where the word “import” means something. The second tweak is to allow the user to import only part of a file. If an import command has the form</p>
+<pre><code>import FILENAME between OPEN and CLOSE</code></pre>
+<p>then only those lines from FILENAME which are between lines OPEN and CLOSE are spliced in.</p>
+<p>First, we write a generic function called <code>takeBetween</code> which cuts out portions of a list.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">takeBetween ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> (a,a) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]
+takeBetween (u,v) <span class="fu">=</span> concat <span class="fu">.</span> unfoldr (firstCut (u,v))
+  <span class="kw">where</span>
+    firstCut (u,v) ys <span class="fu">=</span> <span class="kw">case</span> dropWhile (<span class="fu">/=</span> u) ys <span class="kw">of</span>
+      []     <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+      (_<span class="fu">:</span>zs) <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> span (<span class="fu">/=</span> v) zs</code></pre></div>
+<p>We use a custom data type, <code>Import</code>, to represent the two kinds of import commands. The <code>readCommand</code> function tries to interpret a line of text as an import command, and the <code>splice</code> function processes a single line of text (from reading a command to splicing in text from an external file). Now the main program behaves very much like a line filter, which we recall takes a mapping <code>String -&gt; String</code> and applies it to all lines on <code>stdin</code>. Because <code>splice</code> reads files and writes to <code>stdout</code>, it must take place in the <code>IO</code> monad; its signature is <code>String -&gt; IO ()</code>. We write a variant of <code>lineFilter</code> to handle programs of this type.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lineFilterIO ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+lineFilterIO f <span class="fu">=</span> <span class="kw">do</span>
+  xs <span class="ot">&lt;-</span> fmap getLines getContents
+  sequence_ <span class="fu">$</span> map f xs</code></pre></div>
+<p>The program is then not terribly complicated:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- import: splice contents of a file into stdin</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
+<span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (lineFilterIO, getWords, getLines,
+   putStrLns, takeBetween, reportErrorMsgs)
+
+
+<span class="co">-- We accept two kinds of import commands:</span>
+<span class="kw">data</span> <span class="dt">Import</span>
+  <span class="fu">=</span> <span class="dt">Whole</span>   <span class="dt">String</span>
+  <span class="fu">|</span> <span class="dt">Between</span> <span class="dt">String</span> <span class="dt">String</span> <span class="dt">String</span>
+
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  args <span class="ot">&lt;-</span> getArgs
+
+  keyword <span class="ot">&lt;-</span> <span class="kw">case</span> args <span class="kw">of</span>
+    []             <span class="ot">-&gt;</span> return <span class="st">&quot;import&quot;</span>
+    [<span class="st">&quot;--with&quot;</span>,str] <span class="ot">-&gt;</span> return str
+    otherwise      <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+
+  <span class="kw">let</span>
+    <span class="co">-- see if a line is an import command</span>
+<span class="ot">    readCommand ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Import</span>
+    readCommand str <span class="fu">=</span> <span class="kw">case</span> getWords str <span class="kw">of</span>
+      [x,file] <span class="ot">-&gt;</span> <span class="kw">if</span> x <span class="fu">==</span> key
+        <span class="kw">then</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Whole</span> file
+        <span class="kw">else</span> <span class="dt">Nothing</span>
+      [x,file,<span class="st">&quot;between&quot;</span>,open,<span class="st">&quot;and&quot;</span>,close] <span class="ot">-&gt;</span> <span class="kw">if</span> x <span class="fu">==</span> keyword
+        <span class="kw">then</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Between</span> file open close
+        <span class="kw">else</span> <span class="dt">Nothing</span>
+      otherwise <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+
+    <span class="co">-- process a single line</span>
+<span class="ot">    splice ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+    splice line <span class="fu">=</span> <span class="kw">case</span> readCommand line <span class="kw">of</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+        putStrLn line
+      <span class="dt">Just</span> (<span class="dt">Whole</span> name) <span class="ot">-&gt;</span> <span class="kw">do</span>
+        input <span class="ot">&lt;-</span> fmap getLines <span class="fu">$</span> readFile name
+        putStrLns input
+      <span class="dt">Just</span> (<span class="dt">Between</span> name open close) <span class="ot">-&gt;</span> <span class="kw">do</span>
+        input <span class="ot">&lt;-</span> fmap getLines <span class="fu">$</span> readFile name
+        putStrLns <span class="fu">$</span> takeBetween (open,close) input
+
+  lineFilterIO splice
+  exitSuccess
+
+<span class="ot">argErr ::</span> <span class="dt">IO</span> ()
+argErr <span class="fu">=</span> reportErrorMsgs
+  [ <span class="st">&quot;usage&quot;</span>
+  , <span class="st">&quot;  import            : expand any 'import' lines on stdin&quot;</span>
+  , <span class="st">&quot;  import --with STR : same, using custom import keyword STR&quot;</span>
+  , <span class="st">&quot;this program recognizes two kinds of import commands:&quot;</span>
+  , <span class="st">&quot;  import FILENAME&quot;</span>
+  , <span class="st">&quot;    insert contents of FILENAME in place of this line&quot;</span>
+  , <span class="st">&quot;  import FILENAME from START to END&quot;</span>
+  , <span class="st">&quot;    same, but cut out all lines except those between START and END lines.&quot;</span>
+  ]</code></pre></div>
+<p><code>import</code> is used to help produce this documentation. These pages contain lots of code snippets, which are taken from the actual program source code using import commands. This way we don’t have to worry about keeping (at least part of) the documentation and the code in sync by hand as the code changes (as it does, frequently).</p>
+<p>This tool could be improved in a few ways. First, the import command, filename, and open and close lines must not include any spaces. This may prove to be too restrictive; we could allow for quoted arguments or escaped arguments. Second, we could do something a litte more informative when <code>readFile</code> fails because a file does not exist; this version of <code>import</code> knows nothing about where a given import command came from. In a large pipeline, or a small pipeline operating on lots of data, this may be a problem.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

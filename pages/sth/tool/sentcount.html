@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -48,17 +49,17 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 <pre><code>ever.&quot; She
 
 casserole! (Gumbo</code></pre>
-<p>Again, any small set of heuristics is probably going to have both false positives and false negatives. But we’re not aiming for perfection here, just reasonable first approximations. We start with some helper functions: <code>break2</code> and <code>getSentences</code>.</p>
+<p>Again, any small set of heuristics is probably going to have both false positives and false negatives. But we’re not aiming for perfection here, just reasonable first approximations. We start with a helper function. <code>break2</code> is an extension of the standard library function <code>break</code> that focuses on the spaces between list elements rather than list elements themselves. (Note that <code>break p === break2 (\x _ -&gt; p x)</code>.)</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">break2 ::</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([a],[a])
-break2 p xs <span class="fu">=</span> foo [] xs
+break2 p xs <span class="fu">=</span> accum [] xs
   <span class="kw">where</span>
-    foo acc []  <span class="fu">=</span> (reverse acc, [])
-    foo acc [y] <span class="fu">=</span> (reverse (y<span class="fu">:</span>acc), [])
-    foo acc (y1<span class="fu">:</span>y2<span class="fu">:</span>ys) <span class="fu">=</span> <span class="kw">if</span> p y1 y2
-      <span class="kw">then</span> (reverse (y1<span class="fu">:</span>acc), y2<span class="fu">:</span>ys)
-      <span class="kw">else</span> foo (y1<span class="fu">:</span>acc) (y2<span class="fu">:</span>ys)
-
-<span class="ot">getSentences ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+    accum zs []  <span class="fu">=</span> (reverse zs, [])
+    accum zs [y] <span class="fu">=</span> (reverse (y<span class="fu">:</span>zs), [])
+    accum zs (y1<span class="fu">:</span>y2<span class="fu">:</span>ys) <span class="fu">=</span> <span class="kw">if</span> p y1 y2
+      <span class="kw">then</span> (reverse (y1<span class="fu">:</span>zs), y2<span class="fu">:</span>ys)
+      <span class="kw">else</span> accum (y1<span class="fu">:</span>zs) (y2<span class="fu">:</span>ys)</code></pre></div>
+<p><code>getSentences</code> does the heavy lifting, splitting a string into sentences using heuristics. The heuristics for detecting sentence boundaries are in <code>isSentenceBoundary</code>. This function is ugly, but reasonably easy to modify as new special cases arise.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getSentences ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
 getSentences <span class="fu">=</span> map (intercalate <span class="st">&quot; &quot;</span>) <span class="fu">.</span> unfoldr firstSentence <span class="fu">.</span> getWords
   <span class="kw">where</span>
 <span class="ot">    firstSentence ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> ([<span class="dt">String</span>],[<span class="dt">String</span>])
@@ -88,25 +89,23 @@ getSentences <span class="fu">=</span> map (intercalate <span class="st">&quot; 
 <span class="ot">        isSentenceStart ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
         isSentenceStart ys <span class="fu">=</span> (isCapitalized ys)
           <span class="fu">||</span> (or <span class="fu">$</span> map (<span class="ot">`isPrefixOf`</span> ys) [<span class="st">&quot;\&quot;&quot;</span>, <span class="st">&quot;'&quot;</span>, <span class="st">&quot;(&quot;</span>])</code></pre></div>
-<p>The <code>break2</code> function is an extension of the standard library function <code>break</code> that focuses on the spaces between list elements rather than list elements themselves. (Note that <code>break p === break2 (\x _ -&gt; p x)</code>.) <code>getSentences</code> does the heavy lifting, splitting a string into sentences using heuristics. The heuristics for detecting sentence boundaries are in <code>isSentenceBoundary</code>. This function is ugly, but reasonably easy to modify as new special cases arise.</p>
+<p>The main program is then similar to <code>wordcount</code>.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-sentcount: count sentences on stdin</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span>
-  ((<span class="fu">&gt;&gt;&gt;</span>), unfoldr, intercalate,
-   isPrefixOf, isSuffixOf, isUpper)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter, putNewLine)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.List</span> (count, break2)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (getWords)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (charFilter, putNewLine, count,
+   getSentences)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
   charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getSentences)
-  putNewLine</code></pre></div>
+  putNewLine
+  exitSuccess</code></pre></div>
 <p>We <a href="https://raw.githubusercontent.com/nbloomf/st-haskell/master/test/sentcount/alice.test">test</a> this program on a particularly messy excerpt from <em>Alice in Wonderland</em>, courtesy of <a href="http://www.gutenberg.org">Project Gutenberg</a>. (Even counting by hand I’m not sure how many sentences this example should have!)</p>
-<p>The main functions of <code>linecount</code>, <code>glyphcount</code>, <code>wordcount</code>, and <code>sentcount</code> are essentially the same; each one splits the <code>stdin</code> into appropriate chunks and then counts.</p>
 <!-- END BODY -->
 </div>
 

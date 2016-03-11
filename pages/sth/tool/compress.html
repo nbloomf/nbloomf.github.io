@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -60,9 +61,8 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib</span> (exitSuccess)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.IO</span> (charFilter)
-<span class="kw">import </span><span class="dt">SoftwareTools.Lib.Text</span> (rlEncode)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="kw">import </span><span class="dt">STH.Lib</span> (charFilter, rlEncode)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
@@ -109,20 +109,11 @@ getRuns <span class="fu">=</span> unfoldr firstRun
     firstRun (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">let</span> (as,bs) <span class="fu">=</span> span (<span class="fu">==</span> x) xs <span class="kw">in</span>
       <span class="dt">Just</span> ((x, <span class="dv">1</span> <span class="fu">+</span> count as), bs)
 
+
 <span class="ot">fromRuns ::</span> [(a, <span class="dt">Int</span>)] <span class="ot">-&gt;</span> [a]
 fromRuns <span class="fu">=</span> concatMap (\(x,k) <span class="ot">-&gt;</span> replicate k x)</code></pre></div>
 <p>Repeat counts are encoded in base 86 for space efficiency. (Counts up to 85 need only one character, counts up to 7395 need at most two, and up to 636055 need at most three.)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">digitsToBase ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
-digitsToBase b k
-  <span class="fu">|</span> b <span class="fu">&lt;=</span> <span class="dv">1</span> <span class="fu">||</span> k <span class="fu">&lt;</span> <span class="dv">0</span> <span class="fu">=</span> []
-  <span class="fu">|</span> otherwise <span class="fu">=</span> reverse <span class="fu">$</span> foo k
-      <span class="kw">where</span>
-        foo t
-          <span class="fu">|</span> t <span class="fu">&lt;</span> b <span class="fu">=</span> [t]
-          <span class="fu">|</span> otherwise <span class="fu">=</span> (t<span class="ot">`rem`</span>b) <span class="fu">:</span> (foo (t<span class="ot">`quot`</span>b))
-
-
-<span class="ot">showBase86Nat ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">showBase86Nat ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 showBase86Nat k
   <span class="fu">|</span> k <span class="fu">&lt;</span> <span class="dv">0</span>     <span class="fu">=</span> <span class="st">&quot;&quot;</span>
   <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">case</span> sequence <span class="fu">$</span> map intToChar <span class="fu">$</span> digitsToBase <span class="dv">86</span> k <span class="kw">of</span>

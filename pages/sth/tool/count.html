@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -36,7 +37,7 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 <h3 id="counting-chars">Counting Chars</h3>
 <p>We want <code>count --char</code> to count the characters on stdin until EOF is reached. Almost right off the bat we have a problem: with Unicode it is not obvious what a “character” is. For simplicity’s sake I will split this problem in two: <code>count --char</code>, which ignores any issues with unicode normalization like combining diacritics, and <code>glyphcount</code>, which takes these issues into account. So for instance O̰ (capital O, with combining tilde below) counts as two characters but one glyph. Character encodings were much simpler and less useful when <em>Software Tools</em> was written. 🙂</p>
 <p>Let’s write a generic list-length counter:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">count ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">count ::</span> (<span class="dt">Num</span> t) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> t
 count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
   <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></code></pre></div>
 <p>We use <code>foldl'</code> to force strictness and avoid a memory leak. The <code>foldl</code> function is lazy by default, meaning that it would generate a stack of unevaluated additions to be carried out only once EOF is reached.</p>
@@ -77,12 +78,13 @@ main <span class="fu">=</span> <span class="kw">do</span>
   <span class="kw">case</span> args <span class="kw">of</span>
     [<span class="st">&quot;--char&quot;</span>] <span class="ot">-&gt;</span> <span class="kw">do</span>
       charFilter (show <span class="fu">.</span> count)
-    _ <span class="ot">-&gt;</span> <span class="kw">do</span>
+      putNewLine
+    otherwise <span class="ot">-&gt;</span> <span class="kw">do</span>
       charFilter (getLines <span class="fu">&gt;&gt;&gt;</span> count <span class="fu">&gt;&gt;&gt;</span> show)
+      putNewLine
 
-  putNewLine
   exitSuccess</code></pre></div>
-<p><code>putNewLine</code> is a semantic synonym for <code>putStrLn &quot;&quot;</code>. Note also that we’ve demonstrated the <code>&gt;&gt;&gt;</code> operator from <code>Control.Arrow</code> in contrast with composition. This is a standard library operator which (used here) is simply reversed function composition; it allows us to read the definition of <code>main</code> as if data flows from left to right, following the arrows.</p>
+<p><code>putNewLine</code> is a semantic synonym for <code>putStrLn &quot;&quot;</code>. Note also that we’ve demonstrated the <code>&gt;&gt;&gt;</code> operator from <code>Control.Arrow</code> in contrast with composition. This is a standard library operator which (used here) is simply reversed function composition; it allows us to read chains of functions as if data flows from left to right, following the arrows.</p>
 <!-- END BODY -->
 </div>
 

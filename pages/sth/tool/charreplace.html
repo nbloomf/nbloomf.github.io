@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -34,33 +35,35 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 
 <p>The program <code>charreplace</code> is a companion to <a href="../../../pages/sth/tool/translit.html"><code>translit</code></a> and requires no new machinery.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-charreplace: replace chars with strings on stdin</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
 <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
 <span class="kw">import </span><span class="dt">STH.Lib</span>
-  (charFilter, bsUnEsc, readCharRange, reportErrorMsgs)
+  (charFilter, bsUnEsc, readCharSeq,
+   reportErrorMsgs)
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
   args <span class="ot">&lt;-</span> getArgs
 
-  (notflag,from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> args <span class="kw">of</span>
-    [as] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
-      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">False</span>, xs, <span class="st">&quot;&quot;</span>)
-      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
-    [<span class="st">&quot;--not&quot;</span>,as] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
-      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">True</span>, xs, <span class="st">&quot;&quot;</span>)
-      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
-    [as,bs] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
-      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">False</span>, xs, bsUnEsc bs)
-      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
-    [<span class="st">&quot;--not&quot;</span>,as,bs] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharRange as <span class="kw">of</span>
-      <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="dt">True</span>, xs, bsUnEsc bs)
-      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
-    otherwise          <span class="ot">-&gt;</span> argError
+  (notflag,from,to) <span class="ot">&lt;-</span> <span class="kw">do</span>
+    <span class="kw">let</span>
+      (flag,rest) <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span>
+        (<span class="st">&quot;--not&quot;</span><span class="fu">:</span>xs) <span class="ot">-&gt;</span> (<span class="dt">True</span>,xs)
+        xs           <span class="ot">-&gt;</span> (<span class="dt">False</span>,xs)
+
+    (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> rest <span class="kw">of</span>
+      [as] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharSeq (bsUnEsc as) <span class="kw">of</span>
+        <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (xs, <span class="st">&quot;&quot;</span>)
+        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+      [as,bs] <span class="ot">-&gt;</span> <span class="kw">case</span> readCharSeq (bsUnEsc as) <span class="kw">of</span>
+        <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (xs, bsUnEsc bs)
+        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argError
+      otherwise <span class="ot">-&gt;</span> argError
+
+    return (flag,from,to)
 
   <span class="kw">let</span>
     remove <span class="fu">=</span> <span class="kw">case</span> notflag <span class="kw">of</span>

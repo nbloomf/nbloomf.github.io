@@ -19,8 +19,9 @@
   <div id="navigation">
     <a href="../../../index.html">Home</a>
     <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
     <a href="../../../contact.html">Contact</a>
-    <a href="../../../archive.html">Posts</a>
+    <a href="../../../archive.html">Blog</a>
   </div>
 </div>
 
@@ -50,13 +51,13 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
   <span class="fu">|</span> <span class="dt">Range</span>  <span class="dt">Char</span> <span class="dt">Char</span>
   <span class="kw">deriving</span> (<span class="dt">Show</span>)
 
-<span class="ot">interpArg ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
-interpArg <span class="fu">=</span> fmap charSeqsToList <span class="fu">.</span> readCharSeqs <span class="fu">.</span> backslashUnEscape
+<span class="ot">readCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
+readCharSeq <span class="fu">=</span> fmap charSeqsToList <span class="fu">.</span> readCharSeqs <span class="fu">.</span> bsUnEsc
 
 <span class="ot">charSeqsToList ::</span> [<span class="dt">CharSeq</span>] <span class="ot">-&gt;</span> <span class="dt">String</span>
 charSeqsToList <span class="fu">=</span> concatMap charSeqToList
   <span class="kw">where</span>
-    charSeqToList (<span class="dt">Single</span> x) <span class="fu">=</span> [x]
+    charSeqToList (<span class="dt">Single</span> x)  <span class="fu">=</span> [x]
     charSeqToList (<span class="dt">Range</span> x y) <span class="fu">=</span> enumFromTo x y
 
 <span class="ot">readCharSeqs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CharSeq</span>]
@@ -72,7 +73,6 @@ readCharSeqs <span class="fu">=</span> unfoldrMaybe firstCharSeq
       otherwise <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, y<span class="fu">:</span>z<span class="fu">:</span>xs))</code></pre></div>
 <p>Now the main program just has to interpret its arguments and call some library functions.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- sth-translit: transliterate characters on stdin</span>
-<span class="co">--   character-oriented</span>
 
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
@@ -80,14 +80,14 @@ readCharSeqs <span class="fu">=</span> unfoldrMaybe firstCharSeq
 <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
 <span class="kw">import </span><span class="dt">STH.Lib</span>
   (charFilter, applyListMap, padLast,
-   readCharRange, reportErrorMsgs)
+   readCharSeq, reportErrorMsgs, bsUnEsc)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
   args <span class="ot">&lt;-</span> getArgs
 
-  (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> map readCharRange args <span class="kw">of</span>
+  (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> map (readCharSeq <span class="fu">.</span> bsUnEsc) args <span class="kw">of</span>
     [<span class="dt">Just</span> as]          <span class="ot">-&gt;</span> return (as, <span class="st">&quot;&quot;</span>)
     [<span class="dt">Just</span> as, <span class="dt">Just</span> bs] <span class="ot">-&gt;</span> return (as, bs)
     otherwise          <span class="ot">-&gt;</span> argError
