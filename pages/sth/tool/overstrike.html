@@ -59,19 +59,23 @@ This page is part of a series on <a href="../../../pages/sth/index.html">Softwar
 +  fg</code></pre>
 <p>In fact this is a <em>most</em> efficient set of overstrike lines for this example, since 2 is the minimal number of lines required. It isn’t too hard to see that if a given line has at most <span class="math inline">\(k\)</span> characters with the same column index, then <span class="math inline">\(k\)</span> is the minimum number of overstrike lines required to render that line (and there is always a set of <span class="math inline">\(k\)</span> overstrike lines that works). Why? We can think of this as a graph coloring problem. The char-int pairs are vertices (ignoring those where the character is a blank), and two vertices are adjacent if they have the same column index. Colorings of this graph correspond to valid sets of overstrike lines. But this graph is a disjoint union of complete graphs, with one component for each column index. The minimum number of colors required is the size of the largest component.</p>
 <p>To identify a coloring of the char-int graph, we (1) drop all the blanks, (2) sort the list by column index, and (3) split the list into maximal subsequences by column index. (What?) Finally, (4) thinking of these char-int pairs as sparse lists, convert to real actual lists, using space characters for any missing indices.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">overstrike ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-overstrike <span class="fu">=</span> overstrikeLines
-  <span class="fu">&gt;&gt;&gt;</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>))
-  <span class="fu">&gt;&gt;&gt;</span> intercalate <span class="st">&quot;\n&quot;</span>
+<p>We will use an internal representation, <code>CCLine</code>, for lines formatted using a simplified version of the ASA carriage control scheme; a <code>CCLine</code> is a list of overstrike lines. Rendering a <code>CCLine</code> gives its unicode representation. (Note that the constructors of <code>CCLine</code> are internal to a single library module; programs can only create and manipulate <code>CCLine</code>s via the functions provided by this module. This provides a very basic kind of future-proofing.)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">CCLine</span>
+  <span class="fu">=</span> <span class="dt">CCLine</span> [<span class="dt">String</span>]
+  <span class="kw">deriving</span> (<span class="dt">Show</span>)
 
-
-<span class="ot">overstrikeLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
-overstrikeLines <span class="fu">=</span>
+<span class="ot">renderCCLine ::</span> <span class="dt">CCLine</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+renderCCLine (<span class="dt">CCLine</span> xs)
+  <span class="fu">=</span> intercalate <span class="st">&quot;\n&quot;</span> <span class="fu">$</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>)) xs</code></pre></div>
+<p>Now <code>toCCLine</code> reads a <code>CCLine</code> from a string.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toCCLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">CCLine</span>
+toCCLine <span class="fu">=</span>
   columnIndices
     <span class="fu">&gt;&gt;&gt;</span> filter (\(c,_) <span class="ot">-&gt;</span> c <span class="fu">/=</span> <span class="ch">' '</span>)          <span class="co">-- try omitting</span>
     <span class="fu">&gt;&gt;&gt;</span> sortBy (\(_,a) (_,b) <span class="ot">-&gt;</span> compare a b) <span class="co">-- these lines</span>
     <span class="fu">&gt;&gt;&gt;</span> maxMonoSubseqsBy p
     <span class="fu">&gt;&gt;&gt;</span> map (fromSparseList <span class="ch">' '</span>)
+    <span class="fu">&gt;&gt;&gt;</span> <span class="dt">CCLine</span>
   <span class="kw">where</span>
     p u v <span class="fu">=</span> <span class="kw">if</span> snd u <span class="fu">&lt;</span> snd v
               <span class="kw">then</span> <span class="dt">True</span> <span class="kw">else</span> <span class="dt">False</span>
@@ -115,12 +119,12 @@ fromSparseList x ys <span class="fu">=</span> accum <span class="dv">1</span> []
 <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
 <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
-<span class="kw">import </span><span class="dt">STH.Lib</span> (lineFilter, overstrike)
+<span class="kw">import </span><span class="dt">STH.Lib</span> (lineFilter, toCCLine, renderCCLine)
 
 
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
-  lineFilter overstrike
+  lineFilter (renderCCLine <span class="fu">.</span> toCCLine)
   exitSuccess</code></pre></div>
 <!-- END BODY -->
 </div>
