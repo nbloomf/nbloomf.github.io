@@ -102,19 +102,26 @@ main <span class="fu">=</span> <span class="kw">do</span>
   args <span class="ot">&lt;-</span> getArgs
 
   <span class="co">-- interpret arguments</span>
-  (mode,tests) <span class="ot">&lt;-</span> <span class="kw">do</span>
+  (mode,inv,tests) <span class="ot">&lt;-</span> <span class="kw">do</span>
     <span class="kw">let</span>
-      (flag,rest) <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span>
+      (modeflag,rest') <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span>
         (<span class="st">&quot;--asacc&quot;</span><span class="fu">:</span>zs) <span class="ot">-&gt;</span> (<span class="dt">ASACC</span>, zs)
         zs             <span class="ot">-&gt;</span> (<span class="dt">Lines</span>, zs)
+
+      (notflag,rest) <span class="fu">=</span> <span class="kw">case</span> rest' <span class="kw">of</span>
+        (<span class="st">&quot;--not&quot;</span><span class="fu">:</span>zs) <span class="ot">-&gt;</span> (<span class="dt">True</span>,  zs)
+        zs           <span class="ot">-&gt;</span> (<span class="dt">False</span>, zs)
 
     ps <span class="ot">&lt;-</span> <span class="kw">case</span> sequence <span class="fu">$</span> map readIntSet rest <span class="kw">of</span>
       <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return xs
       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
 
-    return (flag,ps)
+    return (modeflag,notflag,ps)
 
-  <span class="kw">let</span> get xs p <span class="fu">=</span> getEltsByIndex p xs
+  <span class="kw">let</span>
+    get xs p <span class="fu">=</span> <span class="kw">case</span> inv <span class="kw">of</span>
+      <span class="dt">False</span> <span class="ot">-&gt;</span> getEltsByIndex p xs
+      <span class="dt">True</span>  <span class="ot">-&gt;</span> getEltsByIndex (not <span class="fu">.</span> p) xs
 
   <span class="kw">case</span> mode <span class="kw">of</span>
     <span class="dt">Lines</span> <span class="ot">-&gt;</span> <span class="kw">do</span>

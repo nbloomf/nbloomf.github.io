@@ -72,13 +72,14 @@ renderCCLine (<span class="dt">CCLine</span> xs)
   <span class="fu">=</span> intercalate <span class="st">&quot;\n&quot;</span> <span class="fu">$</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>)) xs</code></pre></div>
 <p>Now <code>toCCLine</code> reads a <code>CCLine</code> from a string.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toCCLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">CCLine</span>
-toCCLine <span class="fu">=</span>
-  columnIndices
+toCCLine <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">CCLine</span> [<span class="st">&quot;&quot;</span>]
+toCCLine xs <span class="fu">=</span>
+  (columnIndices
     <span class="fu">&gt;&gt;&gt;</span> filter (\(c,_) <span class="ot">-&gt;</span> c <span class="fu">/=</span> <span class="ch">' '</span>)          <span class="co">-- try omitting</span>
     <span class="fu">&gt;&gt;&gt;</span> sortBy (\(_,a) (_,b) <span class="ot">-&gt;</span> compare a b) <span class="co">-- these lines</span>
     <span class="fu">&gt;&gt;&gt;</span> maxMonoSubseqsBy p
     <span class="fu">&gt;&gt;&gt;</span> map (fromSparseList <span class="ch">' '</span>)
-    <span class="fu">&gt;&gt;&gt;</span> <span class="dt">CCLine</span>
+    <span class="fu">&gt;&gt;&gt;</span> <span class="dt">CCLine</span>) xs
   <span class="kw">where</span>
     p u v <span class="fu">=</span> <span class="kw">if</span> snd u <span class="fu">&lt;</span> snd v
               <span class="kw">then</span> <span class="dt">True</span> <span class="kw">else</span> <span class="dt">False</span>

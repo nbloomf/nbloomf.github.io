@@ -99,19 +99,19 @@ defaultGeom <span class="fu">=</span> <span class="dt">Geom</span>
 
 
 <span class="kw">data</span> <span class="dt">LPState</span> <span class="fu">=</span> <span class="dt">LPState</span>
-  {<span class="ot"> pageSettings ::</span> <span class="dt">Geom</span>
-  ,<span class="ot"> currentLine  ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> currentPage  ::</span> <span class="dt">Int</span>
-  ,<span class="ot"> pageIsDirty  ::</span> <span class="dt">Bool</span>
+  {<span class="ot"> pageSettings  ::</span> <span class="dt">Geom</span>
+  ,<span class="ot"> currentLine   ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> currentPage   ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> pageInProcess ::</span> <span class="dt">Bool</span>
   }
 
 
 <span class="ot">makeLPState ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">LPState</span>
-makeLPState geom <span class="fu">=</span> <span class="dt">LPState</span>
-  { pageSettings <span class="fu">=</span> geom
-  , currentLine  <span class="fu">=</span> <span class="dv">1</span>
-  , currentPage  <span class="fu">=</span> <span class="dv">1</span>
-  , pageIsDirty  <span class="fu">=</span> <span class="dt">False</span>
+makeLPState geom  <span class="fu">=</span> <span class="dt">LPState</span>
+  { pageSettings  <span class="fu">=</span> geom
+  , currentLine   <span class="fu">=</span> <span class="dv">1</span>
+  , currentPage   <span class="fu">=</span> <span class="dv">1</span>
+  , pageInProcess <span class="fu">=</span> <span class="dt">False</span>
   }</code></pre></div>
 <p>From the page geometry, we can compute two important quantities: the number of lines that can be printed on one page, and the position on the page of each line.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">numLinesPerPage ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
@@ -150,21 +150,17 @@ runLPJob geom pr <span class="fu">=</span> <span class="kw">do</span>
         runLP (f y) st2</code></pre></div>
 <p>Now the printer interface we expose is a small number of monadic functions. For instance, <code>lpPutStr</code> prints a string at the current line.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lpPutStr ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
-lpPutStr str <span class="fu">=</span> <span class="dt">LP</span> write
+lpPutStr <span class="st">&quot;&quot;</span>  <span class="fu">=</span> return ()
+lpPutStr str <span class="fu">=</span> lpStartPage <span class="fu">&gt;&gt;</span> <span class="dt">LP</span> write
   <span class="kw">where</span>
     write st <span class="fu">=</span> <span class="kw">do</span>
-      <span class="kw">case</span> pageIsDirty st <span class="kw">of</span>
-        <span class="dt">True</span>  <span class="ot">-&gt;</span> return ()
-        <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
-          <span class="kw">let</span> pg <span class="fu">=</span> currentPage st
-          putStrLn <span class="fu">$</span> <span class="st">&quot;%%Page: &quot;</span> <span class="fu">++</span> show pg
       <span class="kw">let</span> (x,y) <span class="fu">=</span> lineStartPos (pageSettings st) (currentLine st)
       putStrLn <span class="fu">$</span> show x <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show y <span class="fu">++</span> <span class="st">&quot; moveto&quot;</span>
       putStr <span class="fu">$</span> unicodeToPS str
-      return ((), st {pageIsDirty <span class="fu">=</span> <span class="dt">True</span>})</code></pre></div>
+      return ((), st)</code></pre></div>
 <p><code>lpLineFeed</code> advances the “print head” to the next line.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">lpLineFeed ::</span> <span class="dt">LinePrinter</span> ()
-lpLineFeed <span class="fu">=</span> <span class="dt">LP</span> lf
+lpLineFeed <span class="fu">=</span> lpStartPage <span class="fu">&gt;&gt;</span> <span class="dt">LP</span> lf
   <span class="kw">where</span>
     lf st <span class="fu">=</span> <span class="kw">do</span>
       <span class="kw">let</span>
@@ -174,7 +170,7 @@ lpLineFeed <span class="fu">=</span> <span class="dt">LP</span> lf
       <span class="kw">if</span> kOld <span class="fu">+</span> <span class="dv">1</span> <span class="fu">&gt;</span> lpp
         <span class="kw">then</span> <span class="kw">do</span>
           putStrLn <span class="st">&quot;showpage\n&quot;</span>
-          return ((), st {currentLine <span class="fu">=</span> <span class="dv">1</span>, currentPage <span class="fu">=</span> mOld<span class="fu">+</span><span class="dv">1</span>})
+          return ((), st {currentLine <span class="fu">=</span> <span class="dv">1</span>, currentPage <span class="fu">=</span> mOld<span class="fu">+</span><span class="dv">1</span>, pageInProcess <span class="fu">=</span> <span class="dt">False</span>})
         <span class="kw">else</span> <span class="kw">do</span>
           return ((), st {currentLine <span class="fu">=</span> kOld<span class="fu">+</span><span class="dv">1</span>, currentPage <span class="fu">=</span> mOld})
 

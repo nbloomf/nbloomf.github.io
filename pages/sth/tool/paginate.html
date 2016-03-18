@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: paginate</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: paginate</h1>
+<!-- BEGIN BODY -->
+<div class="subtitle">
+<h2>format lines with page numbers and headers</h2>
+This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<p>Our virtual line printer <a href="../../../pages/sth/tool/pslineprint.html"><code>pslineprint</code></a> is nice enough, but extremely simple; it does nothing at all to prettify the documents it prints. Our first attempt at this is <code>paginate</code>. This program will split a sequence of lines into “pages”, giving each page a header and page number. It will also be able to print more than one file sequentially, making each file start on its own page and ensuring that page numbers are correct across files. If any file name happens to be <code>-</code>, we read lines from <code>stdin</code>. Finally, it will optionally print a table of contents page in case we are printing a large number of long files.</p>
+<p>I think this is the ugliest tool in our kit so far, and that part of the reason for this is that <code>paginate</code> depends on several arbitrary choices; frequently if there is a single “natural” or “obvious” choice, the resulting code is simple, but if we are making an arbitrary choice among several options our code feels complicated.</p>
+<p>First lets look at the main program. Like <code>pslineprint</code>, there are enough options to make it worth our while to use <code>GetOpt</code> to process them. For now lets suppose we have functions <code>paginateLines</code> and <code>tableOfContents</code> that handle all the heavy lifting; the main program logic is mostly straightforward.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- paginate: format lines with page numbers and headers</span>
+
+<span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+
+<span class="kw">import </span><span class="dt">System.Console.GetOpt</span>
+<span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
+<span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="kw">import </span><span class="dt">STH.Lib</span>
+  (getLines, paginateLines, <span class="dt">PaginateOpts</span>(<span class="fu">..</span>),
+   putStrLns, readDecimalNat, reportErrorMsgs, readCCLines,
+   paginateCCLines, renderCCLine, tableOfContents)
+
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+  args <span class="ot">&lt;-</span> getArgs
+
+  <span class="kw">let</span>
+    argErr  <span class="fu">=</span> reportErrorMsgs [usageInfo <span class="st">&quot;options&quot;</span> options]
+    corrErr <span class="fu">=</span> reportErrorMsgs [<span class="st">&quot;corrupt asacc input&quot;</span>]
+
+
+  <span class="co">-- read options</span>
+  (flags, filenames) <span class="ot">&lt;-</span> <span class="kw">case</span> getOpt <span class="dt">Permute</span> options args <span class="kw">of</span>
+    (opts, rest, []) <span class="ot">-&gt;</span> <span class="kw">case</span> foldl (<span class="fu">&gt;&gt;=</span>) (<span class="dt">Just</span> defaultFlags) opts <span class="kw">of</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+      <span class="dt">Just</span> fs <span class="ot">-&gt;</span> return (fs, rest)
+    otherwise <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+
+
+  <span class="co">-- process options</span>
+  <span class="kw">let</span>
+    pageOpts <span class="fu">=</span> <span class="dt">PO</span>
+      { linesPerPage <span class="fu">=</span> fLinesPerPage flags
+      , lineLength   <span class="fu">=</span> fLineLength flags
+      }
+
+
+  <span class="co">-- paginate files</span>
+  <span class="kw">case</span> fMode flags <span class="kw">of</span>
+    <span class="dt">Lines</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+      <span class="kw">let</span>
+        readLines name <span class="fu">=</span> <span class="kw">case</span> name <span class="kw">of</span>
+          <span class="st">&quot;-&quot;</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+            lns <span class="ot">&lt;-</span> fmap getLines getContents
+            return (<span class="st">&quot;-&quot;</span>, lns)
+          otherwise <span class="ot">-&gt;</span> <span class="kw">do</span>
+            lns <span class="ot">&lt;-</span> fmap getLines <span class="fu">$</span> readFile name
+            return (name, lns)
+
+      docs <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map readLines filenames
+
+      <span class="kw">if</span> fPrintTOC flags <span class="fu">==</span> <span class="dt">False</span>
+        <span class="kw">then</span> return ()
+        <span class="kw">else</span> putStrLns <span class="fu">$</span> tableOfContents pageOpts docs
+
+      putStrLns <span class="fu">$</span> paginateLines pageOpts docs
+
+    <span class="dt">ASACC</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+      <span class="kw">let</span>
+        readLines name <span class="fu">=</span> <span class="kw">case</span> name <span class="kw">of</span>
+          <span class="st">&quot;-&quot;</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+            lns <span class="ot">&lt;-</span> fmap readCCLines getContents
+            <span class="kw">case</span> lns <span class="kw">of</span>
+              <span class="dt">Nothing</span> <span class="ot">-&gt;</span> corrErr <span class="fu">&gt;&gt;</span> exitFailure
+              <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (<span class="st">&quot;-&quot;</span>, xs)
+          otherwise <span class="ot">-&gt;</span> <span class="kw">do</span>
+            lns <span class="ot">&lt;-</span> fmap readCCLines <span class="fu">$</span> readFile name
+            <span class="kw">case</span> lns <span class="kw">of</span>
+              <span class="dt">Nothing</span> <span class="ot">-&gt;</span> corrErr <span class="fu">&gt;&gt;</span> exitFailure
+              <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return (name, xs)
+
+      docs <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map readLines filenames
+
+      <span class="kw">if</span> fPrintTOC flags <span class="fu">==</span> <span class="dt">False</span>
+        <span class="kw">then</span> return ()
+        <span class="kw">else</span> putStrLns <span class="fu">$</span> map renderCCLine <span class="fu">$</span> tableOfContents pageOpts docs
+
+      putStrLns <span class="fu">$</span> map renderCCLine <span class="fu">$</span> paginateCCLines pageOpts docs
+
+
+  exitSuccess
+
+
+
+<span class="kw">data</span> <span class="dt">Mode</span> <span class="fu">=</span> <span class="dt">Lines</span> <span class="fu">|</span> <span class="dt">ASACC</span>
+
+<span class="kw">data</span> <span class="dt">Flags</span> <span class="fu">=</span> <span class="dt">Flags</span>
+  {<span class="ot"> fLinesPerPage ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> fLineLength   ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> fPrintTOC     ::</span> <span class="dt">Bool</span>
+  ,<span class="ot"> fMode         ::</span> <span class="dt">Mode</span>
+  }
+
+<span class="ot">defaultFlags ::</span> <span class="dt">Flags</span>
+defaultFlags <span class="fu">=</span> <span class="dt">Flags</span>
+  { fLinesPerPage <span class="fu">=</span> <span class="dv">52</span>
+  , fLineLength   <span class="fu">=</span> <span class="dv">75</span>
+  , fPrintTOC     <span class="fu">=</span> <span class="dt">False</span>
+  , fMode         <span class="fu">=</span> <span class="dt">Lines</span>
+  }
+
+
+<span class="ot">options ::</span> [<span class="dt">OptDescr</span> (<span class="dt">Flags</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Flags</span>)]
+options <span class="fu">=</span>
+  [ <span class="dt">Option</span> [] [<span class="st">&quot;lines-per-page&quot;</span>]
+      (<span class="dt">ReqArg</span> readLinesPerPage <span class="st">&quot;INT&quot;</span>)
+      <span class="st">&quot;number of lines per page (including header)&quot;</span>
+
+  , <span class="dt">Option</span> [] [<span class="st">&quot;line-length&quot;</span>]
+      (<span class="dt">ReqArg</span> readLineLength <span class="st">&quot;INT&quot;</span>)
+      <span class="st">&quot;length of header lines&quot;</span>
+
+  , <span class="dt">Option</span> [] [<span class="st">&quot;toc&quot;</span>]
+      (<span class="dt">NoArg</span> (\opts <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> opts { fPrintTOC <span class="fu">=</span> <span class="dt">True</span> }))
+      <span class="st">&quot;print table of contents page&quot;</span>
+
+  , <span class="dt">Option</span> [] [<span class="st">&quot;asacc&quot;</span>]
+      (<span class="dt">NoArg</span> (\opts <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> opts { fMode <span class="fu">=</span> <span class="dt">ASACC</span> }))
+      <span class="st">&quot;interpret basic ASA carriage control codes&quot;</span>
+  ]
+  <span class="kw">where</span>
+    readLinesPerPage str opts <span class="fu">=</span> <span class="kw">do</span>
+      k <span class="ot">&lt;-</span> readDecimalNat str
+      return <span class="fu">$</span> opts { fLinesPerPage <span class="fu">=</span> k }
+
+    readLineLength str opts <span class="fu">=</span> <span class="kw">do</span>
+      k <span class="ot">&lt;-</span> readDecimalNat str
+      return <span class="fu">$</span> opts { fLineLength <span class="fu">=</span> k }</code></pre></div>
+<p>Now for the actual pagination. Generally speaking, <code>paginate</code> takes a list of lines and inserts new lines – the headers – as well as some blank lines in appropriate places, so that the lines can then be taken in chunks of <span class="math inline">\(n\)</span> at a time (called “pages”). But exactly what a “line” is is already ambiguous; of course the usual “text separated by newlines” consists of lines, but so also does a file formatted using ASA carriage control codes. Both kinds of “line” are handled properly by <code>pslineprint</code>, and we already have at least one program, <code>overstrike</code>, which produces carriage control formatted text. So it seems worth our while to make <code>paginate</code> handle carriage controls as well.</p>
+<p>An initial version of this program handled both kinds of line separately, which led to lots of duplicated code. To avoid this, we introduce an abstract <code>Line</code> type class.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Line</span> t <span class="kw">where</span>
+<span class="ot">  fromString ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t
+
+<span class="ot">  blankLine ::</span> t
+  blankLine <span class="fu">=</span> fromString <span class="st">&quot;&quot;</span>
+
+<span class="kw">instance</span> <span class="dt">Line</span> <span class="dt">String</span> <span class="kw">where</span>
+  fromString x <span class="fu">=</span> x
+
+<span class="kw">instance</span> <span class="dt">Line</span> <span class="dt">CCLine</span> <span class="kw">where</span>
+  fromString x <span class="fu">=</span> <span class="dt">CCLine</span> [x]</code></pre></div>
+<p>Also, there are a few tweakable parameters we’d like to be able to adjust: the number of “lines” to appear on each page, and the width (in characters) of the header lines. We wrap these into a type, <code>PaginateOpts</code>, that can be more easily (and meaningfully) be passed around.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">PaginateOpts</span> <span class="fu">=</span> <span class="dt">PO</span>
+  {<span class="ot"> linesPerPage ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> lineLength   ::</span> <span class="dt">Int</span>
+  } <span class="kw">deriving</span> (<span class="dt">Show</span>)
+
+
+<span class="ot">pageCount ::</span> (<span class="dt">Line</span> t) <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [t] <span class="ot">-&gt;</span> <span class="dt">Int</span>
+pageCount opts xs <span class="fu">=</span> <span class="kw">if</span> r <span class="fu">==</span> <span class="dv">0</span> <span class="kw">then</span> q <span class="kw">else</span> q<span class="fu">+</span><span class="dv">1</span>
+  <span class="kw">where</span>
+    slpp <span class="fu">=</span> (linesPerPage opts) <span class="fu">-</span> <span class="dv">2</span>
+    (q,r) <span class="fu">=</span> ((count xs) <span class="ot">`div`</span> slpp, (count xs) <span class="ot">`rem`</span> slpp)
+
+<span class="ot">startPages ::</span> (<span class="dt">Line</span> t) <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [[t]] <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
+startPages opts lnss
+  <span class="fu">=</span> map (\ks <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> sum ks)
+      <span class="fu">$</span> inits
+      <span class="fu">$</span> map (pageCount opts) lnss
+
+<span class="ot">totalPages ::</span> (<span class="dt">Line</span> t) <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [[t]] <span class="ot">-&gt;</span> <span class="dt">Int</span>
+totalPages opts lnss <span class="fu">=</span> sum <span class="fu">$</span> map (pageCount opts) lnss</code></pre></div>
+<p>Note that from a <code>PaginateOpts</code> and a list of (abstract) documents we can compute the total number of pages used and the starting page numbers of each document. These will be used later.</p>
+<p>Next we define an abstract page header. Our headers will include three pieces of information: the name of the file being paginated, the current page number, and the total number of pages. We also need a way to convert an abstract header to a list of lines; this is done with <code>renderHeader</code>. We define this function as part of a type class so that we can have different implementations for each kind of line.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Header</span> <span class="fu">=</span> <span class="dt">Header</span>
+  {<span class="ot"> title      ::</span> <span class="dt">String</span>
+  ,<span class="ot"> pageNumber ::</span> <span class="dt">Int</span>
+  ,<span class="ot"> pageTotal  ::</span> <span class="dt">Int</span>
+  } <span class="kw">deriving</span> (<span class="dt">Show</span>)
+
+
+<span class="kw">class</span> <span class="dt">RenderHeader</span> t <span class="kw">where</span>
+<span class="ot">  renderHeader ::</span> (<span class="dt">Line</span> t) <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> <span class="dt">Header</span> <span class="ot">-&gt;</span> [t]
+
+
+<span class="kw">instance</span> <span class="dt">RenderHeader</span> <span class="dt">String</span> <span class="kw">where</span>
+  renderHeader opts h <span class="fu">=</span> [fn <span class="fu">++</span> (replicate (ll <span class="fu">-</span> nfn <span class="fu">-</span> npg) <span class="ch">' '</span>) <span class="fu">++</span> pg, <span class="st">&quot;&quot;</span>]
+    <span class="kw">where</span>
+      pg  <span class="fu">=</span> show (pageNumber h) <span class="fu">++</span> <span class="st">&quot;/&quot;</span> <span class="fu">++</span> show (pageTotal h)
+      npg <span class="fu">=</span> count pg
+      ll  <span class="fu">=</span> lineLength opts
+      fn  <span class="fu">=</span> <span class="kw">if</span> (count <span class="fu">$</span> title h) <span class="fu">+</span> npg <span class="fu">+</span> <span class="dv">1</span> <span class="fu">&gt;</span> ll
+        <span class="kw">then</span> abbr
+        <span class="kw">else</span> title h
+      abbr <span class="fu">=</span> <span class="st">&quot;...&quot;</span> <span class="fu">++</span> (reverse <span class="fu">$</span> take (ll <span class="fu">-</span> npg <span class="fu">-</span> <span class="dv">4</span>) <span class="fu">$</span> reverse <span class="fu">$</span> title h)
+      nfn <span class="fu">=</span> count fn
+
+<span class="kw">instance</span> <span class="dt">RenderHeader</span> <span class="dt">CCLine</span> <span class="kw">where</span>
+  renderHeader opts h <span class="fu">=</span> map (\x <span class="ot">-&gt;</span> <span class="dt">CCLine</span> [x]) <span class="fu">$</span> renderHeader opts h</code></pre></div>
+<p>The actual pagination is handled by a few different functions:</p>
+<ul>
+<li><code>splitPages</code> divides a document into abstract pages, without proper page numbers.</li>
+<li><code>numberPagesFromOf</code> fixes the page numbers of a list of abstract pages, with parameters allowing us to specify where to begin counting from and the total number of pages.</li>
+<li><code>renderPage</code> converts an abstract page to a list of lines.</li>
+<li><code>paginateOfFrom</code> combines <code>splitPages</code>, <code>numberPagesOfFrom</code>, and <code>renderPage</code> to paginate a single document.</li>
+<li><code>paginateDocs</code> paginates a list of named documents.</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">splitPages ::</span> (<span class="dt">Line</span> t) <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [t] <span class="ot">-&gt;</span> [(<span class="dt">Header</span>, [t])]
+splitPages opts name <span class="fu">=</span> unfoldr firstPage
+  <span class="kw">where</span>
+    slpp <span class="fu">=</span> (linesPerPage opts) <span class="fu">-</span> <span class="dv">2</span>
+
+<span class="ot">    firstPage ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> ((<span class="dt">Header</span>,[a]),[a])
+    firstPage [] <span class="fu">=</span> <span class="dt">Nothing</span>
+    firstPage ys <span class="fu">=</span> <span class="kw">do</span>
+      <span class="kw">let</span>
+        (zs,rest) <span class="fu">=</span> splitAt slpp ys
+        hdr <span class="fu">=</span> <span class="dt">Header</span>
+          { title      <span class="fu">=</span> name
+          , pageNumber <span class="fu">=</span> <span class="dv">0</span>
+          , pageTotal  <span class="fu">=</span> <span class="dv">0</span>
+          }
+      return ((hdr, zs), rest)
+
+
+<span class="ot">numberPagesFromOf ::</span> (<span class="dt">Line</span> t)
+  <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [(<span class="dt">Header</span>, [t])] <span class="ot">-&gt;</span> [(<span class="dt">Header</span>, [t])]
+numberPagesFromOf m n xs <span class="fu">=</span> zipWith fix xs [m<span class="fu">..</span>]
+  <span class="kw">where</span>
+    fix (h,y) k <span class="fu">=</span> (h {pageNumber <span class="fu">=</span> k, pageTotal <span class="fu">=</span> n}, y)
+
+
+<span class="ot">renderPage ::</span> (<span class="dt">Line</span> t, <span class="dt">RenderHeader</span> t)
+  <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> (<span class="dt">Header</span>, [t]) <span class="ot">-&gt;</span> [t]
+renderPage opts (hdr,lns)
+  <span class="fu">=</span> take k ((renderHeader opts hdr) <span class="fu">++</span> lns <span class="fu">++</span> repeat blankLine)
+  <span class="kw">where</span> k <span class="fu">=</span> linesPerPage opts
+
+
+<span class="ot">paginateOfFrom ::</span> (<span class="dt">Line</span> t, <span class="dt">RenderHeader</span> t)
+  <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, [t]) <span class="ot">-&gt;</span> [t]
+paginateOfFrom opts n m (name, lns)
+  <span class="fu">=</span> concatMap (renderPage opts)
+      <span class="fu">$</span> numberPagesFromOf m n
+      <span class="fu">$</span> splitPages opts name lns
+
+
+<span class="ot">paginateDocs ::</span> (<span class="dt">Line</span> t, <span class="dt">RenderHeader</span> t)
+  <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [t])] <span class="ot">-&gt;</span> [t]
+paginateDocs opts docs
+  <span class="fu">=</span> concat <span class="fu">$</span> zipWith (paginateOfFrom opts tot) starts docs
+  <span class="kw">where</span>
+    starts <span class="fu">=</span> startPages opts <span class="fu">$</span> map snd docs
+    tot    <span class="fu">=</span> totalPages opts <span class="fu">$</span> map snd docs</code></pre></div>
+<p>The actual functions we expose from this module are <code>paginateLines</code> and <code>paginateCCLines</code>, which are just monomorphic synonyms of <code>paginateDocs</code> for ordinary lines and carriage control formatted lines, and the constructor for <code>PaginateOpts</code>. As far as consumers of this module are concerned, these two black-boxes are implemented separately. Since (as of this writing) the <code>Line</code> class has only two instances there is no reason to expose the guts of pagination. But by writing our code against an abstract <code>Line</code> class, it will be easier to extend in the future if needed.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">paginateLines ::</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">String</span>])] <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+paginateLines <span class="fu">=</span> paginateDocs
+
+<span class="ot">paginateCCLines ::</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">CCLine</span>])] <span class="ot">-&gt;</span> [<span class="dt">CCLine</span>]
+paginateCCLines <span class="fu">=</span> paginateDocs</code></pre></div>
+<p>All that remains is to provide a function for building the table of contents. This part is kind of gross.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tableOfContents ::</span> (<span class="dt">Line</span> t, <span class="dt">RenderHeader</span> t)
+  <span class="ot">=&gt;</span> <span class="dt">PaginateOpts</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [t])] <span class="ot">-&gt;</span> [t]
+tableOfContents opts docs <span class="fu">=</span> concat <span class="fu">$</span> pad <span class="fu">$</span>
+  (fromString <span class="st">&quot;Contents&quot;</span>) <span class="fu">:</span> blankLine <span class="fu">:</span> tocLines
+  <span class="kw">where</span>
+    ks <span class="fu">=</span> startPages opts <span class="fu">$</span> map snd docs
+
+    tocLines <span class="fu">=</span> zipWith tocLine (map fst docs) ks
+
+    tocLine name pg <span class="fu">=</span> fromString <span class="fu">$</span> padNum pg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> abbr name
+
+    ll  <span class="fu">=</span> lineLength opts
+    abbr str <span class="fu">=</span> <span class="kw">if</span> (count str) <span class="fu">+</span> <span class="dv">5</span> <span class="fu">&gt;</span> ll
+      <span class="kw">then</span> <span class="st">&quot;...&quot;</span> <span class="fu">++</span> (reverse <span class="fu">$</span> take (ll <span class="fu">-</span> <span class="dv">9</span>) <span class="fu">$</span> reverse <span class="fu">$</span> str)
+      <span class="kw">else</span> str 
+
+    padNum k <span class="fu">=</span> reverse <span class="fu">$</span> take <span class="dv">5</span> <span class="fu">$</span> (reverse <span class="fu">$</span> show k) <span class="fu">++</span> repeat <span class="ch">' '</span>
+
+    pad <span class="fu">=</span> unfoldr padFirst
+
+    padFirst [] <span class="fu">=</span> <span class="dt">Nothing</span>
+    padFirst xs <span class="fu">=</span> <span class="dt">Just</span> (take (linesPerPage opts) (ys <span class="fu">++</span> repeat blankLine), rest)
+      <span class="kw">where</span> (ys, rest) <span class="fu">=</span> splitAt (linesPerPage opts) xs</code></pre></div>
+<p>A few comments about the default options. I expect that the main use of <code>paginate</code> will be to prepare documents for <code>pslineprint</code>, and the default settings of that program produce pages with 52 lines per page and about 75 characters per line. Using these as the defaults for <code>paginate</code> means we can say things like</p>
+<pre><code>paginate foo.txt | pslineprint</code></pre>
+<p>and get reasonable results.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
