@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Arithmetic</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Arithmetic</h1>
+<!-- BEGIN BODY -->
+<!-- LaTeX Macros -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{t}}\)
+\(\newcommand{\bfalse}{\mathsf{f}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+</div>
+<!-- End LaTeX Macros -->
+
+<div class="subtitle">
+This page is part of a series on <a href="../../../pages/amd/index.html">Arithmetic Made Difficult</a>.
+</div>
+
+<p>In the previous post, we defined the natural numbers in terms of a unique recursion operator \(\natrec{\ast}{\ast}\). Now we will use this operator to define the usual arithmetic operations and prove that they behave as expected.</p>
+<p><strong>Addition</strong></p>
+<p>We’d like to define a function \(\nplus : \nats \times \nats \rightarrow \nats\) that behaves a certain way. But at the moment we only know of one way to define a function on \(\nats\), using \(\natrec{\ast}{\ast}\). How can we use this to define a function on \(\nats \times \nats\)? We will use a neat trick called <em>currying</em>. Essentially, rather than constructing a function which takes two arguments \(a\) and \(b\) and returns \(a+b\), we construct a function which takes a single argument \(a\) and returns another function of a single argument \(b\) which returns \(a+b\). We need to come up with suitable \(e\) and \(\varphi\) so that \[\natrec{e}{\varphi} : \nats \rightarrow (\nats \rightarrow \nats)\] behaves like \(\nplus\). But how does \(\nplus\) behave? We certainly should have \(0 + a = a\) for all \(a\). That is, \[a = \natrec{e}{\varphi}(\zero)(a) = e(a)\] for all \(a\); thus \(e = \id\). Similarly we must have \((1+n)+a = 1+(n+a)\) for all \(n\) and \(a\), so that \[\next(\natrec{e}{\varphi}(n)(a)) = \natrec{e}{\varphi}(\next(n))(a) = \varphi(\natrec{e}{\varphi}(n))(a).\] Thus \(\varphi(f)(m) = \next(f(m))\).</p>
+<div class="result">
+<div class="defn">
+<p>
+Let \(\varphi : (\nats \rightarrow \nats) \rightarrow (\nats \rightarrow \nats)\) be the mapping given by \(\varphi(f)(m) = \next(f(m))\). We define a special function \(\nplus : \nats \times \nats \rightarrow \nats\) by \[\nplus(a,b) = \natrec{\id}{\varphi}(a)(b).\]
+</p>
+</div>
+</div>
+<div class="result">
+<div class="lemma">
+<p>The following hold for all natural numbers \(a\), \(b\), and \(c\).</p>
+<ol style="list-style-type: decimal">
+<li>\(\nplus(0, a) = a\)</li>
+<li>\(\nplus(\next(a), b) = \next(\nplus(a, b)) = \nplus(a, \next(b))\)</li>
+<li>\(\nplus(a, 0) = a\).</li>
+<li>\(\nplus(a, b) = \nplus(b, a)\).</li>
+<li>\(\nplus(a, \nplus(b, c)) = \nplus(\nplus(a, b), c)\).</li>
+<li>If \(\nplus(a, c) = \nplus(b, c)\) then \(a = b\).</li>
+</ol>
+</div>
+<div class="proof">
+<ol style="list-style-type: decimal">
+<li>Note first that \[\nplus(0, a) = \natrec{\id}{\varphi}(\zero)(a) = \id(a) = a.\]</li>
+<li>To see the first equality, note that \[\begin{eqnarray*} \nplus(\next(a), b) &amp; = &amp; \natrec{\id}{\varphi}(\next(a))(b) \\ &amp; = &amp; \varphi(\natrec{\id}{\varphi}(a))(b) \\ &amp; = &amp; \next(\natrec{\id}{\varphi}(a)(b)) \\ &amp; = &amp; \next(\nplus(a, b)). \end{eqnarray*}\] We show the second by induction. Define \[B = \{n \in \nats \mid \next(\nplus(n, m)) = \nplus(n, \next(m))\ \mathrm{for\ all}\ m \in \nats\}.\] We have \(\zero \in B\) since for all \(m\), \[\next(\nplus(\zero, m)) = \next(m) = \nplus(\zero, \next(m)).\] Now suppose \(n \in B\), and let \(m \in \nats\). Then \[\begin{eqnarray*} \next(\nplus(\next(n), m)) &amp; = &amp; \next(\next(\nplus(n, m))) \\ &amp; = &amp; \next(\nplus(n, \next(m))) \\ &amp; = &amp; \nplus(\next(n), \next(m)). \end{eqnarray*}\] The conclusion follows.</li>
+<li>We use induction. Define a set \[B = \{n \in \nats \mid \nplus(n, 0) = n \}. \] Certainly \(\zero \in B\). Now suppose \(n \in B\); note that \[\nplus(\next(n), \zero) = \next(\nplus(n,0)) = \next(n),\] and thus \(\next(n) \in B\). The conclusion follows.</li>
+<li>We again use induction. Define \[B = \{n \in \nats \mid \nplus(n, m) = \nplus(m, n)\ \mathrm{for\ all}\ m \in \nats\}.\] We have \(\zero \in B\) since \[\nplus(\zero, m) = m = \nplus(m, \zero)\] for all \(m\). Now suppose \(n \in B\), and let \(m \in \nats\). Then \[\begin{eqnarray*} \nplus(\next(n), m) &amp; = &amp; \next(\nplus(n,m)) \\ &amp; = &amp; \next(\nplus(m,n)) \\ &amp; = &amp; \nplus(m, \next(n)) \end{eqnarray*} \] as needed.</li>
+<li>asf</li>
+<li>asd</li>
+</ol>
+</div>
+</div>
+<p><strong>Multiplication</strong></p>
+<div class="result">
+<div class="defn">
+<p>We define three special functions \(\mathbb{N} \rightarrow (\mathbb{N} \rightarrow \mathbb{N})\) as follows.</p>
+<ol start="2" style="list-style-type: decimal">
+<li>\(\ntimes = \natrec{\const(0)}{\varphi}\), where \(\varphi(f)(m) = \nplus\ m\ f(m)\).</li>
+</ol>
+</div>
+</div>
+<ol style="list-style-type: decimal">
+<li>\(\ntimes(a, \zero) = \ntimes(\zero, a) = \zero\).</li>
+<li>\(\ntimes(a, \next(0)) = a\) and \(\ntimes(\next(0), a) = a\).</li>
+<li><span class="math inline">\((a + b) \cdot c = (a \cdot c) + (b \cdot c)\)</span>.</li>
+<li><span class="math inline">\(a \cdot b = b \cdot a\)</span></li>
+<li><span class="math inline">\(latex a \cdot (b + c) = (a \cdot b) + (a \cdot c)\)</span></li>
+<li><span class="math inline">\(latex a \cdot (b \cdot c) = (a \cdot b) \cdot c\)</span>.</li>
+<li><p>If <span class="math inline">\(latex a \cdot c = b \cdot c\)</span> and <span class="math inline">\(latex c \neq 0\)</span>, then <span class="math inline">\(latex a = b\)</span>.</p></li>
+<li><span class="math inline">\(latex a \uparrow 0 = \mathsf{next}(0)\)</span></li>
+<li><span class="math inline">\(latex a \uparrow \mathsf{next}(0) = a\)</span></li>
+<li><span class="math inline">\(latex 0 \uparrow a = 0\)</span> for all <span class="math inline">\(latex a \neq 0\)</span>.</li>
+<li><span class="math inline">\(latex \mathsf{next}(0) \uparrow a = \mathsf{next}(0)\)</span></li>
+<li><span class="math inline">\(latex a \uparrow (b+c) = (a \uparrow b) \cdot (a \uparrow c)\)</span></li>
+<li><span class="math inline">\(latex a \uparrow (b \cdot c) = (a \uparrow b) \uparrow c\)</span></li>
+<li><p><span class="math inline">\(latex (a \cdot b) \uparrow c = (a \uparrow c) \cdot (b \uparrow c)\)</span></p></li>
+</ol>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Arithmetic</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Natural</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; plus ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span> plus <span class="fu">=</span> natRecur id phi
+<span class="ot">&gt;</span>   <span class="kw">where</span> phi f m <span class="fu">=</span> <span class="dt">Next</span> (f m)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; times ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span> times <span class="fu">=</span> natRecur (const <span class="dt">Zero</span>) phi
+<span class="ot">&gt;</span>   <span class="kw">where</span> phi f m <span class="fu">=</span> plus m (f m)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; power ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span> power <span class="fu">=</span> natRecur (const (<span class="dt">Next</span> <span class="dt">Zero</span>)) phi
+<span class="ot">&gt;</span>   <span class="kw">where</span> phi f m <span class="fu">=</span> times m (f m)</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

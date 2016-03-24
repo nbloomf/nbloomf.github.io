@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - From Arrows to Programs</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>From Arrows to Programs</h1>
+<!-- BEGIN BODY -->
+<!-- LaTeX Macros -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{t}}\)
+\(\newcommand{\bfalse}{\mathsf{f}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+</div>
+<!-- End LaTeX Macros -->
+
+<div class="subtitle">
+This page is part of a series on <a href="../../../pages/amd/index.html">Arithmetic Made Difficult</a>.
+</div>
+
+<p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec{\ast}{\ast}\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish a structural result: every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some natural number <span class="math inline">\(m\)</span>.</p>
+<div class="result">
+<div class="lemma">
+<p>
+If <span class="math inline">\(n \in \mathbb{N}\)</span>, then either <span class="math inline">\(n = \zero\)</span> or <span class="math inline">\(n = \next(m)\)</span> for some <span class="math inline">\(m\)</span>.
+</p>
+</div>
+<div class="proof">
+<p>Suppose to the contrary that there is an element <span class="math inline">\(s \in \nats\)</span>, not equal to <span class="math inline">\(\zero\)</span>, which is not of the form <span class="math inline">\(\next(m)\)</span> for some <span class="math inline">\(m\)</span>. Note that <span class="math inline">\(\bool\)</span>, with the distinguished element <span class="math inline">\(\btrue\)</span> and the constant function <span class="math inline">\(\const(\btrue) : \bool \rightarrow \bool\)</span>, is an iterative set. Let <span class="math inline">\(\Theta\)</span> denote the unique iterative homomorphism <span class="math inline">\(\natrec{\btrue}{\const(\btrue)} : \nats \rightarrow \bool\)</span>.</p>
+<p>Now we define another mapping <span class="math inline">\(\Psi : \nats \rightarrow \bool\)</span> as follows: <span class="math display">\[\Psi(x) = \left\{ \begin{array}{ll} \Theta(x) &amp; \mathrm{if}\ x \neq s \\ \bnot(\Theta(x)) &amp; \mathrm{if}\ x = s \end{array} \right.\]</span> We claim that <span class="math inline">\(\Psi\)</span> is an iterative homomorphism. To see this, note that <span class="math display">\[\Psi(\zero) = \Theta(\zero) = \btrue\]</span> (since <span class="math inline">\(\zero \neq s\)</span>) and that if <span class="math inline">\(x \in \nats\)</span>, <span class="math display">\[\Psi(\next(x)) = \Theta(\next(x)) = (\const\ \btrue)(\Theta(x)) = \btrue = (\const\ \btrue)(\Psi(x))\]</span> (since <span class="math inline">\(\next(x) \neq s\)</span>). That is, <span class="math inline">\(\Psi\)</span> is an iterative homomorphism from <span class="math inline">\((\nats, \zero, \next)\)</span> to <span class="math inline">\((\bool, \btrue, \const(\btrue))\)</span>, and since <span class="math inline">\(\Theta\)</span> is unique, we have <span class="math inline">\(\Psi = \Theta\)</span>. But this implies that <span class="math inline">\(\Theta(s) = \Psi(s) = \bnot(\Theta(s))\)</span>, which is absurd.</p>
+</div>
+</div>
+<p>Establishing that every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some <span class="math inline">\(m\)</span> justifies our use of the following Haskell type to model the natural numbers.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span>
+  <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">N</span> <span class="dt">Nat</span>
+
+<span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Nat</span> <span class="kw">where</span>
+  show  <span class="dt">Z</span>    <span class="fu">=</span> <span class="st">&quot;Z&quot;</span>
+  show (<span class="dt">N</span> k) <span class="fu">=</span> <span class="ch">'N'</span> <span class="fu">:</span> show k</code></pre></div>
+<p>(That <code>show</code> instance is so we can display elements of <code>Nat</code> without too many parentheses.) We also define a few synonyms for “small” natural numbers as follows.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">d0 <span class="fu">=</span> <span class="dt">Z</span>
+d1 <span class="fu">=</span> <span class="dt">N</span> d0
+d2 <span class="fu">=</span> <span class="dt">N</span> d1
+d3 <span class="fu">=</span> <span class="dt">N</span> d2
+d4 <span class="fu">=</span> <span class="dt">N</span> d3
+d5 <span class="fu">=</span> <span class="dt">N</span> d4
+d6 <span class="fu">=</span> <span class="dt">N</span> d5
+d7 <span class="fu">=</span> <span class="dt">N</span> d6
+d8 <span class="fu">=</span> <span class="dt">N</span> d7
+d9 <span class="fu">=</span> <span class="dt">N</span> d8
+dA <span class="fu">=</span> <span class="dt">N</span> d9
+dB <span class="fu">=</span> <span class="dt">N</span> dA
+dC <span class="fu">=</span> <span class="dt">N</span> dB
+dD <span class="fu">=</span> <span class="dt">N</span> dC
+dE <span class="fu">=</span> <span class="dt">N</span> dD
+dF <span class="fu">=</span> <span class="dt">N</span> dE</code></pre></div>
+<p>So calling <code>d7</code> in GHCI, for instance, prints</p>
+<pre><code>NNNNNNNZ</code></pre>
+<p>And we can also give a straightforward implementation of <span class="math inline">\(\natrec{\ast}{\ast}\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">natRec ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a
+natRec e _  <span class="dt">Z</span>    <span class="fu">=</span> e
+natRec e f (<span class="dt">N</span> n) <span class="fu">=</span> f (natRec e f n)</code></pre></div>
+<p>For instance, the mapping we used to show that <span class="math inline">\(\zero = \next(m)\)</span> has no solution in <span class="math inline">\(\nats\)</span> is</p>
+<pre><code>let theta = natRec True not</code></pre>
+<p>and we can test out this map by evaluating it on several natural numbers:</p>
+<pre><code>&gt; theta d3
+False
+&gt; theta d6
+True</code></pre>
+<p>Now this <code>theta</code> is pretty silly (though not <em>that</em> silly, it detects the parity of a natural number, which we haven’t defined yet). But in the next section we’ll define a more interesting recursive function.</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
