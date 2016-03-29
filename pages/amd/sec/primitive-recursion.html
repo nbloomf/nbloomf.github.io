@@ -49,6 +49,9 @@
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathsf{and}}\)
 \(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
 </div>
 <!-- End LaTeX Macros -->
 
@@ -63,10 +66,95 @@ This page is part of a series on <a href="../../../pages/amd/index.html">Arithme
 <p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\primrec{\varphi}{\mu}\)</span>.</p>
 </div>
 <div class="proof">
-<p>First, define a mapping <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(n,h) = (\next(n), \lambda x : \mu(n, x, h(x))).\]</span> Note that we are using the <span class="math inline">\(\lambda\)</span> notation to define an anonymous function <span class="math inline">\(A \rightarrow B\)</span> on the right hand side; specifically, <span class="math inline">\(\lambda x : \mu(n, x, h(x))\)</span> is the function <span class="math inline">\(q : A \rightarrow B\)</span> such that <span class="math inline">\(q(x) = \mu(n,x,h(x))\)</span>.</p>
-<p>Now we define <span class="math inline">\(\Theta\)</span> as follows: <span class="math display">\[\Theta(n,a) = (\pi_2 \circ \natrec{(0, \varphi)}{t})(n)(a).\]</span></p>
+<p>First we establish existence. Define a mapping <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(n,h) = (\next(n), \lambda x : \mu(n, x, h(x))).\]</span> Note that we are using the <span class="math inline">\(\lambda\)</span> notation to define an anonymous function <span class="math inline">\(A \rightarrow B\)</span> on the right hand side; specifically, <span class="math inline">\(\lambda x : \mu(n, x, h(x))\)</span> is the function <span class="math inline">\(q : A \rightarrow B\)</span> such that <span class="math inline">\(q(x) = \mu(n,x,h(x))\)</span>.</p>
+<p>Now we define <span class="math inline">\(\Theta\)</span> as follows: <span class="math display">\[\Theta(n,a) = (\snd \circ \natrec{(\zero, \varphi)}{t})(n)(a).\]</span></p>
+<p>(<span class="math inline">\(\snd\)</span> is the map which selects the second entry of a pair.)</p>
+<p>Note that <span class="math display">\[\begin{eqnarray*}
+\Theta(\zero,a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\zero)(a) \\
+ &amp; = &amp; (\snd(\natrec{(\zero, \varphi)}{t})(\zero))(a) \\
+ &amp; = &amp; (\snd(\zero, \varphi))(a) \\
+ &amp; = &amp; \varphi(a).
+\end{eqnarray*}\]</span></p>
+<p>To show the second property of <span class="math inline">\(\Theta\)</span>, we will show by induction that the following (compound) statement holds for all <span class="math inline">\(n \in \nats\)</span>:</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\natrec{(\zero,\varphi)}{t}(n) = (n, \lambda x : \Theta(n,x))\)</span> and</li>
+<li><span class="math inline">\(\Theta(\next(n), a) = \mu(n, a, \Theta(n, a))\)</span> for all <span class="math inline">\(a \in A\)</span>.</li>
+</ol>
+<p>For the base case, note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\natrec{(\zero, \varphi)}{t}(\zero) &amp; = &amp; (\zero, \varphi) \\
+ &amp; = &amp; (\zero, \lambda x : \varphi(x)) \\
+ &amp; = &amp; (\zero, \lambda x : \Theta(\zero, x))
+\end{eqnarray*}\]</span></p>
+<p>and that for all <span class="math inline">\(a \in A\)</span>,</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Theta(\next\ \zero, a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next\ \zero)(a) \\
+ &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next\ \zero)))(a) \\
+ &amp; = &amp; (\snd (t(\natrec{(\zero, \varphi)}{t}(\zero))))(a) \\
+ &amp; = &amp; (\snd (t(\zero, \varphi)))(a) \\
+ &amp; = &amp; (\snd (\next\ \zero, \lambda x : \mu(\zero, x, \varphi(x))))(a) \\
+ &amp; = &amp; (\lambda x : \mu(\zero, x, \varphi(x)))(a) \\
+ &amp; = &amp; \mu(\zero, a, \varphi(a)) \\
+ &amp; = &amp; \mu(\zero, a, \Theta(\zero, a)).
+\end{eqnarray*}\]</span></p>
+<p>Now for the inductive step, suppose the statement holds for <span class="math inline">\(n \in \nats\)</span>. Then we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\natrec{(\zero, \varphi)}{t}(\next\ n) &amp; = &amp; t(\natrec{(\zero, \varphi)}{t}(n)) \\
+ &amp; = &amp; t(n, \lambda x : \Theta(n,x)) \\
+ &amp; = &amp; (\next\ n, \lambda y : \mu(n, y, \Theta(n,y))) \\
+ &amp; = &amp; (\next\ n, \lambda x : \Theta(\next\ n, x).
+\end{eqnarray*}\]</span></p>
+<p>(Note that we used both parts of the induction hypothesis here.) Also note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Theta(\next(\next\ n), a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next(\next\ n))(a) \\
+ &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next(\next\ n)))(a) \\
+ &amp; = &amp; (\snd (t (\natrec{(\zero, \varphi)}{t}(\next\ n)))(a) \\
+ &amp; = &amp; (\snd (t (\next\ n, \lambda x : \Theta(\next\ n, x))))(a) \\
+ &amp; = &amp; (\snd (\next(\next\ n), \lambda y : \mu(\next\ n, y, \Theta(\next\ n, y))))(a) \\
+ &amp; = &amp; (\lambda y : \mu(\next\ n, y, \Theta(\next\ n, y)))(a) \\
+ &amp; = &amp; \mu(\next\ n, a, \Theta(\next\ n, a))
+\end{eqnarray*}\]</span></p>
+<p>So <span class="math inline">\(\Theta\)</span> has the claimed properties by induction. To see that <span class="math inline">\(\Theta\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>. Then we have <span class="math display">\[\Psi(\zero, a) = \varphi(a) = \Theta(\zero, a)\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = \Theta(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Psi(\next\ n, a) &amp; = &amp; \mu(n, a, \Psi(n, a)) \\
+ &amp; = &amp; \mu(n, a, \Theta(n, a)) \\
+ &amp; = &amp; \Theta(\next\ n, a)
+\end{eqnarray*}\]</span></p>
+<p>for all <span class="math inline">\(a \in A\)</span>. Thus <span class="math inline">\(\Psi = \Theta\)</span> as needed.</p>
 </div>
 </div>
+<p>That proof may look complicated, but structurally it’s very simple. We defined <span class="math inline">\(\Theta\)</span> and showed it has the claimed properties with induction, then we showed it is unique by induction.</p>
+<h2 id="implementation">Implementation</h2>
+<p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\primrec{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this.</p>
+<p>There’s the naive way:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">primRec'' ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+primRec'' phi _   <span class="dt">Z</span>    a <span class="fu">=</span> phi a
+primRec'' phi mu (<span class="dt">N</span> n) a <span class="fu">=</span> mu n a <span class="fu">$</span> primRec'' phi mu n a</code></pre></div>
+<p>There’s the definition from the proof:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">primRec' ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+primRec' phi mu n a <span class="fu">=</span>
+  <span class="kw">let</span> t (m,h) <span class="fu">=</span> (<span class="dt">N</span> m, \x <span class="ot">-&gt;</span> mu m x (h x))
+  <span class="kw">in</span> snd (natRec (<span class="dt">Z</span>,phi) t n) <span class="fu">$</span> a</code></pre></div>
+<p>And the tail recursive strategy:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">primRec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+primRec phi mu n a <span class="fu">=</span>
+  <span class="kw">let</span>
+    tau <span class="fu">!</span>x h m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span>
+      <span class="dt">Z</span>   <span class="ot">-&gt;</span> x
+      <span class="dt">N</span> k <span class="ot">-&gt;</span> tau (mu h a x) (<span class="dt">N</span> h) k
+  <span class="kw">in</span> tau (phi a) <span class="dt">Z</span> n</code></pre></div>
+<p>Some simple testing again shows that the tail recursive form is more efficient – both of the other forms run out of space on medium-sized numbers. All we need to do is verify that the efficient <code>primRec</code> is equivalent to the inefficient, but obviously correct, <code>primRec''</code>.</p>
+<p>First we claim that</p>
+<pre><code>   primRec'' (\x -&gt; mu k x (phi x)) mu k a
+== mu k a $ primRec'' phi mu k a</code></pre>
+<p>for all <code>k :: Nat</code> and all <code>a :: a</code>. Using induction, note that</p>
+<pre><code>   primRec'' (\x -&gt; mu Z x (phi x)) mu Z a
+== (\x -&gt; mu Z x (phi x)) a
+== mu Z a (phi a)
+== mu Z a $ primRec'' phi mu Z a</code></pre>
+<p>and if the equation holds for <code>k :: Nat</code>, then</p>
+<pre><code>   primRec'' (\x -&gt; mu (N k) x (phi x)) mu (N k) a
+== mu k a $ primRec'' (\x -&gt; mu (N k) x (phi x)) mu k a</code></pre>
 
 <!-- END BODY -->
 </div>
