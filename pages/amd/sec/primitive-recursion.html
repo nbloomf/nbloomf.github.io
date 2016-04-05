@@ -36,6 +36,7 @@
 \(\newcommand{\nats}{\mathbb{N}}\)
 \(\newcommand{\zero}{\mathsf{0}}\)
 \(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 
@@ -143,18 +144,60 @@ primRec phi mu n a <span class="fu">=</span>
       <span class="dt">Z</span>   <span class="ot">-&gt;</span> x
       <span class="dt">N</span> k <span class="ot">-&gt;</span> tau (mu h a x) (<span class="dt">N</span> h) k
   <span class="kw">in</span> tau (phi a) <span class="dt">Z</span> n</code></pre></div>
-<p>Some simple testing again shows that the tail recursive form is more efficient – both of the other forms run out of space on medium-sized numbers. All we need to do is verify that the efficient <code>primRec</code> is equivalent to the inefficient, but obviously correct, <code>primRec''</code>.</p>
-<p>First we claim that</p>
-<pre><code>   primRec'' (\x -&gt; mu k x (phi x)) mu k a
-== mu k a $ primRec'' phi mu k a</code></pre>
-<p>for all <code>k :: Nat</code> and all <code>a :: a</code>. Using induction, note that</p>
-<pre><code>   primRec'' (\x -&gt; mu Z x (phi x)) mu Z a
-== (\x -&gt; mu Z x (phi x)) a
+<p>Some simple testing again shows that the tail recursive form is more efficient – both of the other forms run out of space on medium-sized numbers. All we need to do is verify that the efficient <code>primRec</code> is equivalent to the inefficient, but obviously correct, <code>primRec''</code>. We will (eventually) do this by induction.</p>
+<p>First, though, we need a lemma about <code>tau</code>. Note that in the definition of <code>tau</code> there are two implicit parameters, <code>mu</code> and <code>a</code>. With <code>mu</code> and <code>phi</code> fixed, we define supplementary functions <code>mu'</code> and <code>phi'</code> as follows:</p>
+<pre><code>mu' k a b = mu (N k) a b
+phi' a = mu Z a (phi a)</code></pre>
+<p>We will denote by <code>tau'</code> the version of <code>tau</code> where <code>mu'</code> is in scope, and by <code>tau</code> the version with <code>mu</code> in scope. We claim that</p>
+<pre><code>tau' x h k == tau x (N h) k</code></pre>
+<p>for all <code>x</code>, <code>h</code>, and <code>k</code>, and prove it by induction on <code>k</code>. For the base case, note that</p>
+<pre><code>   tau' x h Z
+== x
+== tau x (N h) Z</code></pre>
+<p>For the inductive step, suppose the equation holds for <code>k</code>. Then we have</p>
+<pre><code>   tau' x h (N k)
+== tau' (mu' h a x) (N h) k
+== tau (mu' h a x) (N $ N h) k
+== tau (mu (N h) a x) (N $ N h) k
+== tau x (N h) (N k)</code></pre>
+<p>as needed.</p>
+<p>Next we claim that</p>
+<pre><code>primRec phi' mu' k a == primRec phi mu (N k) a</code></pre>
+<p>for all <code>phi</code>, <code>mu</code>, <code>k</code>, and <code>a</code>. To see this, note that</p>
+<pre><code>   primRec phi mu (N k) a
+== tau (phi a) Z (N k)
+== tau (mu Z a (phi a)) (N Z) k
+== tau' (mu Z a (phi a)) Z k
+== tau' (phi' a) Z k
+== primRec phi' mu' k a</code></pre>
+<p>as needed. Also, <code>primRec''</code> satisfies this equation, which we show by induction on <code>k</code>. For the base case, note that</p>
+<pre><code>   primRec'' phi' mu' Z a
+== phi' a
 == mu Z a (phi a)
-== mu Z a $ primRec'' phi mu Z a</code></pre>
-<p>and if the equation holds for <code>k :: Nat</code>, then</p>
-<pre><code>   primRec'' (\x -&gt; mu (N k) x (phi x)) mu (N k) a
-== mu k a $ primRec'' (\x -&gt; mu (N k) x (phi x)) mu k a</code></pre>
+== mu Z a $ primRec'' phi mu Z a
+== primRec'' phi mu (N Z) a</code></pre>
+<p>And if the equation holds for <code>k</code>, then we have</p>
+<pre><code>   primRec'' phi' mu' (N k) a
+== mu' k a $ primRec'' phi' mu' k a
+== mu' k a $ primRec'' phi mu (N k) a
+== mu (N k) a $ primRec'' phi mu (N k) a
+== primRec'' phi mu (N $ N k) a</code></pre>
+<p>so that</p>
+<pre><code>primRec'' phi' mu' k a == primRec'' phi mu (N k) a</code></pre>
+<p>for all <code>phi</code>, <code>mu</code>, <code>k</code>, and <code>a</code> as claimed.</p>
+<p>Finally we are prepared to show that <code>primRec == primRec''</code>, by induction on <code>k</code>. For the base case, we have</p>
+<pre><code>   primRec'' phi mu Z a
+== phi a
+== tau (phi a) Z Z
+== primRec phi mu Z a</code></pre>
+<p>And if the result holds for <code>k</code>, we have</p>
+<pre><code>   primRec'' phi mu (N k) a
+== primRec'' phi' mu' k a
+== primRec phi' mu' k a
+== primRec phi mu (N k) a</code></pre>
+<p>So our efficient <code>primRec</code> is equivalent to <code>primRec''</code>. (We will leave the equivalence of <code>primRec'</code> and <code>primRec</code> as an exercise.)</p>
+<h2 id="what-it-does">What it does</h2>
+<p>This page is already long enough, so I’ll save examples of primitive recursion for another day. Just note what <span class="math inline">\(\primrec{\ast}{\ast}\)</span> does: given some data <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>, it produces a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span>. So whenever we encounter (or want to construct) a function with this signature, it may be worthwhile to look for a definition in terms of <span class="math inline">\(\primrec{\ast}{\ast}\)</span>. The uniqueness of primitive recursion makes such functions very nice to reason about.</p>
 
 <!-- END BODY -->
 </div>
