@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Hacking on WordPress: Getting Started</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Hacking on WordPress: Getting Started</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2016-12-30 by nbloomf
+</div>
+
+<p>This post is about how to set up a local <a href="https://www.wordpress.org">WordPress</a> development environment. There are probably better posts by more qualified authors out there, but this one is mine. :)</p>
+<p>For the last few months I’ve been playing around with the guts of WordPress (more specifically, the <a href="https://jetpack.com/">Jetpack</a> plugin). I have had a blog at WP.com for several years but I’d never tried my hand at building plugins.</p>
+<p>When I started I had no experience with PHP, or development in a dynamic language, or any kind of modern best practice, really. So this post summarizes everything I had to figure out to go from zero to one.</p>
+<p>I’m using Ubuntu, so watch out if you’re following along on a different OS.</p>
+<h2 id="virtual-machines">Virtual Machines</h2>
+<p>To use WordPress you have to install it on a computer first, right? Of course. Presumably then if you want to use WordPress the most natural thing to do is install it on your computer.</p>
+<p>No!</p>
+<p>The trouble with installing software on your computer is that it can get tricky if you want <em>more than one version at a time</em>, or if <em>something goes horribly wrong</em> (which happens a lot), or lord help you if <em>the software is in constant flux</em>.</p>
+<p>Instead we can create a <em>virtual machine</em> and install WordPress on that. This has several advantages over installing WordPress directly. Virtual machines can be created and destroyed at will, so we can tinker without fear. Virtual machines are also (more easily) reproducible, so if we trash one we can make a new one just like it. And virtual machines are (more easily) configurable, so we can use one with exactly the versions of any packages we want. And of course the biggest advantage is that I can have lots of different virtual machines, but I’ve only got one real machine.</p>
+<p>I’ll use “local machine” to refer to my real, actual, physical computer, as opposed to a virtual machine or VM.</p>
+<p>Good news: the fine people of the community have put together a few different virtual machines specifically for hacking on WordPress. After installing some infrastructure on your local machine, these are ready to go with a <code>git clone</code>.</p>
+<ol style="list-style-type: decimal">
+<li><a href="https://github.com/Varying-Vagrant-Vagrants/VVV">VVV</a>: Includes almost everything you could want. Getting started is more involved.</li>
+<li><a href="http://docs.chassis.io/en/latest/">Chassis</a>: Easy to get started. Includes less stuff out of the box, but easily extended.</li>
+</ol>
+<p>Both VVV and Chassis are built on top of VirtualBox and Vagrant and both have great documentation for how to install and get started. I used both because some things were easier to do with VVV (like running unit tests) and others easier with Chassis. But that was just my experience.</p>
+<p>Once you have one of these VMs set up there are some useful commands (all called from the root VM directory on your local machine). Roughly in order of most to least used:</p>
+<ol style="list-style-type: decimal">
+<li><code>vagrant up</code>: this “turns on” the machine.</li>
+<li><code>vagrant ssh</code>: this logs you into the machine so you can muck around.</li>
+<li><code>vagrant halt</code>: this “turns off” the machine.</li>
+<li><code>vagrant provision</code>: only used if you change the configuration settings of a VM.</li>
+</ol>
+<p>Beware that getting a VM set up may be fiddly and take a while, especially the first time! But your patience will be rewarded.</p>
+<p>Once a VM is up and running, and assuming that everything went OK, you can then browse to your shiny new WordPress installation at <code>local.wordpress.dev</code> (VVV) or <code>vagrant.local</code> (Chassis). The actual WP files on the VM are cloned from your local machine, so you can edit locally and have your changes visible immediately. For example, here’s an example workflow with Chassis.</p>
+<ol style="list-style-type: decimal">
+<li>(First time only) Clone Chassis to the directory <code>$FOO</code> on my local machine.</li>
+<li>Say <code>vagrant up</code> in <code>$FOO</code> (and wait while the machine boots)</li>
+<li>Open <code>vagrant.local/$BAR</code> in my browser, login with <code>admin</code> and <code>password</code> if needed</li>
+<li>Edit my plugin in <code>$FOO/content/plugins/</code></li>
+<li>Refresh <code>vagrant.local/$BAR</code> in the browser to see changes</li>
+<li>Repeat 4–5 until I’m happy</li>
+<li><code>git commit</code> my changes</li>
+</ol>
+<h2 id="where-stuff-goes">Where Stuff Goes</h2>
+<p>Okay so this is going to sound silly to experienced WP people, but plugins go in the <code>www/wordpress-default/wp-content/plugins</code> (VVV) or <code>content/plugins</code> (Chassis) directory. I know, right! But I was confused about that for way too long. :)</p>
+<p>Another important file is <code>wp-config.php</code>. This is where you can put little local customizations for your WP install. For instance, during development you will probably want to add these two lines to this file:</p>
+<div class="sourceCode"><pre class="sourceCode php"><code class="sourceCode php"><span class="fu">define</span><span class="ot">(</span> <span class="st">'WP_DEBUG'</span><span class="ot">,</span> <span class="kw">true</span> <span class="ot">);</span>
+<span class="fu">define</span><span class="ot">(</span> <span class="st">'WP_DEBUG_LOG'</span><span class="ot">,</span> <span class="kw">true</span> <span class="ot">);</span></code></pre></div>
+<p>These enable error logging (the error log lives in the content directory, up one level from the plugin directory).</p>
+<p>If you’re working on Jetpack, you’ll also need this line (otherwise nothing works):</p>
+<div class="sourceCode"><pre class="sourceCode php"><code class="sourceCode php"><span class="fu">define</span><span class="ot">(</span> <span class="st">'JETPACK_DEV_DEBUG'</span><span class="ot">,</span> <span class="kw">true</span> <span class="ot">);</span></code></pre></div>
+<h2 id="style">Style</h2>
+<p>WordPress is huuuuge. To help contain the chaos there is an official <a href="https://codex.wordpress.org/WordPress_Coding_Standards">style guide</a>. And so we don’t have to remember all the standards there is a nice tool, <code>phpcs</code>, that can automatically check your PHP code for bad style. To use it:</p>
+<ol style="list-style-type: decimal">
+<li>Install <a href="https://github.com/squizlabs/PHP_CodeSniffer">PHP CodeSniffer</a> on your local machine.</li>
+<li>Install the official <a href="https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards">WordPress codesniffer rules</a>.</li>
+<li>To sniff the file <code>foo.php</code>, navigate to it in the terminal on your local machine and run <code>phpcs --standard=WordPress foo.php</code></li>
+</ol>
+<p>Supposedly this can integrate with IDEs, but I don’t know anything about that.</p>
+<h2 id="databases">Databases</h2>
+<p>There’s this great tool, MySQL Workbench, that we can install to the local machine and use to browse the database of our WordPress installation in Chassis. The <a href="https://github.com/Chassis/Chassis/wiki/Connecting-to-MySQL">documentation</a> is pretty straightforward. This is <strong>really useful</strong> if your plugin messes with the database – you can run queries, see the results, delete tables, and probably more stuff too.</p>
+<h2 id="unit-testing">Unit Testing</h2>
+<p>I never did figure out how to run the entire WordPress unit test suite myself; there was some kind of naming conflict that was beyond my ability to fix. (That may have been fixed by the time you, dear reader, try this.) But I did figure out how to run individual test files, which was good enough.</p>
+<p>I ran the unit tests from inside a VVV virtual machine. The tool that runs the tests is called <code>phpunit</code>, and is very picky about where you ask it to do things. For example, I was working with the <a href="https://jetpack.com/">Jetpack</a> plugin, and wanted to run unit tests for it. To do this, I first installed Jetpack to <code>wordpress-develop</code> (this is important). Then I navigated to</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">vagrant@vvv</span>:/vagrant/www/wordpress-develop/src/wp-content/plugins/jetpack</code></pre></div>
+<p><em>in the virtual machine</em> and said</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">phpunit</span> tests/php/<span class="ot">$PATH_TO_TEST_MODULE</span></code></pre></div>
+<p>to actually run the tests.</p>
+<p>The easiest way to write new unit tests is to copy and edit an existing test. Check out the standard list of <a href="https://phpunit.de/manual/current/en/appendixes.assertions.html">PHPUnit assertion types</a>.</p>
+<h2 id="email">Email</h2>
+<p>If your plugin needs to send email, you can test this without actually sending mail by using mailcatcher (comes with VVV) or <a href="https://github.com/Chassis/MailHog">MailHog</a> (Chassis extension).</p>
+<h2 id="wordpress-from-the-command-line">WordPress from the Command Line</h2>
+<p>This is less immediately useful, but still handy: you can interact with a WP install from the command line with <a href="http://wp-cli.org/">wp-cli</a>. This comes with VVV. To use it, first SSH to the virtual machine and then invoke <code>wp</code> from within <code>/srv/www/wordpress-default</code> (or whatever install you’re using).</p>
+<p>Most interactions with the WP interface can be scripted with <code>wp-cli</code>.</p>
+<h2 id="generating-a-fake-blog">Generating a Fake Blog</h2>
+<p>Depending on what kind of plugin you’re building, you may need to have a blog that’s actually populated with posts and comments. One easy way to generate a dummy blog is with the <a href="https://wordpress.org/plugins/fakerpress/">FakerPress</a> plugin. This can be installed and used from within WP; it’s pretty straightforward. But FakerPress was also super slow on my machine.</p>
+<p>Another option for getting dummy blog data is to generate a <a href="https://devtidbits.com/2011/03/16/the-wordpress-extended-rss-wxr-exportimport-xml-document-format-decoded-and-explained/">WXR</a> file and import it, either through the WP interface or on the command line with <code>wp-cli</code>. I was able to do this successfully (I even made a <a href="https://github.com/nbloomf/prattle">little tool</a> for generating WXR archives) but it is less straightforward because as far as I can tell the only documentation for the WXR format is “whatever WordPress exports”.</p>
+<h2 id="measuring-performance">Measuring Performance</h2>
+<p>There’s a few ways to measure WordPress’ performance.</p>
+<ol style="list-style-type: decimal">
+<li>VVV comes with <a href="https://github.com/Varying-Vagrant-Vagrants/VVV/wiki/Code-Debugging">several tools</a>. xDebug and Cachegrind are nice; with these enabled you can append <code>?XDEBUG_PROFILE</code> to any query to get a nice profile log with webgrind.</li>
+<li>The <a href="https://wordpress.org/plugins/query-monitor/">Query Monitor</a> plugin is nice for measuring database performance.</li>
+<li><p>As a last resort you can measure the end-to-end performance of a site using <code>curl</code>. For example, here’s a pipeline that gets the average time-to-first-byte of 200 requests to <code>$URL</code>. (When editing locally this time is dominated by the site itself.)</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">for</span> <span class="kw">i</span> in <span class="dt">{1..200}</span><span class="kw">;</span> <span class="kw">do</span> <span class="kw">\</span>
+  <span class="kw">curl</span> -s -w <span class="st">&quot;%{time_starttransfer}\n&quot;</span> -o /dev/null <span class="ot">$URL</span><span class="kw">;</span> <span class="kw">\</span>
+<span class="kw">done</span> <span class="kw">\</span>
+  <span class="kw">|</span> <span class="kw">awk</span> <span class="st">'{ sum += $1; n++ } END { if (n &gt; 0) print &quot;average of &quot; n &quot; requests: &quot; sum / n; }'</span></code></pre></div></li>
+</ol>
+<h2 id="the-end">The End</h2>
+<p>That’s about it! For more specific info use google and check with project-specific docs. But hopefully this post can help you know what words to start searching for. :)</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
