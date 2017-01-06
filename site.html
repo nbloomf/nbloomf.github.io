@@ -28,76 +28,138 @@
 <div id="content">
 <h1>site.lhs</h1>
 <!-- BEGIN BODY -->
-<p>It is traditional for sites built with Hakyll to provide the code used to generate them. I borrowed heavily from Hakyll’s default example and from other sites to cobble this together; maybe someone else will find it useful.</p>
+<p>It is traditional for sites built with Hakyll to provide the code used to generate them: here is mine. I borrowed heavily from Hakyll’s default example and from other sites to cobble this together; maybe someone else will find it useful.</p>
+<p>This post is literate Haskell; code lines start with a <code>&gt;</code>, and all other lines (even lines that look like code!) are comments.</p>
+<p>This file is not static and was not written all at once. Over time new bits get added and old bits get changed as my needs evolve.</p>
 <p><strong>Frontmatter</strong></p>
-<p>As usual we begin with some pragmas and imports. The OverloadedStrings pragma allows us to define globs as ordinary strings.</p>
+<p>As usual we begin with some pragmas and imports, to be used later. The <code>OverloadedStrings</code> pragma allows us to define globs and filenames as ordinary strings; otherwise we’d be saying <code>fromGlob</code> everywhere.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mappend)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll</span>
-<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span> (insert)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mconcat)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Set</span> (insert)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Regex</span> (subRegex, mkRegex)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Pandoc.Options</span> 
 <span class="ot">&gt;</span>   ( <span class="dt">Extension</span>(<span class="dt">Ext_tex_math_dollars</span>
 <span class="ot">&gt;</span>     , <span class="dt">Ext_tex_math_double_backslash</span>
-<span class="ot">&gt;</span>     , <span class="dt">Ext_latex_macros</span>)
+<span class="ot">&gt;</span>     , <span class="dt">Ext_latex_macros</span>
+<span class="ot">&gt;</span>     )
 <span class="ot">&gt;</span>   , writerExtensions
 <span class="ot">&gt;</span>   , writerHTMLMathMethod
-<span class="ot">&gt;</span>   , <span class="dt">HTMLMathMethod</span>(<span class="dt">MathJax</span>) )</code></pre></div>
+<span class="ot">&gt;</span>   , <span class="dt">HTMLMathMethod</span>(<span class="dt">MathJax</span>)
+<span class="ot">&gt;</span>   )</code></pre></div>
 <p><strong>The Main Function</strong></p>
+<p>Hakyll is a declarative DSL for building static websites. A typical Hakyll program is of the following form:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> hakyll rules
+
+<span class="ot">rules ::</span> <span class="dt">Rules</span> ()
+rules <span class="fu">=</span> undefined</code></pre></div>
+<p>where <code>Rules</code> is a special monad for turning source files into web pages. Come to think of it, Hakyll feels a lot like <code>make</code>. The Hakyll docs typically define an element of <code>Rules</code> using one giant <code>do</code> block, maybe with smaller <code>do</code> blocks nested in it. I’m not a big fan of this style. Personally I prefer smaller functions with good names and explicit type signatures, so instead I will break up the rules into separate functions. Here’s my <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   match <span class="st">&quot;site.lhs&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span>   matchRawFiles
+<span class="ot">&gt;</span>   matchCssFiles
+<span class="ot">&gt;</span>   matchLoneFiles
+<span class="ot">&gt;</span>   matchClasses
+<span class="ot">&gt;</span>   matchProjectPages
+<span class="ot">&gt;</span>   matchTemplates
+<span class="ot">&gt;</span>   createBlogArchive
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;LICENSE&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   idRoute
-<span class="ot">&gt;</span>     compile copyFileCompiler
+<span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tag/*.html&quot;</span>)
+<span class="ot">&gt;</span>   matchPosts tags
+<span class="ot">&gt;</span>   createTagPages tags</code></pre></div>
+<p><strong>The Rules</strong></p>
+<p>The <code>matchRawFiles</code> rule handles files that should be copied verbatim, with no extra processing.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchRawFiles ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchRawFiles <span class="fu">=</span> match
+<span class="ot">&gt;</span>   (<span class="st">&quot;LICENSE&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;raw/**&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;images/**&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;pdf/**&quot;</span>) <span class="fu">$</span>
+<span class="ot">&gt;</span>   route idRoute <span class="fu">&gt;&gt;</span> compile copyFileCompiler</code></pre></div>
+<p>The <code>matchCssFiles</code> rule is almost identical to <code>matchRawFiles</code>; this time we use the Hakyll function <code>compressCssCompiler</code>, which minifies CSS. It looks like this compiler just removes extra whitespace and newlines.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchCssFiles ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchCssFiles <span class="fu">=</span> match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   route idRoute <span class="fu">&gt;&gt;</span> compile compressCssCompiler</code></pre></div>
+<p>The <code>matchLoneFiles</code> rule handles standalone pages, like <code>about</code> and <code>contact</code>. The easiest way to add a new page (not a post) is to add it to the list of names handled by <code>mathcLoneFiles</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchLoneFiles ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchLoneFiles <span class="fu">=</span> match names <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>   compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
+<span class="ot">&gt;</span>           <span class="st">&quot;templates/default.html&quot;</span> postCtx
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> relativizeUrls
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;raw/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   idRoute
-<span class="ot">&gt;</span>     compile copyFileCompiler
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;images/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   idRoute
-<span class="ot">&gt;</span>     compile copyFileCompiler
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;pdf/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   idRoute
-<span class="ot">&gt;</span>     compile copyFileCompiler
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   idRoute
-<span class="ot">&gt;</span>     compile compressCssCompiler
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match (fromList [<span class="st">&quot;about.md&quot;</span>, <span class="st">&quot;contact.md&quot;</span>, <span class="st">&quot;projects.md&quot;</span>]) <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route   <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;classes/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     names <span class="fu">=</span> fromList
+<span class="ot">&gt;</span>       [ <span class="st">&quot;site.lhs&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;index.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;about.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;contact.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;projects.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pages/sth/index.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pages/sth/formats.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pages/amd.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pages/alg-notes.md&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pages/geo-notes.md&quot;</span>
+<span class="ot">&gt;</span>       ]</code></pre></div>
+<p>The <code>matchPosts</code> rule is a little different from the others we’ve seen so far. It handles blog posts. But instead of listing out the source files by name, we capture them in a glob: <code>&quot;posts/*&quot;</code>. These work similarly to shell globs but (as usual) have their own quirks; see the <a href="https://jaspervdj.be/hakyll/reference/Hakyll-Core-Identifier-Pattern.html">documentation</a> for details.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchPosts ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchPosts tags <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;pages/geo-notes.md&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span> ctx <span class="fu">=</span> postWithTagsCtx tags
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyFilter youtubeFilter
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;pages/alg-notes.md&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
+<span class="ot">&gt;</span>             <span class="st">&quot;arithmetic-made-difficult&quot;</span> <span class="st">&quot;templates/amd.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
+<p>Here we used a custom compiler, <code>loadAndApplyTemplateIfTagged</code>, which loads a given template only if a post has a given tag. This is a cheap way to give some and only some posts a custom header or style.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> loadAndApplyTemplateIfTagged
+<span class="ot">&gt;   ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
+<span class="ot">&gt;</span> loadAndApplyTemplateIfTagged tag template context x <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   path <span class="ot">&lt;-</span> getUnderlying
+<span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> getTags path
+<span class="ot">&gt;</span>   <span class="kw">if</span> elem tag tags
+<span class="ot">&gt;</span>     <span class="kw">then</span> loadAndApplyTemplate template context x
+<span class="ot">&gt;</span>     <span class="kw">else</span> return x</code></pre></div>
+<p>We also apply a custom filter for converting “shortcodes” (borrowing a WordPress term) into <code>iframes</code>. This is shamelessly cribbed from <a href="http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">Jonas Hietala</a> (<a href="http://web.archive.org/web/20161005181904/http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">archive</a>). To use it, put <code>[youtube ZZZ]</code> on its own line, between two blank lines.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; youtubeFilter ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> youtubeFilter x <span class="fu">=</span> subRegex regex x result
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     regex <span class="fu">=</span> mkRegex
+<span class="ot">&gt;</span>       <span class="st">&quot;&lt;p&gt;\\[youtube ([A-Za-z0-9_-]+)\\]&lt;/p&gt;&quot;</span>
+<span class="ot">&gt;</span>     result <span class="fu">=</span> concat
+<span class="ot">&gt;</span>       [ <span class="st">&quot;&lt;div class=\&quot;video-wrapper\&quot;&gt;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;  &lt;div class=\&quot;video-container\&quot;&gt;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;    &lt;iframe&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;      src=\&quot;https://www.youtube.com/embed/\\1\&quot;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;      frameborder=\&quot;0\&quot;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;      allowfullscreen&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;    /&gt;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;  &lt;/div&gt;&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;&lt;/div&gt;&quot;</span>
+<span class="ot">&gt;</span>       ]
 <span class="ot">&gt;</span> 
+<span class="ot">&gt; applyFilter ::</span> (<span class="dt">Monad</span> m, <span class="dt">Functor</span> f) <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> f <span class="dt">String</span> <span class="ot">-&gt;</span> m (f <span class="dt">String</span>)
+<span class="ot">&gt;</span> applyFilter f str <span class="fu">=</span> return <span class="fu">$</span> (fmap <span class="fu">$</span> f) str</code></pre></div>
+<p>The <code>matchClasses</code> rule is similar to <code>matchPosts</code>; it handles the source files for my course pages.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchClasses ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchClasses <span class="fu">=</span> match <span class="st">&quot;classes/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>   compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
+<span class="ot">&gt;</span>           <span class="st">&quot;templates/default.html&quot;</span> postCtx
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
+<p>The <code>matchProjectPages</code> rule is also similar to <code>matchPosts</code>; these rules are separated so we can use custom templates.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchProjectPages ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> matchProjectPages <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   match <span class="st">&quot;pages/sth/tool/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
@@ -105,59 +167,72 @@
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/sth-tools.html&quot;</span> defaultContext
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span>   defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
+<p>The <code>matchTemplates</code> rule simply loads our HTML templates for use by Hakyll (I think).</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> matchTemplates <span class="fu">=</span> match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   compile templateCompiler</code></pre></div>
+<p>The <code>createBlogArchive</code> rule is different from the others as it generates a new file, rather than simply transforming an existing file.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; createBlogArchive ::</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> createBlogArchive <span class="fu">=</span> create [<span class="st">&quot;archive.html&quot;</span>] <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   route idRoute
+<span class="ot">&gt;</span>   compile <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll <span class="st">&quot;posts/*&quot;</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;pages/amd/sec/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/amd-sec.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span>     <span class="kw">let</span> archiveCtx <span class="fu">=</span> mconcat
+<span class="ot">&gt;</span>           [ listField <span class="st">&quot;posts&quot;</span> postCtx (return posts)
+<span class="ot">&gt;</span>           , constField <span class="st">&quot;title&quot;</span> <span class="st">&quot;Archives&quot;</span>
+<span class="ot">&gt;</span>           , defaultContext
+<span class="ot">&gt;</span>           ]
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match (fromList [ <span class="st">&quot;pages/sth/index.md&quot;</span>
-<span class="ot">&gt;</span>                   , <span class="st">&quot;pages/sth/formats.md&quot;</span>
-<span class="ot">&gt;</span>                   , <span class="st">&quot;pages/amd/index.md&quot;</span>
-<span class="ot">&gt;</span>                   ]) <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/post.html&quot;</span>    postCtx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> postCtx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   create [<span class="st">&quot;archive.html&quot;</span>] <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     makeItem <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/archive.html&quot;</span> archiveCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> archiveCtx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
+<p>The <code>createTagPages</code> rule generates a bunch of pages for each tag, and an index of all tags. Woo!</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; createTagPages ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Rules</span> ()
+<span class="ot">&gt;</span> createTagPages tags <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   tagsRules tags <span class="fu">$</span> \tag pattern <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span> title <span class="fu">=</span> <span class="st">&quot;Posts tagged \&quot;&quot;</span> <span class="fu">++</span> tag <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
 <span class="ot">&gt;</span>     route idRoute
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll <span class="st">&quot;posts/*&quot;</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span> archiveCtx <span class="fu">=</span>
-<span class="ot">&gt;</span>             listField <span class="st">&quot;posts&quot;</span> postCtx (return posts) <span class="ot">`mappend`</span>
-<span class="ot">&gt;</span>             constField <span class="st">&quot;title&quot;</span> <span class="st">&quot;Archives&quot;</span>            <span class="ot">`mappend`</span>
-<span class="ot">&gt;</span>             defaultContext
+<span class="ot">&gt;</span>       posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll pattern
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="kw">let</span> ctx <span class="fu">=</span> mconcat
+<span class="ot">&gt;</span>             [ constField <span class="st">&quot;title&quot;</span> title
+<span class="ot">&gt;</span>             , listField <span class="st">&quot;posts&quot;</span> postCtx (return posts)
+<span class="ot">&gt;</span>             , defaultContext
+<span class="ot">&gt;</span>             ]
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>       makeItem <span class="st">&quot;&quot;</span>
-<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/archive.html&quot;</span> archiveCtx
-<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> archiveCtx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/tag.html&quot;</span> ctx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> ctx
 <span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> relativizeUrls
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;index.md&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> defaultContext
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls
+<span class="ot">&gt;</span>   create [<span class="st">&quot;tags/index.html&quot;</span>] <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     route idRoute
+<span class="ot">&gt;</span>     compile <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   match <span class="st">&quot;templates/*&quot;</span> <span class="fu">$</span> compile templateCompiler</code></pre></div>
+<span class="ot">&gt;</span>       <span class="kw">let</span> ctx <span class="fu">=</span> mconcat
+<span class="ot">&gt;</span>             [ constField <span class="st">&quot;title&quot;</span> <span class="st">&quot;Tags&quot;</span> 
+<span class="ot">&gt;</span>             , defaultContext
+<span class="ot">&gt;</span>             ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       renderTagList tags
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> makeItem
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> ctx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
 <p><strong>Compilers</strong></p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; postCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> postCtx <span class="fu">=</span>
-<span class="ot">&gt;</span>   dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span> <span class="ot">`mappend`</span>
-<span class="ot">&gt;</span>   defaultContext
+<span class="ot">&gt;</span> postCtx <span class="fu">=</span> mconcat
+<span class="ot">&gt;</span>   [ dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span>
+<span class="ot">&gt;</span>   , defaultContext
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; postWithTagsCtx ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> postWithTagsCtx tags <span class="fu">=</span> mconcat
+<span class="ot">&gt;</span>   [ tagsField <span class="st">&quot;tags&quot;</span> tags
+<span class="ot">&gt;</span>   , postCtx
+<span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span> 
 <span class="ot">&gt; pandocMathCompiler ::</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
 <span class="ot">&gt;</span> pandocMathCompiler <span class="fu">=</span> pandocCompilerWith defaultHakyllReaderOptions opts
@@ -172,7 +247,7 @@
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     opts <span class="fu">=</span> defaultHakyllWriterOptions 
 <span class="ot">&gt;</span>       { writerExtensions <span class="fu">=</span>
-<span class="ot">&gt;</span>           foldr S.insert defaultExtensions mathExtensions
+<span class="ot">&gt;</span>           foldr insert defaultExtensions mathExtensions
 <span class="ot">&gt;</span>       , writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
 <span class="ot">&gt;</span>       }</code></pre></div>
 <!-- END BODY -->
