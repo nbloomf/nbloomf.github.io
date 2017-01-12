@@ -39,13 +39,10 @@
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mconcat)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Set</span> (insert)
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span> (fromList, union)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Regex</span> (subRegex, mkRegex)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Pandoc.Options</span> 
-<span class="ot">&gt;</span>   ( <span class="dt">Extension</span>(<span class="dt">Ext_tex_math_dollars</span>
-<span class="ot">&gt;</span>     , <span class="dt">Ext_tex_math_double_backslash</span>
-<span class="ot">&gt;</span>     , <span class="dt">Ext_latex_macros</span>
-<span class="ot">&gt;</span>     )
+<span class="ot">&gt;</span>   ( <span class="dt">Extension</span>(<span class="fu">..</span>)
 <span class="ot">&gt;</span>   , writerExtensions
 <span class="ot">&gt;</span>   , writerHTMLMathMethod
 <span class="ot">&gt;</span>   , <span class="dt">HTMLMathMethod</span>(<span class="dt">MathJax</span>)
@@ -259,19 +256,18 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span> 
 <span class="ot">&gt; pandocMathCompiler ::</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
-<span class="ot">&gt;</span> pandocMathCompiler <span class="fu">=</span> pandocCompilerWith defaultHakyllReaderOptions opts
+<span class="ot">&gt;</span> pandocMathCompiler <span class="fu">=</span> pandocCompilerWith defaultHakyllReaderOptions customWriterOptions
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     mathExtensions <span class="fu">=</span> 
-<span class="ot">&gt;</span>       [ <span class="dt">Ext_tex_math_dollars</span>
-<span class="ot">&gt;</span>       , <span class="dt">Ext_tex_math_double_backslash</span>
-<span class="ot">&gt;</span>       , <span class="dt">Ext_latex_macros</span>
-<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span>     customWriterOptions <span class="fu">=</span> defaultHakyllWriterOptions 
+<span class="ot">&gt;</span>       { writerExtensions <span class="fu">=</span> S.union
+<span class="ot">&gt;</span>           (writerExtensions defaultHakyllWriterOptions)
+<span class="ot">&gt;</span>           (S.fromList
+<span class="ot">&gt;</span>              [ <span class="dt">Ext_tex_math_dollars</span>
+<span class="ot">&gt;</span>              , <span class="dt">Ext_tex_math_double_backslash</span>
+<span class="ot">&gt;</span>              , <span class="dt">Ext_latex_macros</span>
+<span class="ot">&gt;</span>              , <span class="dt">Ext_grid_tables</span>
+<span class="ot">&gt;</span>              ])
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     defaultExtensions <span class="fu">=</span> writerExtensions defaultHakyllWriterOptions
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     opts <span class="fu">=</span> defaultHakyllWriterOptions 
-<span class="ot">&gt;</span>       { writerExtensions <span class="fu">=</span>
-<span class="ot">&gt;</span>           foldr insert defaultExtensions mathExtensions
 <span class="ot">&gt;</span>       , writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
 <span class="ot">&gt;</span>       }</code></pre></div>
 <!-- END BODY -->
