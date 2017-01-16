@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - site.lhs</title>
 <link rel="stylesheet" type="text/css" href="./css/default.css" />
-<link rel="icon" href="./icon/favicon.png" />
+<link rel="icon" href="./icon/favicon-32.png" />
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="./icon/favicon-57.png" />
 <link rel="apple-touch-icon-precomposed" sizes="114x114" href="./icon/favicon-114.png" />
 <link rel="apple-touch-icon-precomposed" sizes="152x152" href="./icon/favicon-152.png" />
@@ -76,23 +76,26 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <p><strong>The Rules</strong></p>
 <p>The <code>matchRawFiles</code> rule handles files that should be copied verbatim, with no extra processing.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchRawFiles ::</span> <span class="dt">Rules</span> ()
-<span class="ot">&gt;</span> matchRawFiles <span class="fu">=</span> match
-<span class="ot">&gt;</span>   (<span class="st">&quot;LICENSE&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;raw/**&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;images/**&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;pdf/**&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;icon/**.png&quot;</span> <span class="fu">.||.</span> <span class="st">&quot;favicon.ico&quot;</span>) <span class="fu">$</span>
-<span class="ot">&gt;</span>   route idRoute <span class="fu">&gt;&gt;</span> compile copyFileCompiler</code></pre></div>
+<span class="ot">&gt;</span> matchRawFiles <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     raw <span class="fu">=</span> anyPattern
+<span class="ot">&gt;</span>       [ <span class="st">&quot;LICENSE&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;raw/**&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;images/**&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;pdf/**&quot;</span>
+<span class="ot">&gt;</span>       , <span class="st">&quot;icon/*.png&quot;</span>
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     match raw <span class="fu">$</span>
+<span class="ot">&gt;</span>       route idRoute <span class="fu">&gt;&gt;</span> compile copyFileCompiler</code></pre></div>
 <p>The <code>matchCssFiles</code> rule is almost identical to <code>matchRawFiles</code>; this time we use the Hakyll function <code>compressCssCompiler</code>, which minifies CSS. It looks like this compiler just removes extra whitespace and newlines.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchCssFiles ::</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchCssFiles <span class="fu">=</span> match <span class="st">&quot;css/*&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   route idRoute <span class="fu">&gt;&gt;</span> compile compressCssCompiler</code></pre></div>
-<p>The <code>matchLoneFiles</code> rule handles standalone pages, like <code>about</code> and <code>contact</code>. The easiest way to add a new page (not a post) is to add it to the list of names handled by <code>mathcLoneFiles</code>.</p>
+<p>The <code>matchLoneFiles</code> rule handles standalone pages, like <code>about</code> and <code>contact</code>. The easiest way to add a new page (not a post) is to add it to the list of names handled by <code>matchLoneFiles</code>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchLoneFiles ::</span> <span class="dt">Rules</span> ()
-<span class="ot">&gt;</span> matchLoneFiles <span class="fu">=</span> match names <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
-<span class="ot">&gt;</span>   compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>           <span class="st">&quot;templates/default.html&quot;</span> postCtx
-<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> relativizeUrls
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> matchLoneFiles <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     names <span class="fu">=</span> fromList
 <span class="ot">&gt;</span>       [ <span class="st">&quot;site.lhs&quot;</span>
 <span class="ot">&gt;</span>       , <span class="st">&quot;index.md&quot;</span>
@@ -104,7 +107,14 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>       , <span class="st">&quot;pages/amd.md&quot;</span>
 <span class="ot">&gt;</span>       , <span class="st">&quot;pages/alg-notes.md&quot;</span>
 <span class="ot">&gt;</span>       , <span class="st">&quot;pages/geo-notes.md&quot;</span>
-<span class="ot">&gt;</span>       ]</code></pre></div>
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     match names <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
+<span class="ot">&gt;</span>       compile <span class="fu">$</span> pandocMathCompiler
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
+<span class="ot">&gt;</span>               <span class="st">&quot;templates/default.html&quot;</span> postCtx
+<span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
 <p>The <code>matchPosts</code> rule is a little different from the others we’ve seen so far. It handles blog posts. But instead of listing out the source files by name, we capture them in a glob: <code>&quot;posts/*&quot;</code>. These work similarly to shell globs but (as usual) have their own quirks; see the <a href="https://jaspervdj.be/hakyll/reference/Hakyll-Core-Identifier-Pattern.html">documentation</a> for details.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchPosts ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchPosts tags <span class="fu">=</span> <span class="kw">do</span>
@@ -274,6 +284,9 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>       , writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
 <span class="ot">&gt;</span>       }</code></pre></div>
+<p><strong>Helpers</strong></p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; anyPattern ::</span> [<span class="dt">Pattern</span>] <span class="ot">-&gt;</span> <span class="dt">Pattern</span>
+<span class="ot">&gt;</span> anyPattern <span class="fu">=</span> foldl1 (<span class="fu">.||.</span>)</code></pre></div>
 <!-- END BODY -->
 </div>
 
