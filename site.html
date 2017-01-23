@@ -42,6 +42,7 @@
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll.Shortcode</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mconcat)
 <span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span> (fromList, union)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Regex</span> (subRegex, mkRegex)
@@ -124,7 +125,7 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>     <span class="kw">let</span> ctx <span class="fu">=</span> postWithTagsCtx tags
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyFilter youtubeFilter
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyFilter expandAllShortcodes
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
@@ -141,32 +142,15 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>   <span class="kw">if</span> elem tag tags
 <span class="ot">&gt;</span>     <span class="kw">then</span> loadAndApplyTemplate template context x
 <span class="ot">&gt;</span>     <span class="kw">else</span> return x</code></pre></div>
-<p>We also apply a custom filter for converting “shortcodes” (borrowing a WordPress term) into <code>iframes</code>. This is shamelessly cribbed from <a href="http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">Jonas Hietala</a> (<a href="http://web.archive.org/web/20161005181904/http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">archive</a>). To use it, put <code>[youtube ZZZ]</code> on its own line, between two blank lines.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; youtubeFilter ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> youtubeFilter x <span class="fu">=</span> subRegex regex x result
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     regex <span class="fu">=</span> mkRegex
-<span class="ot">&gt;</span>       <span class="st">&quot;&lt;p&gt;\\[youtube ([A-Za-z0-9_-]+)\\]&lt;/p&gt;&quot;</span>
-<span class="ot">&gt;</span>     result <span class="fu">=</span> concat
-<span class="ot">&gt;</span>       [ <span class="st">&quot;&lt;div class=\&quot;video-wrapper\&quot;&gt;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;  &lt;div class=\&quot;video-container\&quot;&gt;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;    &lt;iframe&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;      src=\&quot;https://www.youtube.com/embed/\\1?rel=0\&quot;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;      frameborder=\&quot;0\&quot;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;      allowfullscreen&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;    /&gt;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;  &lt;/div&gt;&quot;</span>
-<span class="ot">&gt;</span>       , <span class="st">&quot;&lt;/div&gt;&quot;</span>
-<span class="ot">&gt;</span>       ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; applyFilter ::</span> (<span class="dt">Monad</span> m, <span class="dt">Functor</span> f) <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> f <span class="dt">String</span> <span class="ot">-&gt;</span> m (f <span class="dt">String</span>)
+<p>We also apply a custom filter for converting “shortcodes” (borrowing a WordPress term) into <code>iframes</code>. This is inspired by code shamelessly cribbed from <a href="http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">Jonas Hietala</a> (<a href="http://web.archive.org/web/20161005181904/http://www.jonashietala.se/blog/2014/09/01/embedding_youtube_videos_with_hakyll/">archive</a>), but the guts are in a separate library, <a href="https://github.com/nbloomf/hakyll-shortcode"><code>hakyll-shortcode</code></a>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; applyFilter ::</span> (<span class="dt">Monad</span> m, <span class="dt">Functor</span> f) <span class="ot">=&gt;</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> f <span class="dt">String</span> <span class="ot">-&gt;</span> m (f <span class="dt">String</span>)
 <span class="ot">&gt;</span> applyFilter f str <span class="fu">=</span> return <span class="fu">$</span> (fmap <span class="fu">$</span> f) str</code></pre></div>
 <p>The <code>matchClasses</code> rule is similar to <code>matchPosts</code>; it handles the source files for my course pages.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchClasses ::</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchClasses <span class="fu">=</span> match <span class="st">&quot;classes/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
 <span class="ot">&gt;</span>   compile <span class="fu">$</span> pandocMathCompiler
-<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> applyFilter youtubeFilter
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> applyFilter expandAllShortcodes
 <span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>           <span class="st">&quot;templates/default.html&quot;</span> postCtx
 <span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>

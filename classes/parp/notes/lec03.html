@@ -33,11 +33,84 @@
 <h1>Notes on Lecture 3</h1>
 <!-- BEGIN BODY -->
 <p>(<a href="../../../classes/parp/index.html">Go back to the course page</a>)</p>
-<div class="video-wrapper">  <div class="video-container">    <iframe src="https://www.youtube.com/embed/yJ9-Y-T5V7Y?rel=0" frameborder="0" allowfullscreen></iframe>  </div></div>
+<div class="video-container"><iframe type="text/html" frameborder="0" src="https://www.youtube.com/embed/yJ9-Y-T5V7Y?rel=0"></iframe></div>
 <h2 id="links">Links</h2>
 <ul>
 <li><a href="https://people.eecs.berkeley.edu/~demmel/cs267_Spr16/Lectures/lecture03_machines_jwd16_4pp.pdf">Slides</a> (<a href="http://web.archive.org/save/_embed/https://people.eecs.berkeley.edu/~demmel/cs267_Spr16/Lectures/lecture03_machines_jwd16_4pp.pdf">archive</a>)</li>
 </ul>
+<h2 id="matrix-multiplication-revisited">Matrix Multiplication (revisited)</h2>
+<p>A standard: <a href="http://www.netlib.org/blas/">BLAS</a> (Basic Linear Algebra Subprograms). Machine-independent API for linear algebra.</p>
+<p>Why?</p>
+<ul>
+<li>Correctness – floating point is complicated, so BLAS hides details.</li>
+<li>Efficiency – take advantage of vectorizable operations.</li>
+</ul>
+<p>The schoolbook algorithm for matrix multiplication takes <span class="math inline">\(O(n^3)\)</span> arithmetic operations, but there are asymptotically better algorithms.</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Strassen_algorithm">Strassen’s algorithm</a> uses <span class="math inline">\(O(n^{2.8074})\)</span> and is useful in practice (though banned by Top500!)</li>
+<li>The <a href="https://en.wikipedia.org/wiki/Coppersmith%E2%80%93Winograd_algorithm">Coppersmith-Winograd algorithm</a> uses <span class="math inline">\(O(n^{2.375})\)</span>, but constants make it impractical on practically-sized matrices.</li>
+<li><a href="https://arxiv.org/abs/math/0511460">Group-theoretic algorithms for matrix multiplication</a> by Cohn, Kleinsberg, Szegedy, Umans (2003); gives a <span class="math inline">\(O(n^{2.41})\)</span> points the way to an <span class="math inline">\(O(n^2)\)</span> algorithm, but some hard algebra is required.</li>
+</ul>
+<p>For recursive matrix multiplication algorithms, the layout of data in memory becomes vitally important. Example: Morton’s <a href="https://en.wikipedia.org/wiki/Z-order_curve">Z-order</a>. A bijective map <span class="math inline">\(\mathbb{N} \leftrightarrow \mathbb{N} \times \mathbb{N}\)</span> which is good at preserving locality.</p>
+<h2 id="autotuning">Autotuning</h2>
+<p>Our algorithm may have some tunable parameters which will affect efficiency. (Example: <a href="https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm">Cooley-Tukey FFT</a>.) But modern compilers also expose lots of options (<a href="https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options">here</a> is the list for GCC) for optimization, but this “optimalness” is not monotone.</p>
+<p><strong>Important question</strong>: Which combination of parameters and options results in the fastest program?</p>
+<p>Autotuning answers this question by testing combinations automatically. The results will likely be machine-specific and program-specific.</p>
+<p>We can help the compiler:</p>
+<ul>
+<li>Loop unrolling</li>
+<li>Use intermediate variables</li>
+<li>The <code>register</code> keyword</li>
+</ul>
+<p>The more guarantees the compiler has about our program, the more aggressive it can be when optimizing. One area of research: strengthening the type system.</p>
+<h2 id="models">Models</h2>
+<p>Ideally, we could write our programs however we want and the compiler will optimize them for our machine. In practice, we have to know something about the machine. There are 6 basic models, each of which has some standard libraries for common parallel patterns.</p>
+<p>Models are tightly coupled to languages and libraries.</p>
+<ul>
+<li><strong>Shared memory</strong>: Processors share physical memory. Does not scale well past ~32 processors.</li>
+<li><strong>Shared address space</strong>: Processors share <em>logical</em> memory space, which is physically distributed, so that access time is nonuniform. E.g. memory addresses 0–15 are local to processor 0, 16–31 are local to processor 1, etc.</li>
+<li><strong>Message passing</strong>: (MPI) Data must be shared by explicitly sending messages between processors. Tedious, but scales well.</li>
+<li><strong>Data parallel</strong>: Vector operations; e.g. “Add this <span class="math inline">\(n\)</span>-vector to this other <span class="math inline">\(n\)</span>-vector” is <span class="math inline">\(O(1)\)</span>. GPUs do this.</li>
+<li><strong>Clusters</strong>:</li>
+<li><strong>Grid</strong>: A heterogeneous network of machines, each of which has its own internal architecture (SMPs, GPUs), maybe communicating over a very slow network. Good for <a href="https://en.wikipedia.org/wiki/Embarrassingly_parallel">embarrassingly parallel</a> problems. Examples: <a href="https://folding.stanford.edu/">Folding@Home</a>, <a href="http://www.mersenne.org/">GIMPS</a></li>
+</ul>
+<h2 id="aside-mortons-z-order">Aside: Morton’s Z-order</h2>
+<p>Morton’s Z order maps a natural number <span class="math inline">\(k\)</span> to a pair of natural numbers <span class="math inline">\((u,v)\)</span> using the base 4 expansion of <span class="math inline">\(k\)</span> and the base 2 expansions of <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>. (Naturally generalizes to higher dimensional arrays.)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Base b digits of a positive integer</span>
+<span class="co">-- (least significant first)</span>
+<span class="ot">base ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+base b k
+  <span class="fu">|</span> b <span class="fu">&lt;=</span> <span class="dv">1</span> <span class="fu">=</span> []
+  <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="fu">=</span> []
+  <span class="fu">|</span> otherwise <span class="fu">=</span> (rem k b) <span class="fu">:</span> base b (quot k b)
+
+
+<span class="ot">mapIndexToEntry ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
+mapIndexToEntry k <span class="fu">=</span> foldr (<span class="fu">.+</span>) (<span class="dv">0</span>,<span class="dv">0</span>) <span class="fu">$</span> map eps <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> base <span class="dv">4</span> k
+  <span class="kw">where</span>
+    <span class="co">-- Pointwise sum</span>
+    (a1,a2) <span class="fu">.+</span> (b1,b2) <span class="fu">=</span> (a1<span class="fu">+</span>b1, a2<span class="fu">+</span>b2)
+
+    <span class="co">-- Offset vector</span>
+    eps (t,<span class="dv">0</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">0</span>)
+    eps (t,<span class="dv">1</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">0</span>)
+    eps (t,<span class="dv">2</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">2</span><span class="fu">^</span>t)
+    eps (t,<span class="dv">3</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">2</span><span class="fu">^</span>t)
+
+
+<span class="ot">mapEntryToIndex ::</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>) <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+mapEntryToIndex (u,v) <span class="fu">=</span> sum <span class="fu">$</span> map del <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> pad (base <span class="dv">2</span> u) (base <span class="dv">2</span> v)
+  <span class="kw">where</span>
+    <span class="co">-- Like zip, but shorter list is padded with zero.</span>
+    pad []     ys     <span class="fu">=</span> map (\y <span class="ot">-&gt;</span> (<span class="dv">0</span>,y)) ys
+    pad xs     []     <span class="fu">=</span> map (\x <span class="ot">-&gt;</span> (x,<span class="dv">0</span>)) xs
+    pad (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> (x,y) <span class="fu">:</span> pad xs ys
+
+    <span class="co">-- Offset index</span>
+    del (t,(<span class="dv">0</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">0</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
+    del (t,(<span class="dv">1</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
+    del (t,(<span class="dv">0</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
+    del (t,(<span class="dv">1</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">3</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</code></pre></div>
 <!-- END BODY -->
 </div>
 
