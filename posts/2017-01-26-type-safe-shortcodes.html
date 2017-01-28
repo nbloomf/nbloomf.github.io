@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Type-safe shortcodes</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Type-safe shortcodes</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2017-01-26 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/haskell.html">haskell</a></div>
+
+
+<p>This is a story about how two different things I’ve been thinking about recently came together.</p>
+<p>So lots of online services expose an embed API, right? These are special URLs that users can stick in an <code>iframe</code> to embed cat videos, say, into web pages. This is a handy way to <a href="https://en.wikipedia.org/wiki/Transclusion">transclude</a> dynamic content in an otherwise static webpage. That is a nice thing about embed APIs.</p>
+<p>One downside of embed APIs is that they can be cumbersome to use by hand; we have to remember the correct <code>iframe</code> attributes to set, and each embed API has its own fiddly knobs that can be tweaked, and all that has to be encoded in the embed URL in a way that’s unique to each service. To get an idea for how this works, check out the <a href="https://developers.google.com/youtube/player_parameters">YouTube embed API</a>. Constructing a proper <code>iframe</code> isn’t rocket science, but it’s fiddly, and anything that’s too fiddly won’t get used as much as it could. This is a less nice thing about embed APIs.</p>
+<p>WordPress has a nice feature for blog authors called <em>shortcodes</em>. WP shortcodes can do lots of things, but one of their main purposes is to make it easier to use embed APIs. It works like this: say I want to embed a YouTube video. We just take the URL and format it like so in our blog post:</p>
+<pre><code>[youtube https://www.youtube.com/watch?v=dQw4w9WgXcQ]</code></pre>
+<p>and WordPress will automagically reformat the URL as a proper <code>iframe</code>; it even interprets the fiddly knobs in the URL for us. Very cool!</p>
+<p>In my classes I sometimes use a tool called <a href="https://www.geogebra.org/">GeoGebra</a> for demonstrations; it’s open source point-and-click software for making and interacting with straightedge and compass constructions. GeoGebra has a web service for distributing and using demos. And it provides a nice embed API! Meaning that you can embed GeoGebra widgets in web pages if you want.</p>
+<p>Well, I do want. Every GeoGebra widget has a unique ID code that is used to construct its embed URL. So I tried to implement a shortcode for WordPress so that users could type something like</p>
+<pre><code>[geogebra id=&quot;FOO&quot;]</code></pre>
+<p>and have this automagically turned into the correct <code>iframe</code>. Unfortunately, this didn’t work out so well! It turns out that the shortcode handling code I wrote was badly vulnerable to <a href="https://en.wikipedia.org/wiki/Cross-site_scripting">XSS attacks</a>. Long story short, while the shortcode worked great when used as intended, things went pear-shaped if you tried to use it like this:</p>
+<pre><code>[geogebra id='&quot; onload=launch_the_missiles() unused=&quot;']</code></pre>
+<p>Roughly speaking, my code would have allowed anyone to post a <code>geogebra</code> shortcode in the comments of any WordPress blog and run <strong>arbitrary JavaScript</strong>. That’s game over, man. With arbitrary JavaScript you can emulate a frigging <a href="https://www.scullinsteel.com/apple2/">Apple II</a>. Malicious users can (and do) use XSS vulnerabilities less severe than this to their nefarious ends all the time.</p>
+<p>To be clear, at no time did my vulnerable code come close to running on a real server. Fortunately this was caught very quickly by the WordPress maintainers, before it had a chance to do any damage. And I re-learned a lesson I’ve learned a hundred times before on the web: <em>trust nothing and no one</em>. :)</p>
+<p>I was a little embarrassed to have missed what in hindsight should have been an obvious vulnerability. But I was also struck by how <em>easy</em> it was to write vulnerable code. The basic problem, I think, is that I made too many assumptions (the <code>id</code> parameter will be a valid <code>id</code> parameter) and tried to do the most obvious thing. But very often the most obvious thing is unsafe – you have to go out of your way to keep bad things from happening. And this is too bad, because when code is not doing the most obvious thing it’s much easier for buggy behaviour and broken edge cases to slip in.</p>
+<p>But does it have to be this way? It would be nice if it were so easy to write safer code, or at least harder to write vulnerable code. At any rate, I had a real job to get back to, so I put this problem aside.</p>
+<h2 id="meanwhile">Meanwhile…</h2>
+<p>In my day job as a teacher I have a new course this year that makes heavy use of YouTube videos. And rather than putting links to said videos on a web page, I decided I’d rather embed them.</p>
+<p>The only issue with this idea was that this site (and all my course pages) are served statically from GitHub Pages rather than with WordPress. This site exists as a bunch of markdown-formatted files on my computer (and on <a href="https://github.com/nbloomf/nbloomf.md">GitHub</a>) which gets “compiled” into proper HTML by a static site generator – in this case, <a href="https://jaspervdj.be/hakyll/">Hakyll</a>. And yadda yadda yadda, no shortcodes.</p>
+<p>So why use a static site? As much as I love WordPress (and I do – I have a reasonably trafficked WP blog floating around, which I tend not to emphasize my authorship of) I also like using the right tool for the job – and for this particular site, the simplicity and extra security of static files outweighed the benefits of a dynamic site.</p>
+<p>I chose Hakyll because it’s small and lightweight and I like to play with Haskell. The bad news about Hakyll is that it’s a niche player in a niche market – a static site generator written in Haskell. As a result, the Hakyll user community is very small; so while even users of more popular SSGs have libraries of extensions written by other people to play with (like shortcodes!), in Hakyll land if you want something beyond the bare bones (like shortcodes!) you probably have to do it yourself. To some people this is fun. :)</p>
+<p>At any rate, in the last couple of weeks, the following happened:</p>
+<ul>
+<li>I tried implementing a shortcode in PHP and fell into a very bad and very simple security trap.</li>
+<li>I found myself wanting to implement a shortcode extension for Hakyll.</li>
+</ul>
+<p>And believe it or not these two scenarios were independent of each other. :) Only when I sat down to hack on Hakyll did it occur to me to apply the lessons of the first event to the second.</p>
+<h2 id="type-safety">Type Safety</h2>
+<p>To give away the punchline, I started building a shortcode extension for Hakyll called <a href="https://github.com/nbloomf/hakyll-shortcode">hakyll-shortcode</a>. It doesn’t do too much yet – it only understands a couple of shortcodes. It needs a test suite and better documentation, and could use a refactor. But the goal is to make it <em>hard</em> to write shortcodes that are vulnerable to malicious input.</p>
+<p>And this is accomplished, in part, by using <strong>type safety</strong>.</p>
+<p>I like to think of types in programming languages as colors. Every chunk of data has a color, and every function expects to get input data of specific colors. Some languages use only one color or a handful of barely distinguishable colors, while other languages differentiate colors by wavelength down to the nanometer.</p>
+<p>Every language has a type model; some of them just don’t do anything useful.</p>
+<p>Just like a Phillips head screwdriver won’t fit a slotted screw and a North American electrical cord won’t plug into a European outlet, in a strictly typed programming language, trying to evaluate a function with inputs of the wrong color is an error. If your language is strictly typed enough, that error can be detected just by looking at the program’s source and without having to run it. And if your language is <em>really</em> strictly typed, the compiler or interpreter can figure this out without you having to tell it the types of things all the time.</p>
+<p>Haskell is <em>really</em> strictly typed.</p>
+<p>What does this have to do with shortcodes and XSS attacks?</p>
+<p>Let’s think for a moment about exactly how shortcodes work. Say we’ve written our blog post and included a shortcode like this:</p>
+<pre><code>[youtube id=&quot;blah&quot;]</code></pre>
+<p>Then to expand this shortcode we have to:</p>
+<ul>
+<li>Scan the text of the blog post looking for the shortcode string,</li>
+<li>Parse the shortcode string, and</li>
+<li>Replace the shortcode string with its <code>iframe</code> representation.</li>
+</ul>
+<p>But in a really strictly typed language this isn’t the whole story. In Haskell, for instance, the basic shape of the shortcode expansion procedure looks more like this:</p>
+<ul>
+<li>Scan the text of the blog post looking for the shortcode string,</li>
+<li>Parse the shortcode string <strong>into an object of type <code>t</code></strong>, and</li>
+<li>Replace the shortcode string with <strong>the <code>iframe</code> representation of a type <code>t</code> object</strong>.</li>
+</ul>
+<p>The magic is in that type <code>t</code>. Haskell is <strong>really picky</strong> about what kinds of things it considers <code>t</code>s. But what is it? Well, an extremely simple form of the YouTube “shortcode type” might look something like this.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
+  {<span class="ot"> yt_id ::</span> <span class="dt">String</span>
+  }</code></pre></div>
+<p>If you’re not familiar with Haskell, this is saying “a YouTubeEmbed object has a single property, <code>yt_id</code>, which itself has type <code>String</code>”. And this is flawed, because in the absence of any explicit sanitization checks that string could be</p>
+<pre><code>&quot; onload=launch_the_missiles() unused=&quot;</code></pre>
+<p>To prevent shenanigans, we need to restrict what characters can be in the ID of a YouTube embed. There’s apparently no public documentation for this, but it appears that these IDs consist exclusively of alphanumeric characters with occasional hyphens and underscores.</p>
+<p>So our shortcode type could just as easily look like this:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
+  {<span class="ot"> yt_id ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span>
+  }</code></pre></div>
+<p>where <code>AlphanumericWithHyphensAndUnderscores</code> is a not very creative name for the type of strings consisting only of alphanumeric characters, hyphens, and underscores. We can design the type so that we are barred from constructing values that do not satisfy that property. In this way, we can encode constraints on values in their types, and force our shortcode expander to only expand well typed shortcodes.</p>
+<p>And here’s the kicker – Haskell is <strong>so</strong> strongly typed that this is basically all we have to do to make sure that <code>yt_id</code> only holds safe strings, because all data is immutable. By exposing the right API to shortcode authors, they/I can define new shortcodes by writing “obvious” things like</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
+  {<span class="ot"> yt_id       ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span>
+  ,<span class="ot"> yt_height   ::</span> <span class="dt">DecimalDigits</span>
+  ,<span class="ot"> yt_width    ::</span> <span class="dt">DecimalDigits</span>
+  ,<span class="ot"> yt_autoplay ::</span> <span class="dt">YesOrNo</span>
+  <span class="co">-- ...and so on</span>
+  }</code></pre></div>
+<p>and the type checker will not allow invalid embed objects to exist. Those details can happen behind the API, invisible to the shortcode implementer – no explicit sanitization or validation required.</p>
+<p>This moves the game from “check that we never output unsafe data” to “check that unsafe data is invalid” or equivalently “check that valid data is safe”, which I claim (without proof) is easier.</p>
+<p>I do not claim that these shortcodes are invulnerable to all possible attacks; such claims are always false. But using the type system to force shortcode data to have very specific colors helps eliminate a large class of errors.</p>
+<h2 id="the-end">The End</h2>
+<p>The complete details are only a little more complicated; you can see the code on <a href="https://github.com/nbloomf/hakyll-shortcode">GitHub</a> (it’s a work in progress). By using GADTs, we can even provide an API so that the keys and allowed values of our shortcodes are described declaratively, sort of like the way the <code>GetOpt</code> library lets us declaratively define command line option parsers.</p>
+<p>But shortcode implementers do not have to explicitly sanitize anything – that is handled by the shortcode API and the type checker.</p>
+<div class="geogebra-container"><iframe src="https://www.geogebra.org/material/iframe/id/QUUEPmCs"></iframe></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
