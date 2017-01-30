@@ -38,6 +38,86 @@
 <ul>
 <li><a href="https://people.eecs.berkeley.edu/~demmel/cs267_Spr16/Lectures/lecture04_sources1_jwd16_4pp.pdf">Slides</a> (<a href="http://web.archive.org/save/_embed/https://people.eecs.berkeley.edu/~demmel/cs267_Spr16/Lectures/lecture04_sources1_jwd16_4pp.pdf">archive</a>)</li>
 </ul>
+<h2 id="machine-model-1a-shared-memory">Machine Model 1a: Shared Memory</h2>
+<ul>
+<li>Multiple procs with local cache and shared cache &amp; memory via a bus</li>
+<li>Scaling problems: cache coherence, memory bus.</li>
+<li>Nice for programming, bad for hardware</li>
+</ul>
+<h2 id="machine-model-1b-multithreaded-processor">Machine Model 1b: Multithreaded Processor</h2>
+<ul>
+<li>Shared cache &amp; memory</li>
+<li>Each proc switches threads (contexts) instead of idling</li>
+<li>Doesn’t solve coherence problems, but keeps CPUs busy</li>
+</ul>
+<h2 id="machine-model-1c-distributed-shared-memory">Machine Model 1c: Distributed Shared Memory</h2>
+<ul>
+<li>Local cache and physically distributed shared memory</li>
+<li>Still has coherence issues</li>
+<li>&lt;=512 procs is limit</li>
+</ul>
+<p>Shared memory is a nice programming model, so effort is put into mapping to other hardware models.</p>
+<h2 id="message-passing">Message Passing:</h2>
+<ul>
+<li>All procs are running the same program, take an ID number as a parameter</li>
+<li>All data is local; data shared via send/receive calls.</li>
+<li><a href="http://mpi-forum.org/">MPI</a>: The Standard</li>
+<li>Semantics of send/receive: telephone vs. post office (blocking vs. nonblocking)</li>
+<li>Proc with local cache &amp; memory, + NIC</li>
+</ul>
+<h2 id="machine-model-2b-internetgrid-computing">Machine Model 2b: Internet/Grid Computing</h2>
+<ul>
+<li>Like 2, but over an untrusted network</li>
+<li>Trust protocols important</li>
+<li>BOINC, <span class="citation">@Home</span></li>
+</ul>
+<h2 id="programming-model-2a-global-address-space">Programming Model 2a: Global Address Space</h2>
+<ul>
+<li>Illusion of shared memory</li>
+<li>Languages: UPC, Titanium, Co-Array Fortran</li>
+</ul>
+<h2 id="machine-model-2c-global-address-space">Machine Model 2c: Global Address Space</h2>
+<h2 id="programming-model-3-data-parallel">Programming Model 3: Data Parallel</h2>
+<ul>
+<li>SIMD</li>
+<li>CUDA, OpenCL</li>
+<li>No race conditions; parallelism is “atomic”</li>
+<li>GPUs</li>
+<li>Drawback: not all problems fit this model</li>
+</ul>
+<h2 id="machine-model-3a-simd">Machine Model 3a: SIMD</h2>
+<ul>
+<li>All procs carry out the same program</li>
+</ul>
+<h2 id="machine-model-3b-vector-machines">Machine Model 3b: Vector Machines</h2>
+<ul>
+<li>Expensive</li>
+</ul>
+<h2 id="machine-model-4-hybrid">Machine Model 4: Hybrid</h2>
+<ul>
+<li>Hierarchy or heterogeneous</li>
+</ul>
+<p>Goal for all: Divide work into parts that are * mostly independent (little synchronization) * about the same size (load balancing) * have good locality (little communication)</p>
+<h2 id="sources-of-parallelism-and-locality-in-simulations">Sources of Parallelism and Locality in Simulations</h2>
+<p>Basic kinds of simulations * <span class="math inline">\(\mathbb{N} \rightarrow \mathbb{N}\)</span> Discrete event systems: Life, manufacturing systems, finance, … * <span class="math inline">\(\mathbb{N} \rightarrow \mathbb{R}\)</span> Particle systems: billiard balls, galaxies, atoms, … * <span class="math inline">\(\mathbb{R} \rightarrow \mathbb{N}\)</span> Lumped variable depending on continuous parameters: ODEs, Differential algebraic equations, finite element models, … * <span class="math inline">\(\mathbb{R} \rightarrow \mathbb{R}\)</span> Continuous variables depending on continuous parameters: PDEs, heat, elasticity, finance (Black-Scholes) …</p>
+<p>A given phenomenon can be simulated at different levels. What are the primitives? What do we treat as a black box?</p>
+<h2 id="sharks-and-fish">Sharks and Fish</h2>
+<p>Discrete Event Simulations (both time and space are discrete)</p>
+<ul>
+<li>Decompose domain
+<ul>
+<li>Minimizing “surface to volume”. In general, graph partitioning.</li>
+</ul></li>
+<li>Run each component ahead, either
+<ul>
+<li>Synchronously (communicate at each time step)</li>
+<li>Asynchronously (communicate only on demand)
+<ul>
+<li>Conservatively: wait for input (need deadlock detection)</li>
+<li>Speculatively: assume no input (need to be able to roll back)</li>
+</ul></li>
+</ul></li>
+</ul>
 <!-- END BODY -->
 </div>
 
