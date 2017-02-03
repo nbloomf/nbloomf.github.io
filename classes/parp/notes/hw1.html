@@ -91,6 +91,34 @@ $<span class="kw">&gt;</span> <span class="kw">make</span></code></pre></div></l
 <p>Handy tip: you can configure the job scripts to send you an email when your job starts and finishes. To do this, add these lines to your build script. This is more useful if the machine is busy (so your job is queued for a while) or if your job will take a long time.</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#SBATCH --mail-user={your email}</span>
 <span class="co">#SBATCH --mail-type=all</span></code></pre></div>
+<h2 id="the-assignment">The Assignment</h2>
+<p>The file you turn in will be named <code>dgemm.c</code> and must include two functions with precise signatures. We will get started by copying one of the examples.</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$<span class="kw">&gt;</span> <span class="kw">cp</span> dgemm-blocked.c dgemm.c
+$<span class="kw">&gt;</span> <span class="kw">cp</span> job-blocked job</code></pre></div>
+<p>Now we need to edit the <code>Makefile</code> to compile our hand-tuned program. Change the lines</p>
+<pre><code>targets = benchmark-naive benchmark-blocked benchmark-blas
+objects = benchmark.o dgemm-naive.o dgemm-blocked.o dgemm-blas.o</code></pre>
+<p>to this:</p>
+<pre><code>targets = benchmark-naive benchmark-blocked benchmark-blas benchmark-hw1
+objects = benchmark.o dgemm-naive.o dgemm-blocked.o dgemm-blas.o dgemm.o</code></pre>
+<p>And add this:</p>
+<pre><code>benchmark-hw1 : benchmark.o dgemm.o
+        $(CC) -o $@ $^ $(LDLIBS)</code></pre>
+<p>to the end of the list of rules.</p>
+<p>You should now be able to compile your copied code; try it with <code>make</code>.</p>
+<p>Last but not least, we need to edit the job script to run our program <code>benchmark-hw1</code>. To do this, open <code>job</code> and change this:</p>
+<pre><code>#SBATCH -o MyBlockedOutputFile.%j.out
+#SBATCH -e MyBlockedErrorFile.%j.err
+
+./benchmark-blocked</code></pre>
+<p>to this:</p>
+<pre><code>#SBATCH -o HW1_OutputFile.%j.out
+#SBATCH -e HW1_ErrorFile.%j.err
+
+./benchmark-hw1</code></pre>
+<p>Test it out with</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">sbatch</span> job</code></pre></div>
+<p>If all this went well, you can now play with the source file <code>dgemm.c</code>. This is the file we will eventually submit for grading.</p>
 <!-- END BODY -->
 </div>
 
