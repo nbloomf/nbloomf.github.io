@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Relative references for Löb spreadsheets</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Relative references for Löb spreadsheets</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2017-02-28 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/haskell.html">haskell</a></div>
+
+
+<p>This post is literate Haskell; you can copy and paste the contents to a module or just download the <a href="https://github.com/nbloomf/nbloomf.md/posts/2017-02-28-relative-references-for-loeb-spreadsheets.lhs">source file</a> directly, load it in GHCi, and play with it on your own machine. As usual, we need to start with some pragmas and imports.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="ot">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<span class="fu">&gt;</span> <span class="ot">{-# LANGUAGE FunctionalDependencies #-}</span>
+<span class="fu">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="kw">module</span> <span class="dt">Sheet</span> <span class="kw">where</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span>
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span></code></pre></div>
+<p>Some years ago I read a <a href="http://blog.sigfpe.com/2006/11/from-l-theorem-to-spreadsheet.html">blog post</a> by Dan Piponi which includes the following statement:</p>
+<blockquote>
+So here’s a way to write code: pick a theorem, find the corresponding type, and find a function of that type.
+</blockquote>
+<p>Dan then takes a result known as <a href="https://en.wikipedia.org/wiki/L%C3%B6b's_theorem">Löb’s Theorem</a> in modal logic and shows how one “implementation” of this theorem acts like a spreadsheet evaluator. (!) At the time I remember thinking this was pretty neat, but the depth of this strategy for finding useful abstractions went over my head.</p>
+<p>More recently I was reading that post again and it occurred to me that with some tweaking, Dan’s <code>loeb</code> function could probably form the basis of a practical functional spreadsheet program. To recap, Löb’s theorem is the following modal logic statement: <span class="math display">\[\square(\square P \rightarrow P) \rightarrow \square P.\]</span></p>
+<p>One way to interpret that statement as a type is like this:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">loeb ::</span> (<span class="dt">Functor</span> f) <span class="ot">=&gt;</span> f (f x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> f x</code></pre></div>
+<p>and one possible definition for such a function is this:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">loeb x <span class="fu">=</span> fmap (\a <span class="ot">-&gt;</span> a (loeb x)) x</code></pre></div>
+<p>For example, <code>loeb</code> will take a list of functions that each take a list of integers and return an integer and then return a list of integers. This allows us to define lists that refer back to parts of themselves and evaluate them in a meaningful way – like a spreadsheet.</p>
+<p>One thing <code>loeb</code> <em>can’t</em> do is handle relative references. For example, we can have a cell that says “add 1 to the number at cell index 2”, but not one that says “add 1 to the number at the cell with index 5 less than mine”. Of course relative references are an important feature of real spreadsheets, so this is a problem.</p>
+<p>Kenny Foner addressed this by replacing the <code>Functor</code> constraint on <code>f</code> with <code>ComonadApply</code>, and wrapped this in a library called <a href="https://github.com/kwf/ComonadSheet">ComonadSheet</a>. The result is an infinite, lazy, <span class="math inline">\(n\)</span>-dimensional spreadsheet. Have a look – that library and its documentation have some interesting things to say.</p>
+<p>Today I’m interested in a different approach to relative references. The fundamental barrier to using relative references with <code>loeb</code> is that each cell needs to know something about it’s “address” within the spreadsheet. For example, in a list, each entry has a position of type <code>Int</code>; in a matrix, each entry has a position of type <code>(Int, Int)</code>, and so on. The important thing about this position is that (1) every entry has one and (2) they are all distinct. Normally I’d refer to a position like this as an <em>index</em>, but unfortunately the term “Indexed Functor” already means something. And wouldn’t you know it, the concept of a functor with index information already lives in the Lens library, where it goes by the name <a href="http://hackage.haskell.org/package/lens-4.15.1/docs/Control-Lens-Indexed.html#t:FunctorWithIndex">FunctorWithIndex</a>. To avoid pulling in too many dependencies I’ll roll my own simplified version of this class, called an <em>Addressable</em>. For convenience, I’ll make it depend on <code>Applicative</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- t is the &quot;container type&quot;</span>
+<span class="fu">&gt;</span> <span class="co">-- n is the &quot;address type&quot;</span>
+<span class="fu">&gt;</span> <span class="kw">class</span> (<span class="dt">Applicative</span> t) <span class="ot">=&gt;</span> <span class="dt">Addressable</span> t n <span class="fu">|</span> t <span class="ot">-&gt;</span> n <span class="kw">where</span>
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span>   <span class="co">-- extract the entry at a given address</span>
+<span class="fu">&gt;</span>   <span class="co">-- (not necessarily a total function)</span>
+<span class="fu">&gt;</span><span class="ot">   at ::</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>   <span class="co">-- replace each entry by its address</span>
+<span class="fu">&gt;</span><span class="ot">   addresses ::</span> t a <span class="ot">-&gt;</span> t n</code></pre></div>
+<p>And we need an address-aware version of <code>fmap</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- address-aware mapping</span>
+<span class="fu">&gt;</span><span class="ot"> amap ::</span> (<span class="dt">Applicative</span> t, <span class="dt">Addressable</span> t n)
+<span class="fu">&gt;</span>   <span class="ot">=&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b
+<span class="fu">&gt;</span> amap f xs <span class="fu">=</span> f <span class="fu">&lt;$&gt;</span> (addresses xs) <span class="fu">&lt;*&gt;</span> xs</code></pre></div>
+<p>For example, here’s an implementation for <a href="https://hackage.haskell.org/package/base-4.9.1.0/docs/Control-Applicative.html#t:ZipList"><code>ZipLists</code></a>. (We need to use <code>ZipList</code>s to get the right <code>Applicative</code> implementation.) Note that I prefer to think of lists as 1 indexed. :)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Addressable</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="kw">where</span>
+<span class="fu">&gt;</span>   (<span class="dt">ZipList</span> as) <span class="ot">`at`</span> n <span class="fu">=</span> as <span class="fu">!!</span> (n<span class="fu">-</span><span class="dv">1</span>)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>   addresses as <span class="fu">=</span> const <span class="fu">&lt;$&gt;</span> (<span class="dt">ZipList</span> [<span class="dv">1</span><span class="fu">..</span>]) <span class="fu">&lt;*&gt;</span> as
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- my copy of base doesn't have this (?)</span>
+<span class="fu">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">ZipList</span> a) <span class="kw">where</span>
+<span class="fu">&gt;</span>   show <span class="fu">=</span> show <span class="fu">.</span> getZipList</code></pre></div>
+<p>And finally, the <code>loeb</code> function with appropriate changes. I’ve renamed it to <code>eval</code>, because (1) that name is suggestive of what the function does and (2) the type isn’t Löb’s Theorem anymore! The <code>eval'</code> version is tweaked from Piponi’s <code>loeb</code>, and <code>eval</code> is cribbed from Foner’s fixpoint-based version of <code>loeb</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- slow</span>
+<span class="fu">&gt;</span><span class="ot"> eval' ::</span> (<span class="dt">Addressable</span> t n) <span class="ot">=&gt;</span> t (n <span class="ot">-&gt;</span> t x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> t x
+<span class="fu">&gt;</span> eval' x <span class="fu">=</span> amap (\i a <span class="ot">-&gt;</span> a i (eval' x)) x
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- fast</span>
+<span class="fu">&gt;</span><span class="ot"> eval ::</span> (<span class="dt">Addressable</span> t n) <span class="ot">=&gt;</span> t (n <span class="ot">-&gt;</span> t x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> t x
+<span class="fu">&gt;</span> eval x <span class="fu">=</span> fix <span class="fu">$</span> \y <span class="ot">-&gt;</span> amap (\i a <span class="ot">-&gt;</span> a i y) x
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> fix ::</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a
+<span class="fu">&gt;</span> fix f <span class="fu">=</span> <span class="kw">let</span> x <span class="fu">=</span> f x <span class="kw">in</span> x</code></pre></div>
+<p>The type of <code>eval</code> looks like the statement <span class="math display">\[\square(Q \rightarrow (\square P \rightarrow P)) \rightarrow \square P,\]</span> and I have no idea if that means anything in the context of modal logic (I doubt it!).</p>
+<p>Now to use <code>eval</code>, our “spreadsheet” will consist of functions that take both an address and a spreadsheet. This <code>Num</code> instance for functions will be handy:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> (x <span class="ot">-&gt;</span> a)
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Eq</span> (x <span class="ot">-&gt;</span> a)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="kw">instance</span> (<span class="dt">Num</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Num</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span>
+<span class="fu">&gt;</span>   fromInteger <span class="fu">=</span> const <span class="fu">.</span> fromInteger
+<span class="fu">&gt;</span>   f <span class="fu">+</span> g <span class="fu">=</span> \x <span class="ot">-&gt;</span> f x <span class="fu">+</span> g x
+<span class="fu">&gt;</span>   f <span class="fu">*</span> g <span class="fu">=</span> \x <span class="ot">-&gt;</span> f x <span class="fu">*</span> g x
+<span class="fu">&gt;</span>   negate <span class="fu">=</span> (negate <span class="fu">.</span>)
+<span class="fu">&gt;</span>   abs <span class="fu">=</span> (abs <span class="fu">.</span>)
+<span class="fu">&gt;</span>   signum <span class="fu">=</span> (signum <span class="fu">.</span>)</code></pre></div>
+<p>And a type synonym for convenience:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- t is the &quot;container&quot; type</span>
+<span class="fu">&gt;</span> <span class="co">-- n is the &quot;address&quot; type</span>
+<span class="fu">&gt;</span> <span class="co">-- x is the &quot;value&quot; type</span>
+<span class="fu">&gt;</span> <span class="kw">type</span> <span class="dt">Sheet</span> t n x <span class="fu">=</span> t (n <span class="ot">-&gt;</span> t x <span class="ot">-&gt;</span> x)</code></pre></div>
+<p>Now we can define boring spreadsheet-like lists like so:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test1 ::</span> <span class="dt">Sheet</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="dt">Int</span>
+<span class="fu">&gt;</span> test1 <span class="fu">=</span> <span class="dt">ZipList</span> [ <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">6</span> <span class="fu">+</span> <span class="dv">5</span> ]</code></pre></div>
+<p>Try evaluating this with <code>eval test1</code>. Woo!</p>
+<p>Note that the literal integers <code>1</code>, <code>3</code>, et cetera are not of type <code>Int</code>, but type <code>Int -&gt; [Int] -&gt; Int</code>, and that <code>+</code> operates not on <code>Int</code>s but on functions.</p>
+<p>Useful spreadsheets include cell references, both absolute (get the value in cell 2) and relative (get the value in the cell 3 slots to the right). We’ll introduce some helper functions to make this simpler.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> refAbs,<span class="ot"> refRel ::</span> (<span class="dt">Addressable</span> t n, <span class="dt">Monoid</span> n)
+<span class="fu">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t x <span class="ot">-&gt;</span> x
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> refAbs k _ xs <span class="fu">=</span> xs <span class="ot">`at`</span>            k
+<span class="fu">&gt;</span> refRel k i xs <span class="fu">=</span> xs <span class="ot">`at`</span> (mappend i k)</code></pre></div>
+<p>Making the “address” type an instance of monoid makes this code more polymorphic. An instance for <code>Int</code> will be handy:</p>
+<pre><code>
+&gt; instance Monoid Int where
+&gt;   mappend = (+)
+&gt;   mempty  = 0
+</code></pre>
+<p>Now we can write cells that refer to each other, both absolutely and relatively, like so. (Try these out with <code>eval</code> too.)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test2 ::</span> <span class="dt">Sheet</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="dt">Int</span>
+<span class="fu">&gt;</span> test2 <span class="fu">=</span> <span class="dt">ZipList</span>
+<span class="fu">&gt;</span>   [ <span class="dv">1</span>
+<span class="fu">&gt;</span>   , refAbs <span class="dv">1</span>
+<span class="fu">&gt;</span>   , refRel <span class="dv">1</span> <span class="fu">+</span> refRel (<span class="fu">-</span><span class="dv">2</span>)
+<span class="fu">&gt;</span>   , <span class="dv">5</span>
+<span class="fu">&gt;</span>   , const (length <span class="fu">.</span> getZipList)
+<span class="fu">&gt;</span>   ]</code></pre></div>
+<p>Here’s another: this “spreadsheet” constructs the <a href="https://en.wikipedia.org/wiki/Fibonacci_number">Fibonacci sequence</a>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test3 ::</span> <span class="dt">Sheet</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> test3 <span class="fu">=</span> <span class="dt">ZipList</span> <span class="fu">$</span> [<span class="dv">0</span>,<span class="dv">1</span>] <span class="fu">++</span>
+<span class="fu">&gt;</span>   repeat (refRel (<span class="fu">-</span><span class="dv">1</span>) <span class="fu">+</span> refRel (<span class="fu">-</span><span class="dv">2</span>))</code></pre></div>
+<h2 id="again-with-trees">Again, with Trees</h2>
+<p>Of course the whole point of polymorphism is that the same code can apply to different data. So let’s try again, this time with a binary tree shaped spreadsheet. First we roll a quick type:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="kw">data</span> <span class="dt">Tree</span> x
+<span class="fu">&gt;</span>   <span class="fu">=</span> <span class="dt">E</span>                     <span class="co">-- empty</span>
+<span class="fu">&gt;</span>   <span class="fu">|</span> <span class="dt">B</span> x (<span class="dt">Tree</span> x) (<span class="dt">Tree</span> x) <span class="co">-- branch</span>
+<span class="fu">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Tree</span> <span class="kw">where</span>
+<span class="fu">&gt;</span>   fmap _  <span class="dt">E</span>        <span class="fu">=</span> <span class="dt">E</span>
+<span class="fu">&gt;</span>   fmap f (<span class="dt">B</span> x l r) <span class="fu">=</span> <span class="dt">B</span> (f x) (fmap f l) (fmap f r)
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Tree</span> <span class="kw">where</span>
+<span class="fu">&gt;</span>   pure x <span class="fu">=</span> <span class="dt">B</span> x <span class="dt">E</span> <span class="dt">E</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>   (<span class="dt">B</span> f l1 r1) <span class="fu">&lt;*&gt;</span> (<span class="dt">B</span> x l2 r2) <span class="fu">=</span>
+<span class="fu">&gt;</span>     <span class="dt">B</span> (f x) (l1 <span class="fu">&lt;*&gt;</span> l2) (r1 <span class="fu">&lt;*&gt;</span> r2)</code></pre></div>
+<p>And a couple of utilities for working with trees:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- &quot;take&quot; for trees</span>
+<span class="fu">&gt;</span><span class="ot"> prune ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> x <span class="ot">-&gt;</span> <span class="dt">Tree</span> x
+<span class="fu">&gt;</span> prune k t
+<span class="fu">&gt;</span>   <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span>    <span class="fu">=</span> <span class="dt">E</span>
+<span class="fu">&gt;</span>   <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">case</span> t <span class="kw">of</span>
+<span class="fu">&gt;</span>       <span class="dt">E</span>       <span class="ot">-&gt;</span> <span class="dt">E</span>
+<span class="fu">&gt;</span>       <span class="dt">B</span> x a b <span class="ot">-&gt;</span> <span class="dt">B</span> x (prune (k<span class="fu">-</span><span class="dv">1</span>) a) (prune (k<span class="fu">-</span><span class="dv">1</span>) b)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- list elements using inorder traversal</span>
+<span class="fu">&gt;</span><span class="ot"> inord ::</span> <span class="dt">Tree</span> x <span class="ot">-&gt;</span> [x]
+<span class="fu">&gt;</span> inord  <span class="dt">E</span>        <span class="fu">=</span> []
+<span class="fu">&gt;</span> inord (<span class="dt">B</span> x a b) <span class="fu">=</span> (inord a) <span class="fu">++</span> [x] <span class="fu">++</span> (inord b)</code></pre></div>
+<p>Now how can we “address” the nodes in a binary tree? With lists a single integer sufficed, and making the integer signed allowed both absolute and relative references. There’s probably a clever way to encode the position of a tree node as an integer, but I’m feeling lazy – I’ll just say that from any node we can travel to the left branch, to the right branch, or up to the parent.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- L -&gt; go left, R -&gt; go right, U -&gt; go up</span>
+<span class="fu">&gt;</span> <span class="kw">data</span> <span class="dt">Dir</span> <span class="fu">=</span> <span class="dt">L</span> <span class="fu">|</span> <span class="dt">R</span> <span class="fu">|</span> <span class="dt">U</span> <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="kw">instance</span> <span class="dt">Addressable</span> <span class="dt">Tree</span> [<span class="dt">Dir</span>] <span class="kw">where</span>
+<span class="fu">&gt;</span>   at t ps <span class="fu">=</span> <span class="kw">let</span> qs <span class="fu">=</span> norm ps <span class="kw">in</span> at' t qs
+<span class="fu">&gt;</span>     <span class="kw">where</span>
+<span class="fu">&gt;</span>       at' (<span class="dt">B</span> x _ _) []     <span class="fu">=</span> x
+<span class="fu">&gt;</span>       at' (<span class="dt">B</span> _ l _) (<span class="dt">L</span><span class="fu">:</span>es) <span class="fu">=</span> at' l es
+<span class="fu">&gt;</span>       at' (<span class="dt">B</span> _ _ r) (<span class="dt">R</span><span class="fu">:</span>es) <span class="fu">=</span> at' r es
+<span class="fu">&gt;</span>       at' _ _ <span class="fu">=</span> undefined
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>       <span class="co">-- normalize a list of Dirs</span>
+<span class="fu">&gt;</span><span class="ot">       norm ::</span> [<span class="dt">Dir</span>] <span class="ot">-&gt;</span> [<span class="dt">Dir</span>]
+<span class="fu">&gt;</span>       norm []      <span class="fu">=</span> []
+<span class="fu">&gt;</span>       norm (<span class="dt">U</span><span class="fu">:</span>x)   <span class="fu">=</span> norm x
+<span class="fu">&gt;</span>       norm (<span class="dt">L</span><span class="fu">:</span><span class="dt">U</span><span class="fu">:</span>x) <span class="fu">=</span> norm x
+<span class="fu">&gt;</span>       norm (<span class="dt">R</span><span class="fu">:</span><span class="dt">U</span><span class="fu">:</span>x) <span class="fu">=</span> norm x
+<span class="fu">&gt;</span>       norm (d<span class="fu">:</span>x)   <span class="fu">=</span> d <span class="fu">:</span> norm x
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>   addresses x <span class="fu">=</span> f x []
+<span class="fu">&gt;</span>     <span class="kw">where</span>
+<span class="fu">&gt;</span>       f <span class="dt">E</span> _ <span class="fu">=</span> <span class="dt">E</span>
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>       f (<span class="dt">B</span> _ l r) ds
+<span class="fu">&gt;</span>         <span class="fu">=</span> <span class="dt">B</span> (reverse ds) (f l (<span class="dt">L</span><span class="fu">:</span>ds)) (f r (<span class="dt">R</span><span class="fu">:</span>ds))</code></pre></div>
+<p>Now <code>[Dir]</code> is a monoid for free, and we can do things like this:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test4 ::</span> <span class="dt">Sheet</span> <span class="dt">Tree</span> [<span class="dt">Dir</span>] <span class="dt">Int</span>
+<span class="fu">&gt;</span> test4 <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="dt">B</span> <span class="dv">10</span>
+<span class="fu">&gt;</span>    (<span class="dt">B</span> <span class="dv">2</span>
+<span class="fu">&gt;</span>      (<span class="dt">B</span> (<span class="dv">1</span> <span class="fu">+</span> refAbs []) <span class="dt">E</span> <span class="dt">E</span>)
+<span class="fu">&gt;</span>      (<span class="dt">B</span> (refRel [<span class="dt">U</span>,<span class="dt">L</span>] <span class="fu">+</span> refRel [<span class="dt">U</span>,<span class="dt">U</span>]) <span class="dt">E</span> <span class="dt">E</span>))
+<span class="fu">&gt;</span>    (<span class="dt">B</span> <span class="dv">7</span>
+<span class="fu">&gt;</span>      (<span class="dt">B</span> <span class="dv">4</span> <span class="dt">E</span> <span class="dt">E</span>)
+<span class="fu">&gt;</span>      (<span class="dt">B</span> <span class="dv">5</span> <span class="dt">E</span> <span class="dt">E</span>))</code></pre></div>
+<p>Working with tree shaped “spreadsheets” is a little less natural than lists or matrices, but I suspect that is because they are less familiar. Here’s another example:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> mediant ::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span> ((a,a),(a,a)) <span class="ot">-&gt;</span> (a,a)
+<span class="fu">&gt;</span> mediant ((x1,y1),(x2,y2)) <span class="fu">=</span> (x1<span class="fu">+</span>x2, y1<span class="fu">+</span>y2)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> test5 ::</span> <span class="dt">Sheet</span> <span class="dt">Tree</span> [<span class="dt">Dir</span>] ((<span class="dt">Int</span>, <span class="dt">Int</span>), (<span class="dt">Int</span>, <span class="dt">Int</span>))
+<span class="fu">&gt;</span> test5 <span class="fu">=</span> <span class="dt">B</span> (\_ _ <span class="ot">-&gt;</span> ((<span class="dv">0</span>,<span class="dv">1</span>),(<span class="dv">1</span>,<span class="dv">0</span>))) tL tR
+<span class="fu">&gt;</span>   <span class="kw">where</span>
+<span class="fu">&gt;</span>     tL <span class="fu">=</span> <span class="dt">B</span> (fL <span class="fu">$</span> refRel[<span class="dt">U</span>]) tL tR
+<span class="fu">&gt;</span>     tR <span class="fu">=</span> <span class="dt">B</span> (fR <span class="fu">$</span> refRel[<span class="dt">U</span>]) tL tR
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>     fL <span class="fu">=</span> \f h k <span class="ot">-&gt;</span> <span class="kw">let</span> (x,y) <span class="fu">=</span> f h k <span class="kw">in</span> (x, mediant (x,y))
+<span class="fu">&gt;</span>     fR <span class="fu">=</span> \f h k <span class="ot">-&gt;</span> <span class="kw">let</span> (x,y) <span class="fu">=</span> f h k <span class="kw">in</span> (mediant (x,y), y)</code></pre></div>
+<p>This one is awkward – there are likely to be several helper functions we could factor out here. But what does it do? Try this:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> prune <span class="dv">5</span> <span class="fu">$</span> eval test5
+<span class="fu">$&gt;</span> fmap mediant <span class="fu">$</span> prune <span class="dv">5</span> <span class="fu">$</span> eval test5
+<span class="fu">$&gt;</span> inord <span class="fu">$</span> fmap mediant <span class="fu">$</span> prune <span class="dv">5</span> <span class="fu">$</span> eval test5</code></pre></div>
+<p>This “spreadsheet” constructs the <a href="https://en.wikipedia.org/wiki/Stern%E2%80%93Brocot_tree">Stern-Brocot tree</a> of positive rational numbers. Woo!</p>
+<h2 id="one-step-further">One Step Further</h2>
+<p>If we have an applicative functor and it makes sense to assign the contents “addresses”, we have a kind of spreadsheet, and can use both absolute and relative references. Just out of curiosity, we can also have references that depend on a computed value like so.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> crefAbs,<span class="ot"> crefRel ::</span> (<span class="dt">Addressable</span> t n, <span class="dt">Monoid</span> n)
+<span class="fu">&gt;</span>   <span class="ot">=&gt;</span> (n <span class="ot">-&gt;</span> t n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t n <span class="ot">-&gt;</span> n
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> crefAbs f i xs <span class="fu">=</span> xs <span class="ot">`at`</span>            (f i xs)
+<span class="fu">&gt;</span> crefRel f i xs <span class="fu">=</span> xs <span class="ot">`at`</span> (mappend i (f i xs))</code></pre></div>
+<p>Note that <code>crefAbs</code> and <code>crefRel</code> look a lot like <code>refAbs</code> and <code>refRel</code>, except that they apply a context function. These act like the <code>Indirect</code> or <code>Index</code> functions in Excel – they let us compute a cell reference (absolute or relative) on the fly.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test6 ::</span> <span class="dt">Sheet</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="dt">Int</span>
+<span class="fu">&gt;</span> test6 <span class="fu">=</span> <span class="dt">ZipList</span>
+<span class="fu">&gt;</span>   [ <span class="dv">1</span>
+<span class="fu">&gt;</span>   , <span class="dv">1</span> <span class="fu">+</span> crefAbs (<span class="dv">2</span> <span class="fu">+</span> refRel (<span class="fu">-</span><span class="dv">1</span>))
+<span class="fu">&gt;</span>   , <span class="dv">5</span>
+<span class="fu">&gt;</span>   ]</code></pre></div>
+<p>I don’t quite have the motivation to turn this into an actual GUI-driven spreadsheet, so I’ll leave that part as an exercise. :)</p>
+<p>But I am curious – are there any other interesting applicative functors with addresses? Can oddly “shaped” spreadsheets do interesting things that array shaped ones can’t?</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
