@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Project Euler Solution #4: Largest Palindrome Product</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Project Euler Solution #4: Largest Palindrome Product</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+<strong>Spoiler alert!</strong> This page is part of a series on solutions to <a href="https://projecteuler.net/">Project Euler</a> problems. If you prefer to solve problems yourself, do not read on!
+</div>
+
+<div class="info">
+Posted on 2017-03-08 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/project-euler.html">project-euler</a></div>
+
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-03-07-project-euler-solution-4.lhs">the source</a> into GHCi and play along.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.Maybe</span></code></pre></div>
+<p><a href="https://projecteuler.net/problem=4">Problem 4</a> from Project Euler:</p>
+<div class="problem">
+<p>A palindromic number reads the same both ways. The largest palindrome made from the product of two 2-digit numbers is 9009 = 91 × 99.</p>
+<p>Find the largest palindrome made from the product of two 3-digit numbers.</p>
+</div>
+<p>“Palindromeness” is very different from most interesting properties of numbers; it is an artifact of one of many possible <em>representations</em> of the number. In this case, the representation in base 10.</p>
+<p>Let’s start by nailing down a definition for “palindrome”.</p>
+<div class="result">
+<div class="defn">
+<p>Suppose <span class="math inline">\(A = \sum_{k=0}^{t-1} a_k 10^k\)</span> is a <span class="math inline">\(t\)</span>-digit number base 10 (that is, the <span class="math inline">\(a_k\)</span> are integers between 0 and 9 (inclusive) and <span class="math inline">\(a_{t-1}\)</span> is not zero). We say <span class="math inline">\(A\)</span> is a <em>palindrome</em> if <span class="math inline">\(a_{t-1-k} = a_k\)</span> for all <span class="math inline">\(0 \leq k &lt; t\)</span>.</p>
+</div>
+</div>
+<p>The first thing I’ll do is write helper functions to convert a number to its base 10 digits and back.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- base 10 digits of n in 'little endian' order</span>
+<span class="fu">&gt;</span> <span class="co">-- (least significant digits first)</span>
+<span class="fu">&gt;</span><span class="ot"> toDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+<span class="fu">&gt;</span> toDigits n <span class="fu">=</span> <span class="kw">if</span> n <span class="fu">&lt;=</span> <span class="dv">0</span>
+<span class="fu">&gt;</span>   <span class="kw">then</span> []
+<span class="fu">&gt;</span>   <span class="kw">else</span> (n<span class="ot">`rem`</span><span class="dv">10</span>) <span class="fu">:</span> toDigits (n<span class="ot">`quot`</span><span class="dv">10</span>)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> fromDigits ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> fromDigits <span class="fu">=</span> sum <span class="fu">.</span> zipWith (<span class="fu">*</span>) (map (<span class="dv">10</span><span class="fu">^</span>) [<span class="dv">0</span><span class="fu">..</span>])
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> numDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> numDigits n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> toDigits n</code></pre></div>
+<p>Sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test_digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="fu">&gt;</span> test_digits n <span class="fu">=</span> n <span class="fu">==</span> (fromDigits <span class="fu">$</span> toDigits n)
+
+<span class="fu">$&gt;</span> all test_digits [<span class="dv">1</span><span class="fu">..</span><span class="dv">1000000</span>]
+<span class="dt">True</span></code></pre></div>
+<p>Note that our lists of digits come out “backward”; that is, least significant first.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> toDigits <span class="dv">12345</span>
+[<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>]</code></pre></div>
+<p>Then we can detect whether a given number is a palindrome in base 10.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> is_palindrome_10 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="fu">&gt;</span> is_palindrome_10 n <span class="fu">=</span> <span class="kw">let</span> ds <span class="fu">=</span> toDigits n <span class="kw">in</span>
+<span class="fu">&gt;</span>   ds <span class="fu">==</span> (reverse ds)</code></pre></div>
+<p>Now we’re not just looking for the largest palindrome of a given length; that would be easy – the string of all 9s is the largest palindrome with a given number of digits. Instead, we want the largest palindrome that is the product of two 3-digit numbers. The most obvious solution is to list all the products of two 3-digit numbers, filter for the palindromes, and find the max.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- the triple (a,b,a*b) which yields the largest</span>
+<span class="fu">&gt;</span> <span class="co">-- palindrome product a*b among the pairs of</span>
+<span class="fu">&gt;</span> <span class="co">-- t-digit numbers a and b</span>
+<span class="fu">&gt;</span><span class="ot"> pe4' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="fu">&gt;</span> pe4' t <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     thd (_,_,x) <span class="fu">=</span> x
+<span class="fu">&gt;</span>     min <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>)
+<span class="fu">&gt;</span>     max <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>t <span class="fu">-</span> <span class="dv">1</span>
+<span class="fu">&gt;</span>   <span class="kw">in</span>
+<span class="fu">&gt;</span>     maximumBy (\x y <span class="ot">-&gt;</span> compare (thd x) (thd y)) <span class="fu">$</span>
+<span class="fu">&gt;</span>     filter (is_palindrome_10 <span class="fu">.</span> thd) <span class="fu">$</span> 
+<span class="fu">&gt;</span>     [(a,b,a<span class="fu">*</span>b) <span class="fu">|</span> a <span class="ot">&lt;-</span> [min<span class="fu">..</span>max], b <span class="ot">&lt;-</span> [a<span class="fu">..</span>max]]</code></pre></div>
+<p>This <code>pe4'</code> works well enough:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe4' <span class="dv">1</span>
+(<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">9</span>)
+<span class="fu">$&gt;</span> pe4' <span class="dv">2</span>
+(<span class="dv">99</span>,<span class="dv">91</span>,<span class="dv">9009</span>)
+<span class="fu">$&gt;</span> pe4' <span class="dv">3</span>
+(<span class="dv">993</span>,<span class="dv">913</span>,<span class="dv">906609</span>)
+<span class="fu">$&gt;</span> pe4' <span class="dv">4</span>
+(<span class="dv">9901</span>,<span class="dv">9999</span>,<span class="dv">99000099</span>)</code></pre></div>
+<p>Two observations. First, there appears to be a pattern emerging in these results. Second, unfortunately I can’t feasibly explore that pattern further (yet) because as <code>t</code> gets larger, <code>pe4' t</code> gets way slow. It’s not hard to see why; <code>pe4' t</code> constructs a list of <span class="math display">\[\binom{9 \cdot 10^{t-1}}{2} = \frac{(9 \cdot 10^{t-1})(9 \cdot 10^{t-1} - 1)}{2}\]</span> candidates to check by brute force.</p>
+<p>To see if we can find a better way, let’s look at the simplest version of this problem: finding the largest palindrome product among products of 1-digit numbers. To this end, consider the multiplication table for 1-digit numbers below.</p>
+<p><span class="math display">\[\begin{array}{c|ccccccccc}
+  &amp;  9 &amp;  8 &amp;  7 &amp;  6 &amp;  5 &amp;  4 &amp;  3 &amp;  2 &amp;  1 \\ \hline
+9 &amp; 81 &amp; 72 &amp; 63 &amp; 54 &amp; 45 &amp; 36 &amp; 27 &amp; 18 &amp;  9 \\
+8 &amp;    &amp; 64 &amp; 56 &amp; 48 &amp; 40 &amp; 32 &amp; 24 &amp; 16 &amp;  8 \\
+7 &amp;    &amp;    &amp; 49 &amp; 42 &amp; 35 &amp; 28 &amp; 21 &amp; 14 &amp;  7 \\
+6 &amp;    &amp;    &amp;    &amp; 36 &amp; 30 &amp; 24 &amp; 18 &amp; 12 &amp;  6 \\
+5 &amp;    &amp;    &amp;    &amp;    &amp; 25 &amp; 20 &amp; 15 &amp; 10 &amp;  5 \\
+4 &amp;    &amp;    &amp;    &amp;    &amp;    &amp; 16 &amp; 12 &amp;  8 &amp;  4 \\
+3 &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;  9 &amp;  6 &amp;  3 \\
+2 &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;  4 &amp;  2 \\
+1 &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;    &amp;  1 \\
+\end{array}\]</span></p>
+<p>The first thing to jump out at me is that the vast majority of these products are <em>not</em> palindromes. That’s not really surprising I guess – there are <span class="math inline">\(9 \cdot 10^{2t-1}\)</span> different <span class="math inline">\(2t\)</span>-digit numbers, but only <span class="math inline">\(9 \cdot 10^{t-1}\)</span> of them are palindromes, so to a first approximation the probability that an arbitrary <span class="math inline">\(2t\)</span>-digit number is a palindrome is about <span class="math inline">\(10^{-t}\)</span>.</p>
+<p>So maybe instead of searching among the products of <span class="math inline">\(t\)</span>-digit numbers for palindromes, it would be faster to search among the palindromes for products of <span class="math inline">\(t\)</span>-digit numbers.</p>
+<h2 id="a-digression-on-palindromes">A Digression on Palindromes</h2>
+<p>The rarity of palindromes highlights a disturbing possibility. The problem of finding the <em>largest</em> palindrome product implicitly assumes that at least one palindrome product must exist, but this is not obvious to me. After some experimenting, I am convinced that palindrome products exist among pairs of <span class="math inline">\(t\)</span>-digit numbers for any <span class="math inline">\(t\)</span>. I got a little distracted thinking about this probem, so I’ll just dump the results here.</p>
+<p>The first result allows us to recognize a family of palindromes constructed from other palindromes.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(t,u,v \geq 1\)</span> be natural numbers, and let <span class="math inline">\(A = \sum_{k=0}^{t-1} a_k 10^k\)</span> and <span class="math inline">\(B = \sum_{k=0}^{u-1} b_k 10^k\)</span> be <span class="math inline">\(t\)</span>- and <span class="math inline">\(u\)</span>-digit palindromes, respectively. That is, <span class="math inline">\(a_k = a_{t-1-k}\)</span> when <span class="math inline">\(0 \leq k &lt; t\)</span> and <span class="math inline">\(b_k = b_{u-1-k}\)</span> when <span class="math inline">\(0 \leq k &lt; u\)</span>. Then <span class="math display">\[M = A + 10^{t+v} B + 10^{t+u+2v} A\]</span> is a <span class="math inline">\((2t+u+2v)\)</span>-digit palindrome.</p>
+</div>
+<div class="proof">
+<p>Note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+M
+ &amp; = &amp; A + 10^{t+v} B + 10^{2t+u+2v} A \\
+ &amp; = &amp; \sum_{k=0}^{t-1} a_k 10^k + 10^{t+v} \sum_{k=0}^{u-1} b_k 10^k + 10^{2t+u+2v} \sum_{k=0}^{t-1} a_k 10^k \\
+ &amp; = &amp; \sum_{k=0}^{t-1} a_k 10^k + \sum_{k=0}^{u-1} b_k 10^{t+v+k} + \sum_{k=0}^{t-1} a_k 10^{t+u+2v+k} \\
+ &amp; = &amp; \sum_{k=0}^{t-1} a_k 10^k + \sum_{k=t+v}^{t+u+v-1} b_{k-t-v} 10^k + \sum_{k=t+u+2v}^{2t+u+2v-1} a_{k-t-u-2v} 10^k \\
+ &amp; = &amp; \sum_{k=0}^{2t+u+2v-1} e_k 10^k
+\end{eqnarray*}\]</span></p>
+<p>where</p>
+<p><span class="math display">\[e_k = \left\{ \begin{array}{ll} a_k &amp; \mathrm{if}\ 0 \leq k &lt; t \\ 0 &amp; \mathrm{if}\ t \leq k &lt; t+v \\ b_{k-t-v} &amp; \mathrm{if}\ t+v \leq k &lt; t+u+v \\ 0 &amp; \mathrm{if}\ t+u+v \leq k &lt; t+u+2v \\ a_{k-t-u-2v} &amp; \mathrm{if}\ t+u+2v \leq k &lt; 2t+u+2v. \end{array} \right.\]</span></p>
+<p>Certainly <span class="math inline">\(M\)</span> has <span class="math inline">\(2t+u+2v\)</span> digits. To see that <span class="math inline">\(M\)</span> is a palindrome, we need to check that <span class="math display">\[e_{2t+u+2v-1-k} = e_k\]</span> for <span class="math inline">\(0 \leq k &lt; 2t+u+2v\)</span>. We will break this interval into 5 subintervals.</p>
+<ol style="list-style-type: decimal">
+<li>Suppose <span class="math inline">\(0 \leq k &lt; t\)</span>. Then <span class="math inline">\(0 \leq t-1-k &lt; t\)</span>, and so <span class="math inline">\(t+u+2v \leq 2t+u+2v-1-k &lt; 2t+u+2v\)</span>. So <span class="math display">\[e_{2t+u+2v-1-k} = a_{2t+u+2v-1-k-t-u-2v} = a_{t-1-k} = a_k = e_k.\]</span></li>
+<li>Suppose <span class="math inline">\(t \leq k &lt; t+v\)</span>. Then <span class="math inline">\(0 \leq t+v-1-k &lt; v\)</span>, and so <span class="math inline">\(t+u+v \leq 2t+u+2v-1-k &lt; t+u+2v\)</span>. So <span class="math display">\[e_{2t+u+2v-1-k} = 0 = e_k.\]</span></li>
+<li>Suppose <span class="math inline">\(t+v \leq k &lt; t+u+v\)</span>. Then <span class="math inline">\(0 \leq t+u+v-1-k &lt; u\)</span>, and so <span class="math inline">\(t+v \leq 2t+u+2v-1-k &lt; t+u+v\)</span>. So <span class="math display">\[\begin{eqnarray*} e_{2t+u+2v-1-k} &amp; = &amp; b_{2t+u+2v-1-k-t-v} \\ &amp; = &amp; b_{t+u+v-1-k} \\ &amp; = &amp; b_{u-1-t-u-v+1-k} \\ &amp; = &amp; b_{k-t-v} \\ &amp; = &amp; e_{k}. \end{eqnarray*}\]</span></li>
+<li>Suppose <span class="math inline">\(t+u+v \leq k &lt; t+u+2v\)</span>. Then <span class="math inline">\(0 \leq t+u+2v-1-k &lt; v\)</span>, and so <span class="math inline">\(t \leq 2t+u+2v-1-k &lt; t+v\)</span>. So <span class="math display">\[e_{2t+u+2v-1-k} = 0 = e_k.\]</span></li>
+<li>Suppose <span class="math inline">\(t+u+2v \leq k &lt; 2t+u+2v\)</span>. Then <span class="math inline">\(0 \leq 2t+u+2v-1-k &lt; t\)</span>. So <span class="math display">\[\begin{eqnarray*} e_{2t+u+2v-1-k} &amp; = &amp; a_{2t+u+2v-1-k} \\ &amp; = &amp; a_{t-1-2t-u-2v+i+k} \\ &amp; = &amp; a_{k+t-u-2v} \\ &amp; = &amp; e_k. \end{eqnarray*}\]</span></li>
+</ol>
+<p>Thus <span class="math inline">\(M\)</span> is a <span class="math inline">\((2t+u+2v)\)</span>-digit palindrome.</p>
+</div>
+</div>
+<p>This result lets us recognize <em>some</em> palindromes.</p>
+<p>The next result lets us construct new palindrome products from old ones.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be <span class="math inline">\(t\)</span>-digit numbers such that both <span class="math inline">\(AB\)</span> and <span class="math inline">\(2AB\)</span> are <span class="math inline">\(2t\)</span>-digit palindromes. Let <span class="math inline">\(v\)</span> be a positive integer, and define <span class="math display">\[H_v(A) = A(1 + 10^{2t+v})\ \mathrm{and}\ K_v(B) = B(1 + 10^{2t+v}).\]</span> Then <span class="math inline">\(H_v\)</span> and <span class="math inline">\(K_v\)</span> are <span class="math inline">\((3t+v)\)</span>-digit numbers and <span class="math inline">\(H_vK_v\)</span> is a <span class="math inline">\((6t+2v)\)</span>-digit palindrome.</p>
+</div>
+<div class="proof">
+<p>Expanding <span class="math inline">\(H_vK_v\)</span>, we have <span class="math display">\[H_vK_v = AB + 10^{2t+v}(2AB) + 10^{2t+2t+2v}AB.\]</span> The previous theorem applies, and <span class="math inline">\(H_vK_v\)</span> is a <span class="math inline">\((6t+2v)\)</span>-digit palindrome.</p>
+</div>
+</div>
+<p>Let’s make <span class="math inline">\(H_v\)</span> and <span class="math inline">\(K_v\)</span> executable.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> h_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> h_ v a <span class="fu">=</span> a <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
+<span class="fu">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits a
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> k_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> k_ v b <span class="fu">=</span> b <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
+<span class="fu">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits b</code></pre></div>
+<p>And the next result gives us a concrete family of palindrome products with factors of even digit length.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(t\)</span> and <span class="math inline">\(m\)</span> be positive natural numbers, and define <span class="math inline">\(Q_{t,m} = \sum_{k=0}^{t-1} 10^{mk}\)</span>. Now define <span class="math display">\[A_{t,m} = Q_{2t,m},\]</span> <span class="math display">\[B_{t,m} = 1 + 10^{tm}(10^m-1)Q_{t,m},\]</span> and <span class="math display">\[C_t = Q_{t,m}(1 + 10^{3tm}).\]</span></p>
+<p>Then <span class="math inline">\(A_t\)</span> is a <span class="math inline">\((2tm - m + 1)\)</span>-digit number, and <span class="math inline">\(B_t\)</span> is a <span class="math inline">\(2tm\)</span>-digit number, and both <span class="math inline">\(A_tB_t\)</span> and <span class="math inline">\(2A_tB_t\)</span> are <span class="math inline">\((4tm - m + 1)\)</span>-digit palindromes.</p>
+</div>
+<div class="proof">
+<p>Note that <span class="math inline">\(A_{t,m} = Q_{t,m}(1 + 10^{tm})\)</span> and <span class="math display">\[Q_{t,m} = \frac{10^{tm} - 1}{10^m-1}.\]</span> Expanding <span class="math inline">\(A_{t,m}B_{t,m}\)</span>, then, we have <span class="math display">\[A_{t,m}B_{t,m} = Q_{t,m}(1 + 10^{tm})(1 - 10^{tm} + 10^{2tm}) = C_{t,m}\]</span> as needed.</p>
+<p>To see the digit counts, note that <span class="math inline">\(Q_{t,m}\)</span> has <span class="math inline">\((tm-m+1)\)</span> digits. Note also that all the digits of <span class="math inline">\(C_{t,m}\)</span> are 1, so that <span class="math inline">\(2C_{t,m}\)</span> is also a palindrome.</p>
+</div>
+</div>
+<p>Let’s make <span class="math inline">\(Q_{t,m}\)</span>, <span class="math inline">\(A_{t,m}\)</span>, and <span class="math inline">\(B_{t,m}\)</span> executable.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> q_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> q_ t m <span class="fu">=</span> sum <span class="fu">$</span> map (\k <span class="ot">-&gt;</span> <span class="dv">10</span><span class="fu">^</span>(m<span class="fu">*</span>k)) [<span class="dv">0</span><span class="fu">..</span>(t<span class="fu">-</span><span class="dv">1</span>)]
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> a_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> a_ t m <span class="fu">=</span> q_ (<span class="dv">2</span><span class="fu">*</span>t) m
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> b_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> b_ t m <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> (<span class="dv">10</span><span class="fu">^</span>(t<span class="fu">*</span>m))<span class="fu">*</span>(<span class="dv">10</span><span class="fu">^</span>m <span class="fu">-</span> <span class="dv">1</span>)<span class="fu">*</span>(q_ t m)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> c_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> c_ t m <span class="fu">=</span> (q_ t m)<span class="fu">*</span>(<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">3</span><span class="fu">*</span>t<span class="fu">*</span>m))</code></pre></div>
+<p>Sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test_abc ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="fu">&gt;</span> test_abc t m <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     a <span class="fu">=</span> a_ t m; b <span class="fu">=</span> b_ t m; c <span class="fu">=</span> c_ t m
+<span class="fu">&gt;</span>   <span class="kw">in</span> and
+<span class="fu">&gt;</span>     [ a<span class="fu">*</span>b <span class="fu">==</span> c
+<span class="fu">&gt;</span>     , (numDigits a) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
+<span class="fu">&gt;</span>     , (numDigits b) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m
+<span class="fu">&gt;</span>     , (numDigits c) <span class="fu">==</span> <span class="dv">4</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
+<span class="fu">&gt;</span>     , is_palindrome_10 c
+<span class="fu">&gt;</span>     , is_palindrome_10 (<span class="dv">2</span><span class="fu">*</span>c)
+<span class="fu">&gt;</span>     ]</code></pre></div>
+<p>And a test:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">$&gt;</span> and [test_abc t m <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>], m <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>]]
+<span class="dt">True</span></code></pre></div>
+<p>This gives an infinite family of palindrome products. Note that if <span class="math inline">\(m = 1\)</span>, then both factors have the same number of digits – <span class="math inline">\(2t\)</span> – and the product has <span class="math inline">\(4t\)</span> digits.</p>
+<p>Here are the first 5 examples.</p>
+<table>
+<colgroup>
+<col width="6%" />
+<col width="15%" />
+<col width="15%" />
+<col width="21%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"><span class="math inline">\(t\)</span></th>
+<th align="left"><span class="math inline">\(A_{t,m}\)</span></th>
+<th align="left"><span class="math inline">\(B_{t,m}\)</span></th>
+<th align="left"><span class="math inline">\(A_{t,m}B_{t,m}\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">11</td>
+<td align="left">91</td>
+<td align="left">1001</td>
+</tr>
+<tr class="even">
+<td align="left">2</td>
+<td align="left">1111</td>
+<td align="left">9901</td>
+<td align="left">11000011</td>
+</tr>
+<tr class="odd">
+<td align="left">3</td>
+<td align="left">111111</td>
+<td align="left">999001</td>
+<td align="left">111000000111</td>
+</tr>
+<tr class="even">
+<td align="left">4</td>
+<td align="left">11111111</td>
+<td align="left">99990001</td>
+<td align="left">1111000000001111</td>
+</tr>
+<tr class="odd">
+<td align="left">5</td>
+<td align="left">1111111111</td>
+<td align="left">9999900001</td>
+<td align="left">11111000000000011111</td>
+</tr>
+</tbody>
+</table>
+<p>Note that row <span class="math inline">\(k\)</span> in this table has factors <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> with <span class="math inline">\(2k\)</span> digits, and the (palindrome) product has <span class="math inline">\(4k\)</span> digits.</p>
+<p>Taking the first row, <span class="math inline">\(A = 11\)</span> and <span class="math inline">\(B = 91\)</span>, we can use these in our <span class="math inline">\(H_v\)</span> and <span class="math inline">\(K_v\)</span>, with <span class="math inline">\(v = 1\)</span>, we get another family of palindrome products.</p>
+<table>
+<colgroup>
+<col width="6%" />
+<col width="20%" />
+<col width="20%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"><span class="math inline">\(v\)</span></th>
+<th align="left"><span class="math inline">\(H_v(A_{1,1})\)</span></th>
+<th align="left"><span class="math inline">\(K_v(B_{1,1})\)</span></th>
+<th align="left"><span class="math inline">\(H_v(A_{1,1})K_v(B_{1,1})\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">1100011</td>
+<td align="left">9100091</td>
+<td align="left">10010200201001</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">110000011</td>
+<td align="left">910000091</td>
+<td align="left">100100020020001001</td>
+</tr>
+<tr class="odd">
+<td align="left">5</td>
+<td align="left">11000000011</td>
+<td align="left">91000000091</td>
+<td align="left">1001000002002000001001</td>
+</tr>
+<tr class="even">
+<td align="left">7</td>
+<td align="left">1100000000011</td>
+<td align="left">9100000000091</td>
+<td align="left">10010000000200200000001001</td>
+</tr>
+</tbody>
+</table>
+<p>Note that if <span class="math inline">\(v = 2k+1\)</span> then this table gives two <span class="math inline">\((2k+7)\)</span>-digit numbers whose (palindrome) product has <span class="math inline">\(4k+14\)</span> digits.</p>
+<p>Along with the observation that <span class="math inline">\(993 \cdot 913 = 906609\)</span> and <span class="math inline">\(11011 \cdot 91091 = 1003003001\)</span>, we can say the following.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(k \geq 2\)</span>. Then among the <span class="math inline">\(k\)</span>-digits numbers, there exists a pair <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> such that <span class="math inline">\(AB\)</span> is a <span class="math inline">\(2k\)</span>-digit palindrome.</p>
+<p>In particular, the largest such palindrome has <span class="math inline">\(2k\)</span> digits.</p>
+</div>
+</div>
+<p>Right, because the whole point of this digression was to establish this fact about largest palindrome products.</p>
+<h2 id="meanwhile">Meanwhile</h2>
+<p>Our alternate strategy for this problem was to search among the palindromes for <span class="math inline">\(k\)</span>-digit factorizations; and now we know that it’s enough to look among the <span class="math inline">\(2k\)</span>-digit palindromes – we are guaranteed to find a factorization there. This simplifies the search space a bit.</p>
+<p>So the new strategy is to generate the <span class="math inline">\(2k\)</span>-digit palindromes in reverse order and look for the first one that factors are a product of two <span class="math inline">\(k\)</span>-digit numbers.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- the 2k-digit palindromes</span>
+<span class="fu">&gt;</span><span class="ot"> palindromes ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+<span class="fu">&gt;</span> palindromes k <span class="fu">=</span> map (fromDigits <span class="fu">.</span> make) (digits k)
+<span class="fu">&gt;</span>   <span class="kw">where</span>
+<span class="fu">&gt;</span>     <span class="co">-- turn a list into a palindrome</span>
+<span class="fu">&gt;</span>     make ds <span class="fu">=</span> ds <span class="fu">++</span> reverse ds
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot">     digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [[<span class="dt">Integer</span>]]
+<span class="fu">&gt;</span>     digits k <span class="fu">=</span> foo k []
+<span class="fu">&gt;</span>       <span class="kw">where</span>
+<span class="fu">&gt;</span>         foo <span class="dv">0</span> _ <span class="fu">=</span> [[]]
+<span class="fu">&gt;</span>         foo k z <span class="fu">=</span> <span class="kw">do</span>
+<span class="fu">&gt;</span>           d  <span class="ot">&lt;-</span> [<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>] <span class="fu">++</span> z
+<span class="fu">&gt;</span>           ds <span class="ot">&lt;-</span> foo (k<span class="fu">-</span><span class="dv">1</span>) [<span class="dv">0</span>]
+<span class="fu">&gt;</span>           return (d<span class="fu">:</span>ds)</code></pre></div>
+<p>Now given a <span class="math inline">\(2k\)</span>-digit palindrome, we want to know whether it factors as a product of two <span class="math inline">\(k\)</span>-digit numbers. Note that if <span class="math inline">\(N = AB\)</span>, then without loss of generality <span class="math inline">\(A \leq \sqrt{N}\)</span> and <span class="math inline">\(\sqrt{N} \leq B\)</span>. So it is enough to search for a factorization of <span class="math inline">\(N\)</span> where <span class="math inline">\(10^{t-1} \leq A \leq \lfloor \sqrt{N} \rfloor\)</span>.</p>
+<p>Here’s a utility function to find <span class="math inline">\(\lfloor \sqrt{N} \rfloor\)</span> by bisection.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- find t such that t^2 &lt;= n &lt; (t+1)^2</span>
+<span class="fu">&gt;</span><span class="ot"> floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> floor_sqrt n <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     bisect (a,b) <span class="fu">=</span> <span class="kw">if</span> b<span class="fu">-</span>a <span class="fu">&lt;=</span> <span class="dv">1</span>
+<span class="fu">&gt;</span>       <span class="kw">then</span> a
+<span class="fu">&gt;</span>       <span class="kw">else</span> <span class="kw">let</span> m <span class="fu">=</span> (b<span class="fu">+</span>a)<span class="ot">`quot`</span><span class="dv">2</span> <span class="kw">in</span>
+<span class="fu">&gt;</span>         <span class="kw">if</span> m<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n
+<span class="fu">&gt;</span>           <span class="kw">then</span> bisect (m,b)
+<span class="fu">&gt;</span>           <span class="kw">else</span> bisect (a,m)
+<span class="fu">&gt;</span>   <span class="kw">in</span>
+<span class="fu">&gt;</span>     <span class="kw">if</span> n <span class="fu">&lt;</span> <span class="dv">0</span>
+<span class="fu">&gt;</span>       <span class="kw">then</span> error <span class="st">&quot;floor_sqrt: negative argument&quot;</span>
+<span class="fu">&gt;</span>       <span class="kw">else</span> bisect (<span class="dv">1</span>,n)</code></pre></div>
+<p>Sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> test_floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="fu">&gt;</span> test_floor_sqrt n <span class="fu">=</span> <span class="kw">let</span> q <span class="fu">=</span> floor_sqrt n <span class="kw">in</span>
+<span class="fu">&gt;</span>   (q<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) <span class="fu">&amp;&amp;</span> (n <span class="fu">&lt;</span> (q<span class="fu">+</span><span class="dv">1</span>)<span class="fu">^</span><span class="dv">2</span>)</code></pre></div>
+<p>And a test:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">%&gt;</span> all test_floor_sqrt [<span class="dv">1</span><span class="fu">..</span><span class="dv">10000</span>]
+<span class="dt">True</span></code></pre></div>
+<p>Also, if we wish to factor a <span class="math inline">\(2k\)</span>-digit number as a product of <span class="math inline">\(k\)</span> digit numbers, we should search “down” from <span class="math inline">\(\lfloor \sqrt{N} \rfloor\)</span> to <span class="math inline">\(10^{t-1}\)</span> rather than the reverse. This is because smaller factors are likely to give quotients with too many digits.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- search for a factorization of n into t-digit factors</span>
+<span class="fu">&gt;</span><span class="ot"> does_factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="fu">&gt;</span> does_factor t n <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     check m
+<span class="fu">&gt;</span>       <span class="fu">|</span> m <span class="fu">&lt;</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>) <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span>       <span class="fu">|</span> n<span class="ot">`rem`</span>m <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> <span class="kw">if</span> numDigits (n<span class="ot">`quot`</span>m) <span class="fu">==</span> t
+<span class="fu">&gt;</span>           <span class="kw">then</span> <span class="dt">Just</span> m
+<span class="fu">&gt;</span>           <span class="kw">else</span> check (m<span class="fu">-</span><span class="dv">1</span>)
+<span class="fu">&gt;</span>       <span class="fu">|</span> otherwise <span class="fu">=</span> check (m<span class="fu">-</span><span class="dv">1</span>)
+<span class="fu">&gt;</span>   <span class="kw">in</span>
+<span class="fu">&gt;</span>     <span class="kw">case</span> check (floor_sqrt n) <span class="kw">of</span>
+<span class="fu">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span>       <span class="dt">Just</span> m  <span class="ot">-&gt;</span> <span class="dt">Just</span> (m, n<span class="ot">`quot`</span>m)
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span><span class="ot"> pe4'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="fu">&gt;</span> pe4'' k <span class="fu">=</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     (a,b) <span class="fu">=</span> head <span class="fu">$</span> catMaybes <span class="fu">$</span> map (does_factor k) (palindromes k)
+<span class="fu">&gt;</span>   <span class="kw">in</span> (a,b,a<span class="fu">*</span>b)</code></pre></div>
+<p>This <code>pe4''</code> is still slow, as we still check an exponential number of cases. But we can squeeze out a couple more values.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe4'' <span class="dv">2</span>
+(<span class="dv">91</span>,<span class="dv">99</span>,<span class="dv">9009</span>)
+<span class="fu">$&gt;</span> pe4'' <span class="dv">3</span>
+(<span class="dv">913</span>,<span class="dv">993</span>,<span class="dv">906609</span>)
+<span class="fu">$&gt;</span> pe4'' <span class="dv">4</span>
+(<span class="dv">9901</span>,<span class="dv">9999</span>,<span class="dv">99000099</span>)
+<span class="fu">$&gt;</span> pe4'' <span class="dv">5</span>
+(<span class="dv">99681</span>,<span class="dv">99979</span>,<span class="dv">9966006699</span>)</code></pre></div>
+<p>Interesting! It looks like the form of the largest palindrome product depends on whether the factors have an even or odd number of digits.</p>
+<p>Anyway, the final answer is:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> pe4 ::</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> pe4 <span class="fu">=</span> <span class="kw">let</span> (_,_,x) <span class="fu">=</span> pe4'' <span class="dv">3</span> <span class="kw">in</span> x</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
