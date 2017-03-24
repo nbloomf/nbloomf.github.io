@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Pai Gow Poker</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Pai Gow Poker</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+Posted on 2017-03-30 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/haskell.html">haskell</a>, <a href="../tag/games.html">games</a></div>
+
+
+<p>Recently I was in Las Vegas for a conference. While there, I was introduced by a friend to a card game I’d never heard of before called <em>pai gow poker</em>. This post is an exploration of the rules and strategy of this strange game. You can get some background on the game from <a href="https://en.wikipedia.org/wiki/Pai_gow_poker">wikipedia</a>.</p>
+<p>By the way – this post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-03-30-pai-gow-poker.lhs">the source</a> into GHCi and play along.</p>
+<p>In order to build an implementation of pai gow poker in software, we first need a complete and precise list of rules. This turns out to be difficult, because (1) every casino makes minor tweaks to the rules which we expect to affect strategy, and (2) as far as I can tell there is no rule set for the game that does not leave a lot of important questions unanswered. This may be because the poker world assumes a lot of implicit knowledge, but is still unnerving, considering the rules of casino games are frequently codified in <a href="http://www.wsgc.wa.gov/activities/game-rules/pai-gow-poker.pdf">state</a> <a href="http://www.doa.state.wi.us/Documents/DOG/Indian%20Gaming/MICS/006%20Pai%20Gow%20Poker%20-%20Text%20Master.doc">gaming</a> commission regulations.</p>
+<p>At any rate, here is my best understanding as a non-gambler of the rules for basic pai gow poker.</p>
+<ul>
+<li><strong>The Players</strong>
+<ol style="list-style-type: decimal">
+<li>The game requires seven players, including the Dealer, seated at table positions numbered 1 to 7. One of the players (possibly the Dealer) is the Banker.</li>
+<li>If there are not seven people present to play, the missing players’ hands are dealt anyway. These unmanned hands are called <em>dragon hands</em>.</li>
+<li>The role of Banker alternates between the dealer and the other players in order.</li>
+<li>Any player can decline to bank on their turn, in which case the option to bank proceeds to the next player in the sequence.</li>
+<li>A player may only act as the Banker if in the previous round they were a non-Banker and they have enough chips to pay out all bets.</li>
+</ol></li>
+<li><strong>The Game</strong>
+<ol style="list-style-type: decimal">
+<li>All players place their bets on the table before the cards are dealt.</li>
+<li>The dealer shuffles a standard deck with one joker and deals seven cards to each position, whether manned or not. The remaining 4 cards are discarded without being turned over.</li>
+<li>All players divide their cards into two hands: one of five cards, and one of two cards.</li>
+<li>After these hands are set and placed on the table, all players reveal their hands. The hands cannot be changed from this point forward; any player who touches their cards or chips after this will lose.</li>
+<li>Each player then compares their hands against the Banker’s, “componentwise”. If both hands beat the Banker’s respective hands, then the player wins. If both lose, then the player loses. If one hand wins and the other loses, the hand is a <em>push</em> and no money changes hands. On individual hands, ties go to the Banker.</li>
+<li>The Dealer reconciles all bets against the Banker. The Dealer (i.e. House) takes a commission called the <em>rake</em> on all winnings at the table, typically 5%.</li>
+</ol></li>
+<li><strong>The Reckoning</strong>
+<ol style="list-style-type: decimal">
+<li>The joker acts as a <em>bug</em>. That is, it is an ace, unless it can be used to complete a straight or flush, and in that case it is the highest ranked card which completes the hand.</li>
+<li>Five-card hands are ranked using standard poker rules, although some casinos use one exception: the ace-low straight (5432A) ranks below the ace-high straight (AKQJT) and above the king-high straight (KQJT9), rather than as the lowest straight (as in standard rules). I’ll call this special case the <em>ace-low hack</em>.</li>
+<li>Two-card hands are ranked as follows: pairs beat non-pairs, pairs are compared by rank, and non-pairs are compared reverse-lexicographically.</li>
+<li>Each player’s five-card hand must outrank their two-card hand. That is, if the two-card hand is a pair, the five-card must at least be a pair with greater rank, and if the two-card hand is not a pair, the five-card hand must be at least a high-card hand whose two highest cards outrank the two-card. If this condition is not satisfied the player loses.</li>
+<li>The Dealer is required to set her hands according to certain rules, called the <em>house way</em>. These depend on the casino hosting the game. Dragon hands are also set using the house way.</li>
+</ol></li>
+</ul>
+<p>Players really only have three choices to make: (1) how much to bet, (2) how to set their cards, and (3) whether or not to bank on their turn. In general there is more than one way to divide a seven-card hand into a five-card and a two-card hand, and due to the win condition it is not obvious to me that one way is strictly better than the others. Obviously the Dealer has the advantage (they always do!) but exactly <em>how much</em> of an advantage? To try to answer this, I’ll start with some simplifying assumptions.</p>
+<ol style="list-style-type: decimal">
+<li>The real game is played with seven players, but from the perspective of a non-banker this is really a two-player game. I’ll simulate only two players.</li>
+<li>Some casinos tack on extra frilly bits. For instance, under some rules players can bet on the dragon hands, or bet on <em>each other’s</em> hands, or place an “envy” bet that pays in case anyone at the table plays a hand of a given rank. No doubt these change the strategy, but I will ignore this stuff.</li>
+<li>Exactly how is the joker (the bug) interpreted? Every definition I can find says something like this: <strong>the joker is an ace, unless it can be used to complete a straight or flush, in which case it is the highest-ranked card that completes the hand</strong>. A strict reading of this definition would force the player, in some cases, to play a suboptimal hand. For instance, if the player has 5432 and the joker, then playing the bug as a 6 gives the 6-high straight while playing it as an ace gives the ace-low straight. Without the ace-low hack this forces the player into a suboptimal play, and I suspect this is the reason for the ace-low hack in the first place. As another example, suppose the player has 5678 all of one suit, plus the joker. A strict reading of the bug rule here gives an ambiguous outcome. The joker must be a 9, but of what suit? Certainly this hand should be a straight flush, which ranks higher than a straight, but the bug rule is ambiguous. A better interpretation of the bug would be, I think, that <strong>the joker is either an ace or the card which yields the highest ranking straight or flush</strong>. Because hands are linearly ordered modulo suit, this does away with both the suit ambiguity and the ugly ace-low hack. This is the interpretation of the bug I will use.</li>
+<li>Exactly how do we compare a five-card hand to a two-card hand? Certainly two pairs or better is better than any two-card hand, so the tricky part is when the five-card hand is a high card or one pair. In these cases we will truncate the five-card hand at the pair or the two highest ranked cards, and compare as two-card hands.</li>
+</ol>
+<p>This is my best understanding after reading the “official” rules from several sources including casinos and gaming commissions. But bear in mind that I have never played this game. :)</p>
+<p>Now for the code. We start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">PaiGow</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.List</span>                <span class="kw">as</span> <span class="dt">L</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span>                 <span class="kw">as</span> <span class="dt">S</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Control.Monad.State.Lazy</span> <span class="kw">as</span> <span class="dt">ST</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Maybe</span>               <span class="kw">as</span> <span class="dt">M</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad.Trans.Class</span> (lift)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Random</span> (<span class="dt">RVar</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Random.Extras</span> (choice)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.RVar</span> (sampleRVar)</code></pre></div>
+<h2 id="the-deck">The Deck</h2>
+<p>Pai gow poker is played with a standard French deck plus one joker. We’ll model the cards with a few types.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Suit</span>
+<span class="ot">&gt;</span>   <span class="co">-- we impose the usual poker order on suits</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Clubs</span> <span class="fu">|</span> <span class="dt">Diamonds</span> <span class="fu">|</span> <span class="dt">Hearts</span> <span class="fu">|</span> <span class="dt">Spades</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; suits ::</span> [<span class="dt">Suit</span>]
+<span class="ot">&gt;</span> suits <span class="fu">=</span> [<span class="dt">Clubs</span> <span class="fu">..</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="co">-- we also impose the aces-high order on ranks</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Two</span>   <span class="fu">|</span> <span class="dt">Three</span> <span class="fu">|</span> <span class="dt">Four</span> <span class="fu">|</span> <span class="dt">Five</span> <span class="fu">|</span> <span class="dt">Six</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Seven</span> <span class="fu">|</span> <span class="dt">Eight</span> <span class="fu">|</span> <span class="dt">Nine</span> <span class="fu">|</span> <span class="dt">Ten</span>  <span class="fu">|</span> <span class="dt">Jack</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Queen</span> <span class="fu">|</span> <span class="dt">King</span>  <span class="fu">|</span> <span class="dt">Ace</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; ranks ::</span> [<span class="dt">Rank</span>]
+<span class="ot">&gt;</span> ranks <span class="fu">=</span> [<span class="dt">Two</span> <span class="fu">..</span>]</code></pre></div>
+<p>It will be convenient to distinguish between the “standard” deck of cards and the “full” deck which also includes the joker. So I’ll use two card types: <code>Carte</code>, the French word for <em>card</em>, will represent the standard cards. <code>Card</code> will represent either a standard card or a joker.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Carte</span> <span class="fu">=</span> <span class="dt">Carte</span>
+<span class="ot">&gt;</span>   {<span class="ot"> rank ::</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> suit ::</span> <span class="dt">Suit</span>
+<span class="ot">&gt;</span>   } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; standardDeck ::</span> [<span class="dt">Carte</span>]
+<span class="ot">&gt;</span> standardDeck <span class="fu">=</span> [<span class="dt">Carte</span> r s <span class="fu">|</span> r <span class="ot">&lt;-</span> ranks, s <span class="ot">&lt;-</span> suits]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Card</span> <span class="fu">=</span> <span class="dt">Card</span> <span class="dt">Carte</span> <span class="fu">|</span> <span class="dt">Joker</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; fullDeck ::</span> [<span class="dt">Card</span>]
+<span class="ot">&gt;</span> fullDeck <span class="fu">=</span> (map <span class="dt">Card</span> standardDeck) <span class="fu">++</span> [<span class="dt">Joker</span>]</code></pre></div>
+<p>Sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> length fullDeck
+<span class="dv">53</span></code></pre></div>
+<p>Note the derived <code>Ord</code> instance for <code>Card</code>; we’ve cooked it up so that cards sort on rank and then suit. This will be handy later.</p>
+<p>We derived <code>Show</code> instances for the <code>Suit</code>, <code>Rank</code>, and <code>Card</code> types to make debugging easier. But it’d also be nice to have a more succinct string representation for cards. We’ll use the <code>Pretty</code> class to represent this.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">Pretty</span> t <span class="kw">where</span>
+<span class="ot">&gt;   pretty ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- for convenience</span>
+<span class="ot">&gt;   prettyIO ::</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span>   prettyIO <span class="fu">=</span> putStrLn <span class="fu">.</span> pretty
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Maybe</span> t) <span class="kw">where</span>
+<span class="ot">&gt;</span>   pretty <span class="dt">Nothing</span>  <span class="fu">=</span> <span class="st">&quot;*&quot;</span>
+<span class="ot">&gt;</span>   pretty (<span class="dt">Just</span> x) <span class="fu">=</span> pretty x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> [t] <span class="kw">where</span>
+<span class="ot">&gt;</span>   pretty xs <span class="fu">=</span> concat <span class="fu">$</span> L.intersperse <span class="st">&quot; &quot;</span> <span class="fu">$</span> map pretty xs</code></pre></div>
+<p>And Unicode conveniently has characters for playing cards. Woo!</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Carte</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   pretty (<span class="dt">Carte</span> rank suit) <span class="fu">=</span> <span class="kw">case</span> suit <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Clubs</span>    <span class="ot">-&gt;</span> get <span class="st">&quot;🃒🃓🃔🃕🃖🃗🃘🃙🃚🃛🃝🃞🃑&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Diamonds</span> <span class="ot">-&gt;</span> get <span class="st">&quot;🃂🃃🃄🃅🃆🃇🃈🃉🃊🃋🃍🃎🃁&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Hearts</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂲🂳🂴🂵🂶🂷🂸🂹🂺🂻🂽🂾🂱&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Spades</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂢🂣🂤🂥🂦🂧🂨🂩🂪🂫🂭🂮🂡&quot;</span>
+<span class="ot">&gt;</span>     <span class="kw">where</span>
+<span class="ot">&gt;</span>       get cs <span class="fu">=</span>
+<span class="ot">&gt;</span>         <span class="co">-- pattern match should always succeed</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span> <span class="dt">Just</span> c <span class="fu">=</span> L.lookup rank <span class="fu">$</span> zip ranks cs
+<span class="ot">&gt;</span>         <span class="kw">in</span> [c]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Card</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   pretty (<span class="dt">Card</span> c) <span class="fu">=</span> pretty c
+<span class="ot">&gt;</span>   pretty <span class="dt">Joker</span>    <span class="fu">=</span> <span class="st">&quot;🃏&quot;</span></code></pre></div>
+<p>For example:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
+<span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
+<span class="fu">$&gt;</span> pretty <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
+<span class="st">&quot;\127170&quot;</span>
+<span class="fu">$&gt;</span> prettyIO <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
+🃂</code></pre></div>
+<h2 id="detecting-hands">Detecting Hands</h2>
+<p>We have a type representing the cards. Now let’s think about dividing groups of seven cards into hands.</p>
+<p>First, given a list of five cards, what kind of hand is it?</p>
+<p>With the joker present, there are 10 different kinds of five-card poker hands. I had never thought about this before, but when comparing poker hands we mod out the suits. That is, hands that differ only by suit are equivalent. The bottom line is although there are <span class="math inline">\(\binom{53}{5} = 2869685\)</span> different ways to draw 5 cards from the deck, the number of distinct <em>hands</em> is much smaller.</p>
+<p>Our <code>Hand5</code> type represents the possible five-card hands. Note that this type does not depend on <code>Suit</code> at all!</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- arguments to each constructor must be decreasing</span>
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Hand5</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">HighCard</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">OnePair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TwoPair</span> <span class="dt">Pair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">ThreeOfAKind</span> <span class="dt">Triplet</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Straight</span> <span class="dt">High</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Flush</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FullHouse</span> <span class="dt">Triplet</span> <span class="dt">Pair</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FourOfAKind</span> <span class="dt">Quad</span> <span class="dt">Kicker</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">StraightFlush</span> <span class="dt">High</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FiveOfAKind</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Kicker</span>  <span class="fu">=</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Pair</span>    <span class="fu">=</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Triplet</span> <span class="fu">=</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">High</span>    <span class="fu">=</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Quad</span>    <span class="fu">=</span> <span class="dt">Rank</span></code></pre></div>
+<p>Also the order on hands is graded lexicographic (!) meaning we can derive our <code>Ord</code> instance. Later on we can compare hands with <code>&lt;</code>. This is what motivated me to tweak the interpretation of the bug – the order on hands becomes much simpler and we don’t need a special case for the ace-low straight.</p>
+<p>Now some helper functions.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sort items by count, then by rank</span>
+<span class="ot">&gt; tally ::</span> (<span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]
+<span class="ot">&gt;</span> tally <span class="fu">=</span> revlex <span class="fu">.</span> count
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     count ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]
+<span class="ot">&gt;</span>     count [] <span class="fu">=</span> []
+<span class="ot">&gt;</span>     count xs <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         x <span class="fu">=</span> head xs
+<span class="ot">&gt;</span>         n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> filter (<span class="fu">==</span>x) xs
+<span class="ot">&gt;</span>       <span class="kw">in</span> (x,n)<span class="fu">:</span>(count <span class="fu">$</span> filter (<span class="fu">/=</span> x) xs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     revlex <span class="fu">=</span> L.sortBy <span class="fu">$</span> \(a,h) (b,k) <span class="ot">-&gt;</span> <span class="kw">if</span> h <span class="fu">==</span> k
+<span class="ot">&gt;</span>       <span class="kw">then</span> compare b a
+<span class="ot">&gt;</span>       <span class="kw">else</span> compare k h
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- detect if items in a list are sequential</span>
+<span class="ot">&gt; isSequential ::</span> (<span class="dt">Enum</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isSequential xs <span class="fu">=</span> <span class="kw">case</span> xs <span class="kw">of</span>
+<span class="ot">&gt;</span>   []  <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   x<span class="fu">:</span>_ <span class="ot">-&gt;</span> and <span class="fu">$</span> zipWith (<span class="fu">==</span>) xs [x <span class="fu">..</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- detect if items in a list are all equal</span>
+<span class="ot">&gt; allEqual ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> allEqual list <span class="fu">=</span> <span class="kw">case</span> list <span class="kw">of</span>
+<span class="ot">&gt;</span>   []   <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   x<span class="fu">:</span>xs <span class="ot">-&gt;</span> all (<span class="fu">==</span> x) xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- all length k sublists</span>
+<span class="ot">&gt; choose ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="ot">&gt;</span> choose <span class="dv">0</span> _  <span class="fu">=</span> [[]]
+<span class="ot">&gt;</span> choose _ [] <span class="fu">=</span> []
+<span class="ot">&gt;</span> choose k (x<span class="fu">:</span>xs) <span class="fu">=</span> (map (x<span class="fu">:</span>) <span class="fu">$</span> choose (k<span class="fu">-</span><span class="dv">1</span>) xs) <span class="fu">++</span> choose k xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- all length k and n-k cuts</span>
+<span class="ot">&gt; cuts ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [([a],[a])]
+<span class="ot">&gt;</span> cuts k xs <span class="fu">=</span> map (\as <span class="ot">-&gt;</span> (as, xs <span class="dt">L</span><span class="fu">.</span>\\ as)) <span class="fu">$</span> choose k xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- while we're at it</span>
+<span class="ot">&gt; isStraightOrFlush ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">Straight</span> _)      <span class="fu">=</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">Flush</span> _ _ _ _ _) <span class="fu">=</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">StraightFlush</span> _) <span class="fu">=</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> isStraightOrFlush _                 <span class="fu">=</span> <span class="dt">False</span></code></pre></div>
+<p>To detect a five-card hand we start by tallying the cards by rank. If there are at least two cards of equal rank we have an <span class="math inline">\(N\)</span>-of-a-kind, a full house, or two pairs. If all the cards have different ranks we have to check whether or not they all have the same suit and whether or not their ranks are sequential (with a special case for the ace-low straight).</p>
+<p>By the way, note how the <a href="https://en.wikipedia.org/wiki/Partition_%28number_theory%29">partitions</a> of 5 show up in the cases. Neat! Poker hands make way more sense to me now. :)</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand5</span>
+<span class="ot">&gt;</span> toHand5 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span>
+<span class="ot">&gt;</span>   [(a,<span class="dv">5</span>)] <span class="ot">-&gt;</span>              
+<span class="ot">&gt;</span>     <span class="dt">FiveOfAKind</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">4</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">FourOfAKind</span> a b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">3</span>),(b,<span class="dv">2</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">FullHouse</span> a b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">3</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">ThreeOfAKind</span> a b c
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>),(b,<span class="dv">2</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">TwoPair</span> a b c
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">OnePair</span> a b c d
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>),(e,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> allEqual <span class="fu">$</span> map suit cs
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="kw">if</span> isSequential [e,d,c,b,a]
+<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">StraightFlush</span> a
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]
+<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">StraightFlush</span> <span class="dt">Five</span> <span class="co">-- the steel wheel</span>
+<span class="ot">&gt;</span>           <span class="kw">else</span> <span class="dt">Flush</span> a b c d e
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="kw">if</span> isSequential [e,d,c,b,a]
+<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">Straight</span> a
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]
+<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">Straight</span> <span class="dt">Five</span> <span class="co">-- the wheel</span>
+<span class="ot">&gt;</span>           <span class="kw">else</span> <span class="dt">HighCard</span> a b c d e
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand5: unrecognized hand!&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- compare lists of Cartes as hands</span>
+<span class="ot">&gt; compareHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Ordering</span>
+<span class="ot">&gt;</span> compareHand5 as bs <span class="fu">=</span> compare (toHand5 as) (toHand5 bs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- test lists of Cartes for equality as hands</span>
+<span class="ot">&gt; equalHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> equalHand5 as bs <span class="fu">=</span> (toHand5 as) <span class="fu">==</span> (toHand5 bs)</code></pre></div>
+<p>As a sanity check, let’s try to count the hands of each type.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; handType5 ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> handType5 h <span class="fu">=</span> <span class="kw">case</span> h <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">HighCard</span> _ _ _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;High Card&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">OnePair</span> _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;One Pair&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">TwoPair</span> _ _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Two Pairs&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">ThreeOfAKind</span> _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;Three of a Kind&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">Straight</span> _         <span class="ot">-&gt;</span> <span class="st">&quot;Straight&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">Flush</span> _ _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Flush&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">FullHouse</span> _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Full House&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">FourOfAKind</span> _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Four of a Kind&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">StraightFlush</span> _    <span class="ot">-&gt;</span> <span class="st">&quot;Straight Flush&quot;</span>
+<span class="ot">&gt;</span>   <span class="dt">FiveOfAKind</span> _      <span class="ot">-&gt;</span> <span class="st">&quot;Five of a Kind&quot;</span></code></pre></div>
+<p>This command constructs all possible five-card hands and tallies them by hand type. It runs on my machine in about 4 minutes.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> tally <span class="fu">$</span> map (handType5 <span class="fu">.</span> toHand5) <span class="fu">$</span> choose <span class="dv">5</span> standardDeck</code></pre></div>
+<p>And cleaned up, the output matches the number of hands of each type given on <a href="https://en.wikipedia.org/wiki/List_of_poker_hands">wikipedia</a>. This gives some confidence that we’re counting hands correctly.</p>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Hand Type</th>
+<th align="left">Number</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">High Card</td>
+<td align="left">1302540</td>
+</tr>
+<tr class="even">
+<td align="left">One Pair</td>
+<td align="left">1098240</td>
+</tr>
+<tr class="odd">
+<td align="left">Two Pairs</td>
+<td align="left">123552</td>
+</tr>
+<tr class="even">
+<td align="left">Three of a Kind</td>
+<td align="left">54912</td>
+</tr>
+<tr class="odd">
+<td align="left">Straight</td>
+<td align="left">10200</td>
+</tr>
+<tr class="even">
+<td align="left">Flush</td>
+<td align="left">5108</td>
+</tr>
+<tr class="odd">
+<td align="left">Full House</td>
+<td align="left">3744</td>
+</tr>
+<tr class="even">
+<td align="left">Four of a Kind</td>
+<td align="left">624</td>
+</tr>
+<tr class="odd">
+<td align="left">Straight Flush</td>
+<td align="left">40</td>
+</tr>
+</tbody>
+</table>
+<p>So now we can recognize five-card hands from a standard deck, and detect when one such hand beats another. Let’s do the same for two-card hands. There are only two kinds of hands:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Hand2</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">NoPair</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">YesPair</span> <span class="dt">Rank</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</code></pre></div>
+<p>And detecting them is simpler:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand2</span>
+<span class="ot">&gt;</span> toHand2 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span>
+<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>)] <span class="ot">-&gt;</span>              
+<span class="ot">&gt;</span>     <span class="dt">YesPair</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="dt">NoPair</span> a b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand2: unrecognized hand!&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- test lists of Cartes for equality as hands</span>
+<span class="ot">&gt; equalHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> equalHand2 as bs <span class="fu">=</span> (toHand2 as) <span class="fu">==</span> (toHand2 bs)</code></pre></div>
+<p>And now to detect when a five-card hand outranks a two-card hand.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; compareFiveToTwo ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Hand2</span> <span class="ot">-&gt;</span> <span class="dt">Ordering</span>
+<span class="ot">&gt;</span> compareFiveToTwo h5 h2 <span class="fu">=</span> <span class="kw">case</span> h5 <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">OnePair</span> a _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">YesPair</span> b <span class="ot">-&gt;</span> compare a b
+<span class="ot">&gt;</span>     <span class="dt">NoPair</span> _ _ <span class="ot">-&gt;</span> <span class="dt">GT</span>
+<span class="ot">&gt;</span>   <span class="dt">HighCard</span> a b _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">YesPair</span> _ <span class="ot">-&gt;</span> <span class="dt">LT</span>
+<span class="ot">&gt;</span>     <span class="dt">NoPair</span> c d <span class="ot">-&gt;</span> compare [a,b] [c,d]
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="dt">GT</span></code></pre></div>
+<p>A single play consists of a five-card hand and a two-card hand:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Play</span> <span class="fu">=</span> <span class="dt">Play</span>
+<span class="ot">&gt;</span>   {<span class="ot"> fiveCard ::</span> [<span class="dt">Carte</span>]
+<span class="ot">&gt;</span>   ,<span class="ot"> twoCard  ::</span> [<span class="dt">Carte</span>]
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; play ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Play</span>
+<span class="ot">&gt;</span> play a<span class="fu">@</span>[_,_,_,_,_] b<span class="fu">@</span>[_,_] <span class="fu">=</span> <span class="dt">Play</span> a b
+<span class="ot">&gt;</span> play _ _ <span class="fu">=</span> error <span class="st">&quot;play: invalid hand!&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Play</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   pretty (<span class="dt">Play</span> five two) <span class="fu">=</span> pretty five <span class="fu">++</span> <span class="st">&quot;   &quot;</span> <span class="fu">++</span> pretty two
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; equalPlay ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> equalPlay p1 p2 <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ equalHand5 (fiveCard p1) (fiveCard p2)
+<span class="ot">&gt;</span>   , equalHand2 (twoCard p1) (twoCard p2)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; beats ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> beats p1 p2 <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard p1) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard p2)
+<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard p1)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard p2)
+<span class="ot">&gt;</span>   ]</code></pre></div>
+<p>So we can classify and compare both five-card and two-card hands consisting of <code>Carte</code>s. But what about the joker? Here’s how I will handle that: given seven cards, we will build the list of all possible ways to divide the cards and all valid assignments of the joker. Along the way we can filter out any choices that are beaten by other choices, because they necessarily have a lower probability of winning.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- highest ranked valid assignment of the joker (if present)</span>
+<span class="ot">&gt; mapJoker5 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]
+<span class="ot">&gt;</span> mapJoker5 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> L.maximumBy compareHand5 <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   c <span class="ot">&lt;-</span> standardDeck
+<span class="ot">&gt;</span>   <span class="kw">let</span> as <span class="fu">=</span> map (to c) cs
+<span class="ot">&gt;</span>   guard <span class="fu">$</span> (<span class="dt">Ace</span> <span class="fu">==</span> rank c) <span class="fu">||</span> (isStraightOrFlush <span class="fu">$</span> toHand5 as)
+<span class="ot">&gt;</span>   return as
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     to ::</span> <span class="dt">Carte</span> <span class="ot">-&gt;</span> <span class="dt">Card</span> <span class="ot">-&gt;</span> <span class="dt">Carte</span>
+<span class="ot">&gt;</span>     to c <span class="dt">Joker</span>    <span class="fu">=</span> c
+<span class="ot">&gt;</span>     to _ (<span class="dt">Card</span> x) <span class="fu">=</span> x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- assign the joker to an ace (if present)</span>
+<span class="ot">&gt; mapJoker2 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]
+<span class="ot">&gt;</span> mapJoker2 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> <span class="kw">case</span> cs <span class="kw">of</span>
+<span class="ot">&gt;</span>   [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ _), <span class="dt">Card</span> b<span class="fu">@</span>(<span class="dt">Carte</span> _ _)] <span class="ot">-&gt;</span> [a,b]
+<span class="ot">&gt;</span>   [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s), <span class="dt">Joker</span>] <span class="ot">-&gt;</span> [a, <span class="dt">Carte</span> <span class="dt">Ace</span> s]
+<span class="ot">&gt;</span>   [<span class="dt">Joker</span>, <span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s)] <span class="ot">-&gt;</span> [<span class="dt">Carte</span> <span class="dt">Ace</span> s, a]
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;mapJoker2: unrecognized hand!&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- all valid hands</span>
+<span class="ot">&gt; playChoices ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Play</span>]
+<span class="ot">&gt;</span> playChoices cs <span class="fu">=</span> L.nubBy equalPlay <span class="fu">$</span> optimal <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   (cs2, cs5) <span class="ot">&lt;-</span> cuts <span class="dv">2</span> cs
+<span class="ot">&gt;</span>   <span class="kw">let</span> (h2, h5) <span class="fu">=</span> (mapJoker2 cs2, mapJoker5 cs5)
+<span class="ot">&gt;</span>   guard <span class="fu">$</span> <span class="dt">GT</span> <span class="fu">==</span> compareFiveToTwo (toHand5 h5) (toHand2 h2)
+<span class="ot">&gt;</span>   return <span class="fu">$</span> play h5 h2
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     <span class="co">-- if one choice is beaten by another, toss it out.</span>
+<span class="ot">&gt;</span>     optimal (p<span class="fu">:</span>ps) <span class="fu">=</span> <span class="kw">if</span> any (\q <span class="ot">-&gt;</span> q<span class="ot">`beats`</span>p) ps
+<span class="ot">&gt;</span>       <span class="kw">then</span> optimal ps
+<span class="ot">&gt;</span>       <span class="kw">else</span> p <span class="fu">:</span> optimal ps
+<span class="ot">&gt;</span>     optimal ps <span class="fu">=</span> ps</code></pre></div>
+<p>As an example, try this command: it takes the first seven cards from the full deck, divides them into two hands in all 21 possible ways, and pretty prints them.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> sequence_ <span class="fu">$</span> map prettyIO <span class="fu">$</span> playChoices <span class="fu">$</span> take <span class="dv">7</span> fullDeck</code></pre></div>
+<p>To recap: given seven cards, we can construct a list of all the (maximally ranked) valid hands they can form. We can also compare individual hands. We’re nearly in a position to simulate the game.</p>
+<p>Before we can do that, we need to be able to actually deal the cards!</p>
+<h2 id="randomness">Randomness</h2>
+<p>To model a game of pai gow, we need to be able to keep track of a deck and randomly draw cards from it. This is a job for the <code>State</code> and <code>RVar</code> monads, which we’ll roll into a transformer stack like so.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Deal</span> <span class="fu">=</span> <span class="dt">ST.StateT</span> [<span class="dt">Card</span>] <span class="dt">RVar</span></code></pre></div>
+<p>Now an expression of type <code>Deal t</code> is a computation that keeps a deck as state, may use randomness, and returns a value of type <code>t</code> when “run”. We’ll use two helper functions for the “running”.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- carry out the computation, returning the result.</span>
+<span class="ot">&gt; runDeal ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> t
+<span class="ot">&gt;</span> runDeal x <span class="fu">=</span> runDeal' x <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> fst)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- carry out the computation, returning both the</span>
+<span class="ot">&gt;</span> <span class="co">-- result and the final state of the deck.</span>
+<span class="ot">&gt; runDeal' ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> (t, [<span class="dt">Card</span>])
+<span class="ot">&gt;</span> runDeal' <span class="fu">=</span> sampleRVar <span class="fu">.</span> (<span class="fu">$</span> fullDeck) <span class="fu">.</span> ST.runStateT</code></pre></div>
+<p>For example, here is a computation that attempts to deal a single card.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; drawCard ::</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> <span class="dt">Card</span>)
+<span class="ot">&gt;</span> drawCard <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   deck <span class="ot">&lt;-</span> ST.get <span class="co">-- get the state of the deck</span>
+<span class="ot">&gt;</span>   <span class="kw">case</span> deck <span class="kw">of</span>
+<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       c <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice deck <span class="co">-- draw a random card</span>
+<span class="ot">&gt;</span>       ST.put <span class="fu">$</span> L.delete c deck <span class="co">-- remove it from the deck</span>
+<span class="ot">&gt;</span>       return <span class="fu">$</span> <span class="dt">Just</span> c</code></pre></div>
+<p>Now try running the following command a few times.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal drawCard <span class="fu">&gt;&gt;=</span> prettyIO</code></pre></div>
+<p>Sequencing a list of <code>drawCard</code>s allows us to draw more than one at a time.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; drawCards ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> [<span class="dt">Card</span>])
+<span class="ot">&gt;</span> drawCards k <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   deck <span class="ot">&lt;-</span> ST.get <span class="co">-- save the state of the deck</span>
+<span class="ot">&gt;</span>   draw <span class="ot">&lt;-</span> sequence [drawCard <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]
+<span class="ot">&gt;</span>   <span class="kw">case</span> sequence draw <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Just</span> cs <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> cs <span class="co">-- successful draw</span>
+<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span> <span class="co">-- ran out of cards!</span>
+<span class="ot">&gt;</span>       ST.put deck <span class="co">-- return deck to original state</span>
+<span class="ot">&gt;</span>       return <span class="dt">Nothing</span></code></pre></div>
+<p>Now try running the following command a few times.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">5</span>) <span class="fu">&gt;&gt;=</span> prettyIO</code></pre></div>
+<p>This command draws 7 cards from a fresh deck and prints all the best valid pai gow plays they can form. Try running it a few times.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">7</span>) <span class="fu">&gt;&gt;=</span> (sequence_ <span class="fu">.</span> map prettyIO <span class="fu">.</span> playChoices <span class="fu">.</span> M.fromJust)</code></pre></div>
+<h2 id="the-game">The Game</h2>
+<p>Finally! We have the parts needed to model a game of pai gow. I’ll make one further simplification: each player has a number of plays to choose from, and we will select one at random. This ignores the House Way for the dealer and one of only three choices the players can make, but implementing a complete pai gow AI is beyond the scope of this post. :) I’ll be happy getting some concrete win percentages even in this simplified situation.</p>
+<p>Each round between the player and the banker has one of three possible outcomes.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Outcome</span> <span class="fu">=</span> <span class="dt">PlayerWin</span> <span class="fu">|</span> <span class="dt">Push</span> <span class="fu">|</span> <span class="dt">BankerWin</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</code></pre></div>
+<p>And the game: first note the asymmetric win conditions for the player and the banker.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; beatsBanker ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> beatsBanker p b <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard p) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard b)
+<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard p)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard b)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; beatsPlayer ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> beatsPlayer b p <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard b) <span class="fu">&gt;=</span> (toHand5 <span class="fu">$</span> fiveCard p)
+<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard b)  <span class="fu">&gt;=</span> (toHand2 <span class="fu">$</span> twoCard p)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- simulate a round of pai gow</span>
+<span class="ot">&gt; playPaiGow' ::</span> <span class="dt">Deal</span> <span class="dt">Outcome</span>
+<span class="ot">&gt;</span> playPaiGow' <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
+<span class="ot">&gt;</span>   player <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices playerHand
+<span class="ot">&gt;</span>   banker <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices bankerHand
+<span class="ot">&gt;</span>   <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker
+<span class="ot">&gt;</span>     <span class="kw">then</span> return <span class="dt">PlayerWin</span>
+<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player
+<span class="ot">&gt;</span>       <span class="kw">then</span> return <span class="dt">BankerWin</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> return <span class="dt">Push</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- simulate k rounds of pai gow</span>
+<span class="ot">&gt; playRounds' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Outcome</span>]
+<span class="ot">&gt;</span> playRounds' k <span class="fu">=</span> sequence [runDeal playPaiGow' <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]</code></pre></div>
+<p>Now this command will run 10 rounds of pai gow and tally the results.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> playRounds' <span class="dv">10</span> <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> tally)</code></pre></div>
+<p>I ran the simulation a few times to try to estimate what the win/lose/draw percentages are. It’s pretty slow in GHCi, so this took a while! Of course if I ran the simulation again these numbers would be slightly different, but thanks to the <a href="https://en.wikipedia.org/wiki/Law_of_large_numbers">law of large numbers</a> the percentages converge to their ideal values for this simplified version.</p>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="16%" />
+<col width="8%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Rounds</th>
+<th align="left">Banker Win</th>
+<th align="left">Push</th>
+<th align="left">Player Win</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1000</td>
+<td align="left">264</td>
+<td align="left">473</td>
+<td align="left">263</td>
+</tr>
+<tr class="even">
+<td align="left">2000</td>
+<td align="left">561</td>
+<td align="left">891</td>
+<td align="left">548</td>
+</tr>
+<tr class="odd">
+<td align="left">3000</td>
+<td align="left">863</td>
+<td align="left">1267</td>
+<td align="left">870</td>
+</tr>
+<tr class="even">
+<td align="left">4000</td>
+<td align="left">1132</td>
+<td align="left">1764</td>
+<td align="left">1104</td>
+</tr>
+</tbody>
+</table>
+<p>The first thing I notice is that a plurality of games are pushes. Many sources describe pai gow as a <em>slow</em> game, and this is why: many hands are drawn.</p>
+<p>With some concrete numbers we can also estimate the expected value of every dollar bet. If <span class="math inline">\(p\)</span> is the probability that the player wins and <span class="math inline">\(q\)</span> the probability they lose, the expected value of 1 dollar bet is <span class="math display">\[E = 1.95 \times p + 1 \times (1-p-q) + (-1) \times q = 0.95p - 2q + 1.\]</span> (Remember the rake!) Using the data from the 3000 round run (which is a very small number) I get <span class="math inline">\(p = 0.29\)</span> and <span class="math inline">\(q = 0.287\)</span>, so that <span class="math inline">\(E \approx 0.70\)</span>.</p>
+<h2 id="strategy">Strategy?</h2>
+<p>Here I simulated a game between two players who follow the rules but otherwise make random choices. I doubt this is the optimal strategy. It might be interesting to see what other strategies are possible, but this post is already too long and I am tired. :)</p>
+<p>We can think of a <em>strategy</em> here as a mapping <code>[Play] -&gt; Deal Play</code> that takes a list of possible plays (as given by <code>playChoices</code>) and selects one. <code>playPaiGow'</code> does this with the strategy <code>lift . choice</code> for each player (randomly choose one), but by parameterizing on this map we can pass in other strategies.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Strategy</span> <span class="fu">=</span> [<span class="dt">Play</span>] <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Play</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- simulate a round of pai gow</span>
+<span class="ot">&gt; playPaiGow ::</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Outcome</span>
+<span class="ot">&gt;</span> playPaiGow playerStrategy bankerStrategy <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="co">-- normally wouldn't pattern match like this,</span>
+<span class="ot">&gt;</span>   <span class="co">-- but if this fails something is wrong</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
+<span class="ot">&gt;</span>   player <span class="ot">&lt;-</span> playerStrategy <span class="fu">$</span> playChoices playerHand
+<span class="ot">&gt;</span>   banker <span class="ot">&lt;-</span> bankerStrategy <span class="fu">$</span> playChoices bankerHand
+<span class="ot">&gt;</span>   <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker
+<span class="ot">&gt;</span>     <span class="kw">then</span> return <span class="dt">PlayerWin</span>
+<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player
+<span class="ot">&gt;</span>       <span class="kw">then</span> return <span class="dt">BankerWin</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> return <span class="dt">Push</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- choose an optimal hand at random</span>
+<span class="ot">&gt; randomStrategy ::</span> <span class="dt">Strategy</span>
+<span class="ot">&gt;</span> randomStrategy <span class="fu">=</span> lift <span class="fu">.</span> choice</code></pre></div>
+<p>Anyway, if you’ve followed along in GHCi, you can try writing different strategy – maybe maximize the rank of the five-card hand, or try to favor pushes if no hand beats a majority, or minimize the sum of the ranks of the five-card and two-card hands, or something else. Have fun. :)</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

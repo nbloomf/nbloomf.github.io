@@ -59,7 +59,7 @@ main <span class="fu">=</span> hakyll rules
 
 <span class="ot">rules ::</span> <span class="dt">Rules</span> ()
 rules <span class="fu">=</span> undefined</code></pre></div>
-<p>where <code>Rules</code> is a special monad for turning source files into web pages. Come to think of it, Hakyll feels a lot like <code>make</code>. The Hakyll docs typically define an element of <code>Rules</code> using one giant <code>do</code> block, maybe with smaller <code>do</code> blocks nested in it. I’m not a big fan of this style. Personally I prefer smaller functions with good names and explicit type signatures, so instead I will break up the rules into separate functions. Here’s my <code>main</code>:</p>
+<p>where <code>Rules</code> is a special monad for turning source files into web pages. Come to think of it, Hakyll feels a lot like <code>make</code>. The examples in the Hakyll docs typically define an element of <code>Rules</code> using one giant <code>do</code> block, maybe with smaller <code>do</code> blocks nested in it. I’m not a big fan of this style. Personally I prefer smaller functions with good names and explicit type signatures, so instead I will break up the rules into separate functions. Here’s my <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   matchRawFiles
@@ -131,11 +131,13 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
 <span class="ot">&gt;</span>             <span class="st">&quot;arithmetic-made-difficult&quot;</span> <span class="st">&quot;templates/amd.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
+<span class="ot">&gt;</span>             <span class="st">&quot;software-tools-in-haskell&quot;</span> <span class="st">&quot;templates/sth-tools.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
 <span class="ot">&gt;</span>             <span class="st">&quot;project-euler&quot;</span> <span class="st">&quot;templates/project-euler-solutions.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
-<p>Here we used a custom compiler, <code>loadAndApplyTemplateIfTagged</code>, which loads a given template only if a post has a given tag. This is a cheap way to give some and only some posts a custom header or style.</p>
+<p>Here we also used a custom compiler, <code>loadAndApplyTemplateIfTagged</code>, which loads a given template only if a post has a given tag. This is a cheap way to give some and only some posts a custom header or style.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> loadAndApplyTemplateIfTagged
 <span class="ot">&gt;   ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
 <span class="ot">&gt;</span> loadAndApplyTemplateIfTagged tag template context x <span class="fu">=</span> <span class="kw">do</span>

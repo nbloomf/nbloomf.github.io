@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Project Euler #8: Largest Product in a Series</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Project Euler #8: Largest Product in a Series</h1>
+<!-- BEGIN BODY -->
+<div class="info">
+<strong>Spoiler alert!</strong> This page is part of a series on solutions to <a href="https://projecteuler.net/">Project Euler</a> problems. If you prefer to solve problems yourself, do not read on!
+</div>
+
+<div class="info">
+Posted on 2017-03-13 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/project-euler.html">project-euler</a></div>
+
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-03-13-project-euler-solution-8.lhs">the source</a> into GHCi and play along.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.Maybe</span>
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">System.Random</span></code></pre></div>
+<p><a href="https://projecteuler.net/problem=8">Problem 8</a> from Project Euler:</p>
+<div class="problem">
+<p>The four adjacent digits in the following 1000-digit number that have the greatest product are 9 × 9 × 8 × 9 = 5832.</p>
+<pre><code>73167176531330624919225119674426574742355349194934
+96983520312774506326239578318016984801869478851843
+85861560789112949495459501737958331952853208805511
+12540698747158523863050715693290963295227443043557
+66896648950445244523161731856403098711121722383113
+62229893423380308135336276614282806444486645238749
+30358907296290491560440772390713810515859307960866
+70172427121883998797908792274921901699720888093776
+65727333001053367881220235421809751254540594752243
+52584907711670556013604839586446706324415722155397
+53697817977846174064955149290862569321978468622482
+83972241375657056057490261407972968652414535100474
+82166370484403199890008895243450658541227588666881
+16427171479924442928230863465674813919123162824586
+17866458359124566529476545682848912883142607690042
+24219022671055626321111109370544217506941658960408
+07198403850962455444362981230987879927244284909188
+84580156166097919133875499200524063689912560717606
+05886116467109405077541002256983155200055935729725
+71636269561882670428252483600823257530420752963450</code></pre>
+<p>Find the thirteen adjacent digits in this 1000-digit number that have the greatest product. What is the value of this product?</p>
+</div>
+<p>First let’s get this hideous list of digits loaded into haskell.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> bignum ::</span> [<span class="dt">Integer</span>]
+<span class="fu">&gt;</span> bignum <span class="fu">=</span>
+<span class="fu">&gt;</span>   [<span class="dv">7</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">1</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">4</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">7</span>
+<span class="fu">&gt;</span>   ,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">0</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">3</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">1</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">1</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">7</span>
+<span class="fu">&gt;</span>   ,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">7</span>
+<span class="fu">&gt;</span>   ,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">9</span>
+<span class="fu">&gt;</span>   ,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>
+<span class="fu">&gt;</span>   ,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">9</span>
+<span class="fu">&gt;</span>   ,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">3</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">7</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">4</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">2</span>
+<span class="fu">&gt;</span>   ,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">4</span>
+<span class="fu">&gt;</span>   ,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">9</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">1</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">4</span>
+<span class="fu">&gt;</span>   ,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">2</span>
+<span class="fu">&gt;</span>   ,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">0</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">8</span>
+<span class="fu">&gt;</span>   ,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">8</span>
+<span class="fu">&gt;</span>   ,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">8</span>
+<span class="fu">&gt;</span>   ,<span class="dv">8</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">9</span>
+<span class="fu">&gt;</span>   ,<span class="dv">9</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">8</span>,<span class="dv">9</span>,<span class="dv">9</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">6</span>
+<span class="fu">&gt;</span>   ,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">4</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">9</span>,<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>
+<span class="fu">&gt;</span>   ,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">5</span>,<span class="dv">9</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">7</span>,<span class="dv">2</span>,<span class="dv">5</span>
+<span class="fu">&gt;</span>   ,<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">9</span>,<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">1</span>,<span class="dv">8</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">6</span>,<span class="dv">7</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">8</span>
+<span class="fu">&gt;</span>   ,<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">8</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">3</span>,<span class="dv">0</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">5</span>,<span class="dv">2</span>,<span class="dv">9</span>,<span class="dv">6</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">0</span>
+<span class="fu">&gt;</span>   ]</code></pre></div>
+<p>I’ll start by trying the obvious thing. Given a list of integers, we can get all the contiguous subsequences of length exactly <span class="math inline">\(k\)</span>, find the product of each, and take the maximum.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- take a prefix of length exactly k</span>
+<span class="fu">&gt;</span><span class="ot"> takeExactly ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+<span class="fu">&gt;</span> takeExactly <span class="dv">0</span> _  <span class="fu">=</span> <span class="dt">Just</span> []
+<span class="fu">&gt;</span> takeExactly _ [] <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span> takeExactly k (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">&lt;</span> <span class="dv">0</span>
+<span class="fu">&gt;</span>   <span class="kw">then</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span>   <span class="kw">else</span> fmap (x<span class="fu">:</span>) <span class="fu">$</span> takeExactly (k<span class="fu">-</span><span class="dv">1</span>) xs
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- list of all contiguous sublists of length k</span>
+<span class="fu">&gt;</span><span class="ot"> subseqs ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="fu">&gt;</span> subseqs _ [] <span class="fu">=</span> []
+<span class="fu">&gt;</span> subseqs k xs <span class="fu">=</span> <span class="kw">case</span> takeExactly k xs <span class="kw">of</span>
+<span class="fu">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> []
+<span class="fu">&gt;</span>   <span class="dt">Just</span> ys <span class="ot">-&gt;</span> ys <span class="fu">:</span> subseqs k (tail xs)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- total version of maximum (pls ignore abuse of &quot;sup&quot;)</span>
+<span class="fu">&gt;</span><span class="ot"> sup ::</span> (<span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+<span class="fu">&gt;</span> sup [] <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span> sup xs <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> maximum xs
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span> <span class="co">-- largest product of k consecutive entries of xs</span>
+<span class="fu">&gt;</span><span class="ot"> pe8' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> pe8' k xs <span class="fu">=</span> sup <span class="fu">$</span> map product <span class="fu">$</span> subseqs k xs</code></pre></div>
+<p>As a sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe8' <span class="dv">4</span> bignum
+<span class="dt">Just</span> <span class="dv">5832</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> rand ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Integer</span>]
+<span class="fu">&gt;</span> rand k <span class="fu">=</span> <span class="kw">do</span>
+<span class="fu">&gt;</span>   <span class="kw">let</span>
+<span class="fu">&gt;</span>     tk h (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">if</span> h <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="kw">then</span> [] <span class="kw">else</span> x <span class="fu">:</span> tk (h<span class="fu">-</span><span class="dv">1</span>) xs
+<span class="fu">&gt;</span>   g <span class="ot">&lt;-</span> newStdGen
+<span class="fu">&gt;</span>   return <span class="fu">$</span> tk k <span class="fu">$</span> randomRs (<span class="dv">0</span>,<span class="dv">9</span>) g</code></pre></div>
+<p>So this works well enough, but it’s a little unsatisfying. For instance, the <code>subseqs</code> function does a lot of unnecessary length checks. One way to avoid this is to use <code>zip</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span> <span class="co">-- list of all suffixes of xs</span>
+<span class="fu">&gt;</span><span class="ot"> tails ::</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="fu">&gt;</span> tails [] <span class="fu">=</span> []
+<span class="fu">&gt;</span> tails xs <span class="fu">=</span> xs <span class="fu">:</span> tails (tail xs)
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span><span class="ot"> pe8'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> pe8'' k xs <span class="fu">=</span>
+<span class="fu">&gt;</span>   takeExactly k (tails xs)
+<span class="fu">&gt;</span>   <span class="fu">&gt;&gt;=</span> <span class="dt">Just</span> <span class="fu">.</span> (foldr1 (zipWith (<span class="fu">*</span>)))
+<span class="fu">&gt;</span>   <span class="fu">&gt;&gt;=</span> sup</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> splitOn ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="fu">&gt;</span> splitOn _ [] <span class="fu">=</span> [[]]
+<span class="fu">&gt;</span> splitOn z as<span class="fu">@</span>(x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">if</span> z <span class="fu">==</span> x
+<span class="fu">&gt;</span>   <span class="kw">then</span> [] <span class="fu">:</span> splitOn z xs
+<span class="fu">&gt;</span>   <span class="kw">else</span> (takeWhile (<span class="fu">/=</span> z) as) <span class="fu">:</span> splitOn z (dropWhile (<span class="fu">/=</span> z) as)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> pe8''' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> pe8''' k xs <span class="fu">=</span> sup <span class="fu">$</span> catMaybes <span class="fu">$</span> map (pe8'' k) <span class="fu">$</span> splitOn <span class="dv">0</span> xs</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
+<span class="fu">&gt;</span><span class="ot"> pe8'''' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Integer</span>
+<span class="fu">&gt;</span> pe8'''' k xs <span class="fu">=</span>
+<span class="fu">&gt;</span>   sup <span class="fu">$</span> catMaybes <span class="fu">$</span> map bar <span class="fu">$</span> splitOn <span class="dv">0</span> xs
+<span class="fu">&gt;</span>   <span class="kw">where</span>
+<span class="fu">&gt;</span>     bar xs <span class="fu">=</span> <span class="kw">do</span>
+<span class="fu">&gt;</span>       as <span class="ot">&lt;-</span> takeExactly k xs
+<span class="fu">&gt;</span>       bs <span class="ot">&lt;-</span> dropExactly k xs
+<span class="fu">&gt;</span>       sup <span class="fu">$</span> foo (product as) xs bs
+<span class="fu">&gt;</span> 
+<span class="fu">&gt;</span>     foo _ _ [] <span class="fu">=</span> []
+<span class="fu">&gt;</span>     foo a (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span>
+<span class="fu">&gt;</span>       <span class="kw">let</span> z <span class="fu">=</span> (a <span class="fu">*</span> y) <span class="ot">`div`</span> x
+<span class="fu">&gt;</span>       <span class="kw">in</span> z <span class="fu">:</span> foo z xs ys
+<span class="fu">&gt;</span>
+<span class="fu">&gt;</span><span class="ot"> dropExactly ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+<span class="fu">&gt;</span> dropExactly <span class="dv">0</span> xs <span class="fu">=</span> <span class="dt">Just</span> xs
+<span class="fu">&gt;</span> dropExactly _ [] <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span> dropExactly k (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">&lt;</span> <span class="dv">0</span>
+<span class="fu">&gt;</span>   <span class="kw">then</span> <span class="dt">Nothing</span>
+<span class="fu">&gt;</span>   <span class="kw">else</span> dropExactly (k<span class="fu">-</span><span class="dv">1</span>) xs</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
