@@ -45,9 +45,8 @@ Posted on 2017-03-08 by nbloomf
 
 
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-03-08-project-euler-solution-4.lhs">the source</a> into GHCi and play along.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
-<span class="fu">&gt;</span> <span class="kw">import </span><span class="dt">Data.Maybe</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Maybe</span></code></pre></div>
 <p><a href="https://projecteuler.net/problem=4">Problem 4</a> from Project Euler:</p>
 <div class="problem">
 <p>A palindromic number reads the same both ways. The largest palindrome made from the product of two 2-digit numbers is 9009 = 91 × 99.</p>
@@ -61,49 +60,45 @@ Posted on 2017-03-08 by nbloomf
 </div>
 </div>
 <p>The first thing I’ll do is write helper functions to convert a number to its base 10 digits and back.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- base 10 digits of n in 'little endian' order</span>
-<span class="fu">&gt;</span> <span class="co">-- (least significant digits first)</span>
-<span class="fu">&gt;</span><span class="ot"> toDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
-<span class="fu">&gt;</span> toDigits n <span class="fu">=</span> <span class="kw">if</span> n <span class="fu">&lt;=</span> <span class="dv">0</span>
-<span class="fu">&gt;</span>   <span class="kw">then</span> []
-<span class="fu">&gt;</span>   <span class="kw">else</span> (n<span class="ot">`rem`</span><span class="dv">10</span>) <span class="fu">:</span> toDigits (n<span class="ot">`quot`</span><span class="dv">10</span>)
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> fromDigits ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> fromDigits <span class="fu">=</span> sum <span class="fu">.</span> zipWith (<span class="fu">*</span>) (map (<span class="dv">10</span><span class="fu">^</span>) [<span class="dv">0</span><span class="fu">..</span>])
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> numDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> numDigits n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> toDigits n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- base 10 digits of n in 'little endian' order</span>
+<span class="ot">&gt;</span> <span class="co">-- (least significant digits first)</span>
+<span class="ot">&gt; toDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+<span class="ot">&gt;</span> toDigits n <span class="fu">=</span> <span class="kw">if</span> n <span class="fu">&lt;=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>   <span class="kw">then</span> []
+<span class="ot">&gt;</span>   <span class="kw">else</span> (n<span class="ot">`rem`</span><span class="dv">10</span>) <span class="fu">:</span> toDigits (n<span class="ot">`quot`</span><span class="dv">10</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; fromDigits ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> fromDigits <span class="fu">=</span> sum <span class="fu">.</span> zipWith (<span class="fu">*</span>) (map (<span class="dv">10</span><span class="fu">^</span>) [<span class="dv">0</span><span class="fu">..</span>])
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; numDigits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> numDigits n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> toDigits n</code></pre></div>
 <p>Sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> test_digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> test_digits n <span class="fu">=</span> n <span class="fu">==</span> (fromDigits <span class="fu">$</span> toDigits n)
-
-<span class="fu">$&gt;</span> all test_digits [<span class="dv">1</span><span class="fu">..</span><span class="dv">1000000</span>]
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; test_digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> test_digits n <span class="fu">=</span> n <span class="fu">==</span> (fromDigits <span class="fu">$</span> toDigits n)</code></pre></div>
+<p>And a test:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> all test_digits [<span class="dv">1</span><span class="fu">..</span><span class="dv">1000000</span>]
 <span class="dt">True</span></code></pre></div>
 <p>Note that our lists of digits come out “backward”; that is, least significant first.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> toDigits <span class="dv">12345</span>
 [<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>]</code></pre></div>
 <p>Then we can detect whether a given number is a palindrome in base 10.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> is_palindrome_10 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> is_palindrome_10 n <span class="fu">=</span> <span class="kw">let</span> ds <span class="fu">=</span> toDigits n <span class="kw">in</span>
-<span class="fu">&gt;</span>   ds <span class="fu">==</span> (reverse ds)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; is_palindrome_10 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> is_palindrome_10 n <span class="fu">=</span> <span class="kw">let</span> ds <span class="fu">=</span> toDigits n <span class="kw">in</span>
+<span class="ot">&gt;</span>   ds <span class="fu">==</span> (reverse ds)</code></pre></div>
 <p>Now we’re not just looking for the largest palindrome of a given length; that would be easy – the string of all 9s is the largest palindrome with a given number of digits. Instead, we want the largest palindrome that is the product of two 3-digit numbers. The most obvious solution is to list all the products of two 3-digit numbers, filter for the palindromes, and find the max.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- the triple (a,b,a*b) which yields the largest</span>
-<span class="fu">&gt;</span> <span class="co">-- palindrome product a*b among the pairs of</span>
-<span class="fu">&gt;</span> <span class="co">-- t-digit numbers a and b</span>
-<span class="fu">&gt;</span><span class="ot"> pe4' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
-<span class="fu">&gt;</span> pe4' t <span class="fu">=</span>
-<span class="fu">&gt;</span>   <span class="kw">let</span>
-<span class="fu">&gt;</span>     thd (_,_,x) <span class="fu">=</span> x
-<span class="fu">&gt;</span>     min <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>)
-<span class="fu">&gt;</span>     max <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>t <span class="fu">-</span> <span class="dv">1</span>
-<span class="fu">&gt;</span>   <span class="kw">in</span>
-<span class="fu">&gt;</span>     maximumBy (\x y <span class="ot">-&gt;</span> compare (thd x) (thd y)) <span class="fu">$</span>
-<span class="fu">&gt;</span>     filter (is_palindrome_10 <span class="fu">.</span> thd) <span class="fu">$</span> 
-<span class="fu">&gt;</span>     [(a,b,a<span class="fu">*</span>b) <span class="fu">|</span> a <span class="ot">&lt;-</span> [min<span class="fu">..</span>max], b <span class="ot">&lt;-</span> [a<span class="fu">..</span>max]]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- the triple (a,b,a*b) which yields the largest</span>
+<span class="ot">&gt;</span> <span class="co">-- palindrome product a*b among the pairs of</span>
+<span class="ot">&gt;</span> <span class="co">-- t-digit numbers a and b</span>
+<span class="ot">&gt; pe4' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="ot">&gt;</span> pe4' t <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     thd (_,_,x) <span class="fu">=</span> x
+<span class="ot">&gt;</span>     min <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>)
+<span class="ot">&gt;</span>     max <span class="fu">=</span> <span class="dv">10</span><span class="fu">^</span>t <span class="fu">-</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     maximumBy (\x y <span class="ot">-&gt;</span> compare (thd x) (thd y)) <span class="fu">$</span>
+<span class="ot">&gt;</span>     filter (is_palindrome_10 <span class="fu">.</span> thd) <span class="fu">$</span> 
+<span class="ot">&gt;</span>     [(a,b,a<span class="fu">*</span>b) <span class="fu">|</span> a <span class="ot">&lt;-</span> [min<span class="fu">..</span>max], b <span class="ot">&lt;-</span> [a<span class="fu">..</span>max]]</code></pre></div>
 <p>This <code>pe4'</code> works well enough:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe4' <span class="dv">1</span>
 (<span class="dv">3</span>,<span class="dv">3</span>,<span class="dv">9</span>)
@@ -170,14 +165,13 @@ M
 </div>
 </div>
 <p>Let’s make <span class="math inline">\(H_v\)</span> and <span class="math inline">\(K_v\)</span> executable.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> h_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> h_ v a <span class="fu">=</span> a <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
-<span class="fu">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits a
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> k_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> k_ v b <span class="fu">=</span> b <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
-<span class="fu">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits b</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; h_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> h_ v a <span class="fu">=</span> a <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
+<span class="ot">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; k_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> k_ v b <span class="fu">=</span> b <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">2</span><span class="fu">*</span>t<span class="fu">+</span>v))
+<span class="ot">&gt;</span>   <span class="kw">where</span> t <span class="fu">=</span> numDigits b</code></pre></div>
 <p>And the next result gives us a concrete family of palindrome products with factors of even digit length.</p>
 <div class="result">
 <div class="thm">
@@ -190,35 +184,32 @@ M
 </div>
 </div>
 <p>Let’s make <span class="math inline">\(Q_{t,m}\)</span>, <span class="math inline">\(A_{t,m}\)</span>, and <span class="math inline">\(B_{t,m}\)</span> executable.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> q_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> q_ t m <span class="fu">=</span> sum <span class="fu">$</span> map (\k <span class="ot">-&gt;</span> <span class="dv">10</span><span class="fu">^</span>(m<span class="fu">*</span>k)) [<span class="dv">0</span><span class="fu">..</span>(t<span class="fu">-</span><span class="dv">1</span>)]
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> a_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> a_ t m <span class="fu">=</span> q_ (<span class="dv">2</span><span class="fu">*</span>t) m
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> b_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> b_ t m <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> (<span class="dv">10</span><span class="fu">^</span>(t<span class="fu">*</span>m))<span class="fu">*</span>(<span class="dv">10</span><span class="fu">^</span>m <span class="fu">-</span> <span class="dv">1</span>)<span class="fu">*</span>(q_ t m)
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> c_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> c_ t m <span class="fu">=</span> (q_ t m)<span class="fu">*</span>(<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">3</span><span class="fu">*</span>t<span class="fu">*</span>m))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; q_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> q_ t m <span class="fu">=</span> sum <span class="fu">$</span> map (\k <span class="ot">-&gt;</span> <span class="dv">10</span><span class="fu">^</span>(m<span class="fu">*</span>k)) [<span class="dv">0</span><span class="fu">..</span>(t<span class="fu">-</span><span class="dv">1</span>)]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; a_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> a_ t m <span class="fu">=</span> q_ (<span class="dv">2</span><span class="fu">*</span>t) m
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; b_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> b_ t m <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> (<span class="dv">10</span><span class="fu">^</span>(t<span class="fu">*</span>m))<span class="fu">*</span>(<span class="dv">10</span><span class="fu">^</span>m <span class="fu">-</span> <span class="dv">1</span>)<span class="fu">*</span>(q_ t m)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; c_ ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> c_ t m <span class="fu">=</span> (q_ t m)<span class="fu">*</span>(<span class="dv">1</span> <span class="fu">+</span> <span class="dv">10</span><span class="fu">^</span>(<span class="dv">3</span><span class="fu">*</span>t<span class="fu">*</span>m))</code></pre></div>
 <p>Sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> test_abc ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> test_abc t m <span class="fu">=</span>
-<span class="fu">&gt;</span>   <span class="kw">let</span>
-<span class="fu">&gt;</span>     a <span class="fu">=</span> a_ t m; b <span class="fu">=</span> b_ t m; c <span class="fu">=</span> c_ t m
-<span class="fu">&gt;</span>   <span class="kw">in</span> and
-<span class="fu">&gt;</span>     [ a<span class="fu">*</span>b <span class="fu">==</span> c
-<span class="fu">&gt;</span>     , (numDigits a) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
-<span class="fu">&gt;</span>     , (numDigits b) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m
-<span class="fu">&gt;</span>     , (numDigits c) <span class="fu">==</span> <span class="dv">4</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
-<span class="fu">&gt;</span>     , is_palindrome_10 c
-<span class="fu">&gt;</span>     , is_palindrome_10 (<span class="dv">2</span><span class="fu">*</span>c)
-<span class="fu">&gt;</span>     ]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; test_abc ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> test_abc t m <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     a <span class="fu">=</span> a_ t m; b <span class="fu">=</span> b_ t m; c <span class="fu">=</span> c_ t m
+<span class="ot">&gt;</span>   <span class="kw">in</span> and
+<span class="ot">&gt;</span>     [ a<span class="fu">*</span>b <span class="fu">==</span> c
+<span class="ot">&gt;</span>     , (numDigits a) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>     , (numDigits b) <span class="fu">==</span> <span class="dv">2</span><span class="fu">*</span>t<span class="fu">*</span>m
+<span class="ot">&gt;</span>     , (numDigits c) <span class="fu">==</span> <span class="dv">4</span><span class="fu">*</span>t<span class="fu">*</span>m <span class="fu">-</span> m <span class="fu">+</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>     , is_palindrome_10 c
+<span class="ot">&gt;</span>     , is_palindrome_10 (<span class="dv">2</span><span class="fu">*</span>c)
+<span class="ot">&gt;</span>     ]</code></pre></div>
 <p>And a test:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">$&gt;</span> and [test_abc t m <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>], m <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>]]
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> and [test_abc t m <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>], m <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>]]
 <span class="dt">True</span></code></pre></div>
 <p>This gives an infinite family of palindrome products. Note that if <span class="math inline">\(m = 1\)</span>, then both factors have the same number of digits – <span class="math inline">\(2t\)</span> – and the product has <span class="math inline">\(4t\)</span> digits.</p>
 <p>Here are the first 5 examples.</p>
@@ -326,69 +317,65 @@ M
 <h2 id="meanwhile">Meanwhile</h2>
 <p>Our alternate strategy for this problem was to search among the palindromes for <span class="math inline">\(k\)</span>-digit factorizations; and now we know that it’s enough to look among the <span class="math inline">\(2k\)</span>-digit palindromes – we are guaranteed to find a factorization there. This simplifies the search space a bit.</p>
 <p>So the new strategy is to generate the <span class="math inline">\(2k\)</span>-digit palindromes in reverse order and look for the first one that factors are a product of two <span class="math inline">\(k\)</span>-digit numbers.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- the 2k-digit palindromes</span>
-<span class="fu">&gt;</span><span class="ot"> palindromes ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
-<span class="fu">&gt;</span> palindromes k <span class="fu">=</span> map (fromDigits <span class="fu">.</span> make) (digits k)
-<span class="fu">&gt;</span>   <span class="kw">where</span>
-<span class="fu">&gt;</span>     <span class="co">-- turn a list into a palindrome</span>
-<span class="fu">&gt;</span>     make ds <span class="fu">=</span> ds <span class="fu">++</span> reverse ds
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot">     digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [[<span class="dt">Integer</span>]]
-<span class="fu">&gt;</span>     digits k <span class="fu">=</span> foo k []
-<span class="fu">&gt;</span>       <span class="kw">where</span>
-<span class="fu">&gt;</span>         foo <span class="dv">0</span> _ <span class="fu">=</span> [[]]
-<span class="fu">&gt;</span>         foo k z <span class="fu">=</span> <span class="kw">do</span>
-<span class="fu">&gt;</span>           d  <span class="ot">&lt;-</span> [<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>] <span class="fu">++</span> z
-<span class="fu">&gt;</span>           ds <span class="ot">&lt;-</span> foo (k<span class="fu">-</span><span class="dv">1</span>) [<span class="dv">0</span>]
-<span class="fu">&gt;</span>           return (d<span class="fu">:</span>ds)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- the 2k-digit palindromes</span>
+<span class="ot">&gt; palindromes ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+<span class="ot">&gt;</span> palindromes k <span class="fu">=</span> map (fromDigits <span class="fu">.</span> make) (digits k)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     <span class="co">-- turn a list into a palindrome</span>
+<span class="ot">&gt;</span>     make ds <span class="fu">=</span> ds <span class="fu">++</span> reverse ds
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     digits ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [[<span class="dt">Integer</span>]]
+<span class="ot">&gt;</span>     digits k <span class="fu">=</span> foo k []
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;</span>         foo <span class="dv">0</span> _ <span class="fu">=</span> [[]]
+<span class="ot">&gt;</span>         foo k z <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           d  <span class="ot">&lt;-</span> [<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">7</span>,<span class="dv">6</span>,<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">1</span>] <span class="fu">++</span> z
+<span class="ot">&gt;</span>           ds <span class="ot">&lt;-</span> foo (k<span class="fu">-</span><span class="dv">1</span>) [<span class="dv">0</span>]
+<span class="ot">&gt;</span>           return (d<span class="fu">:</span>ds)</code></pre></div>
 <p>Now given a <span class="math inline">\(2k\)</span>-digit palindrome, we want to know whether it factors as a product of two <span class="math inline">\(k\)</span>-digit numbers. Note that if <span class="math inline">\(N = AB\)</span>, then without loss of generality <span class="math inline">\(A \leq \sqrt{N}\)</span> and <span class="math inline">\(\sqrt{N} \leq B\)</span>. So it is enough to search for a factorization of <span class="math inline">\(N\)</span> where <span class="math inline">\(10^{t-1} \leq A \leq \lfloor \sqrt{N} \rfloor\)</span>.</p>
 <p>Here’s a utility function to find <span class="math inline">\(\lfloor \sqrt{N} \rfloor\)</span> by bisection.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- find t such that t^2 &lt;= n &lt; (t+1)^2</span>
-<span class="fu">&gt;</span><span class="ot"> floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> floor_sqrt n <span class="fu">=</span>
-<span class="fu">&gt;</span>   <span class="kw">let</span>
-<span class="fu">&gt;</span>     bisect (a,b) <span class="fu">=</span> <span class="kw">if</span> b<span class="fu">-</span>a <span class="fu">&lt;=</span> <span class="dv">1</span>
-<span class="fu">&gt;</span>       <span class="kw">then</span> a
-<span class="fu">&gt;</span>       <span class="kw">else</span> <span class="kw">let</span> m <span class="fu">=</span> (b<span class="fu">+</span>a)<span class="ot">`quot`</span><span class="dv">2</span> <span class="kw">in</span>
-<span class="fu">&gt;</span>         <span class="kw">if</span> m<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n
-<span class="fu">&gt;</span>           <span class="kw">then</span> bisect (m,b)
-<span class="fu">&gt;</span>           <span class="kw">else</span> bisect (a,m)
-<span class="fu">&gt;</span>   <span class="kw">in</span>
-<span class="fu">&gt;</span>     <span class="kw">if</span> n <span class="fu">&lt;</span> <span class="dv">0</span>
-<span class="fu">&gt;</span>       <span class="kw">then</span> error <span class="st">&quot;floor_sqrt: negative argument&quot;</span>
-<span class="fu">&gt;</span>       <span class="kw">else</span> bisect (<span class="dv">1</span>,n)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- find t such that t^2 &lt;= n &lt; (t+1)^2</span>
+<span class="ot">&gt; floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> floor_sqrt n <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     bisect (a,b) <span class="fu">=</span> <span class="kw">if</span> b<span class="fu">-</span>a <span class="fu">&lt;=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>       <span class="kw">then</span> a
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="kw">let</span> m <span class="fu">=</span> (b<span class="fu">+</span>a)<span class="ot">`quot`</span><span class="dv">2</span> <span class="kw">in</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> m<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n
+<span class="ot">&gt;</span>           <span class="kw">then</span> bisect (m,b)
+<span class="ot">&gt;</span>           <span class="kw">else</span> bisect (a,m)
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> n <span class="fu">&lt;</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>       <span class="kw">then</span> error <span class="st">&quot;floor_sqrt: negative argument&quot;</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> bisect (<span class="dv">1</span>,n)</code></pre></div>
 <p>Sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> test_floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> test_floor_sqrt n <span class="fu">=</span> <span class="kw">let</span> q <span class="fu">=</span> floor_sqrt n <span class="kw">in</span>
-<span class="fu">&gt;</span>   (q<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) <span class="fu">&amp;&amp;</span> (n <span class="fu">&lt;</span> (q<span class="fu">+</span><span class="dv">1</span>)<span class="fu">^</span><span class="dv">2</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; test_floor_sqrt ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> test_floor_sqrt n <span class="fu">=</span> <span class="kw">let</span> q <span class="fu">=</span> floor_sqrt n <span class="kw">in</span>
+<span class="ot">&gt;</span>   (q<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) <span class="fu">&amp;&amp;</span> (n <span class="fu">&lt;</span> (q<span class="fu">+</span><span class="dv">1</span>)<span class="fu">^</span><span class="dv">2</span>)</code></pre></div>
 <p>And a test:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">%&gt;</span> all test_floor_sqrt [<span class="dv">1</span><span class="fu">..</span><span class="dv">10000</span>]
 <span class="dt">True</span></code></pre></div>
 <p>Also, if we wish to factor a <span class="math inline">\(2k\)</span>-digit number as a product of <span class="math inline">\(k\)</span> digit numbers, we should search “down” from <span class="math inline">\(\lfloor \sqrt{N} \rfloor\)</span> to <span class="math inline">\(10^{t-1}\)</span> rather than the reverse. This is because smaller factors are likely to give quotients with too many digits.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- search for a factorization of n into t-digit factors</span>
-<span class="fu">&gt;</span><span class="ot"> does_factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
-<span class="fu">&gt;</span> does_factor t n <span class="fu">=</span>
-<span class="fu">&gt;</span>   <span class="kw">let</span>
-<span class="fu">&gt;</span>     check m
-<span class="fu">&gt;</span>       <span class="fu">|</span> m <span class="fu">&lt;</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>) <span class="fu">=</span> <span class="dt">Nothing</span>
-<span class="fu">&gt;</span>       <span class="fu">|</span> n<span class="ot">`rem`</span>m <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> <span class="kw">if</span> numDigits (n<span class="ot">`quot`</span>m) <span class="fu">==</span> t
-<span class="fu">&gt;</span>           <span class="kw">then</span> <span class="dt">Just</span> m
-<span class="fu">&gt;</span>           <span class="kw">else</span> check (m<span class="fu">-</span><span class="dv">1</span>)
-<span class="fu">&gt;</span>       <span class="fu">|</span> otherwise <span class="fu">=</span> check (m<span class="fu">-</span><span class="dv">1</span>)
-<span class="fu">&gt;</span>   <span class="kw">in</span>
-<span class="fu">&gt;</span>     <span class="kw">case</span> check (floor_sqrt n) <span class="kw">of</span>
-<span class="fu">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-<span class="fu">&gt;</span>       <span class="dt">Just</span> m  <span class="ot">-&gt;</span> <span class="dt">Just</span> (m, n<span class="ot">`quot`</span>m)
-<span class="fu">&gt;</span>
-<span class="fu">&gt;</span><span class="ot"> pe4'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
-<span class="fu">&gt;</span> pe4'' k <span class="fu">=</span>
-<span class="fu">&gt;</span>   <span class="kw">let</span>
-<span class="fu">&gt;</span>     (a,b) <span class="fu">=</span> head <span class="fu">$</span> catMaybes <span class="fu">$</span> map (does_factor k) (palindromes k)
-<span class="fu">&gt;</span>   <span class="kw">in</span> (a,b,a<span class="fu">*</span>b)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- search for a factorization of n into t-digit factors</span>
+<span class="ot">&gt; does_factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="ot">&gt;</span> does_factor t n <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     check m
+<span class="ot">&gt;</span>       <span class="fu">|</span> m <span class="fu">&lt;</span> <span class="dv">10</span><span class="fu">^</span>(t<span class="fu">-</span><span class="dv">1</span>) <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       <span class="fu">|</span> n<span class="ot">`rem`</span>m <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> <span class="kw">if</span> numDigits (n<span class="ot">`quot`</span>m) <span class="fu">==</span> t
+<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">Just</span> m
+<span class="ot">&gt;</span>           <span class="kw">else</span> check (m<span class="fu">-</span><span class="dv">1</span>)
+<span class="ot">&gt;</span>       <span class="fu">|</span> otherwise <span class="fu">=</span> check (m<span class="fu">-</span><span class="dv">1</span>)
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> check (floor_sqrt n) <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       <span class="dt">Just</span> m  <span class="ot">-&gt;</span> <span class="dt">Just</span> (m, n<span class="ot">`quot`</span>m)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; pe4'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="ot">&gt;</span> pe4'' k <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (a,b) <span class="fu">=</span> head <span class="fu">$</span> catMaybes <span class="fu">$</span> map (does_factor k) (palindromes k)
+<span class="ot">&gt;</span>   <span class="kw">in</span> (a,b,a<span class="fu">*</span>b)</code></pre></div>
 <p>This <code>pe4''</code> is still slow, as we still check an exponential number of cases. But we can squeeze out a couple more values.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe4'' <span class="dv">2</span>
 (<span class="dv">91</span>,<span class="dv">99</span>,<span class="dv">9009</span>)
@@ -400,9 +387,8 @@ M
 (<span class="dv">99681</span>,<span class="dv">99979</span>,<span class="dv">9966006699</span>)</code></pre></div>
 <p>Interesting! It looks like the form of the largest palindrome product depends on whether the factors have an even or odd number of digits.</p>
 <p>Anyway, the final answer is:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe4 ::</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe4 <span class="fu">=</span> <span class="kw">let</span> (_,_,x) <span class="fu">=</span> pe4'' <span class="dv">3</span> <span class="kw">in</span> x</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe4 ::</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe4 <span class="fu">=</span> <span class="kw">let</span> (_,_,x) <span class="fu">=</span> pe4'' <span class="dv">3</span> <span class="kw">in</span> x</code></pre></div>
 
 
 <!-- END BODY -->

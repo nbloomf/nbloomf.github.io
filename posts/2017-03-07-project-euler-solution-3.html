@@ -52,37 +52,34 @@ Posted on 2017-03-07 by nbloomf
 </div>
 <p>Let’s start by writing two helper functions: <code>isprime</code>, which detects whether a given integer is prime, and <code>primes</code>, the list of positive prime integers. We’ll use the following characterization of the prime positive integers: 2 is prime, and an integer <span class="math inline">\(n\)</span> is prime if it is not evenly divisible by any of the primes <span class="math inline">\(p\)</span> with <span class="math inline">\(p^2 \leq n\)</span>.</p>
 <p>That sounds circular (the primes are those integers not divisible by any smaller primes) but thanks to the well-ordering property of the natural numbers, it’s kosher. Even better, this definition translates directly to code.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> isprime ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> isprime n <span class="fu">=</span> all (\p <span class="ot">-&gt;</span> n<span class="ot">`rem`</span>p <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">$</span>
-<span class="fu">&gt;</span>   takeWhile (\p <span class="ot">-&gt;</span> p<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) primes
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span><span class="ot"> primes ::</span> [<span class="dt">Integer</span>]
-<span class="fu">&gt;</span> primes <span class="fu">=</span> <span class="dv">2</span> <span class="fu">:</span> filter isprime [<span class="dv">3</span>,<span class="dv">5</span><span class="fu">..</span>]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; isprime ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isprime n <span class="fu">=</span> all (\p <span class="ot">-&gt;</span> n<span class="ot">`rem`</span>p <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">$</span>
+<span class="ot">&gt;</span>   takeWhile (\p <span class="ot">-&gt;</span> p<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) primes
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; primes ::</span> [<span class="dt">Integer</span>]
+<span class="ot">&gt;</span> primes <span class="fu">=</span> <span class="dv">2</span> <span class="fu">:</span> filter isprime [<span class="dv">3</span>,<span class="dv">5</span><span class="fu">..</span>]</code></pre></div>
 <p>Now we have a list of all the primes in order.</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> take <span class="dv">10</span> primes
 [<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">7</span>,<span class="dv">11</span>,<span class="dv">13</span>,<span class="dv">17</span>,<span class="dv">19</span>,<span class="dv">23</span>,<span class="dv">29</span>]</code></pre></div>
 <p>This is absolutely not the most efficient way to construct the primes, but it has the advantage of being both simple and clearly correct. Building a blazing fast prime sieve is beyond the scope of my itch scratching for the moment, so I’ll leave it there.</p>
 <p>So this problem is asking for the largest prime factor of an integer. I happen to know that this is a Hard Problem; so hard, in fact, that cryptographic schemes are built on the premise that finding the largest prime factor of an arbitrary (large) integer is infeasible. All that is to say – I won’t bother trying to be clever, and just do the obvious thing: given <span class="math inline">\(n\)</span>, find all of its prime factors, and just return the largest one.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span> <span class="co">-- find the smallest prime p with n = pm</span>
-<span class="fu">&gt;</span> <span class="co">-- return (p,m)</span>
-<span class="fu">&gt;</span><span class="ot"> first_factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
-<span class="fu">&gt;</span> first_factor n <span class="fu">=</span> check <span class="fu">$</span> takeWhile (\p <span class="ot">-&gt;</span> p<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) primes
-<span class="fu">&gt;</span>   <span class="kw">where</span>
-<span class="fu">&gt;</span>     check [] <span class="fu">=</span> (n,<span class="dv">1</span>)
-<span class="fu">&gt;</span>     check (p<span class="fu">:</span>ps) <span class="fu">=</span> <span class="kw">if</span> n<span class="ot">`rem`</span>p <span class="fu">==</span> <span class="dv">0</span>
-<span class="fu">&gt;</span>       <span class="kw">then</span> (p, n<span class="ot">`quot`</span>p)
-<span class="fu">&gt;</span>       <span class="kw">else</span> check ps
-<span class="fu">&gt;</span> 
-<span class="fu">&gt;</span> <span class="co">-- prime factors of n in nondecreasing order</span>
-<span class="fu">&gt;</span><span class="ot"> factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
-<span class="fu">&gt;</span> factor n <span class="fu">=</span> <span class="kw">let</span> (p,m) <span class="fu">=</span> first_factor n <span class="kw">in</span>
-<span class="fu">&gt;</span>   <span class="kw">if</span> m <span class="fu">==</span> <span class="dv">1</span> <span class="kw">then</span> [p] <span class="kw">else</span> p <span class="fu">:</span> factor m</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- find the smallest prime p with n = pm</span>
+<span class="ot">&gt;</span> <span class="co">-- return (p,m)</span>
+<span class="ot">&gt; first_factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
+<span class="ot">&gt;</span> first_factor n <span class="fu">=</span> check <span class="fu">$</span> takeWhile (\p <span class="ot">-&gt;</span> p<span class="fu">^</span><span class="dv">2</span> <span class="fu">&lt;=</span> n) primes
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     check [] <span class="fu">=</span> (n,<span class="dv">1</span>)
+<span class="ot">&gt;</span>     check (p<span class="fu">:</span>ps) <span class="fu">=</span> <span class="kw">if</span> n<span class="ot">`rem`</span>p <span class="fu">==</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>       <span class="kw">then</span> (p, n<span class="ot">`quot`</span>p)
+<span class="ot">&gt;</span>       <span class="kw">else</span> check ps
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- prime factors of n in nondecreasing order</span>
+<span class="ot">&gt; factor ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
+<span class="ot">&gt;</span> factor n <span class="fu">=</span> <span class="kw">let</span> (p,m) <span class="fu">=</span> first_factor n <span class="kw">in</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> m <span class="fu">==</span> <span class="dv">1</span> <span class="kw">then</span> [p] <span class="kw">else</span> p <span class="fu">:</span> factor m</code></pre></div>
 <p>This implementation of <code>factor</code> does a lot of unnecessary work; each time we call <code>smallest_factor</code>, it tests a bunch of prime divisors that we know in advance won’t work. But it does the job.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe3' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe3' n <span class="fu">=</span> last <span class="fu">$</span> factor n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe3' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe3' n <span class="fu">=</span> last <span class="fu">$</span> factor n</code></pre></div>
 <p>Testing:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe3' <span class="dv">10</span>
 <span class="dv">5</span>
@@ -91,9 +88,8 @@ Posted on 2017-03-07 by nbloomf
 <span class="fu">$&gt;</span> pe3' <span class="dv">600851475143</span>
 <span class="dv">6857</span></code></pre></div>
 <p>So the final answer is:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe3 ::</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe3 <span class="fu">=</span> pe3' <span class="dv">600851475143</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe3 ::</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe3 <span class="fu">=</span> pe3' <span class="dv">600851475143</span></code></pre></div>
 
 
 <!-- END BODY -->

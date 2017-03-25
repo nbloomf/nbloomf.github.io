@@ -51,11 +51,10 @@ Posted on 2017-03-05 by nbloomf
 <p>Find the sum of all the multiples of 3 or 5 below 1000.</p>
 </div>
 <p>First, let’s do the most obvious thing: list the integers below 1000, filter out the ones divisible by either 3 or 5, and sum. For reasons I’ll get to later I will parameterize this function on <span class="math inline">\(n\)</span>, the upper bound for our numbers.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe1' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe1' n <span class="fu">=</span> sum <span class="fu">$</span> filter div3or5 [<span class="dv">1</span><span class="fu">..</span>(n<span class="fu">-</span><span class="dv">1</span>)]
-<span class="fu">&gt;</span>   <span class="kw">where</span>
-<span class="fu">&gt;</span>     div3or5 k <span class="fu">=</span> (k<span class="ot">`mod`</span><span class="dv">3</span> <span class="fu">==</span> <span class="dv">0</span>) <span class="fu">||</span> (k<span class="ot">`mod`</span><span class="dv">5</span> <span class="fu">==</span> <span class="dv">0</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1' n <span class="fu">=</span> sum <span class="fu">$</span> filter div3or5 [<span class="dv">1</span><span class="fu">..</span>(n<span class="fu">-</span><span class="dv">1</span>)]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     div3or5 k <span class="fu">=</span> (k<span class="ot">`mod`</span><span class="dv">3</span> <span class="fu">==</span> <span class="dv">0</span>) <span class="fu">||</span> (k<span class="ot">`mod`</span><span class="dv">5</span> <span class="fu">==</span> <span class="dv">0</span>)</code></pre></div>
 <p>We can verify that <code>pe1' 10 == 23</code> as claimed. Now we can compute the answer to the given problem like so:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe1' <span class="dv">1000</span>
 <span class="dv">233168</span></code></pre></div>
@@ -119,10 +118,9 @@ Posted on 2017-03-05 by nbloomf
 <p>Let’s break the problem down a little. We want the sum of all numbers less than <span class="math inline">\(n\)</span> which are divisible by either 3 or 5; let’s start with something simpler: the sum of all the numbers less than <span class="math inline">\(n\)</span> which are divisible by 3.</p>
 <p>The sum of the first <span class="math inline">\(k\)</span> multiples of 3 is <span class="math display">\[3 + 6 + 9 + \cdots + 3k = 3(1 + 2 + 3 + \cdots + k) = 3 \frac{k(k+1)}{2},\]</span> using the formula for the <span class="math inline">\(k\)</span>th <a href="https://en.wikipedia.org/wiki/Triangular_number">triangular number</a>. Now how many multiples of 3 are there below <span class="math inline">\(n\)</span>? This is exactly what is counted by the quotient in integer division. That is, given positive integers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, when we decompose <span class="math inline">\(a\)</span> as <span class="math inline">\(a = qb + r\)</span> using the division algorithm with <span class="math inline">\(r &gt;= 0\)</span>, that <span class="math inline">\(q\)</span> is precisely the number of numbers between 1 and <span class="math inline">\(a\)</span> (inclusive) which are divisible by <span class="math inline">\(b\)</span>. The Haskell function to find this quotient is (shockingly) <code>quot</code>.</p>
 <p>But there’s nothing magic about 3 in that analysis; we might as well replace 3 with any other positive integer, say <span class="math inline">\(t\)</span>. Then we can sum the multiples of <span class="math inline">\(t\)</span> below <span class="math inline">\(n\)</span> like so.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> sumMultsOfBelow ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> sumMultsOfBelow t n <span class="fu">=</span> t <span class="fu">*</span> q <span class="fu">*</span> (q<span class="fu">+</span><span class="dv">1</span>) <span class="ot">`quot`</span> <span class="dv">2</span>
-<span class="fu">&gt;</span>   <span class="kw">where</span> q <span class="fu">=</span> (n<span class="fu">-</span><span class="dv">1</span>) <span class="ot">`quot`</span> t</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; sumMultsOfBelow ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> sumMultsOfBelow t n <span class="fu">=</span> t <span class="fu">*</span> q <span class="fu">*</span> (q<span class="fu">+</span><span class="dv">1</span>) <span class="ot">`quot`</span> <span class="dv">2</span>
+<span class="ot">&gt;</span>   <span class="kw">where</span> q <span class="fu">=</span> (n<span class="fu">-</span><span class="dv">1</span>) <span class="ot">`quot`</span> t</code></pre></div>
 <p>What is the complexity of <code>sumMultsOfBelow</code>? It’s harder to say exactly, because I don’t know how <code>quot</code> is implemented. But the schoolbook algorithm for integer division is bounded above by <span class="math inline">\(O(\log(n)^2)\)</span>; this is much cheaper than <span class="math inline">\(O(n)\)</span>.</p>
 <p>So we can easily find the sum of the multiples of 3 below 1000 and the multiples of 5 below 1000:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> (sumMultsOfBelow <span class="dv">3</span> <span class="dv">1000</span>) <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> <span class="dv">1000</span>)
@@ -131,23 +129,20 @@ Posted on 2017-03-05 by nbloomf
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> (sumMultsOfBelow <span class="dv">3</span> <span class="dv">1000</span>) <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> <span class="dv">1000</span>) <span class="fu">-</span> (sumMultsOfBelow <span class="dv">15</span> <span class="dv">1000</span>)
 <span class="dv">233168</span></code></pre></div>
 <p>Let’s wrap this in a definition.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe1'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe1'' n <span class="fu">=</span> (sumMultsOfBelow <span class="dv">3</span> n)
-<span class="fu">&gt;</span>             <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> n)
-<span class="fu">&gt;</span>             <span class="fu">-</span> (sumMultsOfBelow <span class="dv">15</span> n)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1'' n <span class="fu">=</span> (sumMultsOfBelow <span class="dv">3</span> n)
+<span class="ot">&gt;</span>             <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> n)
+<span class="ot">&gt;</span>             <span class="fu">-</span> (sumMultsOfBelow <span class="dv">15</span> n)</code></pre></div>
 <p>At this point, I was planning to include another table of timings to show how much faster <code>pe1''</code> is, but I had to go to <span class="math inline">\(n = 10^{85}\)</span> before it took longer than 0.01 seconds (the smallest unit of time reported by GHCi). For reference, <code>pe1'' (10^100000)</code> took 2.03 seconds on my machine. An <span class="math inline">\(O(n)\)</span> algorithm has no hope on inputs that big. And by the way that digit pattern, a 2, followed by 3s, then 1, then 6s, then 8, holds.</p>
 <p>Before we get too excited, let’s verify that <code>pe1'</code> and <code>pe1''</code> agree, at least on small inputs.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> test_pe1 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="fu">&gt;</span> test_pe1 n <span class="fu">=</span> pe1' n <span class="fu">==</span> pe1'' n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; test_pe1 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> test_pe1 n <span class="fu">=</span> pe1' n <span class="fu">==</span> pe1'' n</code></pre></div>
 <p>And then:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> and <span class="fu">$</span> map test_pe1 [<span class="dv">1</span><span class="fu">..</span><span class="dv">1500</span>]
 <span class="dt">True</span></code></pre></div>
 <p>So it is with confidence we say that <code>pe1'</code> and <code>pe1''</code> are the same function. Then the answer to problem 1 is:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> pe1 ::</span> <span class="dt">Integer</span>
-<span class="fu">&gt;</span> pe1 <span class="fu">=</span> pe1'' <span class="dv">1000</span></code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1 ::</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1 <span class="fu">=</span> pe1'' <span class="dv">1000</span></code></pre></div>
 
 
 <!-- END BODY -->
