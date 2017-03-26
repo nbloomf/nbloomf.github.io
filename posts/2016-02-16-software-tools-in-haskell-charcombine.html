@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: charcombine</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../about.html">About</a>
+    <a href="../projects.html">Projects</a>
+    <a href="../contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: charcombine</h1>
+<!-- BEGIN BODY -->
+<h2>replace chars on stdin with precomposed equivalents</h2>
+
+<div class="info">
+This page is part of a series on <a href="../pages/sth/index.html">Software Tools in Haskell</a>.
+</div>
+
+<div class="info">
+Posted on 2016-02-16 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/software-tools-in-haskell.html">software-tools-in-haskell</a></div>
+
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2016-02-16-software-tools-in-haskell-charcombine.lhs">the source</a> into GHCi and play along. As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-charcombine: replace combining unicode chars with precomposed chars</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (isMark)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
+<p>One of the fundamental problems with our <a href="../pages/sth/tool/detab.html"><code>detab</code></a> program is that it assumes plain text characters can be displayed on a rectangular array of character cells in a one-to-one way, with each character taking one cell and each cell having at most one character. This was a reasonable expectation at the time <em>Software Tools</em> was written, when character encodings were simpler. But Unicode makes this assumption wrong for several reasons. The first, which we will address now, is that <em>diacritics</em> like acute accents or carons can be expressed using <em>combining characters</em>. These are special unicode code points that are not displayed independently but rather modify the character which they succeed. You can read more about these on the <a href="https://en.wikipedia.org/wiki/Combining_character">wiki</a>. This is a problem for us because <code>detab</code> counts tab stop widths in terms of characters.</p>
+<p>There is something we can do to fix this. Unicode also includes a large number of <em>precomposed</em> characters; single code points that are semantically equivalent to characters with combining diacritics. For example, code point <code>U+0041</code> (latin capital A) followed by <code>U+0301</code> (combining acute accent above) is canonically equivalent to the single code point <code>U+00C1</code> (latin capital A with acute accent above). There is a helpful <a href="https://en.wikipedia.org/wiki/List_of_precomposed_Latin_characters_in_Unicode">wiki page</a> with a list of these precombined characters.</p>
+<p>We could make <code>detab</code> aware of this equivalence. This is a bad idea, though, for a few reasons. First, it would make <code>detab</code> more complicated with only marginal benefit. Most of the text that I work with is plain ASCII, and making <code>detab</code> fiddle with unicode issues on such files will slow it down for no reason. We could give <code>detab</code> a command line flag to explicitly enable this feature, but it is important not to clutter up the interface of a program without a good reason. Second, <code>detab</code> is surely not the only program that might need to deal with this unicode issue. If each one solves the problem in its own way there will be lots of duplicated code, and duplicated code (while sometimes justifiable) is a breeding ground for bugs. Moreover the Unicode standard changes every few years, possibly requiring a time consuming edit of all the programs that work with unicode-encoded text. <strong>A far better solution is to make a separate tool, <code>charcombine</code>, to handle this problem.</strong> Because our programs are designed to communicate via stdin and stdout, then we can send text through <code>charcombine</code> before giving it to <code>detab</code>. This way <code>detab</code> can stay simple, and <code>charcombine</code> can be a small, general-purpose tool for replacing combining characters with precomposed characters.</p>
+<p>Since we already have a function, <a href="../posts/2016-02-14-software-tools-in-haskell-glyphcount.html"><code>getGlyphs</code></a>, which splits a stream of characters into noncombining+combining substrings, the main function of <code>charcombine</code> is quite succinct.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   charFilter composeGlyphs
+<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<p>All that remains is to write a function, <code>composeGlyph</code>, that takes a string of characters and replaces it by an equivalent precomposed character.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; composeGlyphs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> composeGlyphs <span class="fu">=</span> concatMap composeGlyph <span class="fu">.</span> getGlyphs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; composeGlyph ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> composeGlyph <span class="st">&quot;&quot;</span>  <span class="fu">=</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span> composeGlyph [c] <span class="fu">=</span> [c]
+<span class="ot">&gt;</span> composeGlyph [x, <span class="ch">'\x0301'</span>] <span class="fu">=</span> <span class="kw">case</span> lookup x acute <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y
+<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> [x, <span class="ch">'\x0301'</span>]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     acute <span class="fu">=</span>
+<span class="ot">&gt;</span>       [ (<span class="ch">'A'</span>,<span class="st">&quot;Á&quot;</span>), (<span class="ch">'Æ'</span>,<span class="st">&quot;Ǽ&quot;</span>), (<span class="ch">'C'</span>,<span class="st">&quot;Ć&quot;</span>), (<span class="ch">'E'</span>,<span class="st">&quot;É&quot;</span>), (<span class="ch">'G'</span>,<span class="st">&quot;Ǵ&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'I'</span>,<span class="st">&quot;Í&quot;</span>), (<span class="ch">'K'</span>,<span class="st">&quot;Ḱ&quot;</span>), (<span class="ch">'L'</span>,<span class="st">&quot;Ĺ&quot;</span>), (<span class="ch">'M'</span>,<span class="st">&quot;Ḿ&quot;</span>), (<span class="ch">'N'</span>,<span class="st">&quot;Ń&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'O'</span>,<span class="st">&quot;Ó&quot;</span>), (<span class="ch">'Ø'</span>,<span class="st">&quot;Ǿ&quot;</span>), (<span class="ch">'P'</span>,<span class="st">&quot;Ṕ&quot;</span>), (<span class="ch">'R'</span>,<span class="st">&quot;Ŕ&quot;</span>), (<span class="ch">'S'</span>,<span class="st">&quot;Ś&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'U'</span>,<span class="st">&quot;Ú&quot;</span>), (<span class="ch">'W'</span>,<span class="st">&quot;Ẃ&quot;</span>), (<span class="ch">'Y'</span>,<span class="st">&quot;Ý&quot;</span>), (<span class="ch">'Z'</span>,<span class="st">&quot;Ź&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'a'</span>,<span class="st">&quot;á&quot;</span>), (<span class="ch">'æ'</span>,<span class="st">&quot;ǽ&quot;</span>), (<span class="ch">'c'</span>,<span class="st">&quot;ć&quot;</span>), (<span class="ch">'e'</span>,<span class="st">&quot;é&quot;</span>), (<span class="ch">'g'</span>,<span class="st">&quot;ǵ&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'i'</span>,<span class="st">&quot;í&quot;</span>), (<span class="ch">'k'</span>,<span class="st">&quot;ḱ&quot;</span>), (<span class="ch">'l'</span>,<span class="st">&quot;ĺ&quot;</span>), (<span class="ch">'m'</span>,<span class="st">&quot;ḿ&quot;</span>), (<span class="ch">'n'</span>,<span class="st">&quot;ń&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'o'</span>,<span class="st">&quot;ó&quot;</span>), (<span class="ch">'ø'</span>,<span class="st">&quot;ǿ&quot;</span>), (<span class="ch">'p'</span>,<span class="st">&quot;ṕ&quot;</span>), (<span class="ch">'r'</span>,<span class="st">&quot;ŕ&quot;</span>), (<span class="ch">'s'</span>,<span class="st">&quot;ś&quot;</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'u'</span>,<span class="st">&quot;ú&quot;</span>), (<span class="ch">'w'</span>,<span class="st">&quot;ẃ&quot;</span>), (<span class="ch">'y'</span>,<span class="st">&quot;ý&quot;</span>), (<span class="ch">'z'</span>,<span class="st">&quot;ź&quot;</span>)
+<span class="ot">&gt;</span>       ]</code></pre></div>
+<p>And OH MY GOSH THIS IS SO BORING. There are dozens more precomposed characters, and it’s pretty clear how to extend this function to those. I will leave finishing this to another day.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
+<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
+<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- break a string into a list of &quot;glyphs&quot;</span>
+<span class="ot">&gt; getGlyphs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getGlyphs <span class="fu">=</span> unfoldr firstGlyph
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstGlyph ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstGlyph <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     firstGlyph (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">if</span> isMark x
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">Just</span> <span class="fu">$</span> break (not <span class="fu">.</span> isMark) (x<span class="fu">:</span>xs)
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span> (as,bs) <span class="fu">=</span> break (not <span class="fu">.</span> isMark) xs
+<span class="ot">&gt;</span>         <span class="dt">Just</span> (x<span class="fu">:</span>as, bs)</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
