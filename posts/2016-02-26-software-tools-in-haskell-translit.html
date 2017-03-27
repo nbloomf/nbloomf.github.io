@@ -5,7 +5,7 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>nbloomf.github.io - Software Tools in Haskell: unescape</title>
+<title>nbloomf.github.io - Software Tools in Haskell: translit</title>
 <link rel="stylesheet" type="text/css" href="../css/default.css" />
 <link rel="icon" href="../icon/favicon-32.png" />
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../icon/favicon-57.png" />
@@ -30,38 +30,143 @@
 </div>
 
 <div id="content">
-<h1>Software Tools in Haskell: unescape</h1>
+<h1>Software Tools in Haskell: translit</h1>
 <!-- BEGIN BODY -->
-<h2>interpret C and ASCII escape codes on stdin</h2>
+<h2>transliterate or remove chars on stdin</h2>
 
 <div class="info">
 This page is part of a series on <a href="../pages/sth/index.html">Software Tools in Haskell</a>.
 </div>
 
 <div class="info">
-Posted on 2016-02-21 by nbloomf
+Posted on 2016-02-26 by nbloomf
 </div>
 
 
 <div class="info tags">Tags: <a href="../tag/software-tools-in-haskell.html">software-tools-in-haskell</a></div>
 
 
-<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2016-02-21-software-tools-in-haskell-unescape.lhs">the source</a> into GHCi and play along. As usual, we start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-unescape: interpret C and ASCII backslash escape codes on stdin</span>
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2016-02-26-software-tools-in-haskell-translit.lhs">the source</a> into GHCi and play along. As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-translit: transliterate characters on stdin</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (ord, readLitChar)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
-<p>While testing the <a href="../posts/2016-02-20-software-tools-in-haskell-overstrike.html"><code>overstrike</code></a> program I ran into an inconvenient problem: I couldn’t find an easy and consistent way to type control characters (namely backspace, but others have the same problem) that works both in my terminal and in my golden test suite. It seems like every program – the terminal, the shell, the test runner – wants to interpret these characters slightly differently. This problem is a good candidate for a filter-style program. <code>unescape</code> reads lines from stdin and interprets any C-style escape sequences or ASCII abbreviations it finds. (There is a nice wiki page on <a href="https://en.wikipedia.org/wiki/Escape_sequences_in_C">C-style escape sequences</a>, and the page on <a href="https://en.wikipedia.org/wiki/ASCII#ASCII_control_code_chart">ASCII</a> includes a table of abbreviations.)</p>
-<p>The main program is simple enough, as it simply munches through the lines on stdin looking for escape codes.</p>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (readLitChar)</code></pre></div>
+<p>The purpose of <code>translit</code> is to replace characters by other characters; it applies a mapping with signature <code>Char -&gt; Char</code> to each character on stdin. (While simple, this is surprisingly useful.) The most succinct way to specify such a mapping is with two lists of characters, one denoting the domain of the character mapping and the other the codomain. For instance, calling</p>
+<pre><code>translit &quot;abc&quot; &quot;xyzw&quot;</code></pre>
+<p>replaces all <code>a</code>s by <code>x</code>, <code>b</code>s by <code>y</code>, and <code>c</code>s by <code>z</code>. (The <code>w</code> has no effect.) It is useful if we can also specify <em>ranges</em> of characters with hyphens. For instance the string <code>a-g</code> should be shorthand for <code>abcdefg</code>. If the second list is nonempty, but shorter than the first, we pretend its final character is repeated indefinitely, so that</p>
+<pre><code>translit &quot;abc&quot; &quot;x&quot;</code></pre>
+<p>replaces all copies of <code>a</code>, <code>b</code>, or <code>c</code> by <code>x</code>.</p>
+<p>If the second list is empty or not given, we can reasonably interpret this to mean we should remove the characters in the first list from the input. This is all well and good.</p>
+<p>I have one quibble with Kernighan and Plauger’s design, though; they introduce another special input case. If the second list contains 0 or 1 characters, then the first list can be prepended by a “not” symbol like so:</p>
+<pre><code>translit -&quot;abc&quot; &quot;x&quot;</code></pre>
+<p>This means to replace every character <em>except</em> <code>a</code>, <code>b</code>, and <code>c</code> by <code>x</code>. I respectfully claim that this is the Wrong Thing. The arguments to <code>translit</code> are shorthand for a mapping, given in the form of two <strong>lists</strong>. We can tell by the significance of order; <code>translit ab xy</code> is not the same as <code>translit ba xy</code>. It is only by a quirk of combinatorics that this dependence on order goes away if the second list has 0 or 1 entry. But the special “not” option implicitly treats the arguments of <code>translit</code> as <strong>sets</strong>. To see this, think about what the complement of a list of characters is. In principle we could say that <code>-&quot;a-z&quot;</code>, as a list, means all characters (in order) except for the lower case roman letters. But is this useful? For instance, what if the user tries to run</p>
+<pre><code>translit -&quot;abc&quot; &quot;xy&quot;</code></pre>
+<p>What does this mean? Is the <code>y</code> just ignored? (User input should not be silently ignored.) Does the first unicode code point get mapped to <code>x</code>, and all others to <code>y</code>? Is this useful? Is it useful enough to warrant complicating <code>translit</code> with the extra code needed to handle this special case of a special case? I don’t think it is.</p>
+<p>But the ability to replace or remove characters from a <em>set complement</em> is useful. And so I will split <code>translit</code> into two: <code>translit</code> will handle the list-wise mapping of characters, and a separate program, <code>charreplace</code>, will handle set-wise mappings. My opinion (and it’s just an opinion!) is that these two uses are different enough, semantically, to deserve separate tools; this avoids burdening the user with too many special cases and cluttering the interface with delicate options.</p>
+<p>We already have most of the machinery needed for <code>translit</code>, except for the code needed to interpret command line arguments. We introduce an internal representation of character sequences: a character sequence is a list of either single characters or ranges of characters.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">CharSeq</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Single</span> <span class="dt">Char</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Range</span>  <span class="dt">Char</span> <span class="dt">Char</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; readCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> readCharSeq <span class="fu">=</span> fmap charSeqsToList <span class="fu">.</span> readCharSeqs <span class="fu">.</span> bsUnEsc
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     charSeqsToList ::</span> [<span class="dt">CharSeq</span>] <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>     charSeqsToList <span class="fu">=</span> concatMap charSeqToList
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;</span>         charSeqToList (<span class="dt">Single</span> x)  <span class="fu">=</span> [x]
+<span class="ot">&gt;</span>         charSeqToList (<span class="dt">Range</span> x y) <span class="fu">=</span> enumFromTo x y
+<span class="ot">&gt;</span>     
+<span class="ot">&gt;     readCharSeqs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CharSeq</span>]
+<span class="ot">&gt;</span>     readCharSeqs <span class="fu">=</span> unfoldrMaybe firstCharSeq
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;         firstCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">CharSeq</span>, <span class="dt">String</span>))
+<span class="ot">&gt;</span>         firstCharSeq <span class="st">&quot;&quot;</span>      <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>         firstCharSeq [x]     <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, <span class="st">&quot;&quot;</span>))
+<span class="ot">&gt;</span>         firstCharSeq (<span class="ch">'-'</span><span class="fu">:</span>_) <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>         firstCharSeq [x,y]   <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, [y]))
+<span class="ot">&gt;</span>         firstCharSeq (x<span class="fu">:</span>y<span class="fu">:</span>z<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">case</span> y <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="ch">'-'</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Range</span> x z, xs))
+<span class="ot">&gt;</span>           otherwise <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, y<span class="fu">:</span>z<span class="fu">:</span>xs))</code></pre></div>
+<p>Now the main program just has to interpret its arguments and call some library functions.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   charFilter bsUnEsc
-<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
-<p>The real work is done by the library function <code>bsUnEsc</code>. There’s no nice way to do this, so we pattern match on the prefix of a string looking for escape codes. One gotcha: the ASCII abbreviations are not prefix free; for instance the meaning of the string <code>\SOHello</code> is ambiguous; is it <code>\SO</code> (Shift Out) followed by <code>Hello</code> or <code>\SOH</code> (Start Of Heading) followed by <code>ello</code>? To make sure these are detected correctly, we pattern match <code>\SOH</code> first (since otherwise that string would always match as <code>\SO</code> followed by <code>H</code>) and add one more escape code, <code>\&amp;</code> (taken from Haskell), for those occasions when you <em>really</em> want <code>\SO</code> followed by <code>H</code> not interpreted as <code>\SOH</code>. <code>\&amp;</code> represents the empty string, so we can do this with <code>\SO\&amp;H</code>. So, you know, for all those times you need carefully formatted ASCII control codes.</p>
-<p><code>bsUnEsc</code> will probably be useful later for parsing command line arguments.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; bsUnEsc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> map (readCharSeq <span class="fu">.</span> bsUnEsc) args <span class="kw">of</span>
+<span class="ot">&gt;</span>     [<span class="dt">Just</span> as]          <span class="ot">-&gt;</span> return (as, <span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>     [<span class="dt">Just</span> as, <span class="dt">Just</span> bs] <span class="ot">-&gt;</span> return (as, bs)
+<span class="ot">&gt;</span>     otherwise          <span class="ot">-&gt;</span> argError
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     remove   <span class="fu">=</span> filter (not <span class="fu">.</span> (<span class="ot">`elem`</span> from))
+<span class="ot">&gt;</span>     translit <span class="fu">=</span> map (applyListMap <span class="fu">$</span> zip from (padLast to))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">case</span> to <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;&quot;</span>        <span class="ot">-&gt;</span> charFilter remove
+<span class="ot">&gt;</span>     otherwise <span class="ot">-&gt;</span> charFilter translit
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   exitSuccess
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; argError ::</span> <span class="dt">IO</span> a
+<span class="ot">&gt;</span> argError <span class="fu">=</span> reportErrorMsgs
+<span class="ot">&gt;</span>   [ <span class="st">&quot;usage:&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  translit [FROM] [TO]  -- replace chars in FROM by those in TO&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  translit [REMOVE]     -- remove chars in REMOVE&quot;</span>
+<span class="ot">&gt;</span>   ] <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; padLast ::</span> [a] <span class="ot">-&gt;</span> [a]
+<span class="ot">&gt;</span> padLast []     <span class="fu">=</span> []
+<span class="ot">&gt;</span> padLast [x]    <span class="fu">=</span> repeat x
+<span class="ot">&gt;</span> padLast (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">:</span> padLast xs</code></pre></div>
+<p>Note that the arguments of <code>translit</code> are run through <code>bsUnEsc</code>, so that we can easily work with otherwise untypeable characters. (We could, for example, use this to replace <code>charfullwidth</code>.) With <code>translit</code>, many of the small tools we’ve written so far can suddenly be combined to do neat things. As a simple example, put the following text in a file called <code>unicode-test.txt</code>.</p>
+<pre><code>\uxyz0 \uxyz1 \uxyz2 \uxyz3
+\uxyz4 \uxyz5 \uxyz6 \uxyz7
+\uxyz8 \uxyz9 \uxyza \uxyzb
+\uxyzc \uxyzd \uxyze \uxyzf</code></pre>
+<p>Now the pipeline</p>
+<pre><code>cat unicode-test.txt | translit &quot;xyz&quot; &quot;001&quot; | unescape</code></pre>
+<p>replaces the <code>x</code>, <code>y</code>, and <code>z</code> with <code>0</code>, <code>0</code>, and <code>1</code> and interprets the <code>\uXXXX</code> as escape codes. This lets us see what several unicode code points look like at one time. With a larger “template” file we could see more characters at a time.</p>
+<h2 id="old-stuff">Old Stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
+<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
+<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- apply a list of input-output pairs</span>
+<span class="ot">&gt; applyListMap ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [(a,a)] <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span> applyListMap zs x <span class="fu">=</span> <span class="kw">case</span> lookup x zs <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> x
+<span class="ot">&gt;</span>   <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
+<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; unfoldrMaybe ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (a,b))) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+<span class="ot">&gt;</span> unfoldrMaybe f x <span class="fu">=</span> <span class="kw">case</span> f x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> []
+<span class="ot">&gt;</span>   <span class="dt">Just</span> (<span class="dt">Just</span> (a,b)) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     as <span class="ot">&lt;-</span> unfoldrMaybe f b
+<span class="ot">&gt;</span>     <span class="dt">Just</span> (a<span class="fu">:</span>as)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- expand C and ASCII style escape codes</span>
+<span class="ot">&gt; bsUnEsc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 <span class="ot">&gt;</span> bsUnEsc <span class="fu">=</span> concat <span class="fu">.</span> unfoldr firstChar
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;     firstChar ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
@@ -173,12 +278,6 @@ Posted on 2016-02-21 by nbloomf
 <span class="ot">&gt;</span>             []        <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="ch">'\\'</span><span class="fu">:</span>digs, ds)
 <span class="ot">&gt;</span>             ((x,_)<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="dt">Just</span> ([x],ds)
 <span class="ot">&gt;</span>           <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="ch">'\\'</span><span class="fu">:</span>digs, ds)</code></pre></div>
-<h2 id="old-stuff">Old stuff</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
-<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
-<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs</code></pre></div>
 
 <!-- END BODY -->
 </div>
