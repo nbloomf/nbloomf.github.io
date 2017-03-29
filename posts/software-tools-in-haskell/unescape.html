@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: unescape</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: unescape</h1>
+<!-- BEGIN BODY -->
+<h2>interpret C and ASCII escape codes on stdin</h2>
+
+<div class="info">
+Posted on 2016-02-21 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/unescape.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-unescape: interpret C and ASCII backslash escape codes on stdin</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)</code></pre></div>
+<p>See also the <a href="../../posts/software-tools-in-haskell/Lib/Backslash.html">Backslash</a> module.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lib.Backslash</span> (bsUnEsc)</code></pre></div>
+<p>While testing the <a href="../../posts/2016-02-20-software-tools-in-haskell-overstrike.html"><code>overstrike</code></a> program I ran into an inconvenient problem: I couldn’t find an easy and consistent way to type control characters (namely backspace, but others have the same problem) that works both in my terminal and in my golden test suite. It seems like every program – the terminal, the shell, the test runner – wants to interpret these characters slightly differently. This problem is a good candidate for a filter-style program. <code>unescape</code> reads lines from stdin and interprets any C-style escape sequences or ASCII abbreviations it finds. (There is a nice wiki page on <a href="https://en.wikipedia.org/wiki/Escape_sequences_in_C">C-style escape sequences</a>, and the page on <a href="https://en.wikipedia.org/wiki/ASCII#ASCII_control_code_chart">ASCII</a> includes a table of abbreviations.)</p>
+<p>The main program is simple enough, as it simply munches through the lines on stdin looking for escape codes.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   charFilter bsUnEsc
+<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<p>The real work is done by the library function <code>bsUnEsc</code>.</p>
+<h2 id="old-stuff">Old stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
+<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
+<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

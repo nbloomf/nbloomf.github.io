@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: import</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: import</h1>
+<!-- BEGIN BODY -->
+<h2>splice contents of a file into stdin</h2>
+
+<div class="info">
+Posted on 2016-03-02 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/import.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- import: splice contents of a file into stdin</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (isSpace)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)</code></pre></div>
+<p>The <code>import</code> tool takes lines one at a time, writing them back to <code>stdout</code> until it sees one of the form</p>
+<pre><code>import FILENAME</code></pre>
+<p>These lines should instead be replaced by the contents of <code>FILENAME</code> (relative to the working directory). I will make two tweaks: first, this program implicitly imposes a format on its input. To avoid being too opinionated, I will make the import “keyword” a parameter, so that if the user runs</p>
+<pre><code>import --with &quot;go-go-gadget&quot;</code></pre>
+<p>then the program will instead look for lines of the form</p>
+<pre><code>go-go-gadget FILENAME</code></pre>
+<p>This is because the text being filtered may have some other implicit format, where the word “import” means something. The second tweak is to allow the user to import only part of a file. If an import command has the form</p>
+<pre><code>import FILENAME between OPEN and CLOSE</code></pre>
+<p>then only those lines from FILENAME which are between lines OPEN and CLOSE are spliced in.</p>
+<p>First, we write a generic function called <code>takeBetween</code> which cuts out portions of a list.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; takeBetween ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> (a,a) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]
+<span class="ot">&gt;</span> takeBetween (u,v) <span class="fu">=</span> concat <span class="fu">.</span> unfoldr (firstCut (u,v))
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     firstCut (u,v) ys <span class="fu">=</span> <span class="kw">case</span> dropWhile (<span class="fu">/=</span> u) ys <span class="kw">of</span>
+<span class="ot">&gt;</span>       []     <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       (_<span class="fu">:</span>zs) <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> span (<span class="fu">/=</span> v) zs</code></pre></div>
+<p>We use a custom data type, <code>Import</code>, to represent the two kinds of import commands. The <code>readCommand</code> function tries to interpret a line of text as an import command, and the <code>splice</code> function processes a single line of text (from reading a command to splicing in text from an external file). Now the main program behaves very much like a line filter, which we recall takes a mapping <code>String -&gt; String</code> and applies it to all lines on <code>stdin</code>. Because <code>splice</code> reads files and writes to <code>stdout</code>, it must take place in the <code>IO</code> monad; its signature is <code>String -&gt; IO ()</code>. We write a variant of <code>lineFilter</code> to handle programs of this type.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lineFilterIO ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> lineFilterIO f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> fmap getLines getContents
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map f xs</code></pre></div>
+<p>The program is then not terribly complicated:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- We accept two kinds of import commands:</span>
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Import</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Whole</span>   <span class="dt">String</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Between</span> <span class="dt">String</span> <span class="dt">String</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   keyword <span class="ot">&lt;-</span> <span class="kw">case</span> args <span class="kw">of</span>
+<span class="ot">&gt;</span>     []             <span class="ot">-&gt;</span> return <span class="st">&quot;import&quot;</span>
+<span class="ot">&gt;</span>     [<span class="st">&quot;--with&quot;</span>,str] <span class="ot">-&gt;</span> return str
+<span class="ot">&gt;</span>     otherwise      <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     <span class="co">-- see if a line is an import command</span>
+<span class="ot">&gt;     readCommand ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Import</span>
+<span class="ot">&gt;</span>     readCommand str <span class="fu">=</span> <span class="kw">case</span> getWords str <span class="kw">of</span>
+<span class="ot">&gt;</span>       [x,file] <span class="ot">-&gt;</span> <span class="kw">if</span> x <span class="fu">==</span> keyword
+<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Whole</span> file
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       [x,file,<span class="st">&quot;between&quot;</span>,open,<span class="st">&quot;and&quot;</span>,close] <span class="ot">-&gt;</span> <span class="kw">if</span> x <span class="fu">==</span> keyword
+<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Between</span> file open close
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       otherwise <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="co">-- process a single line</span>
+<span class="ot">&gt;     splice ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span>     splice line <span class="fu">=</span> <span class="kw">case</span> readCommand line <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         putStrLn line
+<span class="ot">&gt;</span>       <span class="dt">Just</span> (<span class="dt">Whole</span> name) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         input <span class="ot">&lt;-</span> fmap getLines <span class="fu">$</span> readFile name
+<span class="ot">&gt;</span>         sequence_ <span class="fu">$</span> map putStrLn input
+<span class="ot">&gt;</span>       <span class="dt">Just</span> (<span class="dt">Between</span> name open close) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         input <span class="ot">&lt;-</span> fmap getLines <span class="fu">$</span> readFile name
+<span class="ot">&gt;</span>         sequence_ <span class="fu">$</span> map putStrLn <span class="fu">$</span> takeBetween (open,close) input
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   lineFilterIO splice
+<span class="ot">&gt;</span>   exitSuccess
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; argErr ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> argErr <span class="fu">=</span> reportErrorMsgs
+<span class="ot">&gt;</span>   [ <span class="st">&quot;usage&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  import            : expand any 'import' lines on stdin&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  import --with STR : same, using custom import keyword STR&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;this program recognizes two kinds of import commands:&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  import FILENAME&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;    insert contents of FILENAME in place of this line&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  import FILENAME from START to END&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;    same, but cut out all lines except those between START and END lines.&quot;</span>
+<span class="ot">&gt;</span>   ]</code></pre></div>
+<p><code>import</code> is used to help produce this documentation. These pages contain lots of code snippets, which are taken from the actual program source code using import commands. This way we don’t have to worry about keeping (at least part of) the documentation and the code in sync by hand as the code changes (as it does, frequently).</p>
+<p>This tool could be improved in a few ways. First, the import command, filename, and open and close lines must not include any spaces. This may prove to be too restrictive; we could allow for quoted arguments or escaped arguments. Second, we could do something a litte more informative when <code>readFile</code> fails because a file does not exist; this version of <code>import</code> knows nothing about where a given import command came from. In a large pipeline, or a small pipeline operating on lots of data, this may be a problem.</p>
+<h2 id="old-stuff">Old Stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- split on \n</span>
+<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
+<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- split a string into words</span>
+<span class="ot">&gt; getWords ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getWords <span class="fu">=</span> unfoldr firstWord
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstWord xs <span class="fu">=</span> <span class="kw">case</span> dropWhile isSpace xs <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: crypt</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: crypt</h1>
+<!-- BEGIN BODY -->
+<h2>xor stdin with a list of keys</h2>
+
+<div class="info">
+Posted on 2016-02-25 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/crypt.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-crypt: xor chars on stdin with a list of keys</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (ord, chr, readLitChar)</code></pre></div>
+<p>See also the <a href="../../posts/software-tools-in-haskell/Lib/Backslash.html">Backslash</a> module.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lib.Backslash</span> (bsUnEsc)</code></pre></div>
+<p>This program performs very (very!) simple encryption by xor-ing <code>stdin</code> with a list of keys, supplied by the user at the command line.</p>
+<p>At the bit level, <code>a xor b</code> is 0 if <code>a</code> and <code>b</code> are equal and is <code>1</code> otherwise. Two lists of bits are <code>xor</code>ed entrywise, with the shorter list padded with <span class="math inline">\(0\)</span>s. We can think of <code>xor</code> as an operation on natural numbers by converting to and from base 2, and finally we can think of <code>xor</code> as an operation on <em>characters</em> by converting to and from natural numbers (a.k.a. code points). Then to <code>xor</code> two strings we <code>xor</code> characterwise.</p>
+<p>We will implement these operations bare-handed.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">XOR</span> t <span class="kw">where</span>
+<span class="ot">&gt;   xor ::</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   xors ::</span> [t] <span class="ot">-&gt;</span> [t] <span class="ot">-&gt;</span> [t]
+<span class="ot">&gt;</span>   xors [] ys <span class="fu">=</span> ys
+<span class="ot">&gt;</span>   xors xs [] <span class="fu">=</span> xs
+<span class="ot">&gt;</span>   xors (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> (xor x y) <span class="fu">:</span> xors xs ys
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Bit</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">One</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">XOR</span> <span class="dt">Bit</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   xor <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="dt">Zero</span>
+<span class="ot">&gt;</span>   xor <span class="dt">Zero</span> <span class="dt">One</span>  <span class="fu">=</span> <span class="dt">One</span>
+<span class="ot">&gt;</span>   xor <span class="dt">One</span>  <span class="dt">Zero</span> <span class="fu">=</span> <span class="dt">One</span>
+<span class="ot">&gt;</span>   xor <span class="dt">One</span>  <span class="dt">One</span>  <span class="fu">=</span> <span class="dt">Zero</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">XOR</span> <span class="dt">Int</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   xor a b <span class="fu">=</span> bitsToInt <span class="fu">$</span> xors (intToBits a) (intToBits b)
+<span class="ot">&gt;</span>     <span class="kw">where</span>
+<span class="ot">&gt;       intToBits ::</span> (<span class="dt">Integral</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> [<span class="dt">Bit</span>]
+<span class="ot">&gt;</span>       intToBits k <span class="fu">=</span> <span class="kw">case</span> getBits k <span class="kw">of</span>
+<span class="ot">&gt;</span>         [] <span class="ot">-&gt;</span> [<span class="dt">Zero</span>]
+<span class="ot">&gt;</span>         bs <span class="ot">-&gt;</span> bs
+<span class="ot">&gt;</span>         <span class="kw">where</span>
+<span class="ot">&gt;</span>           getBits t
+<span class="ot">&gt;</span>             <span class="fu">|</span> t <span class="fu">&lt;=</span> <span class="dv">0</span>    <span class="fu">=</span> []
+<span class="ot">&gt;</span>             <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="kw">case</span> even t <span class="kw">of</span>
+<span class="ot">&gt;</span>                 <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">Zero</span> <span class="fu">:</span> (getBits <span class="fu">$</span> t<span class="ot">`quot`</span><span class="dv">2</span>)
+<span class="ot">&gt;</span>                 <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">One</span>  <span class="fu">:</span> (getBits <span class="fu">$</span> (t<span class="fu">-</span><span class="dv">1</span>)<span class="ot">`quot`</span><span class="dv">2</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;       bitsToInt ::</span> (<span class="dt">Integral</span> n) <span class="ot">=&gt;</span> [<span class="dt">Bit</span>] <span class="ot">-&gt;</span> n
+<span class="ot">&gt;</span>       bitsToInt <span class="fu">=</span> sum <span class="fu">.</span> zipWith (<span class="fu">*</span>) [<span class="dv">2</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]] <span class="fu">.</span> map bitToInt
+<span class="ot">&gt;</span>         <span class="kw">where</span>
+<span class="ot">&gt;</span>           bitToInt <span class="dt">Zero</span> <span class="fu">=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>           bitToInt <span class="dt">One</span>  <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">XOR</span> <span class="dt">Char</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   xor x y <span class="fu">=</span> chr <span class="fu">$</span> xor (ord x) (ord y)</code></pre></div>
+<p>When we <code>xor</code> two strings together, one is called the <em>plaintext</em> and the other is called the <em>key</em>. If the key is shorter than the plaintext we simply repeat it from the beginning as many times as needed. The result is a new string, the <em>ciphertext</em>, which will generally not be recognizable. However, we can recover the plaintext by repeating the <code>xor</code> operation with the same key.</p>
+<p>This method of encrytion has several interesting properties. (I am hesitant to call these unequivocal “pros” or “cons”, since every encryption scheme involves tradeoffs.)</p>
+<ul>
+<li>Extremely simple to implement.</li>
+<li>Is a symmetric cipher; in fact, exactly the same key is used for encryption and decryption.</li>
+<li>If the key is short compared to the text, is vulnerable to statistical attacks. (Beyond the usual brute-force attacks that come with short keys.)</li>
+<li>Can be used to implement a <a href="https://www.wikipedia.org/wiki/One-time_pad">one-time pad</a>, which to my knowledge is the only provably secure encryption scheme. (To do this, the key must be the same length as the plaintext.)</li>
+<li>Can only be used on character encodings of size <span class="math inline">\(2^n\)</span> (which unicode is), which preferably have a canonical mapping to the integers from <span class="math inline">\(0\)</span> to <span class="math inline">\(2^n - 1\)</span> (which unicode does).</li>
+<li>When used on a large alphabet, most significant bits can play an important role. For instance, if we are encrypting a text which consists only of ASCII (the first 128 characters of unicode) and use a key consisting of characters with a bit higher than the 7th set, then these high bits will never be <code>xor</code>ed away. I haven’t thought about this in depth, but I suspect this opens up a new class of statistical attacks.</li>
+<li>Related to the previous property, practical text does not use the full range of unicode – more likely it is restricted to the characters used in a particular language. This may open a class of attacks.</li>
+<li>When used with ASCII or unicode, generally the ciphertext will include control characters. This can make it inconvenient to use text-oriented tools on encrypted text. We could fix this with a different mapping from characters to numbers, but doing so would probably weaken the encryption even further by reducing the alphabet size.</li>
+</ul>
+<p>Here’s the main program.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   keys <span class="ot">&lt;-</span> fmap (map bsUnEsc) getArgs
+<span class="ot">&gt;</span>   charFilter (cryptWith keys)
+<span class="ot">&gt;</span>   exitSuccess
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; cryptWith ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> cryptWith ks str <span class="fu">=</span> foldr crypt str ks
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     crypt ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>     crypt <span class="st">&quot;&quot;</span>  str <span class="fu">=</span> str
+<span class="ot">&gt;</span>     crypt key str <span class="fu">=</span> zipWith xor str (concat <span class="fu">$</span> repeat key)</code></pre></div>
+<p>We definitely want the user to specify an encryption key from the command line. But generally, the user can specify many (or no!) command line arguments. What should we do if that happens?</p>
+<ul>
+<li>If the user does not specify a key, then the simplest thing to do is return the plaintext unchanged. We could return an error, but it is feasible that some future user would prefer that “no key” be treated the same as “empty key”. Moreover, the recursive definition of <code>cryptKeys</code> is much cleaner with this decision.</li>
+<li>We could just silently ignore any arguments after the first, but then the presence of extra arguments likely signifies that the user misunderstands how to use the program.</li>
+<li>We could simply concatenate the arguments together as a single larget key.</li>
+<li>We could interpret the command line arguments as a <em>list</em> of keys, and use all of them, one at a time.</li>
+</ul>
+<p>Concatenating the arguments to a single key would be fine. But interpreting the arguments as multiple keys, to be used independently, has a nice side effect. It provides a simple (if not maximally secure) way for the user to increase the effective size of the key. As K&amp;P note, if we <code>xor</code> encrypt a given file twice with two different keys, of lengths <span class="math inline">\(m\)</span> and <span class="math inline">\(n\)</span>, then this is equivalent to <code>xor</code>ing once with a single key of length <span class="math inline">\(\mathrm{lcm}(m,n)\)</span>. For instance,</p>
+<pre><code>crypt &quot;foo&quot; &quot;quuux&quot;</code></pre>
+<p>with two keys of length 3 and 5, is equivalent to running <code>crypt</code> with a key of length 15. Saying</p>
+<pre><code>crypt &quot;foo&quot; &quot;quuux&quot; &quot;mungely&quot;</code></pre>
+<p>is just like using a key of length 105.</p>
+<p>The keys are also run through <code>backslashUnEscape</code> by default, meaning that any C or ASCII style escape codes are interpreted. This is the Right Thing because we want the user to have easy access to the widest possible range of keys. It is not necessary to clutter the interface by making this functionality optional with an extra command line argument.</p>
+<p>I can think of one important possible improvement to <code>crypt</code>: it would be nice if we could specify the keys as files as well as arguments. For instance, an invocation like</p>
+<pre><code>crypt &quot;foo&quot; &quot;quuux&quot; --keyfiles key1.txt key2.txt</code></pre>
+<p>would treat the contents of <code>key1.txt</code> and <code>key2.txt</code> as keys, just like <code>foo</code> and <code>quuux</code>. We generally do not want to leave encryption keys lying around in files. But this would make it easier to use very large keys, for instance to implement a one-time pad. That’s an idea for another day.</p>
+<h2 id="old-stuff">Old stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
+<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
+<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs</code></pre></div>
+<p>woo</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: pslineprint</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: pslineprint</h1>
+<!-- BEGIN BODY -->
+<h2>print lines to postscript</h2>
+
+<div class="info">
+Posted on 2016-03-05 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/pslineprint.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- pslineprint: print stdin to postscript</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Console.GetOpt</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr, isPrefixOf)</code></pre></div>
+<p>We will separate the <code>print</code> example program in <em>Software Tools</em> into several utilities. I don’t have access to a real line printer (are these even made anymore? I can’t find any info) so I’ll start by building a “virtual” line printer. A line printer consumes lines of text and prints them onto paper one by one. Our virtual line printer should do the same, or something like it – consume lines of text and convert them to a format that can be sent to a real printer.</p>
+<p><em>PostScript</em> is a programming language, in use since the mid-1980s, which allows us to succinctly describe the appearance of a printed page. Many printers can directly interpret programs written in PostScript and there is a large ecosystem of tools which can manipulate PostScript documents. The language is a de facto standard, and so we choose PostScript as the output format of our virtual line printer, <code>pslineprint</code>.</p>
+<h2 id="about-postscript">About PostScript</h2>
+<p>PostScript is a very mature stack-oriented programming language, described in the <a href="https://www.adobe.com/products/postscript/pdfs/PLRM.pdf">PostScript Language Reference Manual</a>. We will only need to use a few features of the language: to print text (including strange characters) using a specific typeface to specific locations on a page and to print multiple pages.</p>
+<p>Every PS document must start with the line</p>
+<pre><code>%!PS</code></pre>
+<p>Then to print text we have to select a font.</p>
+<pre><code>/Courier findfont
+12 scalefont
+setfont</code></pre>
+<p>Every point on the page has a pair of coordinates; the lower left corner of the page is <span class="math inline">\((0,0)\)</span>, and <span class="math inline">\((h,k)\)</span> is <span class="math inline">\(h\)</span> points from the left edge and <span class="math inline">\(k\)</span> points from the bottom edge. At any given time while a PostScript program is running there is a “current” position where all drawing commands are carried out; we can change the current position with <code>moveto</code>. For example the following command moves the position to <span class="math inline">\((10,20)\)</span>.</p>
+<pre><code>10 20 moveto</code></pre>
+<p>This line pushes the numbers 10 and 20 onto a virtual stack, and then <code>moveto</code> pops the first two items (which are numbers) off of the stack and has the side effect of moving the current position to those coordinates. (A full discussion of <a href="https://en.wikipedia.org/wiki/Stack-oriented_programming_language">stack-oriented languages</a> is beyond our scope, but they are a very interesting topic and are very amenable to code generation.)</p>
+<p>The <code>show</code> command prints a string at the current position using the current font; it even implicitly updates the current position so that multiple <code>show</code> commands work as expected. To actually render drawing commands to the page, we use <code>showpage</code>, and <code>%%Page:</code> starts a new page. (That last command is not clear to me, but my PostScript viewer requires it.) Putting this together, try copying the following to a file called <code>test.ps</code> and opening it in a PostScript viewer. (Note that the file must end with a newline!)</p>
+<pre><code>%!PS
+/Courier findfont
+12 scalefont
+setfont
+
+%%Page: 1
+10 20 moveto
+(hello world!) show
+showpage
+
+%%Page: 2
+10 20 moveto
+(what is this) show
+showpage</code></pre>
+<p>Okay. But there is one major limitation of PostScript that we’ll have to work around: PostScript does not play very nicely with Unicode. The <code>show</code> function only behaves as expected on 8-bit ASCII text. The workaround is to use the function <code>glyphshow</code>, which takes special symbolic names for glyphs escaped with a forward slash. For instance,</p>
+<pre><code>/alpha glyphshow</code></pre>
+<p>prints the greek letter alpha as long as the current font has a glyph for it. (The version of Courier on my system does not have glyphs for very many special characters, so I will instead use <code>FreeMono</code> from the <a href="https://www.gnu.org/software/freefont/">GNU Foundation</a>.) Julian Wiseman has compiled a nice <a href="http://www.jdawiseman.com/papers/trivia/character-entities.html">table of PostScript glyph names</a> (<a href="https://web.archive.org/web/20160315094516/http://jdawiseman.com/papers/trivia/character-entities.html">archive link</a>).</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unicodeToPS ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> unicodeToPS <span class="fu">=</span> renderPSText <span class="fu">.</span> toPSText
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">PSChar</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Plain</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Glyph</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">PSText</span> <span class="fu">=</span> [<span class="dt">PSChar</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; renderPSText ::</span> <span class="dt">PSText</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> renderPSText <span class="fu">=</span> concatMap renderPSChar
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     renderPSChar ::</span> <span class="dt">PSChar</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>     renderPSChar (<span class="dt">Plain</span> s)
+<span class="ot">&gt;</span>       <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> s <span class="fu">++</span> <span class="st">&quot;) show\n&quot;</span>
+<span class="ot">&gt;</span>     renderPSChar (<span class="dt">Glyph</span> g)
+<span class="ot">&gt;</span>       <span class="fu">=</span> <span class="st">&quot;/&quot;</span> <span class="fu">++</span> g <span class="fu">++</span> <span class="st">&quot; glyphshow\n&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; toPSText ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">PSText</span>
+<span class="ot">&gt;</span> toPSText <span class="fu">=</span> condense <span class="fu">.</span> map toPSChar
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     condense ::</span> <span class="dt">PSText</span> <span class="ot">-&gt;</span> <span class="dt">PSText</span>
+<span class="ot">&gt;</span>     condense <span class="fu">=</span> unfoldr first
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     first ::</span> <span class="dt">PSText</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">PSChar</span>, <span class="dt">PSText</span>)
+<span class="ot">&gt;</span>     first [] <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     first (x<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">case</span> x <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Glyph</span> g <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Glyph</span> g, xs)
+<span class="ot">&gt;</span>       <span class="dt">Plain</span> c <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span> (ps,rest) <span class="fu">=</span> span isPlain xs
+<span class="ot">&gt;</span>         cs <span class="ot">&lt;-</span> fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map fromPlain ps
+<span class="ot">&gt;</span>         <span class="dt">Just</span> (<span class="dt">Plain</span> (c<span class="fu">++</span>cs), rest)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     isPlain ::</span> <span class="dt">PSChar</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>     isPlain (<span class="dt">Plain</span> _) <span class="fu">=</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>     isPlain (<span class="dt">Glyph</span> _) <span class="fu">=</span> <span class="dt">False</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     fromPlain ::</span> <span class="dt">PSChar</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>     fromPlain (<span class="dt">Plain</span> s) <span class="fu">=</span> <span class="dt">Just</span> s
+<span class="ot">&gt;</span>     fromPlain (<span class="dt">Glyph</span> _) <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- hold on to your butts</span>
+<span class="ot">&gt; toPSChar ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">PSChar</span>
+<span class="ot">&gt;</span> toPSChar x <span class="fu">=</span> <span class="kw">case</span> x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="ch">'\\'</span>     <span class="ot">-&gt;</span> <span class="dt">Plain</span> <span class="st">&quot;\\\\&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- Greek Letters: Uppercase</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0391'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Alpha&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0392'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Beta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0393'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Gamma&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0394'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Deltagreek&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0395'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Epsilon&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0396'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Zeta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0397'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Eta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0398'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Theta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x0399'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Iota&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039a'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Kappa&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039b'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Lambda&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039c'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Mu&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039d'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Nu&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039e'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Xi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x039f'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Omicron&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a0'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Pi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a1'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Rho&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a3'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Sigma&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a4'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Tau&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a5'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Upsilon&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a6'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Phi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a7'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Chi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a8'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Psi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03a9'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;Omegagreek&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- Greek letters: Lowercase</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b1'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;alpha&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b2'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;beta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b3'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;gamma&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b4'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;delta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b5'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;epsilon&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b6'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;zeta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b7'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;eta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b8'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;theta&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03b9'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;iota&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03ba'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;kappa&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03bb'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;lambda&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03bc'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;mugreek&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03bd'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;nu&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03be'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;xi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03bf'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;omicron&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c0'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;pi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c1'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;rho&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c2'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;sigmafinal&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c3'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;sigma&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c4'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;tau&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c5'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;upsilon&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c6'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;phi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c7'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;chi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c8'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;psi&quot;</span>
+<span class="ot">&gt;</span>   <span class="ch">'\x03c9'</span> <span class="ot">-&gt;</span> <span class="dt">Glyph</span> <span class="st">&quot;omega&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- Otherwise</span>
+<span class="ot">&gt;</span>   _        <span class="ot">-&gt;</span> <span class="dt">Plain</span> [x]</code></pre></div>
+<p>First, we’ll write a black-box module that exports only one function, <code>unicodeToPS</code>, with the sole purpose of taking a string of unicode characters and returning the PostScript code needed to print it. The implementation of <code>unicodeToPS</code> is straigtforward, but tedious; we march down the string and chop it into ASCII and non-ASCII parts. The ASCII parts are handled with <code>show</code> and the non-ASCII parts handled one character at a time with <code>glyphshow</code>.</p>
+<h2 id="limiting-the-scope">Limiting the Scope</h2>
+<p>Before writing any code for the printer itself, let’s decide what it will and will not do:</p>
+<ul>
+<li>It <strong>will</strong> print lines of unformatted unicode text in a fixed-width font (as nature intended).</li>
+<li>It <strong>will not</strong> worry about wrapping lines. If we try to print a line that is too long for the page, it will silently march off the edge.</li>
+<li>It <strong>will not</strong> worry about page headings or page numbers.</li>
+<li>It <strong>will not</strong> print multiple files – only lines from <code>stdin</code>.</li>
+<li>It <strong>will not</strong> interpret escape codes or formatting commands.</li>
+</ul>
+<p>All of the “will not” tasks will be left for other tools to deal with; the virtual printer itself will be as simple as possible.</p>
+<h2 id="modeling-a-printer">Modeling a Printer</h2>
+<p>Now for the virtual line printer. We will think of a line printer as a machine which prints lines in the context of some basic internal state. Some state we can think of as configurable, but fixed: page margins, font size, line spacing, and page size. We use an extremely basic model of page geometry. Other state is updated as the line printer prints lines: the current page number and the current line number. (The <code>pageInProcess</code> flag is set whenever the current page has text printed on it; this is needed later.)</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Geom</span> <span class="fu">=</span> <span class="dt">Geom</span>
+<span class="ot">&gt;</span>   {<span class="ot"> fontSize   ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> lineSkip   ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> vMargin    ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> hMargin    ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> pageHeight ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> pageWidth  ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   } <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- letter size, 12 pt type</span>
+<span class="ot">&gt; defaultGeom ::</span> <span class="dt">Geom</span>
+<span class="ot">&gt;</span> defaultGeom <span class="fu">=</span> <span class="dt">Geom</span>
+<span class="ot">&gt;</span>   { fontSize   <span class="fu">=</span> <span class="dv">12</span>
+<span class="ot">&gt;</span>   , lineSkip   <span class="fu">=</span> <span class="dv">2</span>
+<span class="ot">&gt;</span>   , vMargin    <span class="fu">=</span> <span class="dv">28</span>
+<span class="ot">&gt;</span>   , hMargin    <span class="fu">=</span> <span class="dv">32</span>
+<span class="ot">&gt;</span>   , pageHeight <span class="fu">=</span> <span class="dv">792</span>
+<span class="ot">&gt;</span>   , pageWidth  <span class="fu">=</span> <span class="dv">612</span>
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">LPState</span> <span class="fu">=</span> <span class="dt">LPState</span>
+<span class="ot">&gt;</span>   {<span class="ot"> pageSettings  ::</span> <span class="dt">Geom</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> currentLine   ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> currentPage   ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> pageInProcess ::</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; makeLPState ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">LPState</span>
+<span class="ot">&gt;</span> makeLPState geom  <span class="fu">=</span> <span class="dt">LPState</span>
+<span class="ot">&gt;</span>   { pageSettings  <span class="fu">=</span> geom
+<span class="ot">&gt;</span>   , currentLine   <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>   , currentPage   <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>   , pageInProcess <span class="fu">=</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>From the page geometry, we can compute two important quantities: the number of lines that can be printed on one page, and the position on the page of each line.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; numLinesPerPage ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> numLinesPerPage geom <span class="fu">=</span> floor ((pH <span class="fu">-</span> (<span class="dv">2</span><span class="fu">*</span>vM)) <span class="fu">/</span> (fS <span class="fu">+</span> lS))
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     pH <span class="fu">=</span> fromIntegral <span class="fu">$</span> pageHeight geom
+<span class="ot">&gt;</span>     vM <span class="fu">=</span> fromIntegral <span class="fu">$</span> vMargin geom
+<span class="ot">&gt;</span>     fS <span class="fu">=</span> fromIntegral <span class="fu">$</span> fontSize geom
+<span class="ot">&gt;</span>     lS <span class="fu">=</span> fromIntegral <span class="fu">$</span> lineSkip geom
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lower left corner of line number k</span>
+<span class="ot">&gt; lineStartPos ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Int</span>,<span class="dt">Int</span>)
+<span class="ot">&gt;</span> lineStartPos geom k <span class="fu">=</span> (hM, pH <span class="fu">-</span> vM <span class="fu">-</span> k<span class="fu">*</span>(fS <span class="fu">+</span> lS))
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     hM <span class="fu">=</span> hMargin geom
+<span class="ot">&gt;</span>     vM <span class="fu">=</span> vMargin geom
+<span class="ot">&gt;</span>     pH <span class="fu">=</span> pageHeight geom
+<span class="ot">&gt;</span>     fS <span class="fu">=</span> fontSize geom
+<span class="ot">&gt;</span>     lS <span class="fu">=</span> lineSkip geom</code></pre></div>
+<p>We’d like to expose a small number of primitive commands that the printer accepts: print a line of text, advance to the next line or the next page. This problem is well modeled by a monad. We use a custom monad stack with explicit state and IO.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">newtype</span> <span class="dt">LinePrinter</span> t <span class="fu">=</span> <span class="dt">LP</span>
+<span class="ot">&gt;</span>   {<span class="ot"> runLP ::</span> <span class="dt">LPState</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> (t, <span class="dt">LPState</span>) }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; runLPJob ::</span> <span class="dt">Geom</span> <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> t
+<span class="ot">&gt;</span> runLPJob geom pr <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   (x,_) <span class="ot">&lt;-</span> runLP pr (makeLPState geom)
+<span class="ot">&gt;</span>   return x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">LinePrinter</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   return x <span class="fu">=</span> <span class="dt">LP</span> (\st <span class="ot">-&gt;</span> return (x, st))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   x <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">LP</span> foo
+<span class="ot">&gt;</span>     <span class="kw">where</span>
+<span class="ot">&gt;</span>       foo st1 <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         (y,st2) <span class="ot">&lt;-</span> runLP x st1
+<span class="ot">&gt;</span>         runLP (f y) st2</code></pre></div>
+<p>Now the printer interface we expose is a small number of monadic functions. For instance, <code>lpPutStr</code> prints a string at the current line.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lpPutStr ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpPutStr <span class="st">&quot;&quot;</span>  <span class="fu">=</span> return ()
+<span class="ot">&gt;</span> lpPutStr str <span class="fu">=</span> lpStartPage <span class="fu">&gt;&gt;</span> <span class="dt">LP</span> write
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     write st <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (x,y) <span class="fu">=</span> lineStartPos (pageSettings st) (currentLine st)
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> show x <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show y <span class="fu">++</span> <span class="st">&quot; moveto&quot;</span>
+<span class="ot">&gt;</span>       putStr <span class="fu">$</span> unicodeToPS str
+<span class="ot">&gt;</span>       return ((), st)</code></pre></div>
+<p><code>lpLineFeed</code> advances the “print head” to the next line.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lpLineFeed ::</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpLineFeed <span class="fu">=</span> lpStartPage <span class="fu">&gt;&gt;</span> <span class="dt">LP</span> lf
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     lf st <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         (kOld,mOld) <span class="fu">=</span> (currentLine st, currentPage st)
+<span class="ot">&gt;</span>         lpp <span class="fu">=</span> numLinesPerPage (pageSettings st)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="kw">if</span> kOld <span class="fu">+</span> <span class="dv">1</span> <span class="fu">&gt;</span> lpp
+<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           putStrLn <span class="st">&quot;showpage\n&quot;</span>
+<span class="ot">&gt;</span>           return ((), st {currentLine <span class="fu">=</span> <span class="dv">1</span>, currentPage <span class="fu">=</span> mOld<span class="fu">+</span><span class="dv">1</span>, pageInProcess <span class="fu">=</span> <span class="dt">False</span>})
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           return ((), st {currentLine <span class="fu">=</span> kOld<span class="fu">+</span><span class="dv">1</span>, currentPage <span class="fu">=</span> mOld})
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; lpPutStrLn ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpPutStrLn str <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   lpPutStr str
+<span class="ot">&gt;</span>   lpLineFeed</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lpInitialize ::</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpInitialize <span class="fu">=</span> <span class="dt">LP</span> init
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     init st <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;%!PS&quot;</span>
+<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;/FreeMono findfont&quot;</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> k <span class="fu">=</span> fontSize <span class="fu">$</span> pageSettings st
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> show k <span class="fu">++</span> <span class="st">&quot; scalefont&quot;</span>
+<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;setfont\n&quot;</span>
+<span class="ot">&gt;</span>       return ((), st)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; lpStartPage ::</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpStartPage <span class="fu">=</span> <span class="dt">LP</span> sp
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     sp st <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">if</span> pageInProcess st <span class="fu">==</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>         <span class="kw">then</span> return ()
+<span class="ot">&gt;</span>         <span class="kw">else</span> putStrLn <span class="fu">$</span> <span class="st">&quot;%%Page: &quot;</span> <span class="fu">++</span> show (currentPage st)
+<span class="ot">&gt;</span>       return ((), st { pageInProcess <span class="fu">=</span> <span class="dt">True</span> })
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; lpShutDown ::</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpShutDown <span class="fu">=</span> <span class="dt">LP</span> sd
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     sd st <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> pageInProcess st <span class="fu">==</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>           <span class="kw">then</span> return ()
+<span class="ot">&gt;</span>           <span class="kw">else</span> putStrLn <span class="st">&quot;showpage&quot;</span>
+<span class="ot">&gt;</span>         return ((), st { pageInProcess <span class="fu">=</span> <span class="dt">False</span> })</code></pre></div>
+<p>Putting these together, the <code>lpPrintLns</code> function prints a list of lines.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lpPrintLns ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpPrintLns lns <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   lpInitialize
+<span class="ot">&gt;</span>   mapM_ lpPutStrLn lns
+<span class="ot">&gt;</span>   lpShutDown</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lpPutCCStrLn ::</span> <span class="dt">CCLine</span> <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpPutCCStrLn x <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   mapM_ lpPutStr (fromCCLine x)
+<span class="ot">&gt;</span>   lpLineFeed
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; lpPrintCCLns ::</span> [<span class="dt">CCLine</span>] <span class="ot">-&gt;</span> <span class="dt">LinePrinter</span> ()
+<span class="ot">&gt;</span> lpPrintCCLns lns <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   lpInitialize
+<span class="ot">&gt;</span>   mapM_ lpPutCCStrLn lns
+<span class="ot">&gt;</span>   lpShutDown</code></pre></div>
+<p>It is straightforward to write versions of <code>lpPutStr</code> and <code>lpPrintLns</code> that work on carriage control encoded lines we worked with in <code>linecount</code> – doing so allows our virtual line printer to produce overstruck characters.</p>
+<h2 id="the-main-program">The Main Program</h2>
+<p>All we’ve built so far is a small monadic language which simulates a line printer; all the complexity of PostScript (and integrating unicode with PostScript) is hidden away behind the <code>LinePrinter</code> interface. Next we need to wire this language to the command line so it can interact seamlessly with our other tools.</p>
+<p>This tool differs from the others we’ve built so far in that our virtual line printer has a few different knobs the user may want to adjust: specifically, the page geometry parameters. To make our tool unopinionated, we should expose these parameters to the user at the command line. And to minimize the burden on the user the order in which these parameters are specified should not matter. Handling several different possible options in any order <em>by hand</em> is tedious and error prone, so we will instead use the standard <code>GetOpt</code> library. This library allows us to declaratively specify what options our program has and provides several useful functions for reading and processing those options. For programs with very simple parameters the full power of <code>GetOpt</code> is overkill, but it is appropriate here.</p>
+<p>The main program logic is very simple. We read the command line options, interpret them as a page geometry specification, and the run our monadic line printer on <code>stdin</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     argErr  <span class="fu">=</span> reportErrorMsgs [usageInfo <span class="st">&quot;options&quot;</span> options]
+<span class="ot">&gt;</span>     corrErr <span class="fu">=</span> reportErrorMsgs [<span class="st">&quot;corrupt input&quot;</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- read options</span>
+<span class="ot">&gt;</span>   flags <span class="ot">&lt;-</span> <span class="kw">case</span> getOpt <span class="dt">Permute</span> options args <span class="kw">of</span>
+<span class="ot">&gt;</span>     (opts, [], []) <span class="ot">-&gt;</span> return <span class="fu">$</span> foldl (<span class="fu">&gt;&gt;=</span>) (<span class="dt">Just</span> defaultFlags) opts
+<span class="ot">&gt;</span>     otherwise      <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- process options</span>
+<span class="ot">&gt;</span>   (geom, mode) <span class="ot">&lt;-</span> <span class="kw">case</span> flags <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span>     <span class="dt">Just</span> fs <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         g <span class="fu">=</span> defaultGeom
+<span class="ot">&gt;</span>           { fontSize <span class="fu">=</span> fFontSize fs
+<span class="ot">&gt;</span>           , lineSkip <span class="fu">=</span> fLineSkip fs
+<span class="ot">&gt;</span>           , vMargin  <span class="fu">=</span> fVMargin fs
+<span class="ot">&gt;</span>           , hMargin  <span class="fu">=</span> fHMargin fs
+<span class="ot">&gt;</span>           }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       return (g, fMode fs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   stdin <span class="ot">&lt;-</span> getContents
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">case</span> mode <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Lines</span> <span class="ot">-&gt;</span> runLPJob geom <span class="fu">$</span> lpPrintLns <span class="fu">$</span> getLines stdin
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">ASACC</span> <span class="ot">-&gt;</span> <span class="kw">case</span> readCCLines stdin <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> corrErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span>       <span class="dt">Just</span> xs <span class="ot">-&gt;</span> runLPJob geom <span class="fu">$</span> lpPrintCCLns xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   exitSuccess
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">{- Options -}</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Mode</span> <span class="fu">=</span> <span class="dt">Lines</span> <span class="fu">|</span> <span class="dt">ASACC</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Flags</span> <span class="fu">=</span> <span class="dt">Flags</span>
+<span class="ot">&gt;</span>   {<span class="ot"> fFontSize ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> fLineSkip ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> fVMargin  ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> fHMargin  ::</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> fMode     ::</span> <span class="dt">Mode</span>
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; defaultFlags ::</span> <span class="dt">Flags</span>
+<span class="ot">&gt;</span> defaultFlags <span class="fu">=</span> <span class="dt">Flags</span>
+<span class="ot">&gt;</span>   { fFontSize <span class="fu">=</span> <span class="dv">12</span>
+<span class="ot">&gt;</span>   , fLineSkip <span class="fu">=</span> <span class="dv">2</span>
+<span class="ot">&gt;</span>   , fVMargin  <span class="fu">=</span> <span class="dv">32</span>
+<span class="ot">&gt;</span>   , fHMargin  <span class="fu">=</span> <span class="dv">28</span>
+<span class="ot">&gt;</span>   , fMode     <span class="fu">=</span> <span class="dt">Lines</span>
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; options ::</span> [<span class="dt">OptDescr</span> (<span class="dt">Flags</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Flags</span>)]
+<span class="ot">&gt;</span> options <span class="fu">=</span>
+<span class="ot">&gt;</span>   [ <span class="dt">Option</span> [] [<span class="st">&quot;font-size&quot;</span>]
+<span class="ot">&gt;</span>       (<span class="dt">ReqArg</span> readFontSize <span class="st">&quot;INT&quot;</span>)
+<span class="ot">&gt;</span>       <span class="st">&quot;font size in points&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , <span class="dt">Option</span> [] [<span class="st">&quot;line-skip&quot;</span>]
+<span class="ot">&gt;</span>       (<span class="dt">ReqArg</span> readLineSkip <span class="st">&quot;INT&quot;</span>)
+<span class="ot">&gt;</span>       <span class="st">&quot;line spacing in points&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , <span class="dt">Option</span> [] [<span class="st">&quot;vmargin&quot;</span>]
+<span class="ot">&gt;</span>       (<span class="dt">ReqArg</span> readVMargin <span class="st">&quot;INT&quot;</span>)
+<span class="ot">&gt;</span>       <span class="st">&quot;vertical page margins in points&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , <span class="dt">Option</span> [] [<span class="st">&quot;hmargin&quot;</span>]
+<span class="ot">&gt;</span>       (<span class="dt">ReqArg</span> readHMargin <span class="st">&quot;INT&quot;</span>)
+<span class="ot">&gt;</span>       <span class="st">&quot;left page margin in points&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , <span class="dt">Option</span> [] [<span class="st">&quot;asacc&quot;</span>]
+<span class="ot">&gt;</span>       (<span class="dt">NoArg</span> (\opts <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> opts { fMode <span class="fu">=</span> <span class="dt">ASACC</span> }))
+<span class="ot">&gt;</span>       <span class="st">&quot;interpret basic ASA carriage control codes&quot;</span>
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     readFontSize str opts <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       k <span class="ot">&lt;-</span> readDecimalNat str
+<span class="ot">&gt;</span>       return <span class="fu">$</span> opts { fFontSize <span class="fu">=</span> k }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     readLineSkip str opts <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       k <span class="ot">&lt;-</span> readDecimalNat str
+<span class="ot">&gt;</span>       return <span class="fu">$</span> opts { fLineSkip <span class="fu">=</span> k }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     readVMargin str opts <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       k <span class="ot">&lt;-</span> readDecimalNat str
+<span class="ot">&gt;</span>       return <span class="fu">$</span> opts { fVMargin <span class="fu">=</span> k }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     readHMargin str opts <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       k <span class="ot">&lt;-</span> readDecimalNat str
+<span class="ot">&gt;</span>       return <span class="fu">$</span> opts { fHMargin <span class="fu">=</span> k }</code></pre></div>
+<p>Unlike our other tools, it is not so easy to write automated tests of a program like this. As an example, though, try running the following pipeline:</p>
+<pre><code>sth-echo &quot;hello\b\b\b\b\b_____&quot; &quot;world!&quot;
+ | sth-unescape
+ | sth-overstrike
+ | sth-pslineprint --asacc
+ &gt; psprinttest.ps</code></pre>
+<p>This should produce a page with two lines: the first with the word “hello” underlined.</p>
+<p>When every program operates on plain text, making minimal assumptions about formats, it is easy to chain them together to perform complex tasks. Later on we will write programs to make the output of <code>pslineprint</code> prettier: line wrapping, pagination, and so on. By keeping this functionality out of the printer itself, all programs can stay small and modular.</p>
+<p>Later, we may find occasion to enhance our virtual line printer with the ability to change to a bold or italicized font. Because of the modular, monadic design, this will be straightforward.</p>
+<h2 id="old-stuff">Old Stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- split on \n</span>
+<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
+<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- parse a natural number base 10</span>
+<span class="ot">&gt; readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs
+<span class="ot">&gt;</span>   return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>     decToInt x <span class="fu">=</span> lookup x
+<span class="ot">&gt;</span>       [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; unfoldrMaybe ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (a,b))) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+<span class="ot">&gt;</span> unfoldrMaybe f x <span class="fu">=</span> <span class="kw">case</span> f x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> []
+<span class="ot">&gt;</span>   <span class="dt">Just</span> (<span class="dt">Just</span> (a,b)) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     as <span class="ot">&lt;-</span> unfoldrMaybe f b
+<span class="ot">&gt;</span>     <span class="dt">Just</span> (a<span class="fu">:</span>as)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">CCLine</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">CCLine</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; fromCCLine ::</span> <span class="dt">CCLine</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> fromCCLine (<span class="dt">CCLine</span> xs) <span class="fu">=</span> xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; readCCLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CCLine</span>]
+<span class="ot">&gt;</span> readCCLines <span class="fu">=</span> unfoldrMaybe readFirstCCLine <span class="fu">.</span> getLines
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     readFirstCCLine ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">CCLine</span>, [<span class="dt">String</span>]))
+<span class="ot">&gt;</span>     readFirstCCLine [] <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     readFirstCCLine ((<span class="ch">' '</span><span class="fu">:</span>cs)<span class="fu">:</span>ds) <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         (us,vs) <span class="fu">=</span> span (isPrefixOf <span class="st">&quot;+&quot;</span>) ds
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         stripPlus xs <span class="fu">=</span> <span class="kw">case</span> xs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="ch">'+'</span><span class="fu">:</span>ys    <span class="ot">-&gt;</span> <span class="dt">Just</span> ys
+<span class="ot">&gt;</span>           otherwise <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="kw">case</span> sequence <span class="fu">$</span> map stripPlus us <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Just</span> ws <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">CCLine</span> <span class="fu">$</span> cs<span class="fu">:</span>ws, vs))
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     readFirstCCLine _ <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

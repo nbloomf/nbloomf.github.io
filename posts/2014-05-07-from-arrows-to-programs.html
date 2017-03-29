@@ -64,14 +64,19 @@
 This page is part of a series on <a href="../pages/amd.html">Arithmetic Made Difficult</a>.
 </div>
 
+
+
 <div class="info">
 Posted on 2014-05-07 by nbloomf
 </div>
 
 
-<div class="info tags">Tags: <a href="../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../tag/natural-numbers.html">natural-numbers</a>, <a href="../tag/math.html">math</a></div>
+<div class="info tags">Tags: <a href="../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../tag/literate-haskell.html">literate-haskell</a></div>
 
 
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2014-05-07-from-arrows-to-programs.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></code></pre></div>
 <p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec{\ast}{\ast}\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish a structural result: every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some natural number <span class="math inline">\(m\)</span>.</p>
 <div class="result">
 <div class="lemma">
@@ -85,35 +90,35 @@ If <span class="math inline">\(n \in \mathbb{N}\)</span>, then either <span clas
 </div>
 </div>
 <p>Establishing that every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some <span class="math inline">\(m\)</span> justifies our use of the following Haskell type to model the natural numbers.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span>
-  <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">N</span> <span class="dt">Nat</span>
-
-<span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Nat</span> <span class="kw">where</span>
-  show  <span class="dt">Z</span>    <span class="fu">=</span> <span class="st">&quot;Z&quot;</span>
-  show (<span class="dt">N</span> k) <span class="fu">=</span> <span class="ch">'N'</span> <span class="fu">:</span> show k</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Z</span> <span class="fu">|</span> <span class="dt">N</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Nat</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   show  <span class="dt">Z</span>    <span class="fu">=</span> <span class="st">&quot;Z&quot;</span>
+<span class="ot">&gt;</span>   show (<span class="dt">N</span> k) <span class="fu">=</span> <span class="ch">'N'</span> <span class="fu">:</span> show k</code></pre></div>
 <p>(That <code>show</code> instance is so we can display elements of <code>Nat</code> without too many parentheses.) We also define a few synonyms for “small” natural numbers as follows.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">d0 <span class="fu">=</span> <span class="dt">Z</span>
-d1 <span class="fu">=</span> <span class="dt">N</span> d0
-d2 <span class="fu">=</span> <span class="dt">N</span> d1
-d3 <span class="fu">=</span> <span class="dt">N</span> d2
-d4 <span class="fu">=</span> <span class="dt">N</span> d3
-d5 <span class="fu">=</span> <span class="dt">N</span> d4
-d6 <span class="fu">=</span> <span class="dt">N</span> d5
-d7 <span class="fu">=</span> <span class="dt">N</span> d6
-d8 <span class="fu">=</span> <span class="dt">N</span> d7
-d9 <span class="fu">=</span> <span class="dt">N</span> d8
-dA <span class="fu">=</span> <span class="dt">N</span> d9
-dB <span class="fu">=</span> <span class="dt">N</span> dA
-dC <span class="fu">=</span> <span class="dt">N</span> dB
-dD <span class="fu">=</span> <span class="dt">N</span> dC
-dE <span class="fu">=</span> <span class="dt">N</span> dD
-dF <span class="fu">=</span> <span class="dt">N</span> dE</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> d0 <span class="fu">=</span> <span class="dt">Z</span>
+<span class="ot">&gt;</span> d1 <span class="fu">=</span> <span class="dt">N</span> d0
+<span class="ot">&gt;</span> d2 <span class="fu">=</span> <span class="dt">N</span> d1
+<span class="ot">&gt;</span> d3 <span class="fu">=</span> <span class="dt">N</span> d2
+<span class="ot">&gt;</span> d4 <span class="fu">=</span> <span class="dt">N</span> d3
+<span class="ot">&gt;</span> d5 <span class="fu">=</span> <span class="dt">N</span> d4
+<span class="ot">&gt;</span> d6 <span class="fu">=</span> <span class="dt">N</span> d5
+<span class="ot">&gt;</span> d7 <span class="fu">=</span> <span class="dt">N</span> d6
+<span class="ot">&gt;</span> d8 <span class="fu">=</span> <span class="dt">N</span> d7
+<span class="ot">&gt;</span> d9 <span class="fu">=</span> <span class="dt">N</span> d8
+<span class="ot">&gt;</span> dA <span class="fu">=</span> <span class="dt">N</span> d9
+<span class="ot">&gt;</span> dB <span class="fu">=</span> <span class="dt">N</span> dA
+<span class="ot">&gt;</span> dC <span class="fu">=</span> <span class="dt">N</span> dB
+<span class="ot">&gt;</span> dD <span class="fu">=</span> <span class="dt">N</span> dC
+<span class="ot">&gt;</span> dE <span class="fu">=</span> <span class="dt">N</span> dD
+<span class="ot">&gt;</span> dF <span class="fu">=</span> <span class="dt">N</span> dE</code></pre></div>
 <p>So calling <code>d7</code> in <code>ghci</code>, for instance, prints</p>
 <pre><code>NNNNNNNZ</code></pre>
 <p>And we can also give a straightforward implementation of <span class="math inline">\(\natrec{\ast}{\ast}\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">natRec' ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a
-natRec' e _    <span class="dt">Z</span>    <span class="fu">=</span> e
-natRec' e phi (<span class="dt">N</span> n) <span class="fu">=</span> phi (natRec' e phi n)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; natRec' ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span> natRec' e _    <span class="dt">Z</span>    <span class="fu">=</span> e
+<span class="ot">&gt;</span> natRec' e phi (<span class="dt">N</span> n) <span class="fu">=</span> phi (natRec' e phi n)</code></pre></div>
 <p>For example:</p>
 <pre><code>let theta = natRec' True not</code></pre>
 <p>and we can test out this map by evaluating it on several natural numbers:</p>
@@ -133,13 +138,13 @@ True</code></pre>
 == phi $ e''
 == e'''</code></pre>
 <p>So we generate a tower of unevaluated calls to <code>phi</code>, <span class="math inline">\(n\)</span> tall, before collapsing it down again. In the meantime all those unevaluated <code>phi</code>s are sitting in memory. It is not difficult to see that if we evaluate <code>natRec'</code> on a “larger” number (whatever that means) we will quickly run out of actual memory. To help with this, we can try rewriting <code>natRec</code> in so-called “tail call” recursive form like so.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">natRec ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a
-natRec e phi n <span class="fu">=</span>
-  <span class="kw">let</span>
-    tau <span class="fu">!</span>x k <span class="fu">=</span> <span class="kw">case</span> k <span class="kw">of</span>
-      <span class="dt">Z</span>   <span class="ot">-&gt;</span> x
-      <span class="dt">N</span> m <span class="ot">-&gt;</span> tau (phi x) m
-  <span class="kw">in</span> tau e n</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; natRec ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span> natRec e phi n <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     tau <span class="fu">!</span>x k <span class="fu">=</span> <span class="kw">case</span> k <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Z</span>   <span class="ot">-&gt;</span> x
+<span class="ot">&gt;</span>       <span class="dt">N</span> m <span class="ot">-&gt;</span> tau (phi x) m
+<span class="ot">&gt;</span>   <span class="kw">in</span> tau e n</code></pre></div>
 <p>Now <code>natRec</code> does not leave a bunch of unevaluated functions in memory. It is effectively a loop, iterating “up” from 0 (again with the scare quotes because we don’t have an order on <span class="math inline">\(\nats\)</span> yet but of course you know what it means) rather than “down” from <span class="math inline">\(n\)</span>. So this version expands to something like this:</p>
 <pre><code>   natRec e phi (N $ N $ N Z)
 == tau e (N $ N $ N Z)

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Project Euler #1: Multiples of 3 and 5</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Project Euler #1: Multiples of 3 and 5</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-03-05 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/project-euler.html">project-euler</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p><strong>Spoiler alert!</strong> This page is part of a series on solutions to <a href="https://projecteuler.net/">Project Euler</a> problems. If you prefer to solve problems yourself, do not read on!</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/project-euler/solution-1.lhs">the source</a> into GHCi and play along.</p>
+
+<p><a href="https://projecteuler.net/problem=1">Problem 1</a> from Project Euler:</p>
+<div class="problem">
+<p>If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.</p>
+<p>Find the sum of all the multiples of 3 or 5 below 1000.</p>
+</div>
+<p>First, let’s do the most obvious thing: list the integers below 1000, filter out the ones divisible by either 3 or 5, and sum. For reasons I’ll get to later I will parameterize this function on <span class="math inline">\(n\)</span>, the upper bound for our numbers.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1' n <span class="fu">=</span> sum <span class="fu">$</span> filter div3or5 [<span class="dv">1</span><span class="fu">..</span>(n<span class="fu">-</span><span class="dv">1</span>)]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     div3or5 k <span class="fu">=</span> (k<span class="ot">`mod`</span><span class="dv">3</span> <span class="fu">==</span> <span class="dv">0</span>) <span class="fu">||</span> (k<span class="ot">`mod`</span><span class="dv">5</span> <span class="fu">==</span> <span class="dv">0</span>)</code></pre></div>
+<p>We can verify that <code>pe1' 10 == 23</code> as claimed. Now we can compute the answer to the given problem like so:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> pe1' <span class="dv">1000</span>
+<span class="dv">233168</span></code></pre></div>
+<p>And done.</p>
+<p>But wait! Anything worth doing is worth overdoing, so let’s try something less obvious.</p>
+<p>Suppose we wanted the sum of the multiples of 3 or 5 less than a bigger bound – say <span class="math inline">\(n = 10^{10}\)</span>. My laptop computes <code>pe1' 1000</code> in a fraction of a second, but hangs on <span class="math inline">\(10^{10}\)</span>. And the reason why is clear: <code>pe1' n</code> constructs a list <span class="math inline">\(n\)</span> items long and deconstructs it. So the time complexity is roughly <span class="math inline">\(n\)</span>.</p>
+<p>We can verify this with a little experiment. In GHCi, say <code>:set +s</code> and the interpreter will report time and memory usage for each computation. The following table summarizes the execution time of <code>pe1'</code> for several inputs on my machine.</p>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="22%" />
+<col width="6%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"><code>n</code></th>
+<th align="left"><code>pe1' n</code></th>
+<th align="left">Time (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><span class="math inline">\(10^2\)</span></td>
+<td align="left">2318</td>
+<td align="left">0.01</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(10^3\)</span></td>
+<td align="left">233168</td>
+<td align="left">0.02</td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(10^4\)</span></td>
+<td align="left">23331668</td>
+<td align="left">0.06</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(10^5\)</span></td>
+<td align="left">2333316668</td>
+<td align="left">0.46</td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(10^6\)</span></td>
+<td align="left">233333166668</td>
+<td align="left">4.55</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(10^7\)</span></td>
+<td align="left">23333331666668</td>
+<td align="left">45.38</td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(10^8\)</span></td>
+<td align="left">my laptop choked!</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>Two things jump out at me: first, there’s a pattern in the values, which I was not expecting. Second, and more germane, the time seems to increase by a factor of 10 from row to row after <span class="math inline">\(n = 10^4\)</span>. (Below this <span class="math inline">\(n\)</span> I suspect the time is dominated by the time required to print the output.) So the complexity is <span class="math inline">\(O(n)\)</span>.</p>
+<h2 id="can-we-do-better">Can we do better?</h2>
+<p>Let’s break the problem down a little. We want the sum of all numbers less than <span class="math inline">\(n\)</span> which are divisible by either 3 or 5; let’s start with something simpler: the sum of all the numbers less than <span class="math inline">\(n\)</span> which are divisible by 3.</p>
+<p>The sum of the first <span class="math inline">\(k\)</span> multiples of 3 is <span class="math display">\[3 + 6 + 9 + \cdots + 3k = 3(1 + 2 + 3 + \cdots + k) = 3 \frac{k(k+1)}{2},\]</span> using the formula for the <span class="math inline">\(k\)</span>th <a href="https://en.wikipedia.org/wiki/Triangular_number">triangular number</a>. Now how many multiples of 3 are there below <span class="math inline">\(n\)</span>? This is exactly what is counted by the quotient in integer division. That is, given positive integers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, when we decompose <span class="math inline">\(a\)</span> as <span class="math inline">\(a = qb + r\)</span> using the division algorithm with <span class="math inline">\(r &gt;= 0\)</span>, that <span class="math inline">\(q\)</span> is precisely the number of numbers between 1 and <span class="math inline">\(a\)</span> (inclusive) which are divisible by <span class="math inline">\(b\)</span>. The Haskell function to find this quotient is (shockingly) <code>quot</code>.</p>
+<p>But there’s nothing magic about 3 in that analysis; we might as well replace 3 with any other positive integer, say <span class="math inline">\(t\)</span>. Then we can sum the multiples of <span class="math inline">\(t\)</span> below <span class="math inline">\(n\)</span> like so.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; sumMultsOfBelow ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> sumMultsOfBelow t n <span class="fu">=</span> t <span class="fu">*</span> q <span class="fu">*</span> (q<span class="fu">+</span><span class="dv">1</span>) <span class="ot">`quot`</span> <span class="dv">2</span>
+<span class="ot">&gt;</span>   <span class="kw">where</span> q <span class="fu">=</span> (n<span class="fu">-</span><span class="dv">1</span>) <span class="ot">`quot`</span> t</code></pre></div>
+<p>What is the complexity of <code>sumMultsOfBelow</code>? It’s harder to say exactly, because I don’t know how <code>quot</code> is implemented. But the schoolbook algorithm for integer division is bounded above by <span class="math inline">\(O(\log(n)^2)\)</span>; this is much cheaper than <span class="math inline">\(O(n)\)</span>.</p>
+<p>So we can easily find the sum of the multiples of 3 below 1000 and the multiples of 5 below 1000:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> (sumMultsOfBelow <span class="dv">3</span> <span class="dv">1000</span>) <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> <span class="dv">1000</span>)
+<span class="dv">266333</span></code></pre></div>
+<p>But this doesn’t agree with the more naive (but clearly correct) <code>pe1'</code>. And it’s not too hard to see why – the sets of multiples of 3 and multiples of 5 are not disjoint, so some numbers are being included twice in the sum. Which ones? Well, the numbers that are divisible by both 3 and 5, which are precisely the multiples of their least common multiple, 15. And sure enough, if we account for those…</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> (sumMultsOfBelow <span class="dv">3</span> <span class="dv">1000</span>) <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> <span class="dv">1000</span>) <span class="fu">-</span> (sumMultsOfBelow <span class="dv">15</span> <span class="dv">1000</span>)
+<span class="dv">233168</span></code></pre></div>
+<p>Let’s wrap this in a definition.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1'' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1'' n <span class="fu">=</span> (sumMultsOfBelow <span class="dv">3</span> n)
+<span class="ot">&gt;</span>             <span class="fu">+</span> (sumMultsOfBelow <span class="dv">5</span> n)
+<span class="ot">&gt;</span>             <span class="fu">-</span> (sumMultsOfBelow <span class="dv">15</span> n)</code></pre></div>
+<p>At this point, I was planning to include another table of timings to show how much faster <code>pe1''</code> is, but I had to go to <span class="math inline">\(n = 10^{85}\)</span> before it took longer than 0.01 seconds (the smallest unit of time reported by GHCi). For reference, <code>pe1'' (10^100000)</code> took 2.03 seconds on my machine. An <span class="math inline">\(O(n)\)</span> algorithm has no hope on inputs that big. And by the way that digit pattern, a 2, followed by 3s, then 1, then 6s, then 8, holds.</p>
+<p>Before we get too excited, let’s verify that <code>pe1'</code> and <code>pe1''</code> agree, at least on small inputs.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; test_pe1 ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> test_pe1 n <span class="fu">=</span> pe1' n <span class="fu">==</span> pe1'' n</code></pre></div>
+<p>And then:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> and <span class="fu">$</span> map test_pe1 [<span class="dv">1</span><span class="fu">..</span><span class="dv">1500</span>]
+<span class="dt">True</span></code></pre></div>
+<p>So it is with confidence we say that <code>pe1'</code> and <code>pe1''</code> are the same function. Then the answer to problem 1 is:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe1 ::</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> pe1 <span class="fu">=</span> pe1'' <span class="dv">1000</span></code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

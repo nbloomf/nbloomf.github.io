@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: entab</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: entab</h1>
+<!-- BEGIN BODY -->
+<h2>replace spaces on stdin with tabs</h2>
+
+<div class="info">
+Posted on 2016-02-18 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/entab.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-entab: replace spaces on stdin with tabs</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
+<p>The <a href="../../posts/2016-02-15-software-tools-in-haskell-detab.html"><code>detab</code></a> program replaced tab characters with spaces, taking arguments at the command line to let the user specify the width of the tab stops. The <code>entab</code> program reverses this process. It takes input which we assume represents some tabular data where different columns start on specific character columns, chops the input lines into columns, and replaces any trailing spaces in a given column by a single <code>\t</code> character. Just like <code>detab</code>, the default tab stop width is 8, and we allow the user to specify a list of tab stop widths at the command line with the convention that the <em>last</em> user-specified width is assumed to repeat indefinitely.</p>
+<p>The basic structure of this program is nearly identical to that of <code>detab</code> (which is not surprising).</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- Read positive integer tabstop arguments.</span>
+<span class="ot">&gt;</span>   <span class="co">-- Default is [8].</span>
+<span class="ot">&gt;</span>   ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]
+<span class="ot">&gt;</span>     <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks
+<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
+<span class="ot">&gt;</span>                  [<span class="st">&quot;tab widths must be positive integers.&quot;</span>
+<span class="ot">&gt;</span>                  ] <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- Do it!</span>
+<span class="ot">&gt;</span>   lineFilter (insertTabStops ts)
+<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<p>We reuse the functions for reading lists of nonnegative integers that we wrote for <code>detab</code>. The heavly lifting is done by <code>insertTabStops</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> insertTabStops [] xs <span class="fu">=</span> xs
+<span class="ot">&gt;</span> insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> concat <span class="fu">$</span> reverse zs
+<span class="ot">&gt;</span>     accum zs [t] ys <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
+<span class="ot">&gt;</span>       accum (as<span class="fu">:</span>zs) [t] bs
+<span class="ot">&gt;</span>     accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
+<span class="ot">&gt;</span>       accum (as<span class="fu">:</span>zs) ts bs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     splitColumn k xs
+<span class="ot">&gt;</span>       <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> (xs,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       <span class="fu">|</span> otherwise <span class="fu">=</span> (ds,bs)
+<span class="ot">&gt;</span>           <span class="kw">where</span>
+<span class="ot">&gt;</span>             (as,bs) <span class="fu">=</span> splitAt k xs
+<span class="ot">&gt;</span>             munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
+<span class="ot">&gt;</span>             cs <span class="fu">=</span> reverse as
+<span class="ot">&gt;</span>             ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>                      <span class="kw">then</span> <span class="kw">let</span> es <span class="fu">=</span> reverse <span class="fu">$</span> munch cs <span class="kw">in</span>
+<span class="ot">&gt;</span>                        <span class="kw">if</span> es <span class="fu">==</span> <span class="st">&quot;&quot;</span> <span class="kw">then</span> <span class="st">&quot;\t&quot;</span> <span class="kw">else</span> es
+<span class="ot">&gt;</span>                      <span class="kw">else</span> <span class="kw">case</span> cs <span class="kw">of</span>
+<span class="ot">&gt;</span>                        <span class="ch">' '</span><span class="fu">:</span>_ <span class="ot">-&gt;</span> reverse (<span class="ch">'\t'</span><span class="fu">:</span>(munch cs))
+<span class="ot">&gt;</span>                        otherwise <span class="ot">-&gt;</span> as</code></pre></div>
+<p>Even the shape of this function on the page resembles that of its counterpart from <code>detab</code>. Note the use of an accumulating parameter helper function.</p>
+<p>In Exercise 2-2, Kernighan and Plauger ask us to make the simplest change to <code>entab</code> to make it handle tabs correctly. After thinking about this, I’ve decided the right thing to do is <strong>nothing</strong>. Let’s imagine what it means if the user is trying to use <code>entab</code> on data that contains tabs. I can think of two possible situations.</p>
+<ol style="list-style-type: decimal">
+<li>The tabs are “semantic tabs”, used to delimit data. That is, the input either is already tab-delimited, or contains a mixture of tab-delimited and column-delimited data. In this case the user has other problems. The right thing to do in the first case is nothing, and in the second case depends on the user’s intent. We could assume that a semantic tab means “advance to the next tab stop”, but this now changes the column indices of the characters in the remainder of the line unpredictably, so the intent of any tab stop width input is unclear. It would be better here to run the data through <code>detab</code> first to remove the tabs, then run through <code>entab</code> to put them back.</li>
+<li>The tabs are “literal tabs”, as in the data itself involves tab characters for some reason, and they have a different meaning in whatever context the user cares about. This is, after all, a valid reason to use a column-delimited format. Of course in this case the right thing to do is leave the tabs alone.</li>
+</ol>
+<p>If we ignore tabs altogether, then at best this is the Right Thing and at worst the user has to use <code>detab</code> first (or has other problems). On the other hand, trying to make <code>entab</code> do something useful with tabs would make the program more complicated (and probably clutter the interface) with little benefit.</p>
+<p>Old stuff:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- parse a list of positive integers base 10</span>
+<span class="ot">&gt; readPosIntList ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]
+<span class="ot">&gt;</span> readPosIntList <span class="fu">=</span> map readDecimalNat
+<span class="ot">&gt;</span>   <span class="fu">&gt;&gt;&gt;</span> map (filterMaybe (<span class="fu">&gt;</span><span class="dv">0</span>))
+<span class="ot">&gt;</span>   <span class="fu">&gt;&gt;&gt;</span> sequence
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- parse a natural number base 10</span>
+<span class="ot">&gt; readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs
+<span class="ot">&gt;</span>   return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>     decToInt x <span class="fu">=</span> lookup x
+<span class="ot">&gt;</span>       [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- apply a map to all lines on stdin</span>
+<span class="ot">&gt; lineFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> lineFilter f <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> fmap getLines getContents
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> f) xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- split on \n</span>
+<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
+<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; filterMaybe ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+<span class="ot">&gt;</span> filterMaybe p x <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   y <span class="ot">&lt;-</span> x
+<span class="ot">&gt;</span>   <span class="kw">case</span> p y <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">Just</span> y
+<span class="ot">&gt;</span>     <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

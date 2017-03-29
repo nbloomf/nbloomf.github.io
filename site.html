@@ -35,7 +35,7 @@
 <p>It is traditional for sites built with Hakyll to provide the code used to generate them: here is mine. I borrowed heavily from Hakyll’s default example and from other sites to cobble this together; maybe someone else will find it useful.</p>
 <p>This post is literate Haskell; code lines start with a <code>&gt;</code>, and all other lines (even lines that look like code!) are comments.</p>
 <p>This file is not static and was not written all at once. Over time new bits get added and old bits get changed as my needs evolve.</p>
-<p><strong>Frontmatter</strong></p>
+<h2 id="frontmatter">Frontmatter</h2>
 <p>As usual we begin with some pragmas and imports, to be used later. The <code>OverloadedStrings</code> pragma allows us to define globs and filenames as ordinary strings; otherwise we’d be saying <code>fromGlob</code> everywhere.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
 <span class="ot">&gt;</span> 
@@ -52,7 +52,7 @@
 <span class="ot">&gt;</span>   , writerHTMLMathMethod
 <span class="ot">&gt;</span>   , <span class="dt">HTMLMathMethod</span>(<span class="dt">MathJax</span>)
 <span class="ot">&gt;</span>   )</code></pre></div>
-<p><strong>The Main Function</strong></p>
+<h2 id="the-main-function">The Main Function</h2>
 <p>Hakyll is a declarative DSL for building static websites. A typical Hakyll program is of the following form:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> hakyll rules
@@ -71,10 +71,10 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>   createBlogArchive
 <span class="ot">&gt;</span>   create404
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/*&quot;</span> (fromCapture <span class="st">&quot;tag/*.html&quot;</span>)
+<span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/**&quot;</span> (fromCapture <span class="st">&quot;tag/*.html&quot;</span>)
 <span class="ot">&gt;</span>   matchPosts tags
 <span class="ot">&gt;</span>   createTagPages tags</code></pre></div>
-<p><strong>The Rules</strong></p>
+<h2 id="the-rules">The Rules</h2>
 <p>The <code>matchRawFiles</code> rule handles files that should be copied verbatim, with no extra processing.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchRawFiles ::</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchRawFiles <span class="fu">=</span>
@@ -119,21 +119,23 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <p>The <code>matchPosts</code> rule is a little different from the others we’ve seen so far. It handles blog posts. But instead of listing out the source files by name, we capture them in a glob: <code>&quot;posts/*&quot;</code>. These work similarly to shell globs but (as usual) have their own quirks; see the <a href="https://jaspervdj.be/hakyll/reference/Hakyll-Core-Identifier-Pattern.html">documentation</a> for details.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchPosts ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchPosts tags <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   match <span class="st">&quot;posts/*&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   match <span class="st">&quot;posts/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     <span class="kw">let</span> ctx <span class="fu">=</span> postWithTagsCtx tags
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyShortcodes allServices
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
-<span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;</span>             <span class="st">&quot;arithmetic-made-difficult&quot;</span> <span class="st">&quot;templates/amd.html&quot;</span> ctx
+<span class="ot">&gt;</span>             <span class="st">&quot;literate-haskell&quot;</span> <span class="st">&quot;templates/literate-haskell.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
 <span class="ot">&gt;</span>             <span class="st">&quot;software-tools-in-haskell&quot;</span> <span class="st">&quot;templates/sth-tools.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
 <span class="ot">&gt;</span>             <span class="st">&quot;project-euler&quot;</span> <span class="st">&quot;templates/project-euler-solutions.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
+<span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
+<span class="ot">&gt;</span>             <span class="st">&quot;arithmetic-made-difficult&quot;</span> <span class="st">&quot;templates/amd.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
@@ -175,7 +177,7 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span> createBlogArchive <span class="fu">=</span> create [<span class="st">&quot;archive.html&quot;</span>] <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   route idRoute
 <span class="ot">&gt;</span>   compile <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll <span class="st">&quot;posts/*&quot;</span>
+<span class="ot">&gt;</span>     posts <span class="ot">&lt;-</span> recentFirst <span class="fu">=&lt;&lt;</span> loadAll <span class="st">&quot;posts/**&quot;</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     <span class="kw">let</span>
 <span class="ot">&gt;</span>       archiveCtx <span class="fu">=</span> mconcat
@@ -243,7 +245,7 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> makeItem
 <span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate <span class="st">&quot;templates/default.html&quot;</span> ctx
 <span class="ot">&gt;</span>         <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
-<p><strong>Compilers</strong></p>
+<h2 id="compilers">Compilers</h2>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; postCtx ::</span> <span class="dt">Context</span> <span class="dt">String</span>
 <span class="ot">&gt;</span> postCtx <span class="fu">=</span> mconcat
 <span class="ot">&gt;</span>   [ dateField <span class="st">&quot;date&quot;</span> <span class="st">&quot;%Y-%m-%d&quot;</span>
@@ -271,7 +273,7 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>       , writerHTMLMathMethod <span class="fu">=</span> <span class="dt">MathJax</span> <span class="st">&quot;&quot;</span>
 <span class="ot">&gt;</span>       }</code></pre></div>
-<p><strong>Helpers</strong></p>
+<h2 id="helpers">Helpers</h2>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; anyPattern ::</span> [<span class="dt">Pattern</span>] <span class="ot">-&gt;</span> <span class="dt">Pattern</span>
 <span class="ot">&gt;</span> anyPattern <span class="fu">=</span> foldl1 (<span class="fu">.||.</span>)</code></pre></div>
 <!-- END BODY -->

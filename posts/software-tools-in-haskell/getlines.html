@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: getlines</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: getlines</h1>
+<!-- BEGIN BODY -->
+<h2>extract lines from stdin by index</h2>
+
+<div class="info">
+Posted on 2016-02-29 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/getlines.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- getlines: extract lines from stdin by index</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (isPrefixOf, unfoldr, intercalate)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)</code></pre></div>
+<p>This program is not an example from <em>Software Tools</em>; I wrote it to test some functionality that will eventually go into the print program – namely, parsing sets of integers.</p>
+<p><code>getlines</code> does one thing: it takes a set of integers as an argument, and extracts from <code>stdin</code> the lines whose indices (counting from 1) are in the given set. For instance,</p>
+<pre><code>getlines &quot;6&quot;</code></pre>
+<p>extracts the line at index 6. We can also specify ranges, like</p>
+<pre><code>getlines &quot;1-5&quot;</code></pre>
+<p>which extracts lines 1, 2, 3, 4, and 5, as well as skip counts, like</p>
+<pre><code>getlines &quot;2+3&quot;</code></pre>
+<p>which extracts every third line starting with the second (i.e. 2, 5, 8, and so on). We can give several rules separated by commas, and the indices specified will be extracted in order. So</p>
+<pre><code>getlines &quot;7-9,1,2&quot;</code></pre>
+<p>will extract lines 1, 2, 7, 8, and 9, in that order. We can give more than one integer set argument, and each will be considered in turn with the results concatenated. So</p>
+<pre><code>getlines &quot;1,2&quot; &quot;1,2&quot; &quot;1,2&quot;</code></pre>
+<p>extracts lines 1, 2, 1, 2, 1, and 2, in that order.</p>
+<p>We define a data type for each kind of integer set: single integers, ranges, and skip counts.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">IntSet</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Single</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Range</span>  <span class="dt">Int</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Skip</span>   <span class="dt">Int</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; inIntSet ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">IntSet</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> inIntSet k ms <span class="fu">=</span> or <span class="fu">$</span> map (inIntSet' k) ms
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     inIntSet' ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IntSet</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>     inIntSet' k (<span class="dt">Single</span> m)  <span class="fu">=</span> k <span class="fu">==</span> m
+<span class="ot">&gt;</span>     inIntSet' k (<span class="dt">Range</span> a b) <span class="fu">=</span> (a <span class="fu">&lt;=</span> k) <span class="fu">&amp;&amp;</span> (k <span class="fu">&lt;=</span> b)
+<span class="ot">&gt;</span>     inIntSet' k (<span class="dt">Skip</span> a b)  <span class="fu">=</span> (k <span class="fu">&gt;=</span> a) <span class="fu">&amp;&amp;</span> ((k<span class="fu">-</span>a)<span class="ot">`rem`</span>b <span class="fu">==</span> <span class="dv">0</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; readIntSet ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> readIntSet xs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   cs <span class="ot">&lt;-</span> readIntSet' xs
+<span class="ot">&gt;</span>   return (\k <span class="ot">-&gt;</span> inIntSet k cs)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     readIntSet' ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">IntSet</span>]
+<span class="ot">&gt;</span>     readIntSet' <span class="fu">=</span> sequence <span class="fu">.</span> map oneIntSeq <span class="fu">.</span> breakAt <span class="ch">','</span>
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;         oneIntSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">IntSet</span>
+<span class="ot">&gt;</span>         oneIntSeq <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>         oneIntSeq xs <span class="fu">=</span> <span class="kw">case</span> readDecimalNat xs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">Just</span> k  <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Single</span> k
+<span class="ot">&gt;</span>           <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">case</span> map readDecimalNat <span class="fu">$</span> breakAt <span class="ch">'-'</span> xs <span class="kw">of</span>
+<span class="ot">&gt;</span>             [<span class="dt">Just</span> a, <span class="dt">Just</span> b] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Range</span> a b
+<span class="ot">&gt;</span>             otherwise        <span class="ot">-&gt;</span> <span class="kw">case</span> map readDecimalNat <span class="fu">$</span> breakAt <span class="ch">'+'</span> xs <span class="kw">of</span>
+<span class="ot">&gt;</span>               [<span class="dt">Just</span> a, <span class="dt">Just</span> b] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">Skip</span> a b
+<span class="ot">&gt;</span>               otherwise        <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;         breakAt ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="ot">&gt;</span>         breakAt x <span class="fu">=</span> breakBy (<span class="fu">==</span> x)
+<span class="ot">&gt;</span>           <span class="kw">where</span>
+<span class="ot">&gt;             breakBy ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
+<span class="ot">&gt;</span>             breakBy _ [] <span class="fu">=</span> [[]]
+<span class="ot">&gt;</span>             breakBy p xs <span class="fu">=</span> <span class="kw">case</span> break p xs <span class="kw">of</span>
+<span class="ot">&gt;</span>               (ys,[])   <span class="ot">-&gt;</span> [ys]
+<span class="ot">&gt;</span>               (ys,_<span class="fu">:</span>zs) <span class="ot">-&gt;</span> ys <span class="fu">:</span> breakBy p zs</code></pre></div>
+<p>The helper function <code>readIntSet</code> takes the string representation of a set and returns a function that detects whether a given integer is in the set specified. Compared to representing a set of integers as a set, this makes representing large ranges more efficient and makes representing infinite sets (like skip lists) possible.</p>
+<p>Next we write a helper function that extracts items from a list.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; getEltsByIndex ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]
+<span class="ot">&gt;</span> getEltsByIndex p xs <span class="fu">=</span> map snd <span class="fu">$</span> filter (p <span class="fu">.</span> fst) <span class="fu">$</span> zip [<span class="dv">1</span><span class="fu">..</span>] xs</code></pre></div>
+<p>We introduced the type of ASA carriage control lines in the overstrike tool. To handle such files here, we need a helper function for reading carriage control formatted lines.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readCCLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CCLine</span>]
+<span class="ot">&gt;</span> readCCLines <span class="fu">=</span> unfoldrMaybe readFirstCCLine <span class="fu">.</span> getLines
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     readFirstCCLine ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">CCLine</span>, [<span class="dt">String</span>]))
+<span class="ot">&gt;</span>     readFirstCCLine [] <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     readFirstCCLine ((<span class="ch">' '</span><span class="fu">:</span>cs)<span class="fu">:</span>ds) <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         (us,vs) <span class="fu">=</span> span (isPrefixOf <span class="st">&quot;+&quot;</span>) ds
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         stripPlus xs <span class="fu">=</span> <span class="kw">case</span> xs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="ch">'+'</span><span class="fu">:</span>ys    <span class="ot">-&gt;</span> <span class="dt">Just</span> ys
+<span class="ot">&gt;</span>           otherwise <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="kw">case</span> sequence <span class="fu">$</span> map stripPlus us <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Just</span> ws <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">CCLine</span> <span class="fu">$</span> cs<span class="fu">:</span>ws, vs))
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     readFirstCCLine _ <span class="fu">=</span> <span class="dt">Nothing</span></code></pre></div>
+<p>Finally, the main program is simple enough. We take one optional argument, <code>--asacc</code>, which interprets “lines” using the ASA carriage control format.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Mode</span> <span class="fu">=</span> <span class="dt">Lines</span> <span class="fu">|</span> <span class="dt">ASACC</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="co">-- interpret arguments</span>
+<span class="ot">&gt;</span>   (mode,inv,tests) <span class="ot">&lt;-</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (modeflag,rest') <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span>
+<span class="ot">&gt;</span>         (<span class="st">&quot;--asacc&quot;</span><span class="fu">:</span>zs) <span class="ot">-&gt;</span> (<span class="dt">ASACC</span>, zs)
+<span class="ot">&gt;</span>         zs             <span class="ot">-&gt;</span> (<span class="dt">Lines</span>, zs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       (notflag,rest) <span class="fu">=</span> <span class="kw">case</span> rest' <span class="kw">of</span>
+<span class="ot">&gt;</span>         (<span class="st">&quot;--not&quot;</span><span class="fu">:</span>zs) <span class="ot">-&gt;</span> (<span class="dt">True</span>,  zs)
+<span class="ot">&gt;</span>         zs           <span class="ot">-&gt;</span> (<span class="dt">False</span>, zs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     ps <span class="ot">&lt;-</span> <span class="kw">case</span> sequence <span class="fu">$</span> map readIntSet rest <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Just</span> xs <span class="ot">-&gt;</span> return xs
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> argErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     return (modeflag,notflag,ps)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     get xs p <span class="fu">=</span> <span class="kw">case</span> inv <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">False</span> <span class="ot">-&gt;</span> getEltsByIndex p xs
+<span class="ot">&gt;</span>       <span class="dt">True</span>  <span class="ot">-&gt;</span> getEltsByIndex (not <span class="fu">.</span> p) xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">case</span> mode <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Lines</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       lines <span class="ot">&lt;-</span> fmap getLines getContents
+<span class="ot">&gt;</span>       sequence_ <span class="fu">$</span> map putStrLn <span class="fu">$</span> concatMap (get lines) tests
+<span class="ot">&gt;</span>     <span class="dt">ASACC</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       lines <span class="ot">&lt;-</span> fmap readCCLines getContents
+<span class="ot">&gt;</span>       <span class="kw">case</span> lines <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> corrErr <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span>         <span class="dt">Just</span> zs <span class="ot">-&gt;</span> sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> renderCCLine) <span class="fu">$</span> concatMap (get zs) tests
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   exitSuccess
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; argErr ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> argErr <span class="fu">=</span> reportErrorMsgs
+<span class="ot">&gt;</span>   [ <span class="st">&quot;usage:&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  getlines INTSET ... : extract lines from stdin at indices in RANGE (sorted)&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;options:&quot;</span>
+<span class="ot">&gt;</span>   , <span class="st">&quot;  --asacc : read as ASA carriage control lines&quot;</span>
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; corrErr ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> corrErr <span class="fu">=</span> reportErrorMsgs
+<span class="ot">&gt;</span>   [ <span class="st">&quot;corrupt input&quot;</span> ]</code></pre></div>
+<h2 id="old-stuff">Old Stuff</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">CCLine</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">CCLine</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; renderCCLine ::</span> <span class="dt">CCLine</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> renderCCLine (<span class="dt">CCLine</span> xs)
+<span class="ot">&gt;</span>   <span class="fu">=</span> intercalate <span class="st">&quot;\n&quot;</span> <span class="fu">$</span> zipWith (<span class="fu">:</span>) (<span class="ch">' '</span> <span class="fu">:</span> (repeat <span class="ch">'+'</span>)) xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; unfoldrMaybe ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (a,b))) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
+<span class="ot">&gt;</span> unfoldrMaybe f x <span class="fu">=</span> <span class="kw">case</span> f x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   <span class="dt">Just</span> <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> []
+<span class="ot">&gt;</span>   <span class="dt">Just</span> (<span class="dt">Just</span> (a,b)) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     as <span class="ot">&lt;-</span> unfoldrMaybe f b
+<span class="ot">&gt;</span>     <span class="dt">Just</span> (a<span class="fu">:</span>as)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
+<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
+<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- parse a natural number base 10</span>
+<span class="ot">&gt; readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs
+<span class="ot">&gt;</span>   return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span>     decToInt x <span class="fu">=</span> lookup x
+<span class="ot">&gt;</span>       [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)
+<span class="ot">&gt;</span>       , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- split on \n</span>
+<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
+<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
+<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

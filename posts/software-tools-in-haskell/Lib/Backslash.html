@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Software Tools in Haskell: Escape Codes</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<link rel="icon" href="../../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Software Tools in Haskell: Escape Codes</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2016-02-20 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../../tag/software-tools-in-haskell.html">software-tools-in-haskell</a>, <a href="../../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This page is part of a series on <a href="../../../pages/sth/index.html">Software Tools in Haskell</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/software-tools-in-haskell/Lib/Backslash.lhs">the source</a> into GHCi and play along.</p>
+
+<p>As usual, we start with some imports.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-unescape: interpret C and ASCII backslash escape codes on stdin</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Lib.Backslash</span> (bsUnEsc) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (ord, readLitChar)</code></pre></div>
+<p>In several tools to come we will need a function which expands escape codes in a string. This module provides just such a function, called <code>bsUnEsc</code>.</p>
+<p>There’s no nice way to do this, so we pattern match on the prefix of a string looking for escape codes. One gotcha: the ASCII abbreviations are not prefix free; for instance the meaning of the string <code>\SOHello</code> is ambiguous; is it <code>\SO</code> (Shift Out) followed by <code>Hello</code> or <code>\SOH</code> (Start Of Heading) followed by <code>ello</code>? To make sure these are detected correctly, we pattern match <code>\SOH</code> first (since otherwise that string would always match as <code>\SO</code> followed by <code>H</code>) and add one more escape code, <code>\&amp;</code> (taken from Haskell), for those occasions when you <em>really</em> want <code>\SO</code> followed by <code>H</code> not interpreted as <code>\SOH</code>. <code>\&amp;</code> represents the empty string, so we can do this with <code>\SO\&amp;H</code>. So, you know, for all those times you need carefully formatted ASCII control codes.</p>
+<p><code>bsUnEsc</code> is the bulk of the <a href="../../../posts/software-tools-in-haskell/unescape.html">unescape</a> tool, but it will be useful in several other tools as well. So we extract it in a library.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; bsUnEsc ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> bsUnEsc <span class="fu">=</span> concat <span class="fu">.</span> unfoldr firstChar
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     firstChar ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
+<span class="ot">&gt;</span>     firstChar <span class="st">&quot;&quot;</span> <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     firstChar (c<span class="fu">:</span>cs) <span class="fu">=</span> <span class="kw">case</span> c <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="ch">'\\'</span> <span class="ot">-&gt;</span> <span class="kw">case</span> cs <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="co">-- Basic C-style escape characters</span>
+<span class="ot">&gt;</span>         (<span class="ch">'a'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\a\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'b'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\b\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'f'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\f\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'n'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\n\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'r'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\r\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'t'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\t\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'v'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\v\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'\\'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'\''</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;'\&amp;&quot;</span> ,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'&quot;'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\&quot;\&amp;&quot;</span>,ds)
+<span class="ot">&gt;</span>         (<span class="ch">'?'</span> <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;?\&amp;&quot;</span> ,ds)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- 3-digit octal ASCII codes</span>
+<span class="ot">&gt;</span>         (<span class="ch">'0'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'0'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'1'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'1'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'2'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'2'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'3'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'3'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'4'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'4'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'5'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'5'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'6'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'6'</span>,k2,k3] ds
+<span class="ot">&gt;</span>         (<span class="ch">'7'</span><span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>ds) <span class="ot">-&gt;</span> octalCode [<span class="ch">'7'</span>,k2,k3] ds
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- 2-digit hex ASCII codes</span>
+<span class="ot">&gt;</span>         (<span class="ch">'x'</span><span class="fu">:</span>k1<span class="fu">:</span>k2<span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="kw">case</span> all isHexDigit digs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="kw">case</span> readLitChar (<span class="st">&quot;\\x&quot;</span> <span class="fu">++</span> digs) <span class="kw">of</span>
+<span class="ot">&gt;</span>             []        <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\x&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>             ((x,_)<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="dt">Just</span> ([x],ds)
+<span class="ot">&gt;</span>           <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\x&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>           <span class="kw">where</span>
+<span class="ot">&gt;</span>             digs <span class="fu">=</span> [k1,k2]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- Standard ASCII abbreviations</span>
+<span class="ot">&gt;</span>         (<span class="ch">'N'</span><span class="fu">:</span><span class="ch">'U'</span><span class="fu">:</span><span class="ch">'L'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\NUL\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'O'</span><span class="fu">:</span><span class="ch">'H'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SOH\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'T'</span><span class="fu">:</span><span class="ch">'X'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\STX\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'T'</span><span class="fu">:</span><span class="ch">'X'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\ETX\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'O'</span><span class="fu">:</span><span class="ch">'T'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\EOT\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'N'</span><span class="fu">:</span><span class="ch">'Q'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\ENQ\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'A'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span><span class="ch">'K'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\ACK\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'B'</span><span class="fu">:</span><span class="ch">'E'</span><span class="fu">:</span><span class="ch">'L'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\BEL\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'L'</span><span class="fu">:</span><span class="ch">'E'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DLE\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span><span class="ch">'1'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DC1\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span><span class="ch">'2'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DC2\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span><span class="ch">'3'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DC3\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span><span class="ch">'4'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DC4\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'N'</span><span class="fu">:</span><span class="ch">'A'</span><span class="fu">:</span><span class="ch">'K'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\NAK\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'Y'</span><span class="fu">:</span><span class="ch">'N'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SYN\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'T'</span><span class="fu">:</span><span class="ch">'B'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\ETB\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'C'</span><span class="fu">:</span><span class="ch">'A'</span><span class="fu">:</span><span class="ch">'N'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\CAN\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'U'</span><span class="fu">:</span><span class="ch">'B'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SUB\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'S'</span><span class="fu">:</span><span class="ch">'C'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\ESC\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'D'</span><span class="fu">:</span><span class="ch">'E'</span><span class="fu">:</span><span class="ch">'L'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\DEL\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span>         (<span class="ch">'E'</span><span class="fu">:</span><span class="ch">'M'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\EM\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'F'</span><span class="fu">:</span><span class="ch">'S'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\FS\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'G'</span><span class="fu">:</span><span class="ch">'S'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\GS\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'R'</span><span class="fu">:</span><span class="ch">'S'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\RS\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'U'</span><span class="fu">:</span><span class="ch">'S'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\US\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'P'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SP\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'B'</span><span class="fu">:</span><span class="ch">'S'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\BS\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'H'</span><span class="fu">:</span><span class="ch">'T'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\HT\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'L'</span><span class="fu">:</span><span class="ch">'F'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\LF\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'V'</span><span class="fu">:</span><span class="ch">'T'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\VT\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'F'</span><span class="fu">:</span><span class="ch">'F'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\FF\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'C'</span><span class="fu">:</span><span class="ch">'R'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\CR\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'O'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SO\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span>         (<span class="ch">'S'</span><span class="fu">:</span><span class="ch">'I'</span>    <span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\SI\&amp;&quot;</span>,  ds)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- C99-style universal character names</span>
+<span class="ot">&gt;</span>         (<span class="ch">'u'</span><span class="fu">:</span>k1<span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>k4<span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="kw">case</span> all isHexDigit digs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="kw">case</span> readLitChar (<span class="st">&quot;\\x&quot;</span> <span class="fu">++</span> digs) <span class="kw">of</span>
+<span class="ot">&gt;</span>             []        <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\u&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>             ((x,_)<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="dt">Just</span> ([x],ds)
+<span class="ot">&gt;</span>           <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\u&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>           <span class="kw">where</span>
+<span class="ot">&gt;</span>             digs <span class="fu">=</span> [k1,k2,k3,k4]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         (<span class="ch">'U'</span><span class="fu">:</span>k1<span class="fu">:</span>k2<span class="fu">:</span>k3<span class="fu">:</span>k4<span class="fu">:</span>k5<span class="fu">:</span>k6<span class="fu">:</span>k7<span class="fu">:</span>k8<span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="kw">case</span> all isHexDigit digs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="kw">case</span> readLitChar (<span class="st">&quot;\\x&quot;</span> <span class="fu">++</span> digs) <span class="kw">of</span>
+<span class="ot">&gt;</span>             []        <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\U&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>             ((x,_)<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="dt">Just</span> ([x],ds)
+<span class="ot">&gt;</span>           <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\U&quot;</span> <span class="fu">++</span> digs, ds)
+<span class="ot">&gt;</span>           <span class="kw">where</span>
+<span class="ot">&gt;</span>             digs <span class="fu">=</span> [k1,k2,k3,k4,k5,k6,k7,k8]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- stolen from haskell</span>
+<span class="ot">&gt;</span>         (<span class="ch">'&amp;'</span><span class="fu">:</span>ds) <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;&quot;</span>,ds)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         <span class="co">-- If we don't see a valid esc code, just move on.</span>
+<span class="ot">&gt;</span>         ds <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="st">&quot;\\\&amp;&quot;</span>, ds)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="co">-- No backslash</span>
+<span class="ot">&gt;</span>       otherwise <span class="ot">-&gt;</span> <span class="dt">Just</span> ([c],cs)
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;         isHexDigit ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>         isHexDigit <span class="fu">=</span> (<span class="ot">`elem`</span> <span class="st">&quot;0123456789aAbBcCdDeEfF&quot;</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;         isOctDigit ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>         isOctDigit <span class="fu">=</span> (<span class="ot">`elem`</span> <span class="st">&quot;01234567&quot;</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         octalCode digs ds <span class="fu">=</span> <span class="kw">case</span> all isOctDigit digs <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="kw">case</span> readLitChar (<span class="st">&quot;\\o&quot;</span> <span class="fu">++</span> digs) <span class="kw">of</span>
+<span class="ot">&gt;</span>             []        <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="ch">'\\'</span><span class="fu">:</span>digs, ds)
+<span class="ot">&gt;</span>             ((x,_)<span class="fu">:</span>_) <span class="ot">-&gt;</span> <span class="dt">Just</span> ([x],ds)
+<span class="ot">&gt;</span>           <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="ch">'\\'</span><span class="fu">:</span>digs, ds)</code></pre></div>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
