@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Multiplication</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Multiplication</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-03-31 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Times.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Times</span>
+<span class="ot">&gt;</span>  ( times, _test_times
+<span class="ot">&gt;</span>  ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>Natural number multiplication has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define it as <span class="math inline">\(\Theta = \primrec{\varphi}{\mu}\)</span> for some appropriate <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>. Using the universal property of primitive recursion and how we want multiplication to behave, note that on the one hand we want <span class="math inline">\(\Theta(\zero,m) = \zero\)</span> for all <span class="math inline">\(m\)</span>, while on the other hand we have <span class="math inline">\(\Theta(\zero,m) = \varphi(m)\)</span>. So apparently we need <span class="math inline">\(\varphi(m) = \zero\)</span> for all <span class="math inline">\(m\)</span>.</p>
+<p>Similarly, we want <span class="math inline">\(\Theta(\next(n),m) = \nplus(\Theta(n,m),m)\)</span>, but we also have <span class="math display">\[\Theta(\next(n),m) = \mu(n,m,\Theta(n,m)).\]</span> So apparently we need <span class="math inline">\(\mu(n,m,k) = \nplus(k,m)\)</span>.</p>
+<p>With this in mind, we define a binary operation <span class="math inline">\(\ntimes\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
+<div class="result">
+<div class="defn">
+<p>
+Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \primrec{\varphi}{\mu}.\]</span>
+</p>
+</div>
+</div>
+<p>Showing that <span class="math inline">\(\ntimes\)</span> has the familiar properties of multiplication then comes down to a few applications of induction.</p>
+<div class="result">
+<div class="thm">
+<p>The following hold for all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ntimes(\zero,a) = \zero = \ntimes(a,\zero)\)</span>.</li>
+<li><span class="math inline">\(\ntimes(\next(\zero),a) = a = \ntimes(a,\next(\zero))\)</span>.</li>
+<li><span class="math inline">\(\ntimes(\next(a),b) = \nplus(\ntimes(a,b),b)\)</span>.</li>
+<li><span class="math inline">\(\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)\)</span>.</li>
+<li><span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span>.</li>
+<li><span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span>.</li>
+<li><span class="math inline">\(\ntimes(\nplus(a,b),c) = \nplus(\ntimes(a,c),\ntimes(b,c))\)</span>.</li>
+<li><span class="math inline">\(\ntimes(\ntimes(a,b),c) = \ntimes(a,\ntimes(b,c))\)</span>.</li>
+<li>If <span class="math inline">\(\ntimes(\next(a),b) = \ntimes(\next(a),c)\)</span> then <span class="math inline">\(b = c\)</span>.</li>
+<li>If <span class="math inline">\(\ntimes(b,\next(a)) = \ntimes(c,\next(a))\)</span> then <span class="math inline">\(b = c\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Note first that for all <span class="math inline">\(a\)</span>, we have <span class="math display">\[\ntimes(\zero,a) = \varphi(a) = \zero.\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\ntimes(\zero,\zero) = \zero\)</span>. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\zero) = \zero\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} \ntimes(\next(a),\zero) &amp; = &amp; \mu(a,\zero,\ntimes(a,\zero)) \\ &amp; = &amp; \mu(a,\zero,\zero) \\ &amp; = &amp; \nplus(\zero,\zero) \\ &amp; = &amp; \zero \end{eqnarray*}\]</span> as needed.</li>
+<li>Note first that for all <span class="math inline">\(a\)</span>, we have <span class="math display">\[\begin{eqnarray*} \ntimes(\next(\zero),a) &amp; = &amp; \mu(\zero,a,\ntimes(\zero,a)) \\ &amp; = &amp; \mu(\zero,a,\zero) \\ &amp; = &amp; \nplus(\zero,a) \\ &amp; = &amp; a. \end{eqnarray*}\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\ntimes(\zero,\next(\zero)) = \zero\)</span>. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\next(\zero)) = a\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*} \ntimes(\next(a),\next(\zero)) &amp; = &amp; \mu(a,\next(\zero),\ntimes(a,\next(\zero)) \\ &amp; = &amp; \mu(a,\next(\zero),a) \\ &amp; = &amp; \nplus(a,\next(\zero)) \\ &amp; = &amp; \next(\nplus(a,\zero)) \\ &amp; = &amp; \next(a) \end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\ntimes(\next(a),b) = \mu(a,b,\ntimes(a,b)) = \nplus(\ntimes(a,b),b)\]</span> as claimed.</li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\ntimes(\zero,\next(b)) = \zero = \nplus(\zero,\zero) = \nplus(\ntimes(\zero,b),\zero)\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ntimes(\next(a),\next(b)) \\ &amp; = &amp; \mu(a,\next(b),\ntimes(a,\next(b))) \\ &amp; = &amp; \nplus(\ntimes(a,\next(b)),\next(b)) \\ &amp; = &amp; \next(\nplus(\ntimes(a,\next(b)),b)) \\ &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,b),a),b)) \\ &amp; = &amp; \next(\nplus(\ntimes(a,b),\nplus(a,b))) \\ &amp; = &amp;\next(\nplus(\ntimes(a,b),\nplus(b,a))) \\ &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,b),b),a)) \\ &amp; = &amp; \next(\nplus(\ntimes(\next(a),b),a)) \\ &amp; = &amp; \nplus(\ntimes(\next(a),b), \next(a)) \end{eqnarray*}\]</span> as needed.</li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\ntimes(\zero,b) = \zero = \ntimes(b,\zero)\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*} \ntimes(\next(a),b) &amp; = &amp; \mu(a,b,\ntimes(a,b)) \\ &amp; = &amp; \mu(a,b,\ntimes(a,b)) \\ &amp; = &amp; \nplus(\ntimes(a,b),b) \\ &amp; = &amp; \nplus(\ntimes(b,a),b) \\ &amp; = &amp; \ntimes(b,\next(a)) \end{eqnarray*}\]</span> as needed.</li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\ntimes(\zero,\nplus(b,c)) = \zero = \nplus(\zero,\zero) = \nplus(\ntimes(\zero,b),\ntimes(\zero,c))\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ntimes(\next(a),\nplus(b,c)) \\ &amp; = &amp; \nplus(\ntimes(a, \nplus(b,c)), \nplus(b,c)) \\ &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\ntimes(a,c)), \nplus(b,c)) \\ &amp; = &amp; \nplus(\nplus(\nplus(\nplus(\ntimes(a,b),\ntimes(a,c))),b),c) \\ &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\nplus(\ntimes(a,c),b)),c) \\ &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\nplus(b,\ntimes(a,c))),c) \\ &amp; = &amp; \nplus(\nplus(\nplus(\ntimes(a,b),b),\ntimes(a,c)),c) \\ &amp; = &amp; \nplus(\nplus(\ntimes(a,b),b),\nplus(\ntimes(a,c),c)) \\ &amp; = &amp; \nplus(\ntimes(\next(a),b),\ntimes(\next(a),c)) \end{eqnarray*}\]</span> as needed.</li>
+<li>Follows from (5) and (6).</li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*} \ntimes(\zero,\ntimes(b,c)) &amp; = &amp; \zero \\ &amp; = &amp; \ntimes(\zero,c) \\ &amp; = &amp; \ntimes(\ntimes(\zero,b),c) \end{eqnarray*}\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\ntimes(b,c)) = \ntimes(\ntimes(a,b),c)\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ntimes(\ntimes(\next(a),b),c) \\ &amp; = &amp; \ntimes(\nplus(\ntimes(a,b),b),c) \\ &amp; = &amp; \nplus(\ntimes(\ntimes(a,b),c), \ntimes(b,c)) \\ &amp; = &amp; \nplus(\ntimes(a,\ntimes(b,c)),\ntimes(b,c)) \\ &amp; = &amp; \ntimes(\next(a),\ntimes(b,c)) \end{eqnarray*}\]</span> as needed.</li>
+<li>This proof will be a little different: we will use induction twice; first on <span class="math inline">\(b\)</span>, and then on <span class="math inline">\(c\)</span>. To this end, let <span class="math display">\[B = \{ b \in \nats \mid \forall c, \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}\]</span> and given <span class="math inline">\(b \in \nats\)</span> let <span class="math display">\[C(b) = \{ c \in \nats \mid \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}.\]</span> We wish to show that <span class="math inline">\(B = \nats\)</span> by induction. For the base case, we need to show that <span class="math inline">\(b = \zero \in B\)</span>; for this it suffices to show that <span class="math inline">\(C(\zero) = \nats\)</span>, which we do by induction. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math inline">\(b = c\)</span> regardless of <span class="math inline">\(a\)</span>. For the inductive step suppose we have <span class="math inline">\(c \in C(\zero)\)</span> for some <span class="math inline">\(c\)</span>. Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ntimes(\next(a),\next(c)) \\ &amp; = &amp; \nplus(\ntimes(a,\next(c)),\next(c)) \\ &amp; = &amp; \next(\nplus(\ntimes(a,\next(c)),c)) \end{eqnarray*}\]</span> while <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),\zero) = \zero;\]</span> in particular, the statement <span class="math display">\[\ntimes(\next(a),\next(c)) = \ntimes(\next(a),b)\]</span> is false, so that <span class="math inline">\(\next(c) \in C(\zero)\)</span> <em>vacuously</em>. So we have <span class="math inline">\(C(\zero) = \nats\)</span>, and thus <span class="math inline">\(\zero \in B\)</span>. For the inductive step, suppose we have <span class="math inline">\(b \in B\)</span>; we wish to show that <span class="math inline">\(\next(b) \in B\)</span>, or equivalently that <span class="math inline">\(C(\next(b)) = \nats\)</span>. We proceed by induction on <span class="math inline">\(c\)</span> again. The base case <span class="math inline">\(c = \zero\)</span> holds vacuously. For the inductive step, suppose we have <span class="math inline">\(c \in C(\next(b))\)</span>. Now suppose further that <span class="math display">\[\ntimes(\next(a),\next(b)) = \ntimes(\next(a),\next(c)).\]</span> Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ntimes(\next(a),\next(b)) \\ &amp; = &amp; \nplus(\ntimes(a,\next(c),\next(c)) \\ &amp; = &amp; \next(\nplus(\ntimes(\next(c),a),c)) \\ &amp; = &amp; \next(\nplus(\nplus(\ntimes(c,a),a),c)) \\ &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)). \end{eqnarray*}\]</span> The analogous statement holds for <span class="math inline">\(b\)</span>. So we have <span class="math display">\[\begin{eqnarray*} \next(\nplus(\nplus(\ntimes(a,b),b),a)) &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)) \\ \nplus(\nplus(\ntimes(a,b),b),a) &amp; = &amp; \nplus(\nplus(\ntimes(a,c),c),a) \\ \nplus(\ntimes(a,b),b) &amp; = &amp; \nplus(\ntimes(a,c),c) \\ \ntimes(\next(a),b) &amp; = &amp; \ntimes(\next(a),c) \\ b &amp; = &amp; c \end{eqnarray*}\]</span> as needed.</li>
+<li>Follows from (5) and (9).</li>
+</ol>
+</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>times</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> times <span class="fu">=</span> primitiveRec phi mu
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> zero
+<span class="ot">&gt;</span>     mu _ a b <span class="fu">=</span> plus b a</code></pre></div>
+<p>As with <code>plus</code>, it’s a good idea to test the properties of <code>times</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- 0 == times(a,0) and 0 == times(0,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_zero _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ zero <span class="fu">==</span> times a zero
+<span class="ot">&gt;</span>   , zero <span class="fu">==</span> times zero a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- a == times(a,1) and a == times(1,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_one _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ a <span class="fu">==</span> times a (next zero)
+<span class="ot">&gt;</span>   , a <span class="fu">==</span> times (next zero) a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(next(a),b) == plus(times(a,b),b)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_next_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_next_left _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times (next a) b) <span class="fu">==</span> (plus (times a b) b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(a,next(b)) == plus(times(a,b),a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_next_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_next_right _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times a (next b)) <span class="fu">==</span> (plus (times a b) a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(a,b) == times(b,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_commutative _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times a b) <span class="fu">==</span> (times b a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(a,plus(b,c)) == plus(times(a,b),times(a,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_distributive_left _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times a (plus b c)) <span class="fu">==</span> (plus (times a b) (times a c))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(plus(a,b),c) == plus(times(a,c),times(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_distributive_right _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times (plus a b) c) <span class="fu">==</span> (plus (times a c) (times b c))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(times(a,b),c) == times(a,times(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_associative _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times (times a b) c) <span class="fu">==</span> (times a (times b c))</code></pre></div>
+<p>And one function to rule them all:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_times t numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_times_zero t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_one t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_next_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_next_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_commutative t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_distributive_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_distributive_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_associative t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs {maxSuccess <span class="fu">=</span> numCases}</code></pre></div>
+<p>And a sanity check:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> _test_times (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">10</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
+<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span></code></pre></div>
+<p>I used a much smaller number of test cases this time, because these run much more slowly than the tests for <code>plus</code>. The culprit is <code>_test_times_associative</code>. What’s happening is that multiplication of <code>Nat</code>s is inherently slow; it’s implemented as iterated addition, which itself is iterated <code>N</code>.</p>
+<p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

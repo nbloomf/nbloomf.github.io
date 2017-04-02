@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - The universal property of the natural numbers</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>The universal property of the natural numbers</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2014-05-22 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/NaturalNumbers.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span>   ( <span class="dt">Natural</span>(<span class="fu">..</span>), naturalRec, primitiveRec, <span class="dt">Nat</span>(), <span class="dt">NatShape</span>(<span class="fu">..</span>)
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Nat</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>We have assumed the existence of a set <span class="math inline">\(\nats\)</span> such that there is a unique inductive set homomorphism from <span class="math inline">\(\nats\)</span> to any other inductive set. But it turns out that this set is not <em>unique</em> with this property; any other inductive set which is <em>isomorphic</em> to <span class="math inline">\(\nats\)</span> enjoys it as well.</p>
+<p>Here’s a handwavy proof. Let <span class="math inline">\((A,\varphi,e)\)</span> be an inductive set, and suppose the unique map <span class="math inline">\(\theta : \nats \rightarrow A\)</span> is bijective. Then there is a unique inductive set homomorphism <span class="math inline">\(\omega : A \rightarrow \nats\)</span>; namely, <span class="math inline">\(\omega = \theta^{-1}\)</span>. Now any homomorphism from <span class="math inline">\(A\)</span> factors through the (unique) map <span class="math inline">\(\omega\)</span>.</p>
+<p>From a mathematical point of view, isomorphic objects are interchangeable. But as we’ll eventually see, from a <em>computational</em> point of view, isomorphic objects can behave very differently. For this reason we will think of the properties of <span class="math inline">\(\nats\)</span> as a kind of interface, and write our programs against that. Specifically, every element of a <span class="math inline">\(\nats\)</span>-like set is either the zero or the successor of some other element; we’ll represent this with the type <code>NatShape</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">NatShape</span> t <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">Next</span> t</code></pre></div>
+<p>Now every inductive set isomorphic to <span class="math inline">\(\nats\)</span> is characterized by (1) its zero element, (2) its successor function, (3) the unique map <span class="math inline">\(A \rightarrow \nats\)</span>, and (4) the unique map <span class="math inline">\(\nats \rightarrow A\)</span>. We will also need a helper function to recognize the shape of a natural number, and for convenience a helper to convert a Haskell-native <code>Integer</code> to a natural number.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> (<span class="dt">Eq</span> t) <span class="ot">=&gt;</span> <span class="dt">Natural</span> t <span class="kw">where</span>
+<span class="ot">&gt;   toNat   ::</span> t <span class="ot">-&gt;</span> <span class="dt">Nat</span>
+<span class="ot">&gt;   fromNat ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   zero ::</span> t
+<span class="ot">&gt;</span>   zero <span class="fu">=</span> fromNat zero
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   next ::</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span>   next <span class="fu">=</span> fromNat <span class="fu">.</span> next <span class="fu">.</span> toNat
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   shapeOf ::</span> t <span class="ot">-&gt;</span> <span class="dt">NatShape</span> t
+<span class="ot">&gt;</span>   shapeOf m <span class="fu">=</span> <span class="kw">case</span> shapeOf <span class="fu">$</span> toNat m <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Zero</span>   <span class="ot">-&gt;</span> <span class="dt">Zero</span>
+<span class="ot">&gt;</span>     <span class="dt">Next</span> k <span class="ot">-&gt;</span> <span class="dt">Next</span> <span class="fu">$</span> fromNat k
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   natural ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span>   natural <span class="fu">=</span> fromNat <span class="fu">.</span> mkNat</code></pre></div>
+<p>Here’s the <code>Natural</code> instance for <code>Nat</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Natural</span> <span class="dt">Nat</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   toNat <span class="fu">=</span> id
+<span class="ot">&gt;</span>   fromNat <span class="fu">=</span> id
+<span class="ot">&gt;</span>   zero <span class="fu">=</span> <span class="dt">Z</span>
+<span class="ot">&gt;</span>   next <span class="fu">=</span> <span class="dt">N</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   shapeOf m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Z</span>   <span class="ot">-&gt;</span> <span class="dt">Zero</span>
+<span class="ot">&gt;</span>     <span class="dt">N</span> k <span class="ot">-&gt;</span> <span class="dt">Next</span> k
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   natural <span class="fu">=</span> mkNat</code></pre></div>
+<p>And note that both natural and primitive recursion can be written against the <code>Natural</code> interface.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; naturalRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span> naturalRec e phi n <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     tau <span class="fu">!</span>x k <span class="fu">=</span> <span class="kw">case</span> shapeOf k <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Zero</span>   <span class="ot">-&gt;</span> x
+<span class="ot">&gt;</span>       <span class="dt">Next</span> m <span class="ot">-&gt;</span> tau (phi x) m
+<span class="ot">&gt;</span>   <span class="kw">in</span> tau e n
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; primitiveRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span>
+<span class="ot">&gt;</span>   (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+<span class="ot">&gt;</span> primitiveRec phi mu n a <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     tau <span class="fu">!</span>x h m <span class="fu">=</span> <span class="kw">case</span> shapeOf m <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Zero</span>   <span class="ot">-&gt;</span> x
+<span class="ot">&gt;</span>       <span class="dt">Next</span> k <span class="ot">-&gt;</span> tau (mu h a x) (next h) k
+<span class="ot">&gt;</span>   <span class="kw">in</span> tau (phi a) zero n</code></pre></div>
+<p>From now on we’ll use the <code>Natural</code> interface with <code>naturalRec</code> and <code>primitiveRec</code> instead of <code>Nat</code>.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

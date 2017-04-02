@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Primitive Recursion</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Primitive Recursion</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2014-05-07 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/PrimitiveRecursion.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">PrimitiveRecursion</span>
+<span class="ot">&gt;</span>   ( primRec
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Nat</span></code></pre></div>
+<p>So far we’ve defined the natural numbers as an iterative set with a special <em>universal property</em>, which was encapsulated in the existence of a simple recursion operator <span class="math inline">\(\natrec{\ast}{\ast}\)</span>. Anything we will wish to do with the natural numbers can be done using this operator alone. However, in practice, it will be handy to define synonyms for some more complicated recursive functions; the first of these is <em>primitive recursion with a parameter</em>.</p>
+<div class="result">
+<div class="thm">
+<p>Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then there is a unique function <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero, a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(n), a) = \mu(n, a, \Theta(n, a)).\]</span></p>
+<p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\primrec{\varphi}{\mu}\)</span>.</p>
+</div>
+<div class="proof">
+<p>First we establish existence. Define a mapping <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(n,h) = (\next(n), \lambda x : \mu(n, x, h(x))).\]</span> Note that we are using the <span class="math inline">\(\lambda\)</span> notation to define an anonymous function <span class="math inline">\(A \rightarrow B\)</span> on the right hand side; specifically, <span class="math inline">\(\lambda x : \mu(n, x, h(x))\)</span> is the function <span class="math inline">\(q : A \rightarrow B\)</span> such that <span class="math inline">\(q(x) = \mu(n,x,h(x))\)</span>.</p>
+<p>Now we define <span class="math inline">\(\Theta\)</span> as follows: <span class="math display">\[\Theta(n,a) = (\snd \circ \natrec{(\zero, \varphi)}{t})(n)(a).\]</span></p>
+<p>(<span class="math inline">\(\snd\)</span> is the map which selects the second entry of a pair.)</p>
+<p>Note that <span class="math display">\[\begin{eqnarray*}
+\Theta(\zero,a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\zero)(a) \\
+ &amp; = &amp; (\snd(\natrec{(\zero, \varphi)}{t})(\zero))(a) \\
+ &amp; = &amp; (\snd(\zero, \varphi))(a) \\
+ &amp; = &amp; \varphi(a).
+\end{eqnarray*}\]</span></p>
+<p>To show the second property of <span class="math inline">\(\Theta\)</span>, we will show by induction that the following (compound) statement holds for all <span class="math inline">\(n \in \nats\)</span>:</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\natrec{(\zero,\varphi)}{t}(n) = (n, \lambda x : \Theta(n,x))\)</span> and</li>
+<li><span class="math inline">\(\Theta(\next(n), a) = \mu(n, a, \Theta(n, a))\)</span> for all <span class="math inline">\(a \in A\)</span>.</li>
+</ol>
+<p>For the base case, note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\natrec{(\zero, \varphi)}{t}(\zero) &amp; = &amp; (\zero, \varphi) \\
+ &amp; = &amp; (\zero, \lambda x : \varphi(x)) \\
+ &amp; = &amp; (\zero, \lambda x : \Theta(\zero, x))
+\end{eqnarray*}\]</span></p>
+<p>and that for all <span class="math inline">\(a \in A\)</span>,</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Theta(\next\ \zero, a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next\ \zero)(a) \\
+ &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next\ \zero)))(a) \\
+ &amp; = &amp; (\snd (t(\natrec{(\zero, \varphi)}{t}(\zero))))(a) \\
+ &amp; = &amp; (\snd (t(\zero, \varphi)))(a) \\
+ &amp; = &amp; (\snd (\next\ \zero, \lambda x : \mu(\zero, x, \varphi(x))))(a) \\
+ &amp; = &amp; (\lambda x : \mu(\zero, x, \varphi(x)))(a) \\
+ &amp; = &amp; \mu(\zero, a, \varphi(a)) \\
+ &amp; = &amp; \mu(\zero, a, \Theta(\zero, a)).
+\end{eqnarray*}\]</span></p>
+<p>Now for the inductive step, suppose the statement holds for <span class="math inline">\(n \in \nats\)</span>. Then we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\natrec{(\zero, \varphi)}{t}(\next\ n) &amp; = &amp; t(\natrec{(\zero, \varphi)}{t}(n)) \\
+ &amp; = &amp; t(n, \lambda x : \Theta(n,x)) \\
+ &amp; = &amp; (\next\ n, \lambda y : \mu(n, y, \Theta(n,y))) \\
+ &amp; = &amp; (\next\ n, \lambda x : \Theta(\next\ n, x).
+\end{eqnarray*}\]</span></p>
+<p>(Note that we used both parts of the induction hypothesis here.) Also note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Theta(\next(\next\ n), a) &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next(\next\ n))(a) \\
+ &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next(\next\ n)))(a) \\
+ &amp; = &amp; (\snd (t (\natrec{(\zero, \varphi)}{t}(\next\ n)))(a) \\
+ &amp; = &amp; (\snd (t (\next\ n, \lambda x : \Theta(\next\ n, x))))(a) \\
+ &amp; = &amp; (\snd (\next(\next\ n), \lambda y : \mu(\next\ n, y, \Theta(\next\ n, y))))(a) \\
+ &amp; = &amp; (\lambda y : \mu(\next\ n, y, \Theta(\next\ n, y)))(a) \\
+ &amp; = &amp; \mu(\next\ n, a, \Theta(\next\ n, a))
+\end{eqnarray*}\]</span></p>
+<p>So <span class="math inline">\(\Theta\)</span> has the claimed properties by induction. To see that <span class="math inline">\(\Theta\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>. Then we have <span class="math display">\[\Psi(\zero, a) = \varphi(a) = \Theta(\zero, a)\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = \Theta(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+\Psi(\next\ n, a) &amp; = &amp; \mu(n, a, \Psi(n, a)) \\
+ &amp; = &amp; \mu(n, a, \Theta(n, a)) \\
+ &amp; = &amp; \Theta(\next\ n, a)
+\end{eqnarray*}\]</span></p>
+<p>for all <span class="math inline">\(a \in A\)</span>. Thus <span class="math inline">\(\Psi = \Theta\)</span> as needed.</p>
+</div>
+</div>
+<p>That proof may look complicated, but structurally it’s very simple. We defined <span class="math inline">\(\Theta\)</span> and showed it has the claimed properties with induction, then we showed it is unique by induction.</p>
+<h2 id="implementation">Implementation</h2>
+<p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\primrec{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this.</p>
+<p>There’s the naive way:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; primRec'' ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+<span class="ot">&gt;</span> primRec'' phi _   <span class="dt">Z</span>    a <span class="fu">=</span> phi a
+<span class="ot">&gt;</span> primRec'' phi mu (<span class="dt">N</span> n) a <span class="fu">=</span> mu n a <span class="fu">$</span> primRec'' phi mu n a</code></pre></div>
+<p>There’s the definition from the proof:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; primRec' ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+<span class="ot">&gt;</span> primRec' phi mu n a <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> t (m,h) <span class="fu">=</span> (<span class="dt">N</span> m, \x <span class="ot">-&gt;</span> mu m x (h x))
+<span class="ot">&gt;</span>   <span class="kw">in</span> snd (natRec (<span class="dt">Z</span>,phi) t n) <span class="fu">$</span> a</code></pre></div>
+<p>And the tail recursive strategy:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; primRec ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+<span class="ot">&gt;</span> primRec phi mu n a <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     tau <span class="fu">!</span>x h m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Z</span>   <span class="ot">-&gt;</span> x
+<span class="ot">&gt;</span>       <span class="dt">N</span> k <span class="ot">-&gt;</span> tau (mu h a x) (<span class="dt">N</span> h) k
+<span class="ot">&gt;</span>   <span class="kw">in</span> tau (phi a) <span class="dt">Z</span> n</code></pre></div>
+<p>Some simple testing again shows that the tail recursive form is more efficient – both of the other forms run out of space on medium-sized numbers. All we need to do is verify that the efficient <code>primRec</code> is equivalent to the inefficient, but obviously correct, <code>primRec''</code>. We will (eventually) do this by induction.</p>
+<p>First, though, we need a lemma about <code>tau</code>. Note that in the definition of <code>tau</code> there are two implicit parameters, <code>mu</code> and <code>a</code>. With <code>mu</code> and <code>phi</code> fixed, we define supplementary functions <code>mu'</code> and <code>phi'</code> as follows:</p>
+<pre><code>mu' k a b = mu (N k) a b
+phi' a = mu Z a (phi a)</code></pre>
+<p>We will denote by <code>tau'</code> the version of <code>tau</code> where <code>mu'</code> is in scope, and by <code>tau</code> the version with <code>mu</code> in scope. We claim that</p>
+<pre><code>tau' x h k == tau x (N h) k</code></pre>
+<p>for all <code>x</code>, <code>h</code>, and <code>k</code>, and prove it by induction on <code>k</code>. For the base case, note that</p>
+<pre><code>   tau' x h Z
+== x
+== tau x (N h) Z</code></pre>
+<p>For the inductive step, suppose the equation holds for <code>k</code>. Then we have</p>
+<pre><code>   tau' x h (N k)
+== tau' (mu' h a x) (N h) k
+== tau (mu' h a x) (N $ N h) k
+== tau (mu (N h) a x) (N $ N h) k
+== tau x (N h) (N k)</code></pre>
+<p>as needed.</p>
+<p>Next we claim that</p>
+<pre><code>primRec phi' mu' k a == primRec phi mu (N k) a</code></pre>
+<p>for all <code>phi</code>, <code>mu</code>, <code>k</code>, and <code>a</code>. To see this, note that</p>
+<pre><code>   primRec phi mu (N k) a
+== tau (phi a) Z (N k)
+== tau (mu Z a (phi a)) (N Z) k
+== tau' (mu Z a (phi a)) Z k
+== tau' (phi' a) Z k
+== primRec phi' mu' k a</code></pre>
+<p>as needed. Also, <code>primRec''</code> satisfies this equation, which we show by induction on <code>k</code>. For the base case, note that</p>
+<pre><code>   primRec'' phi' mu' Z a
+== phi' a
+== mu Z a (phi a)
+== mu Z a $ primRec'' phi mu Z a
+== primRec'' phi mu (N Z) a</code></pre>
+<p>And if the equation holds for <code>k</code>, then we have</p>
+<pre><code>   primRec'' phi' mu' (N k) a
+== mu' k a $ primRec'' phi' mu' k a
+== mu' k a $ primRec'' phi mu (N k) a
+== mu (N k) a $ primRec'' phi mu (N k) a
+== primRec'' phi mu (N $ N k) a</code></pre>
+<p>so that</p>
+<pre><code>primRec'' phi' mu' k a == primRec'' phi mu (N k) a</code></pre>
+<p>for all <code>phi</code>, <code>mu</code>, <code>k</code>, and <code>a</code> as claimed.</p>
+<p>Finally we are prepared to show that <code>primRec == primRec''</code>, by induction on <code>k</code>. For the base case, we have</p>
+<pre><code>   primRec'' phi mu Z a
+== phi a
+== tau (phi a) Z Z
+== primRec phi mu Z a</code></pre>
+<p>And if the result holds for <code>k</code>, we have</p>
+<pre><code>   primRec'' phi mu (N k) a
+== primRec'' phi' mu' k a
+== primRec phi' mu' k a
+== primRec phi mu (N k) a</code></pre>
+<p>So our efficient <code>primRec</code> is equivalent to <code>primRec''</code>. (We will leave the equivalence of <code>primRec'</code> and <code>primRec</code> as an exercise.)</p>
+<h2 id="what-it-does">What it does</h2>
+<p>This page is already long enough, so I’ll save examples of primitive recursion for another day. Just note what <span class="math inline">\(\primrec{\ast}{\ast}\)</span> does: given some data <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>, it produces a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span>. So whenever we encounter (or want to construct) a function with this signature, it may be worthwhile to look for a definition in terms of <span class="math inline">\(\primrec{\ast}{\ast}\)</span>. The uniqueness of primitive recursion makes such functions very nice to reason about.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
