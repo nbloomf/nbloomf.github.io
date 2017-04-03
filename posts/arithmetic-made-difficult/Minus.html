@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Subtraction</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Subtraction</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-05 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Minus.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Minus</span>
+<span class="ot">&gt;</span>   ( minus, _test_minus
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>Recall that <span class="math inline">\(\nleq(a,b)\)</span> is true if and only if the equation <span class="math inline">\(b = \nplus(a,x)\)</span> has a solution. Moreover, this solution (if it exists) is unique. When this happens in mathematics – a thing exists and is unique – it is frequently useful to give it a name. Putting on our third-grader hat of course the solution to <span class="math inline">\(b = a+x\)</span> is <span class="math inline">\(x = b-a\)</span>. So we’ll call this solution “b minus a”. Our goal in this post is to give a constructive characterization for subtraction.</p>
+<p>There’s a hitch: whereas sums and products of natural numbers always exist, differences do not; <span class="math inline">\(5 - 2 = 3\)</span> is a natural number, but <span class="math inline">\(5 - 7 = ???\)</span> is not. So the signature of minus cannot be <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>. What is it then? How should we handle this?</p>
+<p>I can think of three options. First, we can just declare that <span class="math inline">\(b-a\)</span> is not defined if the difference is not a natural number. The corresponding algorithm would then just error out. This should be avoided if possible.</p>
+<p>The second option is to implement so-called <em>truncated subtraction</em>, so that anytime <span class="math inline">\(b-a\)</span> is not a natural number we simply call it 0. This also is not ideal, since now <span class="math inline">\(b-a\)</span> always exists, but the equation <span class="math inline">\(b = a + (b-a)\)</span> is no longer an identity and we cannot tell just from the value of <span class="math inline">\(b-a\)</span> whether it holds or not.</p>
+<p>The third option is a blend of the first two. We can attach an extra element to <span class="math inline">\(\nats\)</span>, say <span class="math inline">\(\ast\)</span>, and then say <span class="math inline">\(b-a = \ast\)</span> if <span class="math inline">\(b-a\)</span> is not a natural number. This allows us to distinguish when <span class="math inline">\(b-a\)</span> does not exist but keeps the minus function total. So our signature for minus will be <span class="math display">\[\nats \times \nats \rightarrow \ast + \nats\]</span></p>
+<div class="result">
+<div class="defn">
+<p>
+<p>Define the map <span class="math inline">\(\psi : (\ast + \nats)^\nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\psi(f) = \left\{ \begin{array}{ll} \ast &amp; \mathrm{if}\ f(\zero) = \ast \\ \next(c) &amp; \mathrm{if}\ f(\zero) = c \in \nats, \end{array} \right.\]</span> define <span class="math inline">\(\mu : \nats \times (\ast + \nats)^\nats \times (\ast + \nats) \rightarrow \ast + \nats\)</span> by <span class="math display">\[\mu(x,f,y) = f(x),\]</span> and define <span class="math inline">\(\Theta : (\ast + \nats)^\nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\Theta(f,x) = \primrec{\psi}{\mu}(x)(f).\]</span></p>
+<p>Now define <span class="math inline">\(\varepsilon : \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\varepsilon(a) = \left\{ \begin{array}{ll} \zero &amp; \mathrm{if}\ a = \zero \\ \ast &amp; \mathrm{otherwise}. \end{array} \right.\]</span></p>
+We then define <span class="math inline">\(\nminus : \nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\nminus(a,b) = \natrec{\varepsilon}{\Theta}(a)(b).\]</span>
+</p>
+</div>
+</div>
+<p>This definition looks complicated (primitive recursion nested inside natural recursion). Here’s a useful lemma:</p>
+<div class="result">
+<div class="lemma">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a).\]</span></p>
+</div>
+<div class="proof">
+<p>
+We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(b),\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(b))(\next(a)) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(b))(\next(a)) \\ &amp; = &amp; \primrec{\psi}{\mu}(\next(a),\natrec{\varepsilon}{\Theta}(b)) \\ &amp; = &amp; \mu(a,\natrec{\varepsilon}{\Theta}(b),\primrec{\psi}{\mu}(a,\natrec{\varepsilon}{\Theta}(b))) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(b)(a) \\ &amp; = &amp; \nminus(b,a) \end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>And one more:</p>
+<div class="result">
+<div class="lemma">
+<p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have <span class="math display">\[\nminus(a,\zero) = a\]</span> and <span class="math display">\[\nminus(\zero,\next(a)) = \ast.\]</span></p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nminus(\zero,\zero) = \natrec{\varepsilon}{\Theta}(\zero)(\zero) = \varepsilon(\zero) = \zero\]</span> as needed. For the inductive step, suppose the results holds for some <span class="math inline">\(a \in \nats\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(a),\zero) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(a))(\zero) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(a))(\zero) \\ &amp; = &amp; \primrec{\psi}{\mu}(\zero)(\natrec{\varepsilon}{\Theta}(a)) \\ &amp; = &amp; \psi(\natrec{\varepsilon}{\mu}(a)) \\ &amp; = &amp; \next(a), \end{eqnarray*}\]</span> where in the last step we used the induction hypothesis since <span class="math display">\[a = \nminus(a,\zero) = \natrec{\varepsilon}{\Theta}(a)(\zero).\]</span></li>
+<li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\zero,\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\zero)(\next(a)) \\ &amp; = &amp; \varepsilon(\next(a)) \\ &amp; = &amp; \ast \end{eqnarray*}\]</span> since <span class="math inline">\(\zero \neq \next(a)\)</span>.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>We’d like to avoid having to reason about the guts of <span class="math inline">\(\nminus\)</span> as quickly as possible; to this end, we completely characterize <span class="math inline">\(\nminus\)</span> in terms of <span class="math inline">\(\nleq\)</span> with the next two results.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then the following are equivalent.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\nleq(a,b) = \bfalse\)</span>.</li>
+<li><span class="math inline">\(\nminus(b,a) = \ast\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<p>First we show that (1) implies (2); we proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = 0\)</span>, note that <span class="math inline">\(\nleq(\zero,b)\)</span> is true for all <span class="math inline">\(b\)</span>, so the implication holds vacuously. For the induction step, suppose the implication holds for all <span class="math inline">\(b\)</span>, for some <span class="math inline">\(a\)</span>. Define <span class="math display">\[B(x) = \{ b \in \nats \mid \mathrm{if}\ \nleq(a,b) = \bfalse\ \mathrm{then}\ \nminus(b,a) = \ast \}.\]</span> By the induction hypothesis we have <span class="math inline">\(B(a) = \nats\)</span>, and we wish to show that <span class="math inline">\(B(\next(a)) = \nats\)</span>. We do this by induction (again). For the base case <span class="math inline">\(b = 0\)</span>, note that <span class="math inline">\(\nleq(\next(a),\zero) = \bfalse\)</span> and that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>. For the inductive step, suppose the implication holds for some <span class="math inline">\(b \in \nats\)</span>, and suppose further that <span class="math inline">\(\nleq(\next(a),\next(b)) = \bfalse\)</span>. Now <span class="math inline">\(\nleq(a,b)\)</span> is also false, so that (by the second induction hypothesis) <span class="math inline">\(\nminus(b,a) = \ast\)</span>, and hence <span class="math inline">\(\nminus(\next(b),\next(a)) = \ast\)</span> as needed.</p>
+Now we show that (2) implies (1); we proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = 0\)</span>, suppose <span class="math inline">\(\nminus(\zero,a) = \ast\)</span>. Now we must have <span class="math inline">\(a \neq \zero\)</span>; say <span class="math inline">\(a = \next(c)\)</span>. Then <span class="math inline">\(\nleq(\next(c),\zero) = \bfalse\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(b\)</span>. We show that it also holds for all <span class="math inline">\(a\)</span> for <span class="math inline">\(\next(b)\)</span> by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(b),\zero) = \next(b) \neq \ast\)</span>, so that the implication holds vacuously. For the inductive step, suppose the implication holds for <span class="math inline">\(a \in \nats\)</span>. If <span class="math inline">\(\nminus(\next(b),\next(a)) = \ast\)</span>, then we also have <span class="math inline">\(\nminus(b,a) = \ast\)</span>. By the induction hypothesis, then <span class="math display">\[\nleq(\next(a),\next(b)) = \nleq(a,b) = \bfalse\]</span> as needed.
+</p>
+</div>
+</div>
+<p>And the second is like it:</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then the following are equivalent.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\nminus(b,a) = c\)</span>.</li>
+<li><span class="math inline">\(b = \nplus(a,c)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<p>First we show that (1) implies (2) by induction on <span class="math inline">\(a\)</span>. For the base cse, note that <span class="math display">\[\nplus(\zero,\nminus(b,\zero)) = \nminus(b,\zero) = b\]</span> for all <span class="math inline">\(b\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. We induct on <span class="math inline">\(b\)</span>; in the base case (<span class="math inline">\(b = \zero\)</span>) note that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>, so that the implication holds vacuously. For the inductive step suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. If <span class="math inline">\(c = \nminus(b,a)\)</span>, then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\nminus(\next(b),\next(a))) \\ &amp; = &amp; \nplus(\next(a),\nminus(b,a)) \\ &amp; = &amp; \primrec{\id}{\mu_\nplus}(\next(a),\nminus(b,a)) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),\nplus(a,\nminus(b,a))) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),b) \\ &amp; = &amp; \next(b) \end{eqnarray*}\]</span> as needed.</p>
+Next we show that (2) implies (1), again by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that if <span class="math inline">\(b = \nplus(\zero,c) = c\)</span>, then we have <span class="math inline">\(c = b = \nminus(b,\zero)\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Now we induct on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\zero = \nplus(\next(a),c)\)</span> is false, so the implication holds vacuously. For the inductive step, suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. Now suppose we have <span class="math display">\[\nplus(\next(a),c) = \next(b);\]</span> then we have <span class="math inline">\(\nplus(a,c) = b\)</span>, and using the induction hypothesis <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a) = c\]</span> as needed.
+</p>
+</div>
+</div>
+<p>This result allows us to solve some “linear” equations (whatever that means).</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then the equation <span class="math inline">\(\nplus(a,x) = b\)</span> has a unique solution <span class="math inline">\(x = \nminus(b,a)\)</span> if <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, and no solution otherwise.</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>minus</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; minus ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Maybe</span> t
+<span class="ot">&gt;</span> minus <span class="fu">=</span> naturalRec eps theta
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     eps k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">==</span> zero <span class="kw">then</span> <span class="dt">Just</span> zero <span class="kw">else</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     theta f x <span class="fu">=</span> (primitiveRec psi mu) x f
+<span class="ot">&gt;</span>       <span class="kw">where</span>
+<span class="ot">&gt;</span>         psi f <span class="fu">=</span> fmap next (f zero)
+<span class="ot">&gt;</span>         mu x f _ <span class="fu">=</span> f x</code></pre></div>
+<p>And some properties:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_minus_next ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_minus_next _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (minus (next a) (next b)) <span class="fu">==</span> (minus a b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_minus_zero_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_minus_zero_left _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (minus zero (next a)) <span class="fu">==</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_minus_zero_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_minus_zero_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (minus a zero) <span class="fu">==</span> <span class="dt">Just</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_minus_leq ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_minus_leq _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   ((leq a b) <span class="fu">==</span> <span class="dt">False</span>) <span class="fu">==</span> ((minus b a) <span class="fu">==</span> <span class="dt">Nothing</span>)</code></pre></div>
+<p>And a suite:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_minus ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_minus t maxSize numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_minus_next t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_minus_zero_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_minus_zero_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_minus_leq t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>      { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>      , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>      }</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

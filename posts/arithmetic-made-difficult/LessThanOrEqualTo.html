@@ -58,6 +58,7 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
 \(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -250,15 +251,19 @@ For the inductive step, suppose we have <span class="math inline">\(a \in A\)</s
 <span class="ot">&gt;</span>   (leq a b) <span class="fu">==</span> (leq (times a (next c)) (times b (next c)))</code></pre></div>
 <p>And a test wrapper:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for leq</span>
-<span class="ot">&gt;</span> _<span class="ot">test_leq ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_leq t numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span> _<span class="ot">test_leq ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_leq t maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_leq_reflexive t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_right_plus t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_plus t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_times t)
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs {maxSuccess <span class="fu">=</span> numCases}</code></pre></div>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
 
 
 <!-- END BODY -->

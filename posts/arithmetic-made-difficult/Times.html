@@ -58,6 +58,7 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
 \(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -187,8 +188,9 @@ Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be gi
 <span class="ot">&gt;</span> _test_times_associative _ a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   (times (times a b) c) <span class="fu">==</span> (times a (times b c))</code></pre></div>
 <p>And one function to rule them all:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_times t numCases <span class="fu">=</span> sequence_
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_times t maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_times_zero t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_times_one t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_times_next_left t)
@@ -199,7 +201,10 @@ Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be gi
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_times_associative t)
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs {maxSuccess <span class="fu">=</span> numCases}</code></pre></div>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
 <p>And a sanity check:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> _test_times (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">10</span>
 <span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>

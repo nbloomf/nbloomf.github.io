@@ -58,6 +58,7 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
 \(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -162,15 +163,19 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <span class="ot">&gt;</span>   (plus a b) <span class="fu">==</span> (plus b a)</code></pre></div>
 <p>We’ll wrap all these tests behind a single function, <code>_test_plus</code>, which takes the number of cases to check as an argument.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for plus</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_plus t numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span> _<span class="ot">test_plus ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_plus t maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_plus_zero t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_next t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_associative t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_commutative t)
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs {maxSuccess <span class="fu">=</span> numCases}</code></pre></div>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
 <p>Sanity check:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> _test_plus (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">1000</span>
 <span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">1000</span> tests<span class="fu">.</span>
