@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Bailout Recursion</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Bailout Recursion</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2014-05-23 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/BailoutRecursion.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">BailoutRecursion</span>
+<span class="ot">&gt;</span>   ( bailRec
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Nat</span></code></pre></div>
+<p>So far we have defined two special <em>recursion operators</em>, <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. These act like program skeletons: fill in the slots with functions of the right signatures and get a computable function out. In this post we’ll define one more operator, which we will call <em>bailout recursion</em>.</p>
+<div class="result">
+<div class="thm">
+<p>Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions with the following signatures: <span class="math display">\[\begin{eqnarray*}
+\varphi &amp; : &amp; A \rightarrow B \\
+\beta &amp; : &amp; \nats \times A \rightarrow \bool \\
+\psi &amp; : &amp; \nats \times A \rightarrow B \\
+\omega &amp; : &amp; \nats \times A \rightarrow A. \\
+\end{eqnarray*}\]</span></p>
+<p>Then there is a unique function <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero, a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(m), a) = \left\{ \begin{array}{ll} \psi(m,a) &amp; \mathrm{if}\ \beta(m,a) \\ \Theta(m, \omega(m,a)) &amp; \mathrm{otherwise}. \end{array}\right.\]</span></p>
+<p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\bailrec{\varphi}{\beta}{\psi}{\omega}\)</span>.</p>
+</div>
+<div class="proof">
+<p>This proof will be very similar to the analogous proof for simple recursion.</p>
+<p>First we establish existence. To this end, define a map <span class="math inline">\(W : \nats \times {}^AB \rightarrow {}^AB\)</span> by <span class="math display">\[W(m,h)(x) = \left\{ \begin{array}{ll} \psi(m,x) &amp; \mathrm{if}\ \beta(m,x) \\ h(\omega(m,x)) &amp; \mathrm{otherwise}, \end{array} \right.\]</span> and define <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(m,h) = (\next(m), W(m,h)).\]</span></p>
+<p>Now we define <span class="math inline">\(\Theta\)</span> as follows: <span class="math display">\[\Theta(m,a) = \snd((\natrec{(\zero, \varphi)}{t})(m))(a).\]</span></p>
+<p>(<span class="math inline">\(\snd\)</span> is the map which selects the second entry of a pair.)</p>
+<p>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\zero,a) \\
+ &amp; = &amp; (\snd(\natrec{(\zero, \varphi)}{t})(\zero))(a) \\
+ &amp; = &amp; (\snd(\zero, \varphi))(a) \\
+ &amp; = &amp; \varphi(a).
+\end{eqnarray*}\]</span></p>
+<p>To show the second property of <span class="math inline">\(\Theta\)</span>, we will show by induction that the following (compound) statement holds for all <span class="math inline">\(n \in \nats\)</span>:</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\natrec{(\zero,\varphi)}{t}(n) = (n, \lambda x: \Theta(n,x))\)</span> and</li>
+<li><span class="math inline">\(\Theta(\next(n), a) = W(n,\lambda x: \Theta(n,x))(a)\)</span> for all <span class="math inline">\(a \in A\)</span>.</li>
+</ol>
+<p>For the base case, note that</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \natrec{(\zero, \varphi)}{t}(\zero) \\
+ &amp; = &amp; (\zero, \varphi) \\
+ &amp; = &amp; (\zero, \lambda x : \varphi(x)) \\
+ &amp; = &amp; (\zero, \lambda x : \Theta(\zero, x))
+\end{eqnarray*}\]</span></p>
+<p>and that for all <span class="math inline">\(a \in A\)</span>,</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\next\ \zero, a) \\
+ &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next\ \zero)))(a) \\
+ &amp; = &amp; (\snd (t(\natrec{(\zero, \varphi)}{t}(\zero))))(a) \\
+ &amp; = &amp; (\snd (t(\zero, \varphi)))(a) \\
+ &amp; = &amp; (\snd (\next\ \zero, W(\zero, \varphi)))(a). \\
+ &amp; = &amp; W(\zero, \varphi)(a). \\
+ &amp; = &amp; W(\zero, \lambda x: \varphi(x))(a). \\
+ &amp; = &amp; W(\zero, \lambda x: \Theta(\zero,x))(a). \\
+\end{eqnarray*}\]</span></p>
+<p>Now for the inductive step, suppose the statement holds for <span class="math inline">\(n \in \nats\)</span>. Then we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \natrec{(\zero, \varphi)}{t}(\next\ n) \\
+ &amp; = &amp; t(\natrec{(\zero, \varphi)}{t}(n)) \\
+ &amp; = &amp; t(n, \lambda x : \Theta(n,x)) \\
+ &amp; = &amp; (\next\ n, W(n, \lambda x : \Theta(n,x))) \\
+ &amp; = &amp; (\next\ n, \lambda y : W(n, \lambda x : \Theta(n,x))(y)) \\
+ &amp; = &amp; (\next\ n, \lambda y : \Theta(\next\ n, y)
+\end{eqnarray*}\]</span></p>
+<p>(Note that we used both parts of the induction hypothesis here.) Also note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\next(\next\ n), a) \\
+ &amp; = &amp; \snd (\natrec{(\zero, \varphi)}{t}(\next(\next\ n)))(a) \\
+ &amp; = &amp; \snd (t (\natrec{(\zero, \varphi)}{t}(\next\ n)))(a) \\
+ &amp; = &amp; \snd (t (\next\ n, \lambda x : \Theta(\next\ n, x)))(a) \\
+ &amp; = &amp; \snd (\next(\next\ n), W(\next\ n, \lambda x : \Theta(\next\ n,x)))(a) \\
+ &amp; = &amp; W(\next\ n, \lambda x : \Theta(\next\ n, x))(a).
+\end{eqnarray*}\]</span></p>
+<p>So <span class="math inline">\(\Theta\)</span> has the claimed properties by induction. To see that <span class="math inline">\(\Theta\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>. Then we have <span class="math display">\[\Psi(\zero, a) = \varphi(a) = \Theta(\zero, a)\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = \Theta(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\next\ n, a) \\
+ &amp; = &amp; \psi(n,a) \\
+ &amp; = &amp; \Theta(\next\ n, a)
+\end{eqnarray*}\]</span></p>
+<p>if <span class="math inline">\(\beta(n,a) = \btrue\)</span>, and</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\next\ n, a) \\
+ &amp; = &amp; \Psi(n, \omega(n,a)) \\
+ &amp; = &amp; \Theta(n, \omega(n,a)) \\
+ &amp; = &amp; \Theta(\next\ n, a)
+\end{eqnarray*}\]</span></p>
+<p>if not, for all <span class="math inline">\(a \in A\)</span>. Thus <span class="math inline">\(\Psi = \Theta\)</span> as needed.</p>
+</div>
+</div>
+<p>You might notice that in this proof, we didn’t really use <span class="math inline">\(\beta\)</span> or <span class="math inline">\(\psi\)</span>, and the fact that <span class="math inline">\(W\)</span> is piecewise-defined plays no role. When this happens in a proof it usually means we’ve got some unnecessary details. But in this case, we will be using <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\psi\)</span> later, and the piecewiseness of <span class="math inline">\(\Theta\)</span> will be crucial in constructing an efficient tail-recursive evaluation strategy. Stay tuned. :)</p>
+<h2 id="implementation">Implementation</h2>
+<p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\bailrec{\ast}{\ast}{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this. First, the signature.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> bailRec, bailRec'
+<span class="ot">&gt;   ::</span> (a <span class="ot">-&gt;</span> b)
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b)
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Nat</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a)
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Nat</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> b</code></pre></div>
+<p>There’s the naive way:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> bailRec phi beta psi omega <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     theta n a <span class="fu">=</span> <span class="kw">case</span> n <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Z</span> <span class="ot">-&gt;</span> phi a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="dt">N</span> m <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> beta m a
+<span class="ot">&gt;</span>           <span class="kw">then</span> psi m a
+<span class="ot">&gt;</span>           <span class="kw">else</span> theta m (omega m a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">in</span> theta</code></pre></div>
+<p>And there’s the definition from the proof:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> bailRec' phi beta psi omega <span class="fu">=</span> \n a <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     w m h x <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">if</span> beta m x
+<span class="ot">&gt;</span>         <span class="kw">then</span> psi m x
+<span class="ot">&gt;</span>         <span class="kw">else</span> h <span class="fu">$</span> omega m x
+<span class="ot">&gt;</span>  
+<span class="ot">&gt;</span>     t (m,h) <span class="fu">=</span> (<span class="dt">N</span> m, w m h)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">in</span> snd (natRec (<span class="dt">Z</span>, phi) t n) <span class="fu">$</span> a</code></pre></div>
+<p>(Sorry for the greek letters! Spelling them out takes up so much space.)</p>
+<p>Unlike simple recursion, the naive implementation of bailout recursion is already tail recursive.</p>
+<h2 id="what-it-does">What it does</h2>
+<p>Bailout recursion does some cool things that simple recursion does not. The <span class="math inline">\(\omega\)</span> map lets us “mutate” the initial parameter <span class="math inline">\(a\)</span> at each step in the recursion, and the boolean-valued function <span class="math inline">\(\beta\)</span> lets us short-circuit the recursion.</p>
+<p>Also note that simple recursion and bailout recursion were carefully chosen to have <em>tail recursive</em> evaluation strategies. Roughly speaking, a recursive function is called <em>tail recursive</em> if there is “nothing left to do” after the recursive call. For example, <span class="math display">\[f(n+1) = 1 + f(n)\]</span> is <em>not</em> tail recursive, because on the right hand side there is something waiting for the result of the recursive evaluation – in this case, the <span class="math inline">\(1+\)</span>.</p>
+<p>Arbitrary recursion is dangerous because in general, every time one function uses another we have to keep track of what remains to be done afterward – if we aren’t careful, it is very easy to write recursive functions which eat up lots of memory. Even simple recursion can blow up exponentially; the classic example is the Fibonacci numbers (which we’ll see later).</p>
+<p>In contrast, a <em>tail recursive</em> function by definition doesn’t have to keep track of what remains to be done after the recursion. Our recursion operators, <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, and <span class="math inline">\(\bailrec{\ast}{\ast}{\ats}{\ast}\)</span>, are carefully chosen so that they have tail recursive implementations.</p>
+<p>By the way, I think it’s helpful to compare the difference between arbitrary recursion and recursion operators to the difference between arbitrary <code>GOTO</code>s and structured loops. In both cases we have a simple but dangerous primitive operation that is hidden behind a safer and more meaningful interface. A <code>for</code> loop means “repeat this some number of times”; while the meaning of simple recursion is given by its universal property.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

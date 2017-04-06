@@ -5,7 +5,7 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>nbloomf.github.io - The universal property of the natural numbers</title>
+<title>nbloomf.github.io - The Universal Property of the Natural Numbers</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
 <link rel="icon" href="../../icon/favicon-32.png" />
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
@@ -30,7 +30,7 @@
 </div>
 
 <div id="content">
-<h1>The universal property of the natural numbers</h1>
+<h1>The Universal Property of the Natural Numbers</h1>
 <!-- BEGIN BODY -->
 
 
@@ -52,7 +52,8 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\next}{\mathsf{next}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
-\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
@@ -61,6 +62,10 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\nmax}{\mathsf{max}}\)
 \(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -81,7 +86,7 @@ Posted on 2014-05-22 by nbloomf
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">NaturalNumbers</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Natural</span>(<span class="fu">..</span>), naturalRec, primitiveRec, <span class="dt">Nat</span>(), <span class="dt">NatShape</span>(<span class="fu">..</span>)
+<span class="ot">&gt;</span>   ( <span class="dt">Natural</span>(<span class="fu">..</span>), naturalRec, simpleRec, bailoutRec, <span class="dt">Nat</span>(), <span class="dt">NatShape</span>(<span class="fu">..</span>)
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Nat</span>
@@ -121,7 +126,7 @@ Posted on 2014-05-22 by nbloomf
 <span class="ot">&gt;</span>     <span class="dt">N</span> k <span class="ot">-&gt;</span> <span class="dt">Next</span> k
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   natural <span class="fu">=</span> mkNat</code></pre></div>
-<p>And note that both natural and primitive recursion can be written against the <code>Natural</code> interface.</p>
+<p>And note that natural, simple, and primitive recursion can be written against the <code>Natural</code> interface.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; naturalRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a
 <span class="ot">&gt;</span> naturalRec e phi n <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
@@ -131,15 +136,30 @@ Posted on 2014-05-22 by nbloomf
 <span class="ot">&gt;</span>   <span class="kw">in</span> tau e n
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; primitiveRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span>
+<span class="ot">&gt; simpleRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span>
 <span class="ot">&gt;</span>   (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
-<span class="ot">&gt;</span> primitiveRec phi mu n a <span class="fu">=</span>
+<span class="ot">&gt;</span> simpleRec phi mu n a <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     tau <span class="fu">!</span>x h m <span class="fu">=</span> <span class="kw">case</span> shapeOf m <span class="kw">of</span>
 <span class="ot">&gt;</span>       <span class="dt">Zero</span>   <span class="ot">-&gt;</span> x
 <span class="ot">&gt;</span>       <span class="dt">Next</span> k <span class="ot">-&gt;</span> tau (mu h a x) (next h) k
-<span class="ot">&gt;</span>   <span class="kw">in</span> tau (phi a) zero n</code></pre></div>
-<p>From now on we’ll use the <code>Natural</code> interface with <code>naturalRec</code> and <code>primitiveRec</code> instead of <code>Nat</code>.</p>
+<span class="ot">&gt;</span>   <span class="kw">in</span> tau (phi a) zero n
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; bailoutRec ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span>
+<span class="ot">&gt;</span>   (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b
+<span class="ot">&gt;</span> bailoutRec phi beta psi omega <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     theta n a <span class="fu">=</span> <span class="kw">case</span> shapeOf n <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Zero</span> <span class="ot">-&gt;</span> phi a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="dt">Next</span> m <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> beta m a
+<span class="ot">&gt;</span>           <span class="kw">then</span> psi m a
+<span class="ot">&gt;</span>           <span class="kw">else</span> theta m (omega m a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">in</span> theta</code></pre></div>
+<p>From now on we’ll use the <code>Natural</code> interface with <code>naturalRec</code> and <code>simpleRec</code> instead of <code>Nat</code>.</p>
 
 
 <!-- END BODY -->

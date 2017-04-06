@@ -52,7 +52,8 @@ Posted on 2017-04-05 by nbloomf
 \(\newcommand{\next}{\mathsf{next}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
-\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
@@ -61,6 +62,10 @@ Posted on 2017-04-05 by nbloomf
 \(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\nmax}{\mathsf{max}}\)
 \(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -97,20 +102,20 @@ Posted on 2017-04-05 by nbloomf
 <div class="result">
 <div class="defn">
 <p>
-<p>Define the map <span class="math inline">\(\psi : (\ast + \nats)^\nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\psi(f) = \left\{ \begin{array}{ll} \ast &amp; \mathrm{if}\ f(\zero) = \ast \\ \next(c) &amp; \mathrm{if}\ f(\zero) = c \in \nats, \end{array} \right.\]</span> define <span class="math inline">\(\mu : \nats \times (\ast + \nats)^\nats \times (\ast + \nats) \rightarrow \ast + \nats\)</span> by <span class="math display">\[\mu(x,f,y) = f(x),\]</span> and define <span class="math inline">\(\Theta : (\ast + \nats)^\nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\Theta(f,x) = \primrec{\psi}{\mu}(x)(f).\]</span></p>
+<p>Define the map <span class="math inline">\(\psi : (\ast + \nats)^\nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\psi(f) = \left\{ \begin{array}{ll} \ast &amp; \mathrm{if}\ f(\zero) = \ast \\ \next(c) &amp; \mathrm{if}\ f(\zero) = c \in \nats, \end{array} \right.\]</span> define <span class="math inline">\(\mu : \nats \times (\ast + \nats)^\nats \times (\ast + \nats) \rightarrow \ast + \nats\)</span> by <span class="math display">\[\mu(x,f,y) = f(x),\]</span> and define <span class="math inline">\(\Theta : (\ast + \nats)^\nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\Theta(f,x) = \simprec{\psi}{\mu}(x)(f).\]</span></p>
 <p>Now define <span class="math inline">\(\varepsilon : \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\varepsilon(a) = \left\{ \begin{array}{ll} \zero &amp; \mathrm{if}\ a = \zero \\ \ast &amp; \mathrm{otherwise}. \end{array} \right.\]</span></p>
 We then define <span class="math inline">\(\nminus : \nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\nminus(a,b) = \natrec{\varepsilon}{\Theta}(a)(b).\]</span>
 </p>
 </div>
 </div>
-<p>This definition looks complicated (primitive recursion nested inside natural recursion). Here’s a useful lemma:</p>
+<p>This definition looks complicated (simple recursion nested inside natural recursion). Here’s a useful lemma:</p>
 <div class="result">
 <div class="lemma">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a).\]</span></p>
 </div>
 <div class="proof">
 <p>
-We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(b),\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(b))(\next(a)) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(b))(\next(a)) \\ &amp; = &amp; \primrec{\psi}{\mu}(\next(a),\natrec{\varepsilon}{\Theta}(b)) \\ &amp; = &amp; \mu(a,\natrec{\varepsilon}{\Theta}(b),\primrec{\psi}{\mu}(a,\natrec{\varepsilon}{\Theta}(b))) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(b)(a) \\ &amp; = &amp; \nminus(b,a) \end{eqnarray*}\]</span> as claimed.
+We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(b),\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(b))(\next(a)) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(b))(\next(a)) \\ &amp; = &amp; \simprec{\psi}{\mu}(\next(a),\natrec{\varepsilon}{\Theta}(b)) \\ &amp; = &amp; \mu(a,\natrec{\varepsilon}{\Theta}(b),\simprec{\psi}{\mu}(a,\natrec{\varepsilon}{\Theta}(b))) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(b)(a) \\ &amp; = &amp; \nminus(b,a) \end{eqnarray*}\]</span> as claimed.
 </p>
 </div>
 </div>
@@ -122,7 +127,7 @@ We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nminus(\zero,\zero) = \natrec{\varepsilon}{\Theta}(\zero)(\zero) = \varepsilon(\zero) = \zero\]</span> as needed. For the inductive step, suppose the results holds for some <span class="math inline">\(a \in \nats\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(a),\zero) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(a))(\zero) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(a))(\zero) \\ &amp; = &amp; \primrec{\psi}{\mu}(\zero)(\natrec{\varepsilon}{\Theta}(a)) \\ &amp; = &amp; \psi(\natrec{\varepsilon}{\mu}(a)) \\ &amp; = &amp; \next(a), \end{eqnarray*}\]</span> where in the last step we used the induction hypothesis since <span class="math display">\[a = \nminus(a,\zero) = \natrec{\varepsilon}{\Theta}(a)(\zero).\]</span></li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nminus(\zero,\zero) = \natrec{\varepsilon}{\Theta}(\zero)(\zero) = \varepsilon(\zero) = \zero\]</span> as needed. For the inductive step, suppose the results holds for some <span class="math inline">\(a \in \nats\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(a),\zero) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(a))(\zero) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(a))(\zero) \\ &amp; = &amp; \simprec{\psi}{\mu}(\zero)(\natrec{\varepsilon}{\Theta}(a)) \\ &amp; = &amp; \psi(\natrec{\varepsilon}{\mu}(a)) \\ &amp; = &amp; \next(a), \end{eqnarray*}\]</span> where in the last step we used the induction hypothesis since <span class="math display">\[a = \nminus(a,\zero) = \natrec{\varepsilon}{\Theta}(a)(\zero).\]</span></li>
 <li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\zero,\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\zero)(\next(a)) \\ &amp; = &amp; \varepsilon(\next(a)) \\ &amp; = &amp; \ast \end{eqnarray*}\]</span> since <span class="math inline">\(\zero \neq \next(a)\)</span>.</li>
 </ol>
 </p>
@@ -155,7 +160,7 @@ Now we show that (2) implies (1); we proceed by induction on <span class="math i
 </div>
 <div class="proof">
 <p>
-<p>First we show that (1) implies (2) by induction on <span class="math inline">\(a\)</span>. For the base cse, note that <span class="math display">\[\nplus(\zero,\nminus(b,\zero)) = \nminus(b,\zero) = b\]</span> for all <span class="math inline">\(b\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. We induct on <span class="math inline">\(b\)</span>; in the base case (<span class="math inline">\(b = \zero\)</span>) note that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>, so that the implication holds vacuously. For the inductive step suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. If <span class="math inline">\(c = \nminus(b,a)\)</span>, then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\nminus(\next(b),\next(a))) \\ &amp; = &amp; \nplus(\next(a),\nminus(b,a)) \\ &amp; = &amp; \primrec{\id}{\mu_\nplus}(\next(a),\nminus(b,a)) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),\nplus(a,\nminus(b,a))) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),b) \\ &amp; = &amp; \next(b) \end{eqnarray*}\]</span> as needed.</p>
+<p>First we show that (1) implies (2) by induction on <span class="math inline">\(a\)</span>. For the base cse, note that <span class="math display">\[\nplus(\zero,\nminus(b,\zero)) = \nminus(b,\zero) = b\]</span> for all <span class="math inline">\(b\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. We induct on <span class="math inline">\(b\)</span>; in the base case (<span class="math inline">\(b = \zero\)</span>) note that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>, so that the implication holds vacuously. For the inductive step suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. If <span class="math inline">\(c = \nminus(b,a)\)</span>, then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\nminus(\next(b),\next(a))) \\ &amp; = &amp; \nplus(\next(a),\nminus(b,a)) \\ &amp; = &amp; \simprec{\id}{\mu_\nplus}(\next(a),\nminus(b,a)) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),\nplus(a,\nminus(b,a))) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),b) \\ &amp; = &amp; \next(b) \end{eqnarray*}\]</span> as needed.</p>
 Next we show that (2) implies (1), again by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that if <span class="math inline">\(b = \nplus(\zero,c) = c\)</span>, then we have <span class="math inline">\(c = b = \nminus(b,\zero)\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Now we induct on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\zero = \nplus(\next(a),c)\)</span> is false, so the implication holds vacuously. For the inductive step, suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. Now suppose we have <span class="math display">\[\nplus(\next(a),c) = \next(b);\]</span> then we have <span class="math inline">\(\nplus(a,c) = b\)</span>, and using the induction hypothesis <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a) = c\]</span> as needed.
 </p>
 </div>
@@ -199,7 +204,7 @@ Next we show that (2) implies (1), again by induction on <span class="math inlin
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     eps k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">==</span> zero <span class="kw">then</span> <span class="dt">Just</span> zero <span class="kw">else</span> <span class="dt">Nothing</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     theta f x <span class="fu">=</span> (primitiveRec psi mu) x f
+<span class="ot">&gt;</span>     theta f x <span class="fu">=</span> (simpleRec psi mu) x f
 <span class="ot">&gt;</span>       <span class="kw">where</span>
 <span class="ot">&gt;</span>         psi f <span class="fu">=</span> fmap next (f zero)
 <span class="ot">&gt;</span>         mu x f _ <span class="fu">=</span> f x</code></pre></div>

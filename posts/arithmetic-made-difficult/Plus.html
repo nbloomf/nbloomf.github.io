@@ -52,7 +52,8 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\next}{\mathsf{next}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
-\(\newcommand{\primrec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
@@ -61,6 +62,10 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\nminus}{\mathsf{minus}}\)
 \(\newcommand{\nmax}{\mathsf{max}}\)
 \(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -86,20 +91,20 @@ Posted on 2014-06-01 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
-<p>So far we’ve characterized the natural numbers via a unique mapping <span class="math display">\[\natrec{\ast}{\ast} : \nats \rightarrow A,\]</span> and we defined another parameterized mapping <span class="math display">\[\primrec{\ast}{\ast} : \nats \times A \rightarrow B.\]</span> From now on, when we want to define a mapping with one of these signatures, these prepackaged recursive maps may come in handy. What’s more, we can use the universal properties of these maps to define them in terms of <em>desired behavior</em>.</p>
-<p>Natural number addition has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define addition in terms of <span class="math inline">\(\primrec{\ast}{\ast}\)</span>. To do this, we need to find mappings <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> and <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> that make <span class="math inline">\(\primrec{\varphi}{\mu}\)</span> act like addition. For example, we want <span class="math inline">\(\next\)</span> to act like <span class="math inline">\(+1\)</span>, and <span class="math display">\[n = \zero + n = \primrec{\varphi}{\mu}(\zero,n) = \varphi(n),\]</span> and</p>
+<p>So far we’ve characterized the natural numbers via a unique mapping <span class="math display">\[\natrec{\ast}{\ast} : \nats \rightarrow A,\]</span> and we defined another parameterized mapping <span class="math display">\[\simprec{\ast}{\ast} : \nats \times A \rightarrow B.\]</span> From now on, when we want to define a mapping with one of these signatures, these prepackaged recursive maps may come in handy. What’s more, we can use the universal properties of these maps to define them in terms of <em>desired behavior</em>.</p>
+<p>Natural number addition has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define addition in terms of <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. To do this, we need to find mappings <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> and <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> that make <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> act like addition. For example, we want <span class="math inline">\(\next\)</span> to act like <span class="math inline">\(+1\)</span>, and <span class="math display">\[n = \zero + n = \simprec{\varphi}{\mu}(\zero,n) = \varphi(n),\]</span> and</p>
 <p><span class="math display">\[\begin{eqnarray*}
 (m+n)+1
  &amp; = &amp; (m+1)+n \\
- &amp; = &amp; \primrec{\varphi}{\mu}(\next(m),n) \\
- &amp; = &amp; \mu(m,n,\primrec{\varphi}{\mu}(m,n)) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\next(m),n) \\
+ &amp; = &amp; \mu(m,n,\simprec{\varphi}{\mu}(m,n)) \\
  &amp; = &amp; \mu(m,n,m+n).
 \end{eqnarray*}\]</span></p>
 <p>With this in mind, we define a binary operation <span class="math inline">\(\nplus\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
 <div class="result">
 <div class="defn">
 <p>
-Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \next(b)\)</span>. We then define <span class="math inline">\(\nplus : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nplus = \primrec{\id}{\mu}.\]</span>
+Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \next(b)\)</span>. We then define <span class="math inline">\(\nplus : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nplus = \simprec{\id}{\mu}.\]</span>
 </p>
 </div>
 </div>
@@ -119,8 +124,8 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>Note that <span class="math display">\[\nplus(\zero,a) = \primrec{\id}{\mu}(\zero,a) = \id(a) = a.\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the first equality. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}  &amp; &amp; \nplus(\next(a),\zero) \\ &amp; = &amp; \primrec{\id}{\mu}(\next(a),\zero) \\ &amp; = &amp; \mu(a, \zero, \primrec{\id}{\mu}(a,\zero)) \\ &amp; = &amp; \mu(a, \zero, \nplus(a, \zero)) \\ &amp; = &amp; \mu(a,\zero,a) \\ &amp; = &amp; \next(a) \end{eqnarray*}\]</span> as needed.</li>
-<li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),b) \\ &amp; = &amp; \primrec{\id}{\mu}(\next(a),b) \\ &amp; = &amp; \mu(a,b,\primrec{\id}{\mu}(a,b)) \\ &amp; = &amp; \mu(a,b,\nplus(a,b)) \\ &amp; = &amp; \next(\nplus(a,b)). \end{eqnarray*}\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\zero,\next(b)) \\ &amp; = &amp; \primrec{\id}{\mu}(\zero,\next(b)) \\ &amp; = &amp; \id(\next(b)) \\ &amp; = &amp; \next(b). \end{eqnarray*}\]</span> For the inductive step, suppose we have <span class="math inline">\(\next(\nplus(a,b)) = \nplus(a,\next(b))\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\next(b)) \\ &amp; = &amp; \primrec{\id}{\mu}(\next(a),\next(b)) \\ &amp; = &amp; \mu(a, \next(b), \primrec{\id}{\mu}(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \nplus(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \next(\nplus(a,b))) \\ &amp; = &amp; \next(\next(\nplus(a,b))) \\ &amp; = &amp; \next(\nplus(\next(a),b)) \end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\nplus(\zero,a) = \simprec{\id}{\mu}(\zero,a) = \id(a) = a.\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the first equality. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}  &amp; &amp; \nplus(\next(a),\zero) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\zero) \\ &amp; = &amp; \mu(a, \zero, \simprec{\id}{\mu}(a,\zero)) \\ &amp; = &amp; \mu(a, \zero, \nplus(a, \zero)) \\ &amp; = &amp; \mu(a,\zero,a) \\ &amp; = &amp; \next(a) \end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),b) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),b) \\ &amp; = &amp; \mu(a,b,\simprec{\id}{\mu}(a,b)) \\ &amp; = &amp; \mu(a,b,\nplus(a,b)) \\ &amp; = &amp; \next(\nplus(a,b)). \end{eqnarray*}\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\zero,\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\zero,\next(b)) \\ &amp; = &amp; \id(\next(b)) \\ &amp; = &amp; \next(b). \end{eqnarray*}\]</span> For the inductive step, suppose we have <span class="math inline">\(\next(\nplus(a,b)) = \nplus(a,\next(b))\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\next(b)) \\ &amp; = &amp; \mu(a, \next(b), \simprec{\id}{\mu}(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \nplus(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \next(\nplus(a,b))) \\ &amp; = &amp; \next(\next(\nplus(a,b))) \\ &amp; = &amp; \next(\nplus(\next(a),b)) \end{eqnarray*}\]</span> as needed.</li>
 <li>We will show this by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\nplus(\zero,b),c) = \nplus(b,c) = \nplus(\zero,\nplus(b,c)).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\nplus(\next(a),b),c) \\ &amp; = &amp; \nplus(\next(\nplus(a,b)),c) \\ &amp; = &amp; \next(\nplus(\nplus(a,b),c)) \\ &amp; = &amp; \next(\nplus(a, \nplus(b,c))) \\ &amp; = &amp; \nplus(\next(a), \nplus(b,c)) \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\zero,b) = b = \nplus(b,\zero).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),b) \\ &amp; = &amp; \next(\nplus(a,b)) \\ &amp; = &amp; \next(\nplus(b,a)) \\ &amp; = &amp; \nplus(b, \next(a))\end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, note that if <span class="math inline">\(\nplus(\zero,a) = \nplus(\zero,b)\)</span>, then we have <span class="math display">\[a = \nplus(\zero,a) = \nplus(\zero,b) = b.\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(c\)</span>. Now if <span class="math display">\[\nplus(\next(c),a)) = \nplus(\next(c),b),\]</span> then <span class="math display">\[\next(\nplus(c,a)) = \next(\nplus(c,b))\]</span> so that <span class="math display">\[\nplus(c,a) = \nplus(c,b)\]</span> and thus <span class="math inline">\(a = b\)</span> as needed.</li>
@@ -133,7 +138,7 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <h2 id="implementation-and-testing">Implementation and Testing</h2>
 <p>Here’s <code>plus</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; plus ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
-<span class="ot">&gt;</span> plus <span class="fu">=</span> primitiveRec id mu
+<span class="ot">&gt;</span> plus <span class="fu">=</span> simpleRec id mu
 <span class="ot">&gt;</span>   <span class="kw">where</span> mu _ _ b <span class="fu">=</span> next b</code></pre></div>
 <p>We’ve proved a bunch of properties for <code>plus</code>, but it’s still a good idea to verify them. We can do this with <code>QuickCheck</code>. First we express each property to be tested as a boolean function. Note that each one takes an “extra” argument; this is just to fix the type of the function being tested. (There may be a better way to do this.)</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- a == plus(a,0) and a == plus(0,a)</span>

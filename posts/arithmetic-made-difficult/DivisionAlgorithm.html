@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - The Division Algorithm</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>The Division Algorithm</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-08 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/DivisionAlgorithm.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">DivisionAlgorithm</span>
+<span class="ot">&gt;</span>   ( divalg, quo, rem, _test_divalg
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (rem)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>Finally we come to the first power tool for natural numbers: the division algorithm. Remember this theorem states that given any two natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, with <span class="math inline">\(b \neq \zero\)</span>, there is a <em>unique</em> pair of natural numbers <span class="math inline">\((q,r)\)</span> such that <span class="math inline">\(a = qb+r\)</span> and <span class="math inline">\(r\)</span> is not “too big”, specifically, <span class="math inline">\(r &lt; b\)</span>; this <span class="math inline">\(q\)</span> is called the <em>quotient</em> of <span class="math inline">\(a\)</span> by <span class="math inline">\(b\)</span>, and <span class="math inline">\(r\)</span> is the <em>remainder</em>.</p>
+<p>I like this result for several reasons. It ties together the three basic operations on <span class="math inline">\(\nats\)</span> – <span class="math inline">\(\next\)</span>, <span class="math inline">\(\nplus\)</span>, and <span class="math inline">\(\ntimes\)</span> – in a satisfying way, and it has two conclusions, one an equality and the other an inequality. It also has some really powerful applications. Notably, we’ll use the division algorithm to compute greatest common divisors and to compute fixed-radix representations of numbers.</p>
+<p>The task at hand is to find a constructive, or more precisely, simple or primitive recursive, definition for the division algorithm. This function takes a pair of natural numbers <span class="math inline">\((a,b)\)</span> and returns a pair of natural numbers <span class="math inline">\((q,r)\)</span>, so its signature should be something like <span class="math display">\[\nats \times \nats \rightarrow \nats \times \nats.\]</span> Remember that the signature of <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> is <span class="math display">\[\nats \times A \rightarrow B,\]</span> where <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Letting <span class="math inline">\(A = \nats\)</span> and <span class="math inline">\(B = \nats \times \nats\)</span>, we’re looking for <span class="math display">\[\varphi : \nats \rightarrow \nats \times \nats\]</span> and <span class="math display">\[\mu : \nats \times \nats \times (\nats \times \nats) \rightarrow \nats \times \nats\]</span> so that <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span> acts like the division algorithm. But how does the division algorithm act?</p>
+<p>For starters, we have <span class="math display">\[\Theta(\zero,b) = \varphi(b) = (q,r)\]</span> where <span class="math display">\[\zero = \nplus(\ntimes(q,b),r).\]</span> So <span class="math inline">\(r = q = \zero\)</span>; evidently then <span class="math inline">\(\varphi(x) = (\zero,\zero)\)</span> for all <span class="math inline">\(x\)</span>.</p>
+<p>Suppose now that <span class="math inline">\(\Theta(a,b) = (q,r)\)</span>. Can we describe <span class="math inline">\(\Theta(\next(a),b)\)</span> in terms of <span class="math inline">\(q\)</span> and <span class="math inline">\(r\)</span>? (Presumably yes.) Switching to more familiar notation for a moment, we have <span class="math display">\[a = qb+r,\]</span> so that <span class="math display">\[a+1 = qb+r+1.\]</span> So <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> satisfy the equality constraint, but possibly not the inequality constraint. If <span class="math inline">\(r+1 &lt; b\)</span>, then <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. But what if <span class="math inline">\(r+1 \geq b\)</span>? Well, this failure is too general; since <span class="math inline">\(r &lt; b\)</span>, the worst that can happen is <span class="math inline">\(r+1 = b\)</span>. But in this case we can “increment” <span class="math inline">\(q\)</span> and “reset” <span class="math inline">\(r\)</span> to <span class="math inline">\(\zero\)</span>; that is, <span class="math inline">\(q+1\)</span> and <span class="math inline">\(\zero\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. So in <span class="math display">\[\Theta(\next(a),b) = \mu(a,b,(q,r))\]</span> (where <span class="math inline">\((q,r) = \Theta(a,b)\)</span>), we want <span class="math inline">\(\mu(a,b,(q,r)) = (q+1,\zero)\)</span> if <span class="math inline">\(r+1 = b\)</span> and <span class="math inline">\((q,r+1)\)</span> otherwise.</p>
+<p>Let’s try it.</p>
+<div class="result">
+<div class="defn">
+<p>
+Define <span class="math inline">\(\varphi : \nats \rightarrow \nats \times \nats\)</span> by <span class="math inline">\(\varphi(x) = (\zero,\zero)\)</span>, and define <span class="math inline">\(\mu : \nats \times \nats \times (\nats \times \nats) \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\mu(a,b,(q,r)) = \left\{ \begin{array}{ll} (\next(q),\zero) &amp; \mathrm{if}\ b = \next(r) \\ (q,\next(r)) &amp; \mathrm{otherwise}. \end{array} \right.\]</span> Then define <span class="math inline">\(\ndivalg : \nats \times \nats \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\ndivalg = \simprec{\varphi}{\mu}.\]</span>
+</p>
+</div>
+</div>
+<p>Get ready:</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span> and let <span class="math inline">\((q,r) = \ndivalg(a,\next(b))\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(a = \nplus(\ntimes(q,b),r)\)</span>.</li>
+<li><span class="math inline">\(\leq(r,b) = \btrue\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, <span class="math inline">\(a = \zero\)</span>, note that <span class="math display">\[\ndivalg(\zero,\next(b)) = \varphi(\next(b)) = (\zero,\zero).\]</span> Now we have <span class="math display">\[\nplus(\ntimes(\zero,\next(b)),\zero) = \zero = a\]</span> and <span class="math inline">\(\nleq(\zero,\next(b))\)</span> as needed.</p>
+<p>For the inductive step, suppose both conclusions hold for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Let <span class="math inline">\((q_1,r_1) = \ndivalg(a,b)\)</span>. Now we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \ndivalg(\next(a),\next(b)) \\ &amp; = &amp; \mu(a,\next(b),\ndivalg(a,\next(b))) \\ &amp; = &amp; \mu(a,\next(b),(q_1,r_1)) \\ &amp; = &amp; Q. \end{eqnarray*}\]</span> We have two possibilities: either <span class="math inline">\(\next(r_1) = \next(b)\)</span> or <span class="math inline">\(\next(r_1) \neq \next(b)\)</span>.</p>
+<p>Suppose first that <span class="math inline">\(\next(r_1) = \next(b)\)</span>; then we have <span class="math display">\[Q = (\next(q_1),\zero).\]</span> Now we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\ntimes(\next(q_1),\next(b)),\zero) \\ &amp; = &amp; \ntimes(\next(q_1),\next(b)) \\ &amp; = &amp; \nplus(\ntimes(q_1,\next(b)),\next(b)) \\ &amp; = &amp; \nplus(\ntimes(q_1,\next(b)),\next(r_1)) \\ &amp; = &amp; \next(\nplus(\ntimes(q_1,\next(b)),r_1)) \\ &amp; = &amp; \next(a) \end{eqnarray*}\]</span> as needed; moreover, we have <span class="math inline">\(\nleq(\zero,b) = \btrue\)</span>.</p>
+Now suppose we have <span class="math inline">\(\next(r_1) \neq \next(b)\)</span>. Now we have <span class="math display">\[Q = (q_1,\next(r_1)).\]</span> In this case, <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(\ntimes(q_1,\next(b)),\next(r_1)) \\
+ &amp; = &amp; \next(\nplus(\ntimes(q_1,\next(b)),r_1)) \\
+ &amp; = &amp; \next(a).
+\end{eqnarray*}\]</span> If <span class="math inline">\(\nleq(\next(r_1),b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,\next(r_1)) = \btrue\)</span> and <span class="math inline">\(\next(r_1) \neq b\)</span>. In particular, we must have <span class="math inline">\(r_1 = b\)</span>. But then <span class="math inline">\(\next(r_1) = \next(b)\)</span>, a contradiction. So we must have <span class="math inline">\(\nleq(\next(r_1),b) = \btrue\)</span>, and the conclusion holds for all <span class="math inline">\(b\)</span> given <span class="math inline">\(\next(a)\)</span> as needed.
+</p>
+</div>
+</div>
+<p>woo!</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span> and suppose we have <span class="math inline">\(q,r \in \nats\)</span> such that <span class="math display">\[a = \nplus(\ntimes(q,\next(b)),r)\]</span> and <span class="math inline">\(\leq(r,b) = \btrue\)</span>. Then <span class="math inline">\((q,r) = \ndivalg(a,b)\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+<p>It suffices to show that if <span class="math inline">\((q_1,r_1)\)</span> and <span class="math inline">\((q_2,r_2)\)</span> both satisfy the conditions of the division algorithm, then <span class="math inline">\(q_1 = q_2\)</span> and <span class="math inline">\(r_1 = r_2\)</span>. To this end, suppose we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\ntimes(q_1,\next(b)),r_1) \\ &amp; = &amp; a \\ &amp; = &amp; \nplus(\ntimes(q_2,\next(b)),r_2). \end{eqnarray*}\]</span> Without loss of generality, we have <span class="math inline">\(\nleq(r_1,r_2)\)</span>; say <span class="math inline">\(r_2 = \nplus(r_1,k)\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\ntimes(q_1,\next(b)),r_1) \\ &amp; = &amp; \nplus(\ntimes(q_2,\next(b)),r_2) \\ &amp; = &amp; \nplus(\ntimes(q_2,\next(b)),\nplus(r_1,k))) \\ &amp; = &amp; \nplus(\nplus(\ntimes(q_2,\next(b)),k),r_1), \end{eqnarray*}\]</span> and thus <span class="math display">\[\ntimes(q_1,\next(b)) = \nplus(\ntimes(q_2,\next(b)),k).\]</span> Note that <span class="math inline">\(\nleq(k,r_2)\)</span>, and thus <span class="math inline">\(\nleq(k,b)\)</span>.</p>
+<p>We wish to show that <span class="math inline">\(k = \zero\)</span>. To this end, let <span class="math inline">\(P(q_1,q_2,b,k)\)</span> denote the statement <span class="math display">\[\mathrm{if}\ \ntimes(q_1,\next(b)) = \nplus(\ntimes(\ntimes(q_2,\next(b))),k)\ \mathrm{then}\ k = \zero,\]</span> and define a set <span class="math display">\[M = \{ q_1 \in \nats \mid \forall q_2,b,k\ P(q_1,q_2,b,k) \}.\]</span> We will show that <span class="math inline">\(M = \nats\)</span> by (you guessed it!) induction.</p>
+<p>For the base case <span class="math inline">\(q_1 = \zero\)</span>, suppose the hypothesis of <span class="math inline">\(P(\zero,q_2,b,k)\)</span>. Then we have <span class="math display">\[\zero = \ntimes(\zero,\next(b)) = \nplus(\ntimes(q_2,\next(b)),k),\]</span> so that <span class="math inline">\(k = \zero\)</span>. For the inductive step, we suppose that <span class="math inline">\(q_1 \in M\)</span>. Now define the set <span class="math display">\[N(x) = \{ q_2 \in \nats \mid \forall b,k, P(x,q_2,b,k) \};\]</span> we have supposed that <span class="math inline">\(N(q_1) = \nats\)</span>.</p>
+<p>We will show that <span class="math inline">\(N(\next(q_1)) = \nats\)</span> also by induction. For the base case <span class="math inline">\(q_2 = \zero\)</span>, suppose the hypothesis of <span class="math inline">\(P(\next(q_1),\zero,b,k)\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\ntimes(q_1,\next(b)),\next(b)) \\ &amp; = &amp; \ntimes(\next(q_1),\next(b)) \\ &amp; = &amp; \nplus(\ntimes(\zero,\next(b)),k) \\ &amp; = &amp; \nplus(\zero,k) \\ &amp; = &amp; k. \end{eqnarray*}\]</span> Thus <span class="math inline">\(\nleq(\next(b),k)\)</span>. But now we have <span class="math inline">\(\nleq(\next(b),b)\)</span> by transitivity, a contradiction. Thus the hypothesis of <span class="math inline">\(P(\next(q_1),\zero,b,k)\)</span> is false, and we have <span class="math inline">\(\zero \in N(\next(q_1))\)</span> vacuously.</p>
+<p>For the inductive step, suppose we have <span class="math inline">\(q_2 \in N(\next(q_1))\)</span>, and suppose the hypothesis of <span class="math inline">\(P(\next(q_1),\next(q_2),b,k)\)</span>; that is, that <span class="math display">\[\ntimes(\next(q_1),\next(b)) = \nplus(\ntimes(\next(q_2),\next(b)),k).\]</span> Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(\ntimes(q_1,\next(b)),\next(b)) \\
+ &amp; = &amp; \ntimes(\next(q_1),\next(b)) \\
+ &amp; = &amp; \nplus(\ntimes(\next(q_2),\next(b)),k) \\
+ &amp; = &amp; \nplus(\nplus(\ntimes(q_2,\next(b)),\next(b)),k) \\
+ &amp; = &amp; \nplus(\nplus(\ntimes(q_2,\next(b)),k),\next(b))
+\end{eqnarray*}\]</span> So we have <span class="math display">\[\ntimes(q_1,\next(b)) = \nplus(\ntimes(q_2,\next(b)),k),\]</span> and since <span class="math inline">\(N(q_1) = \nats\)</span>, <span class="math inline">\(k = \zero\)</span>. So <span class="math inline">\(\next(q_2) \in N(\next(q_1))\)</span> as needed.</p>
+So we have <span class="math inline">\(k = \zero\)</span>, and thus <span class="math display">\[\ntimes(q_1,\next(b)) = \ntimes(q_2,\next(b)).\]</span> Thus <span class="math inline">\(q_1 = q_2\)</span>, and moreover <span class="math inline">\(r_1 = r_2\)</span> as needed.
+</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>divalg</code>, <code>quo</code>, and <code>rem</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; divalg ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> (t,t)
+<span class="ot">&gt;</span> divalg <span class="fu">=</span> simpleRec phi mu
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> (zero,zero)
+<span class="ot">&gt;</span>     mu _ b (q,r) <span class="fu">=</span> <span class="kw">if</span> b <span class="fu">==</span> next r
+<span class="ot">&gt;</span>       <span class="kw">then</span> (next q, zero)
+<span class="ot">&gt;</span>       <span class="kw">else</span> (q, next r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; quo ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> quo a b <span class="fu">=</span> <span class="kw">let</span> (q,_) <span class="fu">=</span> divalg a b <span class="kw">in</span> q
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; rem ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> rem a b <span class="fu">=</span> <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a b <span class="kw">in</span> r</code></pre></div>
+<p>Property tests:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- a == plus(times(q,b),r) where (q,r) = divalg(a,b)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_equality ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_equality _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> (q,r) <span class="fu">=</span> divalg a b <span class="kw">in</span>
+<span class="ot">&gt;</span>   a <span class="fu">==</span> plus (times q b) r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- leq(r,b) where (_,r) = divalg(a,next(b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_inequality ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_inequality _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a (next b) <span class="kw">in</span>
+<span class="ot">&gt;</span>   leq r b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- quo(a,b) = q where (q,_) = divalg(a,b)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_quo ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_quo _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> (q,_) <span class="fu">=</span> divalg a b <span class="kw">in</span>
+<span class="ot">&gt;</span>   q <span class="fu">==</span> quo a b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- rem(a,b) = r where (_,r) = divalg(a,b)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_rem ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_rem _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a b <span class="kw">in</span>
+<span class="ot">&gt;</span>   r <span class="fu">==</span> rem a b</code></pre></div>
+<p>And the suite:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for max</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_divalg t maxSize numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_divalg_equality t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_inequality t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_quo t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_rem t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
