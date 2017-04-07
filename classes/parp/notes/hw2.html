@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Notes on Homework 2</title>
+<link rel="stylesheet" type="text/css" href="../../../css/default.css" />
+<link rel="icon" href="../../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../../index.html">Home</a>
+    <a href="../../../about.html">About</a>
+    <a href="../../../projects.html">Projects</a>
+    <a href="../../../contact.html">Contact</a>
+    <a href="../../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Notes on Homework 2</h1>
+<!-- BEGIN BODY -->
+<p>(<a href="../../../classes/parp/index.html">Go back to the course page</a>)</p>
+<p>With a few edits, it is possible to turn your simulation into a video. I found this useful for debugging – sometimes it is easier to “see” what is wrong than try to trace the code. :)</p>
+<p>Here is an example:</p>
+<video width="640" height="480" controls>
+<source src="../../../raw/parp/hw2/test-05.mp4" type="video/mp4"> Your browser does not support the video tag.
+</video>
+<p>Here are the steps I used to do this. These steps assume you’re using a unix-like.</p>
+<ol style="list-style-type: decimal">
+<li><p>Edit your particle program so that on each time step, the coordinates of all points are written out to a file – one for each step. Here’s how I did it: toward the top of <code>main</code> (and before the main loop) I declared a string, <code>outname</code>, to hold the title of the output file.</p>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c"><span class="dt">char</span> *outname = (<span class="dt">char</span>*) malloc(<span class="dv">32</span> * <span class="kw">sizeof</span>(<span class="dt">char</span>));</code></pre></div></li>
+<li><p>Toward the end of the loop, write the coordinates to a file. This did it for me. You may need to create the <code>out</code> directory before running the program, I don’t remember. That <code>sprintf</code> command writes the name of the output file to the string we declared earlier; the <code>%05d</code> pads <code>step</code> to length 5. This is necessary to make later processing steps work.</p>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c">sprintf( outname, <span class="st">&quot;out/fout-%05d.txt&quot;</span>, step );``
+FILE *fout = fopen( outname, <span class="st">&quot;w&quot;</span> );``
+save( fout, n, particles);``
+fclose( fout );``</code></pre></div></li>
+<li><p>If everything went well, when you run your program now (say by making the <code>job-stampede-*</code> script executable, or by running the program directly) it will populate the <code>out</code> subdirectory with a bunch of text files called <code>fout-00000.txt</code>, <code>fout-00001.txt</code>, and so on. These are the coordinates of the particles at each time step, in order.</p></li>
+<li><p>On your local machine, put the following script into a text file called <code>particles.sh</code>. <strong>Important:</strong> Before running this, you will need to replace <code>USERNAME</code> with your <em>stampede</em> username, and <code>PATH</code> with the path to the directory where <code>out</code> lives on stampede. To find these values you can use <code>whoami</code> (to get your username) and then cd to the directory where <code>out</code> lives and say <code>pwd</code>.</p>
+<p>What this script does is (1) download all those <code>fout-</code> text files with <code>scp</code>, (2) convert each file to a png with <code>gnuplot</code>, and (3) stitch the png files into an mp4 with <code>ffmpeg</code>. (Did I mention you need to have <code>gnuplot</code> and <code>ffmpeg</code>? You do.) Note that <code>ffmpeg</code> will automatically put the frames in the right order, since we padded our filenames to the same length. Woo!</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>
+
+<span class="kw">scp</span> -r USERNAME@stampede.tacc.utexas.edu:/PATH/out .
+
+<span class="kw">(</span>
+<span class="kw">cd</span> out
+
+<span class="kw">for</span> <span class="kw">FILE</span> in *.txt<span class="kw">;</span> <span class="kw">do</span>
+  <span class="kw">gnuplot</span> &lt;&lt;- EOF
+    se<span class="kw">t</span> <span class="kw">terminal</span> png
+    set output &quot;<span class="ot">${FILE}</span>.png&quot;
+    p<span class="kw">lot</span> <span class="st">&quot;</span><span class="ot">${FILE}</span><span class="st">&quot;</span> notitle pointtype 6
+EOF
+done
+
+ffmpeg -r 60 -f image2 -s 1080x960 -i 'fou<span class="kw">t-%05d.txt.png</span><span class="st">' -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4</span>
+
+<span class="st">rm *.png</span>
+<span class="st">)</span></code></pre></div></li>
+</ol>
+<p>If everything went well, when you run this command you will be prompted for your stampede password and the rest requires no intervention. After a few minutes you should have an mp4 video that looks something like the above example.</p>
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -35,7 +35,7 @@
 
 
 <div class="info">
-Posted on 2017-04-05 by nbloomf
+Posted on 2017-04-02 by nbloomf
 </div>
 
 
@@ -91,35 +91,27 @@ Posted on 2017-04-05 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
-<p>Recall that <span class="math inline">\(\nleq(a,b)\)</span> is true if and only if the equation <span class="math inline">\(b = \nplus(a,x)\)</span> has a solution. Moreover, this solution (if it exists) is unique. When this happens in mathematics – a thing exists and is unique – it is frequently useful to give it a name. Putting on our third-grader hat of course the solution to <span class="math inline">\(b = a+x\)</span> is <span class="math inline">\(x = b-a\)</span>. So we’ll call this solution “b minus a”. Our goal in this post is to give a constructive characterization for subtraction.</p>
-<p>There’s a hitch: whereas sums and products of natural numbers always exist, differences do not; <span class="math inline">\(5 - 2 = 3\)</span> is a natural number, but <span class="math inline">\(5 - 7 = ???\)</span> is not. So the signature of minus cannot be <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>. What is it then? How should we handle this?</p>
+<p>We’d eventually like to solve some equations; for instance, one of the simplest equations we can construct with the tools we have so far is <span class="math display">\[\nplus(a,x) = b\]</span> where <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> are in <span class="math inline">\(\nats\)</span>. Putting on our third-grader hat of course the solution to <span class="math inline">\(b = a+x\)</span> is <span class="math inline">\(x = b-a\)</span>. So we’ll call this solution “b minus a”. Our goal in this post is to give a constructive characterization for subtraction.</p>
+<p>There’s a hitch: whereas sums and products of natural numbers always exist, differences do not; <span class="math inline">\(5 - 2 = 3\)</span> is a natural number, but <span class="math inline">\(5 - 7 = ?\)</span> is not. So the signature of minus cannot be <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>. What is it then? How should we handle this?</p>
 <p>I can think of three options. First, we can just declare that <span class="math inline">\(b-a\)</span> is not defined if the difference is not a natural number. The corresponding algorithm would then just error out. This should be avoided if possible.</p>
 <p>The second option is to implement so-called <em>truncated subtraction</em>, so that anytime <span class="math inline">\(b-a\)</span> is not a natural number we simply call it 0. This also is not ideal, since now <span class="math inline">\(b-a\)</span> always exists, but the equation <span class="math inline">\(b = a + (b-a)\)</span> is no longer an identity and we cannot tell just from the value of <span class="math inline">\(b-a\)</span> whether it holds or not.</p>
 <p>The third option is a blend of the first two. We can attach an extra element to <span class="math inline">\(\nats\)</span>, say <span class="math inline">\(\ast\)</span>, and then say <span class="math inline">\(b-a = \ast\)</span> if <span class="math inline">\(b-a\)</span> is not a natural number. This allows us to distinguish when <span class="math inline">\(b-a\)</span> does not exist but keeps the minus function total. So our signature for minus will be <span class="math display">\[\nats \times \nats \rightarrow \ast + \nats\]</span></p>
 <div class="result">
 <div class="defn">
 <p>
-<p>Define the map <span class="math inline">\(\psi : (\ast + \nats)^\nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\psi(f) = \left\{ \begin{array}{ll} \ast &amp; \mathrm{if}\ f(\zero) = \ast \\ \next(c) &amp; \mathrm{if}\ f(\zero) = c \in \nats, \end{array} \right.\]</span> define <span class="math inline">\(\mu : \nats \times (\ast + \nats)^\nats \times (\ast + \nats) \rightarrow \ast + \nats\)</span> by <span class="math display">\[\mu(x,f,y) = f(x),\]</span> and define <span class="math inline">\(\Theta : (\ast + \nats)^\nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\Theta(f,x) = \simprec{\psi}{\mu}(x)(f).\]</span></p>
-<p>Now define <span class="math inline">\(\varepsilon : \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\varepsilon(a) = \left\{ \begin{array}{ll} \zero &amp; \mathrm{if}\ a = \zero \\ \ast &amp; \mathrm{otherwise}. \end{array} \right.\]</span></p>
-We then define <span class="math inline">\(\nminus : \nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\nminus(a,b) = \natrec{\varepsilon}{\Theta}(a)(b).\]</span>
+<p>Define maps <span class="math inline">\(\varphi : \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\varphi(x) = \left\{\begin{array}{ll} \zero &amp; \mathrm{if}\ x == \zero \\ \ast &amp; \mathrm{otherwise}; \end{array}\right.\]</span> <span class="math inline">\(\beta : \nats \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\beta(a,b) = \left\{\begin{array}{ll} \btrue &amp; \mathrm{if}\ b = \zero \\ \bfalse &amp; \mathrm{otherwise}; \end{array}\right.\]</span> <span class="math inline">\(\psi : \nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\psi(a,b) = \next(a);\]</span> and <span class="math inline">\(\omega : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\omega(a,b) = \prev(b).\]</span></p>
+Now define <span class="math inline">\(\nminus : \nats \times \nats \rightarrow \ast + \nats\)</span> by <span class="math display">\[\nminus = \bailrec{\varphi}{\beta}{\psi}{\omega}.\]</span>
 </p>
 </div>
 </div>
-<p>This definition looks complicated (simple recursion nested inside natural recursion). Here’s a useful lemma:</p>
-<div class="result">
-<div class="lemma">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a).\]</span></p>
-</div>
-<div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(b),\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(b))(\next(a)) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(b))(\next(a)) \\ &amp; = &amp; \simprec{\psi}{\mu}(\next(a),\natrec{\varepsilon}{\Theta}(b)) \\ &amp; = &amp; \mu(a,\natrec{\varepsilon}{\Theta}(b),\simprec{\psi}{\mu}(a,\natrec{\varepsilon}{\Theta}(b))) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(b)(a) \\ &amp; = &amp; \nminus(b,a) \end{eqnarray*}\]</span> as claimed.
-</p>
-</div>
-</div>
-<p>And one more:</p>
+<p>This is our first time using bailout recursion. Woo! As a reminder, <span class="math inline">\(\nminus\)</span> satisfies the following: <span class="math display">\[\begin{eqnarray*}
+\nminus(\zero,a) &amp; = &amp; \left\{\begin{array}{ll} \zero &amp; \mathrm{if}\ a = \zero \\ \ast &amp; \mathrm{otherwise} \end{array}\right. \\
+ &amp; &amp; \\
+\nminus(\next(b),a) &amp; = &amp; \left\{\begin{array}{ll} \next(b) &amp; \mathrm{if}\ a = \zero \\ \nminus(b,\prev(a)) &amp; \mathrm{otherwise}. \end{array}\right.
+\end{eqnarray*}\]</span></p>
+<p>Here are some special cases:</p>
 <div class="result">
 <div class="lemma">
 <p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have <span class="math display">\[\nminus(a,\zero) = a\]</span> and <span class="math display">\[\nminus(\zero,\next(a)) = \ast.\]</span></p>
@@ -127,29 +119,28 @@ We have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nminus(\zero,\zero) = \natrec{\varepsilon}{\Theta}(\zero)(\zero) = \varepsilon(\zero) = \zero\]</span> as needed. For the inductive step, suppose the results holds for some <span class="math inline">\(a \in \nats\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(a),\zero) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\next(a))(\zero) \\ &amp; = &amp; \Theta(\natrec{\varepsilon}{\Theta}(a))(\zero) \\ &amp; = &amp; \simprec{\psi}{\mu}(\zero)(\natrec{\varepsilon}{\Theta}(a)) \\ &amp; = &amp; \psi(\natrec{\varepsilon}{\mu}(a)) \\ &amp; = &amp; \next(a), \end{eqnarray*}\]</span> where in the last step we used the induction hypothesis since <span class="math display">\[a = \nminus(a,\zero) = \natrec{\varepsilon}{\Theta}(a)(\zero).\]</span></li>
-<li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\zero,\next(a)) \\ &amp; = &amp; \natrec{\varepsilon}{\Theta}(\zero)(\next(a)) \\ &amp; = &amp; \varepsilon(\next(a)) \\ &amp; = &amp; \ast \end{eqnarray*}\]</span> since <span class="math inline">\(\zero \neq \next(a)\)</span>.</li>
+<li>If <span class="math inline">\(a = \zero\)</span>, then <span class="math display">\[\nminus(\zero,\zero) = \varphi(\zero) = \zero.\]</span> If <span class="math inline">\(a = \next(b)\)</span>, then we have <span class="math display">\[\nminus(\next(b),\zero) = \psi(b,\zero) = \next(b) = a\]</span> as needed.</li>
+<li>We have <span class="math display">\[\nminus(\zero,\next(a)) = \psi(\next(a)) = \ast\]</span> as claimed.</li>
 </ol>
 </p>
 </div>
 </div>
-<p>We’d like to avoid having to reason about the guts of <span class="math inline">\(\nminus\)</span> as quickly as possible; to this end, we completely characterize <span class="math inline">\(\nminus\)</span> in terms of <span class="math inline">\(\nleq\)</span> with the next two results.</p>
+<p>And a useful lemma:</p>
 <div class="result">
-<div class="thm">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then the following are equivalent.</p>
-<ol style="list-style-type: decimal">
-<li><span class="math inline">\(\nleq(a,b) = \bfalse\)</span>.</li>
-<li><span class="math inline">\(\nminus(b,a) = \ast\)</span>.</li>
-</ol>
+<div class="lemma">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a).\]</span></p>
 </div>
 <div class="proof">
 <p>
-<p>First we show that (1) implies (2); we proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = 0\)</span>, note that <span class="math inline">\(\nleq(\zero,b)\)</span> is true for all <span class="math inline">\(b\)</span>, so the implication holds vacuously. For the induction step, suppose the implication holds for all <span class="math inline">\(b\)</span>, for some <span class="math inline">\(a\)</span>. Define <span class="math display">\[B(x) = \{ b \in \nats \mid \mathrm{if}\ \nleq(a,b) = \bfalse\ \mathrm{then}\ \nminus(b,a) = \ast \}.\]</span> By the induction hypothesis we have <span class="math inline">\(B(a) = \nats\)</span>, and we wish to show that <span class="math inline">\(B(\next(a)) = \nats\)</span>. We do this by induction (again). For the base case <span class="math inline">\(b = 0\)</span>, note that <span class="math inline">\(\nleq(\next(a),\zero) = \bfalse\)</span> and that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>. For the inductive step, suppose the implication holds for some <span class="math inline">\(b \in \nats\)</span>, and suppose further that <span class="math inline">\(\nleq(\next(a),\next(b)) = \bfalse\)</span>. Now <span class="math inline">\(\nleq(a,b)\)</span> is also false, so that (by the second induction hypothesis) <span class="math inline">\(\nminus(b,a) = \ast\)</span>, and hence <span class="math inline">\(\nminus(\next(b),\next(a)) = \ast\)</span> as needed.</p>
-Now we show that (2) implies (1); we proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = 0\)</span>, suppose <span class="math inline">\(\nminus(\zero,a) = \ast\)</span>. Now we must have <span class="math inline">\(a \neq \zero\)</span>; say <span class="math inline">\(a = \next(c)\)</span>. Then <span class="math inline">\(\nleq(\next(c),\zero) = \bfalse\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(b\)</span>. We show that it also holds for all <span class="math inline">\(a\)</span> for <span class="math inline">\(\next(b)\)</span> by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(b),\zero) = \next(b) \neq \ast\)</span>, so that the implication holds vacuously. For the inductive step, suppose the implication holds for <span class="math inline">\(a \in \nats\)</span>. If <span class="math inline">\(\nminus(\next(b),\next(a)) = \ast\)</span>, then we also have <span class="math inline">\(\nminus(b,a) = \ast\)</span>. By the induction hypothesis, then <span class="math display">\[\nleq(\next(a),\next(b)) = \nleq(a,b) = \bfalse\]</span> as needed.
+Note that <span class="math inline">\(\next(b) \neq \zero\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nminus(\next(b),\next(a)) \\
+ &amp; = &amp; \nminus(b,\prev(\next(a))) \\
+ &amp; = &amp; \nminus(b,a)
+\end{eqnarray*}\]</span> as claimed.
 </p>
 </div>
 </div>
-<p>And the second is like it:</p>
+<p>The next result shows that <span class="math inline">\(\nminus\)</span> gives a solution to the equation <span class="math inline">\(b = \nplus(a,x)\)</span>.</p>
 <div class="result">
 <div class="thm">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then the following are equivalent.</p>
@@ -160,15 +151,26 @@ Now we show that (2) implies (1); we proceed by induction on <span class="math i
 </div>
 <div class="proof">
 <p>
-<p>First we show that (1) implies (2) by induction on <span class="math inline">\(a\)</span>. For the base cse, note that <span class="math display">\[\nplus(\zero,\nminus(b,\zero)) = \nminus(b,\zero) = b\]</span> for all <span class="math inline">\(b\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. We induct on <span class="math inline">\(b\)</span>; in the base case (<span class="math inline">\(b = \zero\)</span>) note that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>, so that the implication holds vacuously. For the inductive step suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. If <span class="math inline">\(c = \nminus(b,a)\)</span>, then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\nminus(\next(b),\next(a))) \\ &amp; = &amp; \nplus(\next(a),\nminus(b,a)) \\ &amp; = &amp; \simprec{\id}{\mu_\nplus}(\next(a),\nminus(b,a)) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),\nplus(a,\nminus(b,a))) \\ &amp; = &amp; \mu_\nplus(a,\nminus(b,a),b) \\ &amp; = &amp; \next(b) \end{eqnarray*}\]</span> as needed.</p>
-Next we show that (2) implies (1), again by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that if <span class="math inline">\(b = \nplus(\zero,c) = c\)</span>, then we have <span class="math inline">\(c = b = \nminus(b,\zero)\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Now we induct on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\zero = \nplus(\next(a),c)\)</span> is false, so the implication holds vacuously. For the inductive step, suppose the implication holds for all <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. Now suppose we have <span class="math display">\[\nplus(\next(a),c) = \next(b);\]</span> then we have <span class="math inline">\(\nplus(a,c) = b\)</span>, and using the induction hypothesis <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a) = c\]</span> as needed.
+<p>First we show (1) implies (2) by induction on <span class="math inline">\(b\)</span>. For the base case, suppose we have <span class="math inline">\(\nminus(\zero,a) = c\)</span>. Now <span class="math display">\[c = \nminus(\zero,a) = \varphi(a),\]</span> so that <span class="math inline">\(a = \zero\)</span> and <span class="math inline">\(c = \zero\)</span>. Then <span class="math inline">\(\zero = \nminus(a,c)\)</span> as claimed. For the inductive step, suppose the result holds for some <span class="math inline">\(b\)</span>, and suppose further that <span class="math inline">\(\nminus(\next(b),a) = c\)</span>. If <span class="math inline">\(a = \zero\)</span>, we have <span class="math display">\[c = \nminus(\next(b),\zero) = \psi(b,\zero) = \next(b),\]</span> so that <span class="math inline">\(\next(b) = \nplus(c,\zero)\)</span> as needed. If <span class="math inline">\(a \neq \zero\)</span>, then we have <span class="math inline">\(a = \next(d)\)</span> for some <span class="math inline">\(d\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; c \\
+ &amp; = &amp; \nminus(\next(b),a) \\
+ &amp; = &amp; \nminus(\next(b),\next(d)) \\
+ &amp; = &amp; \nminus(b,\prev(\next(d))) \\
+ &amp; = &amp; \nminus(b,d) \\
+\end{eqnarray*}\]</span> and thus <span class="math inline">\(\nplus(d,c) = b\)</span>. But then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \next(b) \\
+ &amp; = &amp; \next(\nplus(d,c)) \\
+ &amp; = &amp; \nplus(\next(d),c) \\
+ &amp; = &amp; \nplus(a,c)
+\end{eqnarray*}\]</span> as claimed.</p>
+Next we show that (2) implies (1) by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, if <span class="math inline">\(b = \nplus(a,c) = c\)</span> then <span class="math inline">\(\nminus(b,\zero) = b = c\)</span>. For the inductive step, suppose the implication holds for some <span class="math inline">\(a\)</span>, and suppose further that <span class="math inline">\(b = \nplus(\next(a),c)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nminus(b,\next(a)) \\
+ &amp; = &amp; \nminus(\nplus(\next(a),c),\next(a)) \\
+ &amp; = &amp; \nminus(\next(\nplus(a,c)),\next(a)) \\
+ &amp; = &amp; \nminus(\nplus(a,c),a) \\
+ &amp; = &amp; c
+\end{eqnarray*}\]</span> as needed.
 </p>
-</div>
-</div>
-<p>This result allows us to solve some “linear” equations (whatever that means).</p>
-<div class="result">
-<div class="corollary">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then the equation <span class="math inline">\(\nplus(a,x) = b\)</span> has a unique solution <span class="math inline">\(x = \nminus(b,a)\)</span> if <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, and no solution otherwise.</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\nminus\)</span> inherits several properties from <span class="math inline">\(\nleq\)</span> and <span class="math inline">\(\nplus\)</span>.</p>
@@ -179,20 +181,20 @@ Next we show that (2) implies (1), again by induction on <span class="math inlin
 <li><span class="math inline">\(\nminus(\nplus(a,b),b) = a\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(b,a) = \nminus(b,c) \in \nats\)</span>, then <span class="math inline">\(a = c\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(a,b) = \nminus(c,b) \in \nats\)</span>, then <span class="math inline">\(a = c\)</span>.</li>
-<li>If <span class="math inline">\(\nleq(a,b)\)</span>, then <span class="math inline">\(\nminus(\next(b),a) = \next(\nminus(b,a))\)</span>.</li>
-<li>If <span class="math inline">\(\nleq(a,b)\)</span>, then <span class="math inline">\(\nleq(\nminus(b,a),b)\)</span>.</li>
+<li>If <span class="math inline">\(\nminus(b,a) \in \nats\)</span>, then <span class="math inline">\(\nminus(\next(b),a) = \next(\nminus(b,a))\)</span>.</li>
+<li>If <span class="math inline">\(\nminus(b,a) \in \nats\)</span>, then <span class="math inline">\(\nminus(b,\nminus(b,a)) \in \nats\)</span>.</li>
 <li>If <span class="math inline">\(\nleq(c,b)\)</span> and <span class="math inline">\(\nleq(b,a)\)</span>, then <span class="math inline">\(\nminus(a,\nminus(b,c)) = \nplus(\nminus(a,b),c)\)</span>.</li>
 </ol>
 </div>
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>Note that <span class="math inline">\(\nleq(b,\nplus(a,b))\)</span>, so that <span class="math display">\[\nminus(\nplus(a,b),b) = d \in \nats\]</span> for some <span class="math inline">\(d\)</span>. Then we have <span class="math inline">\(\nplus(b,d) = \nplus(a,b)\)</span> and so <span class="math inline">\(a = d\)</span> as claimed.</li>
+<li>Note that <span class="math inline">\(\nplus(a,b) = \nplus(a,b)\)</span>.</li>
 <li>Say <span class="math display">\[\nminus(b,a) = d = \nminus(b,c),\]</span> with <span class="math inline">\(d \in \nats\)</span>. Now <span class="math display">\[\nplus(a,d) = b = \nplus(c,d)\]</span> and thus <span class="math inline">\(a = c\)</span> as claimed.</li>
 <li>Say <span class="math display">\[\nminus(a,b) = d = \nminus(c,b),\]</span> with <span class="math inline">\(d \in \nats\)</span>. Now <span class="math display">\[a = \nplus(b,d) = c\]</span> as claimed.</li>
 <li>Say <span class="math inline">\(\nminus(b,a) = c\)</span>. Now <span class="math inline">\(\nplus(a,c) = b\)</span>, so that <span class="math display">\[\nplus(a,\next(c)) = \next(\nplus(a,c)) = \next(b).\]</span> Thus we have <span class="math display">\[\nminus(\next(b),a) = \next(c) = \next(\nminus(b,a))\]</span> as claimed.</li>
-<li>We induct on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, if <span class="math inline">\(\nleq(a,b)\)</span> then we have <span class="math inline">\(a = \zero\)</span>. Then <span class="math inline">\(\nminus(b,a) = \zero\)</span>, so that <span class="math inline">\(\nleq(\nminus(b,a),b)\)</span> as claimed. For the inductive step, suppose we have <span class="math inline">\(\nleq(a,\next(b))\)</span>. If <span class="math inline">\(a = \next(b)\)</span>, then <span class="math inline">\(\nminus(\next(b),a) = \zero\)</span> and <span class="math display">\[\nleq(\nminus(\next(b),a),b)\]</span> as needed. If <span class="math inline">\(\nleq(a,b)\)</span>, then by the induction hypothesis we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \btrue \\ \nleq(\nminus(b,a),b) \\ &amp; = &amp; \nleq(\next(\nminus(b,a)),\next(b)) \\ &amp; = &amp; \nleq(\nminus(\next(b),a),\next(b)) \end{eqnarray*}\]</span> as needed.</li>
-<li>Note that <span class="math inline">\(\nleq(\nminus(b,c),b)\)</span>, and thus <span class="math inline">\(\nleq(\nminus(b,c),a)\)</span> by transitivity. We induct on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, we must have <span class="math inline">\(\nminus(b,c) = \zero\)</span>, so that <span class="math inline">\(\nplus(c,\zero) = b\)</span>, and thus <span class="math inline">\(c = b\)</span>. But now <span class="math inline">\(b = \zero\)</span> and so <span class="math inline">\(c = \zero\)</span>, and the implication holds. For the inductive step suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>, and suppose further that <span class="math inline">\(\nleq(c,b)\)</span> and <span class="math inline">\(\nleq(b,\next(a))\)</span>. If <span class="math inline">\(\nminus(b,c) = \next(a)\)</span>, we have <span class="math inline">\(b = \nplus(\next(a),c)\)</span>, but since <span class="math inline">\(\nleq(b,\next(a))\)</span>, we also have <span class="math inline">\(\next(a) = \nplus(b,d)\)</span> for some <span class="math inline">\(d\)</span>. Then <span class="math inline">\(\zero = \nplus(c,d)\)</span>, so that <span class="math inline">\(c = 0\)</span> and then <span class="math inline">\(b = \next(a)\)</span>. In this case we have <span class="math display">\[\nminus(\next(a),\nminus(b,c)) = \zero = \nplus(\nminus(\next(a),b),c)\]</span> as needed. Suppose instead we have <span class="math inline">\(\nleq(b,a)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nminus(\next(a),\nminus(b,c)) \\ &amp; = &amp; \next(\nminus(a,\nminus(b,c))) \\ &amp; = &amp; \next(\nplus(\nminus(a,b),c)) \\ &amp; = &amp; \nplus(\next(\nminus(a,b)),c) \\ &amp; = &amp; \nplus(\nminus(\next(a),b),c) \end{eqnarray*}\]</span> as needed.</li>
+<li>We induct on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, if <span class="math inline">\(\nminus(\zero,a) \in \nats\)</span> then we have <span class="math inline">\(a = \zero\)</span>. Then <span class="math inline">\(\nminus(b,a) = \zero\)</span>, so that <span class="math inline">\(\nminus(b,\nminus(b,a)) = \zero \in \nats\)</span> as claimed. For the inductive step, suppose we have <span class="math inline">\(\nminus(\next(b),a) = c \in \nats\)</span>. (@@@)</li>
+<li>(@@@)</li>
 </ol>
 </p>
 </div>
@@ -200,14 +202,17 @@ Next we show that (2) implies (1), again by induction on <span class="math inlin
 <h2 id="implementation-and-testing">Implementation and Testing</h2>
 <p>Here’s <code>minus</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; minus ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Maybe</span> t
-<span class="ot">&gt;</span> minus <span class="fu">=</span> naturalRec eps theta
+<span class="ot">&gt;</span> minus <span class="fu">=</span> bailoutRec phi beta psi omega
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     eps k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">==</span> zero <span class="kw">then</span> <span class="dt">Just</span> zero <span class="kw">else</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>     phi x <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">==</span> zero
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">Just</span> zero
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="dt">Nothing</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     theta f x <span class="fu">=</span> (simpleRec psi mu) x f
-<span class="ot">&gt;</span>       <span class="kw">where</span>
-<span class="ot">&gt;</span>         psi f <span class="fu">=</span> fmap next (f zero)
-<span class="ot">&gt;</span>         mu x f _ <span class="fu">=</span> f x</code></pre></div>
+<span class="ot">&gt;</span>     beta _ b <span class="fu">=</span> b <span class="fu">==</span> zero
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     psi a _ <span class="fu">=</span> <span class="dt">Just</span> (next a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     omega _ b <span class="fu">=</span> prev b</code></pre></div>
 <p>And some properties. Some of these are less nice because <code>minus</code> returns a <code>Maybe t</code>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_minus_next ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_minus_next _ a b <span class="fu">=</span>

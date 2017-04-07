@@ -35,7 +35,7 @@
 
 
 <div class="info">
-Posted on 2017-04-02 by nbloomf
+Posted on 2017-04-05 by nbloomf
 </div>
 
 
@@ -91,15 +91,14 @@ Posted on 2017-04-02 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
-<p>Next we’d like to nail down what it means for one natural number to be less than or equal to another. Note that while <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span> have signatures <span class="math display">\[\nats \times \nats \rightarrow \nats,\]</span> “less than or equal to” (which I will abbrebiate to <em>leq</em> from now on) does not. In fact <span class="math inline">\(\leq\)</span> is typically defined as a set of pairs. To make <span class="math inline">\(\leq\)</span> computable, we will instead (try to) define it as a function with signature <span class="math display">\[\nats \times \nats \rightarrow \bool.\]</span> With this signature there is hope that we can define leq using simple recursion, provided we can find appropriate maps <span class="math display">\[\varphi : \nats \rightarrow \bool\]</span> and <span class="math display">\[\mu : \nats \times \nats \times \bool \rightarrow \bool.\]</span> But what should <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span> be? Let’s think about it.</p>
-<p>One nice thing about <span class="math inline">\(\simprec{\ast}{\ast}\)</span> (and recursion operators in general) is that we can afford to be a little sloppy while looking for a good definition.</p>
-<p>Let <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span>, and suppose <span class="math inline">\(\Theta\)</span> acts like the <span class="math inline">\(\leq\)</span> we know and love. Then for all <span class="math inline">\(b\)</span> we want, for instance, <span class="math display">\[\btrue = \Theta(\zero,b) = \varphi(b);\]</span> evidently then we should have <span class="math inline">\(\varphi(b) = \btrue\)</span> for all <span class="math inline">\(b\)</span>. Likewise, we have <span class="math display">\[\Theta(\next(a),b) = \mu(a,b,\Theta(a,b)).\]</span> That is, the truth value of <span class="math inline">\(a+1 \leq b\)</span> is some function of <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and the truth value of <span class="math inline">\(a \leq b\)</span>. Note that if <span class="math inline">\(a = b\)</span>, then <span class="math inline">\(a+1 \leq b\)</span> is <em>false</em>. If <span class="math inline">\(a &gt; b\)</span>, then <span class="math inline">\(a \leq b\)</span> and <span class="math inline">\(a+1 \leq b\)</span> are both false, and if <span class="math inline">\(a &lt; b\)</span>, then <span class="math inline">\(a \leq b\)</span> and <span class="math inline">\(a+1 \leq b\)</span> are both true. So let’s try <span class="math inline">\(\mu(a,b,k) = \bfalse\)</span> if <span class="math inline">\(a = b\)</span> and <span class="math inline">\(k\)</span> otherwise.</p>
+<p>Next we’d like to nail down what it means for one natural number to be less than or equal to another. Note that while <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span> have signatures <span class="math display">\[\nats \times \nats \rightarrow \nats,\]</span> “less than or equal to” (which I will abbrebiate to <em>leq</em> from now on) does not. In fact <span class="math inline">\(\leq\)</span> is typically defined as a set of pairs. To make <span class="math inline">\(\leq\)</span> computable, we will instead (try to) define it as a function with signature <span class="math display">\[\nats \times \nats \rightarrow \bool.\]</span> In fact, we can make a reasonable attempt on <span class="math inline">\(\nleq\)</span> without using recursion at all.</p>
 <div class="result">
 <div class="defn">
 <p>
-Let <span class="math inline">\(\mu : \nats \times \nats \times \bool \rightarrow \bool\)</span> be given by <span class="math display">\[\mu(a,b,k) = \left\{ \begin{array}{ll} \bfalse &amp; \mathrm{if}\ a = b \\ k &amp; \mathrm{otherwise}, \end{array} \right.\]</span> and define <span class="math inline">\(\varphi : \nats \rightarrow \bool\)</span> by <span class="math inline">\(\varphi(x) = \btrue\)</span>. We then define <span class="math inline">\(\nleq : \nats \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\nleq = \simprec{\varphi}{\mu}.\]</span>
+Define <span class="math inline">\(\nleq : \nats \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\nleq(a,b) = \left\{\begin{array}{ll} \bfalse &amp; \mathrm{if}\ \nminus(b,a) = \ast \\ \btrue &amp; \mathrm{otherwise}. \end{array}\right.\]</span>
 </p>
 </div>
 </div>
@@ -115,8 +114,8 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \bool \rightarro
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>We induct on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\nleq(\next(\zero),\zero)\)</span> is false since <span class="math inline">\(\zero = \zero\)</span>. For the inductive step, suppose we have that <span class="math inline">\(\nleq(\next(a),\zero)\)</span> is false. Now <span class="math inline">\(\nleq(\next(\next(a)),\zero)\)</span> has the same value as <span class="math inline">\(\nleq(\next(a),\zero)\)</span> (false) since <span class="math inline">\(\next(a) \neq \zero\)</span>.</li>
-<li>We induct on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\nleq(\next(\next(\zero)),\next(\zero)) = \bfalse\)</span> since <span class="math inline">\(\next(\zero) = \next(\zero)\)</span>. For the inductive step, suppose <span class="math display">\[\nleq(\next(\next(a)),\next(\zero)) = \bfalse.\]</span> Now <span class="math display">\[\nleq(\next(\next(\next(a)),\next(\zero))\]</span> has the same value as <span class="math display">\[\nleq(\next(\next(a)),\next(\zero))\]</span> (false) since <span class="math inline">\(\next(\next(a)) \neq \next(\zero)\)</span>.</li>
+<li>Note that <span class="math display">\[\zero = \nplus(\next(a),x) = \next(\nplus(a,x))\]</span> has no solution, so that <span class="math inline">\(\nminus(\zero,\next(a)) = \ast\)</span>. Thus <span class="math inline">\(\nleq(\next(a),\zero) = \bfalse\)</span>.</li>
+<li>(@@@)</li>
 </ol>
 </p>
 </div>
