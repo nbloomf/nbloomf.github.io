@@ -50,11 +50,13 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\nats}{\mathbb{N}}\)
 \(\newcommand{\zero}{\mathsf{0}}\)
 \(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
+\(\newcommand{\nequal}{\mathsf{eq}}\)
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
@@ -66,6 +68,9 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\nquo}{\mathsf{quo}}\)
 \(\newcommand{\nrem}{\mathsf{rem}}\)
 \(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -156,11 +161,19 @@ So we have <span class="math inline">\(k = \zero\)</span>, and thus <span class=
 <p>The last two theorems say that the output of <span class="math inline">\(\ndivalg(a,b)\)</span> is the unique solution of a particular system of equations so long as <span class="math inline">\(b\)</span> is not <span class="math inline">\(\zero\)</span>. But what if <span class="math inline">\(b\)</span> is zero? We frankly won’t usually be interested in this case, but it will show up later as the base case in some induction proofs. Of course in the <span class="math inline">\(b = \zero\)</span> case the output of <span class="math inline">\(\ndivalg\)</span> is no longer a unique solution to the system of equations, and the particular solution is a quirk of our definition.</p>
 <div class="result">
 <div class="thm">
-<p>Let <span class="math inline">\(a \in \nats\)</span>. Then <span class="math inline">\(\ndiv(a,\zero) = (\zero,a)\)</span>.</p>
+<p>If <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ndivalg(\zero,a) = (\zero, \zero)\)</span></li>
+<li><span class="math inline">\(\ndivalg(a,\zero) = (\zero,a)\)</span>.</li>
+<li><span class="math inline">\(\ndivalg(a,\next(\zero)) = (a,\zero)\)</span>.</li>
+<li>If <span class="math inline">\(\nleq(a,b)\)</span>, then <span class="math inline">\(\ndivalg(a,\next(b)) = (\zero,a)\)</span>.</li>
+</ol>
 </div>
 <div class="proof">
 <p>
-We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math display">\[\ndivalg(\zero, a) = \phi(a) = (\zero, \zero).\]</span></li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ndivalg(\zero, \zero) \\
  &amp; = &amp; \varphi(\zero) \\
  &amp; = &amp; (\zero, \zero)
@@ -169,18 +182,21 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; \mu(a, \zero, \ndivalg(a, \zero)) \\
  &amp; = &amp; \mu(a, \zero, (\zero, a)) \\
  &amp; = &amp; (\zero, \next(a))
-\end{eqnarray*}\]</span> as needed.
+\end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math inline">\(a = \nplus(\ntimes(a,\next(\zero)),\zero)\)</span> and <span class="math inline">\(\nleq(\zero,\zero)\)</span>. By the uniqueness of quotients and remainders for nonzero divisors, we have <span class="math inline">\(\ndiv(a,\next(\zero)) = (a,\zero)\)</span> as claimed.</li>
+<li>Note that <span class="math inline">\(a = \nplus(\ntimes(\zero,\next(b)),a)\)</span> and <span class="math inline">\(\nleq(a,b)\)</span>. By the uniqueness of quotients and remainders for positive divisors we have <span class="math inline">\(\ndiv(a,\next(b)) = (\zero,a)\)</span>.</li>
+</ol>
 </p>
 </div>
 </div>
 <p>And while we’re at it, some special cases.</p>
 <div class="result">
 <div class="thm">
-<p>Let <span class="math inline">\(a \in \nats\)</span>. Then <span class="math inline">\(\ndivalg(\zero,a) = (\zero, \zero)\)</span></p>
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. If <span class="math inline">\(b \neq \zero\)</span>, then <span class="math inline">\(\nquo(\ntimes(a,b),b) = a\)</span>.</p>
 </div>
 <div class="proof">
 <p>
-Note that <span class="math display">\[\ndivalg(\zero, a) = \phi(a) = (\zero, \zero).\]</span>
+Say <span class="math inline">\(b = \next(m)\)</span>. Note that <span class="math inline">\(\nleq(\zero,m)\)</span>. Now <span class="math display">\[\ntimes(a,b) = \nplus(\ntimes(a,b),\zero),\]</span> and by the uniqueness of quotients by nonzero divisors, we have <span class="math inline">\(a = \nquo(\ntimes(a,b),b)\)</span> as claimed.
 </p>
 </div>
 </div>
@@ -189,7 +205,7 @@ Note that <span class="math display">\[\ndivalg(\zero, a) = \phi(a) = (\zero, \z
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; divalg ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> (t,t)
 <span class="ot">&gt;</span> divalg <span class="fu">=</span> simpleRec phi mu
 <span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> (zero,zero)
+<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> (zero, zero)
 <span class="ot">&gt;</span>     mu _ b (q,r) <span class="fu">=</span> <span class="kw">if</span> b <span class="fu">==</span> next r
 <span class="ot">&gt;</span>       <span class="kw">then</span> (next q, zero)
 <span class="ot">&gt;</span>       <span class="kw">else</span> (q, next r)
@@ -216,16 +232,36 @@ Note that <span class="math display">\[\ndivalg(\zero, a) = \phi(a) = (\zero, \z
 <span class="ot">&gt;</span>   leq r b
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- divalg(0,a) = (0,0)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_zero_left _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (divalg zero a) <span class="fu">==</span> (zero, zero)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- divalg(a,0) = (0,a)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_zero_right _ a <span class="fu">=</span>
 <span class="ot">&gt;</span>   (divalg a zero) <span class="fu">==</span> (zero, a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- divalg(0,a) = (0,0)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_divalg_zero_left _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (divalg zero a) <span class="fu">==</span> (zero, zero)
+<span class="ot">&gt;</span> <span class="co">-- divalg(a,next(0)) = (a,0)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_one_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_one_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (divalg a (next zero)) <span class="fu">==</span> (a, zero)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- if leq(a,b) then divalg(a,next(b)) = (0,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_leq ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_leq _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> leq a b
+<span class="ot">&gt;</span>     <span class="kw">then</span> (divalg a (next b)) <span class="fu">==</span> (zero, a)
+<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- quo(times(a,next(b)),next(b)) = a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_times_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_divalg_times_left _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (quo (times a (next b)) (next b)) <span class="fu">==</span> a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- quo(a,b) = q where (q,_) = divalg(a,b)</span>
@@ -247,8 +283,11 @@ Note that <span class="math display">\[\ndivalg(\zero, a) = \phi(a) = (\zero, \z
 <span class="ot">&gt;</span> _test_divalg t maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_divalg_equality t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_inequality t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_zero_right t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_zero_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_zero_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_one_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_leq t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_times_left t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_quo t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_rem t)
 <span class="ot">&gt;</span>   ]

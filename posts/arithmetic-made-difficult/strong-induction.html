@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Strong Induction</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Strong Induction</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-06 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>In this post we’ll take a break from defining programs to establish two important equivalent versions of the induction principle: first a version of induction that allows us to make a much “stronger” induction hypothesis, and then a nonconstructive result about <span class="math inline">\(\nats\)</span> that will make some proofs easier.</p>
+<div class="result">
+<div class="thm">
+<p>(Strong Induction.) Suppose we have a map <span class="math inline">\(f : \nats \rightarrow A\)</span> and a subset <span class="math inline">\(B \subseteq A\)</span> such that the following hold.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(f(\zero) \in B\)</span>.</li>
+<li>If <span class="math inline">\(f(k) \in B\)</span> whenever <span class="math inline">\(\nleq(k,n)\)</span>, then <span class="math inline">\(f(\next(n)) \in B\)</span>.</li>
+</ol>
+<p>Then <span class="math inline">\(f(n) \in B\)</span> for all <span class="math inline">\(n \in \nats\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+<p>Let <span class="math inline">\(B\)</span> be such a subset.</p>
+<p>Define <span class="math display">\[T = \{ n \in \nats \mid \mathrm{if}\ \nleq(k,n)\ \mathrm{then}\ f(k) \in B \}.\]</span> We will show that <span class="math inline">\(T = \nats\)</span> by induction. For the base case <span class="math inline">\(n = \zero\)</span>, note that if <span class="math inline">\(\nleq(k,\zero)\)</span>, then <span class="math inline">\(k = \zero\)</span>, and we have <span class="math inline">\(f(\zero) \in B\)</span> by condition (1).</p>
+<p>Next suppose <span class="math inline">\(n \in T\)</span>, and suppose further that <span class="math inline">\(\nleq(k,\next(n))\)</span>. Now either <span class="math inline">\(\nleq(k,n)\)</span> or <span class="math inline">\(k = \next(n)\)</span>. If <span class="math inline">\(\nleq(k,n)\)</span>, then since <span class="math inline">\(n \in T\)</span> we have <span class="math inline">\(f(k) \in B\)</span>. If <span class="math inline">\(k = \next(n)\)</span>, we have <span class="math inline">\(f(\next(n)) \in B\)</span> by condition (2). Thus <span class="math inline">\(\next(n) \in T\)</span> as needed.</p>
+Now suppose <span class="math inline">\(n \in \nats\)</span>. Since <span class="math inline">\(\nleq(n,n)\)</span> and <span class="math inline">\(n \in T\)</span>, we have <span class="math inline">\(f(n) \in B\)</span> as claimed.
+</p>
+</div>
+</div>
+<p>As with ordinary induction, we will typically apply this theorem with <span class="math inline">\(A = \nats\)</span> and <span class="math inline">\(f\)</span> the identity.</p>
+<p>Note that condition (2) in the Strong Induction theorem appears to be much stronger than the corresponding condition in ordinary induction. Here we are allowed to assume that a given statement is true for <em>all</em> integers up to some bound <span class="math inline">\(n\)</span>, while plain induction makes that assumption only for <span class="math inline">\(n\)</span>. However it turns out that these two results are equivalent; in fact it’s not too difficult to see that strong induction implies ordinary induction. Despite this, there are times when the stronger induction hypothesis makes for a simpler proof.</p>
+<div class="result">
+<div class="thm">
+<p>(Strong Induction on <span class="math inline">\(f\)</span>.) Suppose we have a map <span class="math inline">\(f : A \rightarrow \nats\)</span> and a subset <span class="math inline">\(B \subseteq A\)</span> satisfying the following.</p>
+<ol style="list-style-type: decimal">
+<li>If <span class="math inline">\(f(a) = \zero\)</span>, then <span class="math inline">\(a \in B\)</span>.</li>
+<li>If we have <span class="math inline">\(n \in \nats\)</span> such that if <span class="math inline">\(f(a) = k\)</span> with <span class="math inline">\(\nleq(k,n)\)</span> then <span class="math inline">\(a \in B\)</span>, then if <span class="math inline">\(f(a) = \next(n)\)</span> then <span class="math inline">\(a \in B\)</span>.</li>
+</ol>
+<p>Then we have <span class="math inline">\(B = A\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+<p>Let <span class="math inline">\(B\)</span> be such a subset. We define <span class="math inline">\(T \subseteq \nats\)</span> by <span class="math display">\[T = \{n \in \nats \mid \forall a \in A, \mathrm{if}\ f(a) = n\ \mathrm{then}\ a \in B\}.\]</span> We will show that <span class="math inline">\(T = \nats\)</span> by strong induction.</p>
+<p>For the base case, suppose <span class="math inline">\(f(a) = \zero\)</span>. By condition (1) we have <span class="math inline">\(a \in B\)</span>. Thus <span class="math inline">\(\zero \in T\)</span>.</p>
+<p>For the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(k \in T\)</span> whenever <span class="math inline">\(\nleq(k,n)\)</span>. Now suppose we have <span class="math inline">\(a \in A\)</span> such that <span class="math inline">\(f(a) = \next(n)\)</span>. By condition (2) we have <span class="math inline">\(a \in B\)</span> as needed.</p>
+So <span class="math inline">\(T = \nats\)</span>, and thus if <span class="math inline">\(a \in A\)</span>, we have <span class="math inline">\(f(a) = n\)</span> for some <span class="math inline">\(n \in \nats\)</span>, and thus <span class="math inline">\(a \in B\)</span>.
+</p>
+</div>
+</div>
+<p>Again, when using this principle we will say we’re using “strong induction <em>on</em> <span class="math inline">\(f(a)\)</span>”.</p>
+<div class="result">
+<div class="thm">
+<p>(Well-Ordering Property.) Let <span class="math inline">\(A\)</span> be a nonempty set and <span class="math inline">\(f : A \rightarrow \nats\)</span>. Then there exists <span class="math inline">\(a \in A\)</span> such that <span class="math inline">\(\nleq(f(a),f(b))\)</span> for all <span class="math inline">\(b \in A\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+<p>Suppose to the contrary that some set <span class="math inline">\(A\)</span> and map <span class="math inline">\(f : A \rightarrow \nats\)</span> exist which do not have this property; that is, for all <span class="math inline">\(a \in A\)</span>, there exists <span class="math inline">\(b \in A\)</span> such that <span class="math inline">\(\nleq(f(a),f(b))\)</span> is false.</p>
+<p>Define <span class="math display">\[T = \{ n \in \nats \mid \exists a \in A, n = f(a) \},\]</span> and let <span class="math inline">\(K = \nats \minus T\)</span>. Note that <span class="math inline">\(T \neq \emptyset\)</span>. We will show that <span class="math inline">\(K = \nats\)</span> by strong induction.</p>
+<p>For the base case, note that if <span class="math inline">\(f(a) = \zero\)</span>, then <span class="math inline">\(\nleq(f(a),f(b))\)</span> is true for all <span class="math inline">\(b \in A\)</span>. So we have <span class="math inline">\(\zero \notin T\)</span>, and thus <span class="math inline">\(\zero \in K\)</span>.</p>
+<p>For the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(k \in K\)</span> whenever <span class="math inline">\(\nleq(k,n)\)</span>. Now suppose that <span class="math inline">\(\next(n) \notin K\)</span>, that is, <span class="math inline">\(\next(n) \in T\)</span>; say <span class="math inline">\(\next(n) = f(a)\)</span>. Now suppose we have <span class="math inline">\(b \in A\)</span>. If <span class="math inline">\(\nleq(f(a),f(b))\)</span> is false, then <span class="math inline">\(\nleq(f(b),f(a))\)</span> is true and <span class="math inline">\(f(b) \neq \next(n)\)</span>. But now <span class="math inline">\(\nleq(f(b),n)\)</span>, so that <span class="math inline">\(f(b) \in K\)</span>, a contradiction. Thus we have <span class="math inline">\(\nleq(f(a),f(b)) = \btrue\)</span> for all <span class="math inline">\(b\)</span>, a contradiction. So in fact <span class="math inline">\(\next(n) \in K\)</span>.</p>
+By induction, then, we have <span class="math inline">\(K = \nats\)</span>, so that <span class="math inline">\(T = \emptyset\)</span>, a contradiction. So in fact no such <span class="math inline">\(A\)</span> and <span class="math inline">\(f\)</span> can exist.
+</p>
+</div>
+</div>
+<p>Again, in typical applications we will have <span class="math inline">\(A = \nats\)</span> and <span class="math inline">\(f\)</span> the identity.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

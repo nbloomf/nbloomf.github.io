@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Least Common Multiple</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Least Common Multiple</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-12 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/LeastCommonMultiple.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">LeastCommonMultiple</span>
+<span class="ot">&gt;</span>   ( lcm, _test_lcm
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd, lcm)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">DivisionAlgorithm</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Divides</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GreatestCommonDivisor</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">CoprimeTo</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>Recall the following property of <span class="math inline">\(\nmax\)</span>: if <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmax(a,b))\)</span>. This statement fell out of the definition of <span class="math inline">\(\nmax\)</span> without much fuss, and may seem anticlimactic. But compare it to this analogous statement about <span class="math inline">\(\ngcd\)</span>: if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>. Now <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\ngcd\)</span> seem to play very similar roles. Where <span class="math inline">\(\nleq\)</span> is a kind of “additive order” on <span class="math inline">\(\nats\)</span> and <span class="math inline">\(\nmax\)</span> gives an additive ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, <span class="math inline">\(\ndiv\)</span> is a kind of “multiplicative order” and <span class="math inline">\(\ngcd\)</span> gives a multiplicative ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>. When an analogy this strong holds between two concepts in mathematics, it is frequently useful to see how far the analogy goes. To that end, today we will define the multiplicative counterpart to <span class="math inline">\(\nmin\)</span>.</p>
+<p>We don’t need recursion for this.</p>
+<div class="result">
+<div class="defn">
+<p>
+Define <span class="math inline">\(\nlcm : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nlcm(a,b) = \nquo(\ntimes(a,b),\ngcd(a,b)).\]</span>
+</p>
+</div>
+</div>
+<p>woo special cases!</p>
+<div class="result">
+<div class="lemma">
+<p>For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\nlcm(a,\zero) = \zero\)</span>.</li>
+<li><span class="math inline">\(\nlcm(a,\next(\zero)) = a\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+</p>
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,\zero) \\
+ &amp; = &amp; \nquo(\ntimes(a,\zero),\ngcd(a,\zero)) \\
+ &amp; = &amp; \nquo(\zero,a) \\
+ &amp; = &amp; \zero.
+\end{eqnarray*}\]</span></li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,\next(\zero)) \\
+ &amp; = &amp; \nquo(\ntimes(a,\next(\zero)),\ngcd(a,\next(\zero))) \\
+ &amp; = &amp; \nquo(a,\next(\zero)) \\
+ &amp; = &amp; a.
+\end{eqnarray*}\]</span>
+</p>
+</div></li>
+</ol>
+</div>
+<p>As we might expect, <span class="math inline">\(\nlcm\)</span> enjoys many properties analogous to those of <span class="math inline">\(\ngcd\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\nlcm(a,a) = a\)</span>.</li>
+<li><span class="math inline">\(\nlcm(a,b) = \nlcm(b,a)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We consider two cases: <span class="math inline">\(a = \zero\)</span> and <span class="math inline">\(a \neq \zero\)</span>. If <span class="math inline">\(a = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,a) \\
+ &amp; = &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
+ &amp; = &amp; \nquo(\zero,\zero) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; a
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a \neq \zero\)</span>, say <span class="math inline">\(a = \next(t)\)</span>, then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,a) \\
+ &amp; = &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
+ &amp; = &amp; \nquo(\ntimes(a,a),a) \\
+ &amp; = &amp; a
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,b) \\
+ &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp; = &amp; \nquo(\ntimes(b,a),\ngcd(b,a)) \\
+ &amp; = &amp; \nlcm(b,a)
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>And the universal property:</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ndiv(a,\nlcm(a,b))\)</span> and <span class="math inline">\(\ndiv(b,\nlcm(a,b))\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(a,c)\)</span> and <span class="math inline">\(\ndiv(b,c)\)</span>, then <span class="math inline">\(\ndiv(\nlcm(a,b),c)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We consider two cases: <span class="math inline">\(\ngcd(a,b) = \zero\)</span> and <span class="math inline">\(\ngcd(a,b) \neq \zero\)</span>. If <span class="math inline">\(\ngcd(a,b) = \zero\)</span>, then we have <span class="math inline">\(a = b = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(\zero,\zero) \\
+ &amp; = &amp; \nquo(\ntimes(\zero,\zero),\ngcd(\zero,\zero)) \\
+ &amp; = &amp; \nquo(\zero,\zero) \\
+ &amp; = &amp; \zero
+\end{eqnarray*}\]</span> and <span class="math inline">\(\ndiv(\zero,\zero)\)</span> as needed. Suppose instead that <span class="math inline">\(\ngcd(a,b) \neq \zero\)</span>. Say <span class="math inline">\(b = \ntimes(k,\ngcd(a,b))\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,b) \\
+ &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(a,k),\ngcd(a,b)),\ngcd(a,b)) \\
+ &amp; = &amp; \ntimes(a,k),
+\end{eqnarray*}\]</span> so that <span class="math inline">\(\ndiv(a,\nlcm(a,b))\)</span>. A similar argument shows that <span class="math inline">\(\ndiv(b,\nlcm(a,b))\)</span> as claimed.</li>
+<li>Suppose we have <span class="math inline">\(\ndiv(a,c)\)</span> and <span class="math inline">\(\ndiv(b,c)\)</span>. We consider two cases: either <span class="math inline">\((a,b) = (\zero,\zero)\)</span> or <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. First suppose <span class="math inline">\((a,b) = (\zero,\zero)\)</span>. Now <span class="math inline">\(c = \zero\)</span>, and we have <span class="math inline">\(\ndiv(\nlcm(a,b),\zero)\)</span> as claimed. Suppose instead that <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. Say <span class="math inline">\(c = \ntimes(a,u)\)</span> and <span class="math inline">\(c = \ntimes(b,v)\)</span>. Now let <span class="math inline">\(d = \ngcd(a,b)\)</span> (note that <span class="math inline">\(d \neq \zero\)</span>) and say <span class="math inline">\(a = \ntimes(d,s)\)</span> and <span class="math inline">\(b = \ntimes(d,t)\)</span>. Note that <span class="math inline">\(\ncoprime(s,t)\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+c &amp; = &amp; c \\
+\ntimes(a,u) &amp; = &amp; \ntimes(b,v) \\
+\ntimes(\ntimes(d,s),u) &amp; = &amp; \ntimes(\ntimes(d,t),v) \\
+\ntimes(d,\ntimes(s,u)) &amp; = &amp; \ntimes(d,\ntimes(d,t)) \\
+\ntimes(s,u) &amp; = &amp; \ntimes(t,v). \\
+\end{eqnarray*}\]</span> That is, <span class="math inline">\(\ndiv(t,\ntimes(s,u))\)</span>. By Euclid’s lemma, we have <span class="math inline">\(\ndiv(t,u)\)</span>. Next, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,b) \\
+ &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp; = &amp; \nquo(\ntimes(a,\ntimes(t,d)),d) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(a,t),d),d) \\
+ &amp; = &amp; \ntimes(a,t).
+\end{eqnarray*}\]</span> Since <span class="math inline">\(c = \ntimes(a,u)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \ndiv(t,u) \\
+ &amp; = &amp; \ndiv(\ntimes(a,t),\ntimes(a,u)) \\
+ &amp; = &amp; \ndiv(\nlcm(a,b),c)
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>And <span class="math inline">\(\nlcm(a,b)\)</span> is unique with this property.</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Suppose <span class="math inline">\(m \in \nats\)</span> satisfies the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inline">\(\ndiv(b,m)\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(a,c)\)</span> and <span class="math inline">\(\ndiv(b,c)\)</span>, then <span class="math inline">\(\ndiv(m,c)\)</span>.</li>
+</ol>
+<p>Then <span class="math inline">\(m = \nlcm(a,b)\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inline">\(\ndiv(b,m)\)</span>, we have <span class="math inline">\(\ndiv(\nlcm(a,b),m)\)</span>. But likewise we have <span class="math inline">\(\ndiv(m,\nlcm(a,b))\)</span>. By antisymmetry, we have <span class="math inline">\(m = \nlcm(a,b)\)</span> as claimed.
+</p>
+</div>
+</div>
+<p>More stuff:</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\nlcm(\nlcm(a,b),c) = \nlcm(a,\nlcm(b,c))\)</span>.</li>
+<li><span class="math inline">\(\nlcm(a,b) = a\)</span> if and only if <span class="math inline">\(\ndiv(b,a)\)</span>.</li>
+<li><span class="math inline">\(\nlcm(\ntimes(c,a),ntimes(c,b)) = \ntimes(c,\nlcm(a,b))\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(a,b)\)</span>, then <span class="math inline">\(\ndiv(\nlcm(a,c),\nlcm(b,c))\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math inline">\(\ndiv(a,\nlcm(a,\nlcm(b,c)))\)</span>. We also have <span class="math inline">\(\ndiv(b,\nlcm(b,c))\)</span>, so that <span class="math display">\[\ndiv(b,\nlcm(a,\nlcm(b,c))\]</span> by transitivity; similarly, <span class="math display">\[\ndiv(c,\nlcm(a,\nlcm(b,c))).\]</span> By the universal property of <span class="math inline">\(\nlcm\)</span>, we thus have <span class="math display">\[\ndiv(\nlcm(a,b),\nlcm(a,\nlcm(b,c))),\]</span> so that <span class="math display">\[\ndiv(\nlcm(\nlcm(a,b),c),\nlcm(a,\nlcm(b,c))).\]</span> A similar argument shows that <span class="math display">\[\ndiv(\nlcm(a,\nlcm(b,c)),\nlcm(\nlcm(a,b),c)).\]</span> By antisymmetry, we thus have <span class="math display">\[\nlcm(a,\nlcm(b,c)) = \nlcm(\nlcm(a,b),c)\]</span> as claimed.</li>
+<li>First suppose <span class="math inline">\(\ndiv(b,a)\)</span>; say <span class="math inline">\(a = \ntimes(b,d)\)</span>. Now <span class="math inline">\(\ndiv(a,a)\)</span> and <span class="math inline">\(\ndiv(b,a)\)</span>, and if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span> then <span class="math inline">\(\ndiv(c,a)\)</span>. By the universal property of <span class="math inline">\(\nlcm\)</span> we have <span class="math inline">\(a = \nlcm(a,b)\)</span>. Conversely, suppose <span class="math inline">\(a = \nlcm(a,b)\)</span>. We consider two cases: either <span class="math inline">\((a,b) = (\zero,\zero)\)</span> or <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\((a,b) = (\zero,\zero)\)</span> then <span class="math inline">\(\ndiv(b,a)\)</span> as needed. Suppose then that <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(\ndiv(b,a)\)</span> as claimed. Suppose <span class="math inline">\(a \neq \zero\)</span>. Now let <span class="math inline">\(d = \ngcd(a,b)\)</span>; note that <span class="math inline">\(d \neq \zero\)</span>. Say <span class="math inline">\(b = \ntimes(k,d)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ntimes(a,\next(\zero)) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nlcm(a,b) \\
+ &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(a,k),d),d) \\
+ &amp; = &amp; \ntimes(a,k).
+\end{eqnarray*}\]</span> Since <span class="math inline">\(a \neq \zero\)</span>, we have <span class="math inline">\(k = \next(\zero)\)</span>, and thus <span class="math inline">\(b = \ngcd(a,b)\)</span>. Hence <span class="math inline">\(\ndiv(b,a)\)</span> as claimed.</li>
+<li>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
+ &amp; = &amp; \nlcm(\zero,\zero) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; \ntimes(\zero,\nlcm(a,b)) \\
+ &amp; = &amp; \ntimes(c,\nlcm(a,b))
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(c \neq \zero\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(c,a),\ntimes(c,b)),\ngcd(\ntimes(c,a),\ntimes(c,b)) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(c,\ntimes(a,b)),c),\ngcd(\ntimes(a,b),c)) \\
+ &amp; = &amp; \nquo(\ntimes(c,\ntimes(a,b)),\ngcd(a,b)) \\
+ &amp; = &amp; \ntimes(c,\nquo(\ntimes(a,b),\ngcd(a,b))) \\
+ &amp; = &amp; \ntimes(c,\nlcm(a,b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(\nlcm(a,c),\nlcm(b,c)) \\
+ &amp; = &amp; \nlcm(\nlcm(a,b),\nlcm(c,c)) \\
+ &amp; = &amp; \nlcm(b,c) \\
+\end{eqnarray*}\]</span> so that <span class="math inline">\(\ndiv(\nlcm(a,c),\nlcm(b,c))\)</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>Finally, <span class="math inline">\(\ngcd\)</span> and <span class="math inline">\(\nlcm\)</span> distribute over each other.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ngcd(a,\nlcm(b,c)) = \nlcm(\ngcd(a,b),\ngcd(a,c))\)</span>.</li>
+<li><span class="math inline">\(\nlcm(a,\ngcd(b,c)) = \ngcd(\nlcm(a,b),\nlcm(a,c))\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<p>The proofs of these two results will not be painful, but they are a little tedious, especially with the notation we’re using for arithmetic. So for this proof – and this proof only! – I’ll make two concessions to readability. Because <span class="math inline">\(\ngcd\)</span> is associative, there is no ambiguity in an expression like <span class="math display">\[\ngcd(a,b,c).\]</span> Also, we will denote <span class="math inline">\(\ntimes(a,b)\)</span> by juxtaposition (like we’re used to anyway, but have been avoiding).</p>
+<ol style="list-style-type: decimal">
+<li>First suppose <span class="math inline">\(a = \zero\)</span>; note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
+ &amp; = &amp; \ngcd(\zero,\nlcm(b,c)) \\
+ &amp; = &amp; \nlcm(b,c) \\
+ &amp; = &amp; \nlcm(\ngcd(\zero,b),\ngcd(\zero,c)) \\
+ &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,c))
+\end{eqnarray*}\]</span> as claimed. Next suppose <span class="math inline">\(b = \zero\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
+ &amp; = &amp; \ngcd(a,\nlcm(\zero,c)) \\
+ &amp; = &amp; \ngcd(a,\zero) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nlcm(\ngcd(a,b),a) \\
+ &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,\zero)) \\
+ &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,c))
+\end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
+ &amp; = &amp; \ngcd(a,\nlcm(b,\zero)) \\
+ &amp; = &amp; \ngcd(a,\zero) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nlcm(a,\ngcd(a,c)) \\
+ &amp; = &amp; \nlcm(\ngcd(a,\zero),\ngcd(b,c)) \\
+ &amp; = &amp; \nlcm(\ngcd(a,c),\ngcd(b,c))
+\end{eqnarray*}\]</span> as claimed. We can now assume that <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span> are not zero; in particular, <span class="math inline">\(\ngcd(b,c)\)</span> and <span class="math inline">\(\ngcd(a,\ngcd(b,c))\)</span> are not zero. We begin with a sub-result. Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a\ngcd(b,c),bc)\ngcd(a,\ngcd(b,c)) \\
+ &amp; = &amp; \ngcd(\ngcd(ab,ac),bc)\ngcd(a,b,c) \\
+ &amp; = &amp; \ngcd(ab,ac,bc)\ngcd(a,b,c) \\
+ &amp; = &amp; \ngcd(ab\ngcd(a,b,c),ac\ngcd(a,b,c),bc\ngcd(a,b,c)) \\
+ &amp; = &amp; \ngcd(aba,abb,abc,aca,acb,acc,bca,bcb,bcc) \\
+ &amp; = &amp; \ngcd(aab,aac,acb,acc,bab,bac,bcb,bcc) \\
+ &amp; = &amp; \ngcd(aa\ngcd(b,c),ac\ngcd(b,c),ba\ngcd(b,c),bc\ngcd(b,c)) \\
+ &amp; = &amp; \ngcd(aa,ac,ba,bc)\ngcd(b,c) \\
+ &amp; = &amp; \ngcd(a\ngcd(a,c),b\ngcd(a,c))\ngcd(b,c) \\
+ &amp; = &amp; \ngcd(a,b)\ngcd(a,c)\ngcd(b,c).
+\end{eqnarray*}\]</span> Note that <span class="math display">\[\ndiv(\ngcd(b,c),a\ngcd(b,c))\]</span> and <span class="math display">\[\ndiv(\ngcd(b,c),bc),\]</span> so that <span class="math display">\[\ndiv(\ngcd(b,c),\ngcd(a\ngcd(b,c),bc));\]</span> thus we also have <span class="math display">\[\ndiv(\ngcd(a,\ngcd(b,c)),\ngcd(a,b)\ngcd(a,c)).\]</span> By cross-multiplication, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nquo(\ngcd(a\ngcd(b,c),bc),\ngcd(b,c)) \\
+ &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c)),\ngcd(a,\ngcd(b,c))).
+\end{eqnarray*}\]</span> Thus we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
+ &amp; = &amp; \ngcd(a,\nquo(bc,\ngcd(b,c))) \\
+ &amp; = &amp; \ngcd(\nquo(a\ngcd(b,c),\ngcd(b,c)),\nquo(bc,\ngcd(b,c))) \\
+ &amp; = &amp; \nquo(\ngcd(a\ngcd(b,c),bc),\ngcd(b,c)) \\
+ &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(\ngcd(a,b),\ngcd(a,c))) \\
+ &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,c))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>First suppose <span class="math inline">\(a = \zero\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nlcm(\zero,\ngcd(b,c)) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; \ngcd(\zero,\zero) \\
+ &amp; = &amp; \ngcd(\nlcm(\zero,b),\nlcm(\zero,c)) \\
+ &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
+\end{eqnarray*}\]</span> as claimed. Next suppose <span class="math inline">\(b = \zero\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nlcm(a,\ngcd(\zero,c)) \\
+ &amp; = &amp; \nlcm(a,c) \\
+ &amp; = &amp; \ngcd(\zero,\nlcm(a,c)) \\
+ &amp; = &amp; \ngcd(\nlcm(a,\zero),\nlcm(a,c)) \\
+ &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
+\end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nlcm(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nlcm(a,\ngcd(b,\zero)) \\
+ &amp; = &amp; \nlcm(a,b) \\
+ &amp; = &amp; \ngcd(\nlcm(a,b),\zero) \\
+ &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,\zero)) \\
+ &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
+\end{eqnarray*}\]</span> as claimed. We can now assume that <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span> are not zero; in particular, <span class="math inline">\(\ngcd(a,b)\ngcd(a,c)\)</span> and <span class="math inline">\(\ngcd(a,\ngcd(b,c))\)</span> are not zero; in particular, <span class="math inline">\(\ngcd(a,b)\ngcd(a,c)\)</span> and <span class="math inline">\(\ngcd(a,\ngcd(b,c))\)</span> are not zero. We begin with a sub-result. Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; a\ngcd(a,\ngcd(b,c))\ngcd(ba,bc,ca,cb) \\
+ &amp; = &amp; a\ngcd(a,b,c)\ngcd(ba,bc,ca,cb) \\
+ &amp; = &amp; a\ngcd(a\ngcd(ba,bc,ca,cb),b\ngcd(ba,bc,ca,cb),c\ngcd(ba,bc,ca,cb)) \\
+ &amp; = &amp; a\ngcd(\ngcd(aba,abc,aca,acb),\ngcd(bba,bbc,bca,bcb),\ngcd(cba,cbc,cca,ccb)) \\
+ &amp; = &amp; a\ngcd(aba,abc,aca,acb,bba,bbc,bca,bcb,cba,cbc,cca,ccb) \\
+ &amp; = &amp; a\ngcd(aab,aac,acb,acc,bab,bac,bcb,bcc) \\
+ &amp; = &amp; a\ngcd(aa\ngcd(b,c),ac\ngcd(b,c),ba\ngcd(b,c),bc\ngcd(b,c)) \\
+ &amp; = &amp; a\ngcd(aa,ac,ba,bc)\ngcd(b,c) \\
+ &amp; = &amp; a\ngcd(a\ngcd(a,c),b\ngcd(a,c))\ngcd(b,c) \\
+ &amp; = &amp; a\ngcd(a,b)\ngcd(a,c)\ngcd(b,c).
+\end{eqnarray*}\]</span> Note that <span class="math display">\[\ndiv(\ngcd(a,\ngcd(b,c)),a\ngcd(b,c)),\]</span> so that <span class="math display">\[\ndiv(\ngcd(a,b)\ngcd(a,c),a\ngcd(ba,bc,ca,cb)).\]</span> By cross-multiplication, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nquo(a\ngcd(ba,bc,ca,cb),\ngcd(a,b)\ngcd(a,c)) \\
+ &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c)).
+\end{eqnarray*}\]</span> Thus we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(\nlcm(a,b),\nlcm(a,c)) \\
+ &amp; = &amp; \ngcd(\nquo(ab,\ngcd(a,b)),\nquo(ac,\ngcd(a,c))) \\
+ &amp; = &amp; \ngcd(\nquo(ab\ngcd(a,c),\ngcd(a,b)\ngcd(a,c)),\nquo(ac\ngcd(a,b),\ngcd(a,b)\ngcd(a,c))) \\
+ &amp; = &amp; \nquo(\ngcd(ab\ngcd(a,c),ac\ngcd(a,b)),\ngcd(a,b)\ngcd(a,c)) \\
+ &amp; = &amp; \nquo(a\ngcd(b\ngcd(a,c),c\ngcd(a,b)),\ngcd(a,b)\ngcd(a,c)) \\
+ &amp; = &amp; \nquo(a\ngcd(ba,bc,ca,cb),\ngcd(a,b)\ngcd(a,c)) \\
+ &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nlcm(a,\ngcd(b,c))
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>lcm</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcm ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> lcm a b <span class="fu">=</span> quo (times a b) (gcd a b)</code></pre></div>
+<p>Property tests for <code>lcm</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- lcm(a,0) == 0 and lcm(0,a) == 0</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_zero _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ zero <span class="fu">==</span> lcm a zero
+<span class="ot">&gt;</span>   , zero <span class="fu">==</span> lcm zero a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(a,next(0)) == a and lcm(next(0),a) == a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_one _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ a <span class="fu">==</span> lcm a (next zero)
+<span class="ot">&gt;</span>   , a <span class="fu">==</span> lcm (next zero) a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- div(a,lcm(a,b)) and div(b,lcm(a,b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_div_args ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_div_args _ a b <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ div a (lcm a b)
+<span class="ot">&gt;</span>   , div b (lcm a b)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(a,a) = a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_idempotent ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_idempotent _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (lcm a a) <span class="fu">==</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(a,b) == lcm(b,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_commutative _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (lcm a b) <span class="fu">==</span> (lcm b a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(lcm(a,b),c) == lcm(a,lcm(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_associative _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (lcm (lcm a b) c) <span class="fu">==</span> (lcm a (lcm b c))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(times(c,a),times(c,b)) == times(c,lcm(a,b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_distributive_times _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (lcm (times c a) (times c b)) <span class="fu">==</span> (times c (lcm a b))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- lcm(gcd(c,a),gcd(c,b)) == gcd(c,lcm(a,b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_gcd ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_distributive_gcd _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (lcm (gcd c a) (gcd c b)) <span class="fu">==</span> (gcd c (lcm a b))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(lcm(c,a),lcm(c,b)) == lcm(c,gcd(a,b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_lcm ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_distributive_lcm _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (gcd (lcm c a) (lcm c b)) <span class="fu">==</span> (lcm c (gcd a b))</code></pre></div>
+<p>And the suite:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for lcm</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_lcm t maxSize numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_lcm_zero t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_one t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_div_args t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_idempotent t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_commutative t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_associative t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_distributive_times t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_distributive_gcd t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_distributive_lcm t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

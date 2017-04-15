@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Greatest Common Divisor</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Greatest Common Divisor</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-10 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/GreatestCommonDivisor.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">GreatestCommonDivisor</span>
+<span class="ot">&gt;</span>   ( gcd, _test_gcd
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">DivisionAlgorithm</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Divides</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>Today we’ll define the greatest common divisor of two natural numbers. The usual way to do this (in books I’ve seen) is to define what it means to say that <span class="math inline">\(d\)</span> is a greatest common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, then show (possibly nonconstructively) that any two <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> have a greatest common divisor, and finally establish the Euclidean algorithm that actually computes GCDs. We will work backwards: first <em>defining</em> the GCD of two natural numbers using the punchline of the Euclidean algorithm and then proving that the output of this function acts like the GCD.</p>
+<p>We’ll do this using bailout recursion. This definition will be trickier to work with than the others we’ve seen so far because the “countdown timer” is just for show – we don’t expect it to actually reach zero. For this reason reasoning about the recursive step is awkward.</p>
+<div class="result">
+<div class="defn">
+<p>
+Define maps <span class="math inline">\(\varphi : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\varphi(a,b) = b,\]</span> then <span class="math inline">\(\beta : \nats \times (\nats \times \nats) \rightarrow \bool\)</span> by <span class="math display">\[\beta(k,(a,b)) = \iszero(b),\]</span> then <span class="math inline">\(\psi : \nats \times (\nats \times \nats) \rightarrow \nats\)</span> by <span class="math display">\[\psi(k,(a,b)) = a,\]</span> and <span class="math inline">\(\omega : \nats \times (\nats \times \nats) \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\omega(k,(a,b)) = (b, \nrem(a,b)).\]</span> We then define a map <span class="math inline">\(\ngcd : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ngcd(a,b) = \bailrec{\varphi}{\beta}{\psi}{\omega}(\next(\nplus(a,b)))(a,b).\]</span>
+</p>
+</div>
+</div>
+<p>For brevity’s sake, we let <span class="math inline">\(\Theta = \bailrec{\varphi}{\beta}{\psi}{\omega}\)</span> for the rest of this post.</p>
+<p>Because of the way <span class="math inline">\(\ngcd\)</span> uses its countdown parameter, we will need a couple of technical lemmas about <span class="math inline">\(\Theta\)</span>. The first gives a bound on the parts of a long division problem.</p>
+<div class="result">
+<div class="lemma">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span> with <span class="math inline">\(\nleq(b,a)\)</span>, and suppose <span class="math inline">\(b = \next(m)\)</span>. Then we have <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,m)).\]</span></p>
+</div>
+<div class="proof">
+<p>
+<p>Say <span class="math inline">\(a = \nplus(b,k)\)</span>. There are two possibilities for <span class="math inline">\(k\)</span>; either <span class="math inline">\(k = \zero\)</span> or <span class="math inline">\(k = \next(u)\)</span> for some <span class="math inline">\(u\)</span>. Suppose first that <span class="math inline">\(k = \zero\)</span>. In this case we have <span class="math inline">\(\nrem(a,b) = \zero\)</span>, so that <span class="math inline">\(b = \nplus(b,\nrem(a,b))\)</span> and <span class="math inline">\(\nplus(b,m) = \nplus(a,b)\)</span>. Thus <span class="math display">\[\nleq(b,\nplus(a,m))\]</span> as claimed.</p>
+Suppose instead that <span class="math inline">\(k = \next(u)\)</span>. By the division algorithm, we have <span class="math inline">\(b = \nplus(\nrem(a,b),h)\)</span> for some <span class="math inline">\(h\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(a,m) \\
+ &amp; = &amp; \nplus(\nplus(b,k),m) \\
+ &amp; = &amp; \nplus(\nplus(b,\next(u)),m) \\
+ &amp; = &amp; \nplus(\nplus(b,u),\next(m)) \\
+ &amp; = &amp; \nplus(\nplus(b,u),b) \\
+ &amp; = &amp; \nplus(\nplus(b,u),\nplus(\nrem(a,b),h)) \\
+ &amp; = &amp; \nplus(\nplus(b,\nrem(a,b)),\nplus(u,h)).
+\end{eqnarray*}\]</span> In particular, we have <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,m))\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>The next lemma says that we can add a constant <span class="math inline">\(c\)</span> to the initial countdown timer of <span class="math inline">\(\Theta\)</span> without affecting the final value.</p>
+<div class="result">
+<div class="lemma">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span> with <span class="math inline">\(\nleq(b,a)\)</span>. Then for all <span class="math inline">\(c \in \nats\)</span>, we have <span class="math display">\[\Theta(\nplus(\next(\nplus(a,b)),c),(a,b)) = \Theta(\next(\nplus(a,b)),(a,b)).\]</span></p>
+</div>
+<div class="proof">
+<p>
+<p>Let <span class="math inline">\(A = \{(a,b) \in \nats \times \nats \mid \nleq(b,a)\}\)</span>. For brevity, we define functions <span class="math inline">\(M : \nats \times \nats \times \nats \rightarrow \nats\)</span> and <span class="math inline">\(N : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\begin{eqnarray*}
+M(a,b,c) &amp; = &amp; \Theta(\nplus(\next(\nplus(a,b)),c),(a,b)) \\
+N(a,b)   &amp; = &amp; \Theta(\next(\nplus(a,b)),(a,b)),
+\end{eqnarray*}\]</span> and finally define <span class="math inline">\(B \subseteq A\)</span> by <span class="math display">\[B = \{(a,b) \in A \mid \forall c \in \nats, M(a,b,c) = N(a,b) \}.\]</span> Now define <span class="math inline">\(f : A \rightarrow \nats\)</span> by <span class="math inline">\(f(a,b) = b\)</span>. We will show that <span class="math inline">\(B = A\)</span> by strong induction on <span class="math inline">\(f\)</span>.</p>
+<p>For the base case, suppose we have <span class="math inline">\((a,b) \in A\)</span> such that <span class="math inline">\(\zero = f(a,b) = b\)</span>. Now for all <span class="math inline">\(c \in \nats\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; N(a,\zero) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,\zero)),(a,\zero)) \\
+ &amp; = &amp; \psi(\nplus(a,\zero),(a,\zero)) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \psi(\nplus(\nplus(a,\zero),c),(a,\zero)) \\
+ &amp; = &amp; \Theta(\next(\nplus(\nplus(a,\zero),c)),(a,\zero)) \\
+ &amp; = &amp; \Theta(\nplus(\next(\nplus(a,\zero)),c),(a,\zero)) \\
+ &amp; = &amp; M(a,\zero,c).
+\end{eqnarray*}\]</span> Thus we have <span class="math inline">\((a,b) \in B\)</span>.</p>
+<p>Now for the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\((a,b) \in B\)</span> whenever <span class="math inline">\(b = f(a,b) = k\)</span> and <span class="math inline">\(\nleq(k,n)\)</span>. Suppose further that <span class="math inline">\((a,b) \in A\)</span> such that <span class="math inline">\(b = f(a,b) = \next(n)\)</span>.</p>
+By the previous lemma, note that <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,n)),\]</span> and thus we have <span class="math display">\[\nplus(a,n) = \nplus(\nplus(b,\nrem(a,b)),u)\]</span> for some <span class="math inline">\(u\)</span>. Note also that <span class="math inline">\(\nleq(\nrem(a,b),n)\)</span> by the division algorithm; in particular, we have <span class="math inline">\((b,\nrem(a,b)) \in B\)</span> by the induction hypothesis. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; N(a,b) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,b)),(a,b)) \\
+ &amp; = &amp; \Theta(\nplus(a,b),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,n)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(\next(\nplus(b,\nrem(a,b))),u),(b,\nrem(a,b)) \\
+ &amp; = &amp; M(b,\nrem(a,b),u) \\
+ &amp; = &amp; N(b,\nrem(a,b)) \\
+ &amp; = &amp; M(b,\nrem(a,b),\nplus(u,c)) \\
+ &amp; = &amp; \Theta(\nplus(\next(\nplus(b,\nrem(a,b))),\nplus(u,c)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(\nplus(a,n),c),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(\nplus(a,b),c),(a,b)) \\
+ &amp; = &amp; M(a,b,c)
+\end{eqnarray*}\]</span> as claimed. Thus <span class="math inline">\((a,b) \in B\)</span>, and by strong induction we have <span class="math inline">\(B = A\)</span>.
+</p>
+</div>
+</div>
+<p>The next lemma says that we can subtract 1 from the initial countdown timer of <span class="math inline">\(\Theta\)</span> without affecting the final value.</p>
+<div class="result">
+<div class="lemma">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span> such that <span class="math inline">\(\nleq(b,a)\)</span> and <span class="math inline">\(a \neq b\)</span>. Then we have <span class="math display">\[\Theta(\next(\nplus(a,b)),(a,b)) = \Theta(\nplus(a,b)),(a,b)).\]</span></p>
+</div>
+<div class="proof">
+<p>
+<p>Note that, since <span class="math inline">\(a \neq b\)</span>, we must have <span class="math inline">\(\nplus(a,b) = \next(m)\)</span> for some <span class="math inline">\(m \in \nats\)</span>.</p>
+<p>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\nplus(a,\zero),(a,\zero)) \\
+ &amp; = &amp; \Theta(\next(m),(a,\zero)) \\
+ &amp; = &amp; \psi(m,(a,\zero)) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \psi(\next(m),(a,\zero)) \\
+ &amp; = &amp; \Theta(\next(\next(m)),(a,\zero)) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,\zero)),(a,\zero))
+\end{eqnarray*}\]</span> as claimed.</p>
+<p>For the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that the implication holds whenever <span class="math inline">\(\nleq(b,n)\)</span>, and suppose further that <span class="math inline">\(b = \next(n)\)</span> and <span class="math inline">\(a \in \nats\)</span> such that <span class="math inline">\(\nleq(b,a)\)</span> and <span class="math inline">\(a \neq b\)</span>.</p>
+By the next-to-last lemma, note that <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,n)),\]</span> and thus we have <span class="math display">\[\nplus(a,n) = \nplus(\nplus(b,\nrem(a,b)),u)\]</span> for some <span class="math inline">\(u\)</span>. Note also that <span class="math inline">\(\nleq(\nrem(a,b),n)\)</span> by the division algorithm. Now, borrowing the <span class="math inline">\(M\)</span> and <span class="math inline">\(N\)</span> notation from the proof of the last lemma, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\nplus(a,b),(a,b)) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,n)),(a,b)) \\
+ &amp; = &amp; \Theta(\nplus(a,n),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(\nplus(b,\nrem(a,b)),u),(b,\nrem(a,b))) \\
+ &amp; = &amp; M(b,\nrem(a,b),u) \\
+ &amp; = &amp; N(b,\nrem(a,b)) \\
+ &amp; = &amp; M(b,\nrem(a,b),\next(u)) \\
+ &amp; = &amp; \Theta(\nplus(\nplus(b,\nrem(a,b)),\next(u)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\next(\nplus(\nplus(b,\nrem(a,b)),u)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,n)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(a,b),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,b)),(a,b))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>The last two lemmas will enable us to reason about <span class="math inline">\(\ngcd\)</span> recursively. For example, we are prepared to show that <span class="math inline">\(\ngcd\)</span> is commutative.</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then <span class="math inline">\(\ngcd(a,b) = \ngcd(b,a)\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+We consider two cases: either <span class="math inline">\(a = b\)</span> or <span class="math inline">\(a \neq b\)</span>. Of course the result holds if <span class="math inline">\(a = b\)</span>; suppose instead that <span class="math inline">\(a \neq b\)</span>, and without loss of generality, say <span class="math inline">\(\nleq(b,a)\)</span> is false. Then we have <span class="math inline">\(\nleq(a,b)\)</span> and <span class="math inline">\(a \neq b\)</span>. Now <span class="math inline">\(b \neq \zero\)</span> and <span class="math inline">\(\nrem(b,a) = a\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,b) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,b))),(a,b)) \\
+ &amp; = &amp; \Theta(\nplus(a,b),(b,a)) \\
+ &amp; = &amp; \Theta(\nplus(b,a),(b,a)) \\
+ &amp; = &amp; \Theta(\next(\nplus(b,a)),(b,a)) \\
+ &amp; = &amp; \ngcd(b,a)
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>We can show that <span class="math inline">\(\ngcd\)</span> is idempotent:</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a \in \nats\)</span>. Then <span class="math display">\[\ngcd(a,a) = a.\]</span></p>
+</div>
+<div class="proof">
+<p>
+We consider two cases: either <span class="math inline">\(a = \zero\)</span> or <span class="math inline">\(a = \next(m)\)</span> for some <span class="math inline">\(m\)</span>. If <span class="math inline">\(a = \zero\)</span>, then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(\zero,\zero) \\
+ &amp; = &amp; \Theta(\next(\nplus(\zero,\zero)),(\zero,\zero)) \\
+ &amp; = &amp; \psi(\zero,(\zero,\zero)) \\
+ &amp; = &amp; \zero
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a = \next(m)\)</span>, then <span class="math inline">\(\nrem(a,a) = \zero\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,a) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,a)),(a,a)) \\
+ &amp; = &amp; \Theta(\next(\nplus(m,a)),(a,\zero)) \\
+ &amp; = &amp; \psi(\nplus(m,a),(a,\zero)) \\
+ &amp; = &amp; a
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>Now for a special case.</p>
+<div class="result">
+<div class="lemma">
+<p>For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ngcd(a,\zero) = a\)</span>.</li>
+<li><span class="math inline">\(\ngcd(a,\next(\zero)) = \next(\zero)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\zero) \\
+ &amp; = &amp; \Theta(\next(\zero),(a,\zero)) \\
+ &amp; = &amp; \psi(\zero,(a,\zero)) \\
+ &amp; = &amp; a
+\end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,\next(\zero)) \\
+ &amp; = &amp; \Theta(\next(\next(a)),(a,\next(\zero)) \\
+ &amp; = &amp; \Theta(\next(a),(\next(\zero),\zero)) \\
+ &amp; = &amp; \psi(a,(\next(\zero),\zero)) \\
+ &amp; = &amp; \next(\zero)
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>We can now give an unqualified recursive characterization of <span class="math inline">\(\ngcd\)</span>:</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then <span class="math display">\[\ngcd(a,b) = \ngcd(b,\nrem(a,b)).\]</span></p>
+</div>
+<div class="proof">
+<p>
+<p>We consider two cases: <span class="math inline">\(\nleq(b,a)\)</span> is either false or true. If <span class="math inline">\(\nleq(b,a)\)</span> is false, then <span class="math inline">\(\nleq(a,b)\)</span> and <span class="math inline">\(a \neq b\)</span>, and we have <span class="math inline">\(\nrem(a,b) = a\)</span>. Then by commutativity we have <span class="math display">\[\ngcd(a,b) = \ngcd(b,a) = \ngcd(b,\nrem(a,b))\]</span> as claimed.</p>
+<p>Suppose instead that <span class="math inline">\(\nleq(b,a)\)</span>. If <span class="math inline">\(a = b\)</span>, then <span class="math inline">\(\nrem(a,b) = \zero\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,b) \\
+ &amp; = &amp; \ngcd(b,b) \\
+ &amp; = &amp; b \\
+ &amp; = &amp; \ngcd(b,\zero) \\
+ &amp; = &amp; \ngcd(b,\nrem(a,b))
+\end{eqnarray*}\]</span> as claimed.</p>
+Suppose then that <span class="math inline">\(a \neq b\)</span>. In this case we have <span class="math inline">\(b \neq \zero\)</span>, <span class="math inline">\(\nleq(\nrem(a,b),b)\)</span>, <span class="math inline">\(b \neq \nrem(a,b)\)</span>, and <span class="math inline">\(\nleq(\nrem(a,b),a)\)</span>, so that <span class="math display">\[a = \nplus(\nrem(a,b),k)\]</span> for some <span class="math inline">\(k\)</span>. Now so that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,b) \\
+ &amp; = &amp; \Theta(\next(\nplus(a,b)),(a,b)) \\
+ &amp; = &amp; \Theta(\nplus(a,b),(b,\nrem(a,b)) \\
+ &amp; = &amp; \Theta(\nplus(\nplus(b,\nrem(a,b)),k),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\nplus(b,\nrem(a,b)),(b,\nrem(a,b))) \\
+ &amp; = &amp; \Theta(\next(\nplus(b,\nrem(a,b))),(b,\nrem(a,b)) \\
+ &amp; = &amp; \ngcd(b,\nrem(a,b))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>Working with the definition of <span class="math inline">\(\ngcd\)</span> is tedious! The next theorem characterizes <span class="math inline">\(\ngcd(a,b)\)</span> in terms of a useful “universal property”: it is a common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and among the common divisors of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, it is the “largest” in an appropriate sense. We can use this property to avoid having to look inside the implementation of <span class="math inline">\(\ngcd\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span> and <span class="math inline">\(\ndiv(\ngcd(a,b),b)\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Let <span class="math display">\[A = \{ (a,b) \in \nats \times \nats \mid \ndiv(\ngcd(a,b),a)\ \mathrm{and}\ \ndiv(\ngcd(a,b),b) \}\]</span> and define <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> by <span class="math inline">\(f(a,b) = b\)</span>. We will show that <span class="math inline">\(A = \nats \times \nats\)</span> by strong induction on <span class="math inline">\(f\)</span>. For the base case, suppose we have <span class="math inline">\(\zero = f(a,b) = b\)</span>. Then <span class="math inline">\(\ngcd(a,b) = a\)</span>, and so <span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span> and of course <span class="math inline">\(\ndiv(\ngcd(a,b),b)\)</span> as claimed. For the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that the conclusion holds whenever <span class="math inline">\(\nleq(f(a,b),n)\)</span>, and suppose <span class="math inline">\(b = f(a,b) = \next(n)\)</span>. Now <span class="math inline">\(\ngcd(a,b) = \ngcd(b,\nrem(a,b))\)</span>. We also have <span class="math inline">\(\nleq(\nrem(a,b),n) = \btrue\)</span>, so by the inductive hypothesis, <span class="math display">\[\ndiv(\ngcd(a,b),b)\ \mathrm{and}\ \ndiv(\ngcd(a,b),\nrem(a,b)).\]</span> Say <span class="math display">\[b = \ntimes(\ngcd(a,b),u)\]</span> and <span class="math display">\[\nrem(a,b) = \ntimes(\ngcd(a,b),v).\]</span> Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; a \\
+ &amp; = &amp; \nplus(\ntimes(\nquo(a,b),b),\nrem(a,b)) \\
+ &amp; = &amp; \nplus(\ntimes(\nquo(a,b),\ntimes(\ngcd(a,b),u)),\ntimes(\ngcd(a,b),v)) \\
+ &amp; = &amp; \ntimes(\ngcd(a,b),\nplus(\ntimes(\nquo(a,b),u),v))
+\end{eqnarray*}\]</span> so <span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span>, and thus <span class="math inline">\((a,b) \in A\)</span>. By strong induction, <span class="math inline">\(A = \nats \times \nats\)</span> as needed.</li>
+<li>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case, suppose <span class="math inline">\(b = \zero\)</span>. Now we have <span class="math inline">\(\ngcd(a,b) = a\)</span>. If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> as needed. For the inductive step, suppose we have <span class="math inline">\(n \in \nats\)</span> such that the implication holds for all <span class="math inline">\(c\)</span> when <span class="math inline">\(\nleq(b,n)\)</span>, and say <span class="math inline">\(b = \next(n)\)</span>. We consider two cases. If <span class="math inline">\(\nleq(b,a)\)</span> is false, we have <span class="math inline">\(\ngcd(a,b) = \ngcd(b,a)\)</span> and by the induction hypothesis the implication holds. Suppose then that <span class="math inline">\(\nleq(b,a)\)</span> is true. Now <span class="math display">\[\ngcd(a,b) = \ngcd(b,\nrem(a,b))\]</span> and <span class="math inline">\(\nleq(\nrem(a,b),n)\)</span>. By the induction hypothesis, the implication holds for <span class="math inline">\(\nrem(a,b)\)</span>. Suppose then that <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>; we have <span class="math inline">\(\ndiv(c,\nrem(a,b))\)</span>, so that <span class="math inline">\(\ndiv(c,\ngcd(b,\nrem(a,b)))\)</span>, and thus <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> as needed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>And <span class="math inline">\(\ngcd(a,b)\)</span> is unique with this property.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Suppose <span class="math inline">\(m \in \nats\)</span> satisfies the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inline">\(\ndiv(m,b)\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,m)\)</span>.</li>
+</ol>
+<p>Then <span class="math inline">\(m = \ngcd(a,b)\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inline">\(\ndiv(m,b)\)</span>, we have <span class="math inline">\(\ndiv(m,\ngcd(a,b))\)</span>. But a similar argument shows that <span class="math inline">\(\ndiv(\ngcd(a,b),m)\)</span>. By antisymmetry we have <span class="math inline">\(m = \ngcd(a,b)\)</span> as claimed.
+</p>
+</div>
+</div>
+<p>From here, more properties of <span class="math inline">\(\ngcd\)</span> are much easier to prove.</p>
+<div class="result">
+<div class="corollary">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\ngcd(\ngcd(a,b),c) = \ngcd(a,\ngcd(b,c))\)</span>.</li>
+<li><span class="math inline">\(\ngcd(a,b) = a\)</span> if and only if <span class="math inline">\(\ndiv(a,b)\)</span>.</li>
+<li><span class="math inline">\(\ngcd(\ntimes(a,c),\ntimes(b,c)) = \ntimes(\ngcd(a,b),c)\)</span>.</li>
+<li>If <span class="math inline">\(\ngcd(a,b) = \zero\)</span>, then <span class="math inline">\(a = b = \zero\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(a,b)\)</span>, then <span class="math inline">\(\ndiv(\ngcd(a,c),\ngcd(b,c))\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math display">\[\ngcd(\nquo(a,c),\nquo(b,c)) = \nquo(\ngcd(a,b),c).\]</span></li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Let <span class="math inline">\(h = \ngcd(\ngcd(a,b),c)\)</span>, <span class="math inline">\(k = \ngcd(a,\ngcd(b,c))\)</span>, <span class="math inline">\(u = \ngcd(a,b)\)</span>, and <span class="math inline">\(v = \ngcd(b,c)\)</span>. First we show that <span class="math inline">\(\ndiv(h,k)\)</span>. Note that <span class="math inline">\(\ndiv(h,u)\)</span>, so that <span class="math inline">\(\ndiv(h,a)\)</span> and <span class="math inline">\(\ndiv(h,b)\)</span>. Now <span class="math inline">\(\ndiv(h,c)\)</span>, so that <span class="math inline">\(\ndiv(h,v)\)</span>. Thus <span class="math inline">\(\ndiv(h,k)\)</span>. The proof that <span class="math inline">\(\ndiv(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.</li>
+<li>Certainly if <span class="math inline">\(\ngcd(a,b) = a\)</span>, then <span class="math inline">\(\ndiv(a,b)\)</span>. Suppose conversely that <span class="math inline">\(\ndiv(a,b)\)</span>. We consider two cases: either <span class="math inline">\(a = \zero\)</span> or <span class="math inline">\(a = \next(t)\)</span> for some <span class="math inline">\(t\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(b = \zero\)</span>, and we have <span class="math display">\[\ngcd(a,b) = \zero = a\]</span> as claimed. Suppose now that <span class="math inline">\(a = \next(t)\)</span>. Since <span class="math inline">\(\ndiv(a,b)\)</span>, we have <span class="math display">\[b = \ntimes(q,a) = \nplus(\ntimes(q,a),\zero)\]</span> for some <span class="math inline">\(q\)</span>. Now <span class="math inline">\(\nleq(\zero,t)\)</span>, and by the uniqueness of remainders by nonzero divisors, we have <span class="math inline">\(\nrem(b,a) = \zero\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(a,b) \\
+ &amp; = &amp; \ngcd(b,a) \\
+ &amp; = &amp; \ngcd(a,\nrem(b,a)) \\
+ &amp; = &amp; \ngcd(a,\zero) \\
+ &amp; = &amp; a
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ntimes(\ngcd(a,b),c) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; \ngcd(\zero,\zero) \\
+ &amp; = &amp; \ngcd(\ntimes(a,c),\ntimes(b,c))
+\end{eqnarray*}\]</span> as claimed. Now suppose <span class="math inline">\(c \neq \zero\)</span>. First note that <span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span>, so that <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(a,c)).\]</span> Similarly, we have <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(b,c)).\]</span> Thus <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c), \ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Now note that <span class="math inline">\(\ndiv(c,\ntimes(a,c))\)</span> and <span class="math inline">\(\ndiv(c,\ntimes(b,c))\)</span>, so that <span class="math display">\[\ndiv(c,\ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Say <span class="math display">\[\ntimes(u,c) = \ngcd(\ntimes(a,c),\ntimes(b,c)).\]</span> Now <span class="math inline">\(\ndiv(\ntimes(u,c),\ntimes(a,c))\)</span>, so that <span class="math inline">\(\ndiv(u,a)\)</span>; similarly, <span class="math inline">\(\ndiv(u,b)\)</span>. Thus <span class="math inline">\(\ndiv(u,\ngcd(a,b))\)</span>, and we have <span class="math display">\[\ndiv(\ngcd(\ntimes(a,c),\ntimes(b,c)),\ntimes(\ngcd(a,b),c)).\]</span> By the antisymmetry of <span class="math inline">\(\ndiv\)</span>, we have <span class="math display">\[\ngcd(\ntimes(a,c),\ntimes(b,c) = \ntimes(\ngcd(a,b),c)\]</span> as claimed.</li>
+<li>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math display">\[a = \ngcd(a,\zero) = \zero\]</span> as claimed. Now suppose we have <span class="math inline">\(n\)</span> such that the implication holds for all <span class="math inline">\(b\)</span> with <span class="math inline">\(\nleq(b,n)\)</span>, and that <span class="math inline">\(b = \next(n)\)</span>. Now <span class="math display">\[\zero = \ngcd(a,b) = \ngcd(b,\nrem(a,b)),\]</span> where <span class="math inline">\(\nleq(\nrem(a,b),b)\)</span>. By the induction hypothesis we have <span class="math inline">\(b = \zero\)</span> and <span class="math inline">\(\nrem(a,b) = \zero\)</span>, so that <span class="math display">\[a = \nplus(\ntimes(\nquo(a,b),b),\nrem(a,b)) = \zero\]</span> as claimed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(\ngcd(a,c),\ngcd(b,c)) \\
+ &amp; = &amp; \ngcd(\ngcd(a,b),\ngcd(c,c)) \\
+ &amp; = &amp; \ngcd(a,c).
+\end{eqnarray*}\]</span> Thus <span class="math inline">\(\ndiv(\ngcd(a,c),\ngcd(b,c))\)</span> as claimed.</li>
+<li>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, then <span class="math inline">\(\nquo(a,c) = \zero\)</span> and <span class="math inline">\(\nquo(b,c) = \zero\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ngcd(\nquo(a,c),\nquo(b,c)) \\
+ &amp; = &amp; \ngcd(\zero,\zero) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; \nquo(\ngcd(a,b),c)
+\end{eqnarray*}\]</span> as claimed. Suppose now that <span class="math inline">\(c \neq \zero\)</span>. Say <span class="math inline">\(a = \ntimes(c,u)\)</span> and <span class="math inline">\(b = \ntimes(c,v)\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ntimes(c,\ngcd(u,v)) \\
+ &amp; = &amp; \ngcd(\ntimes(c,u),\ntimes(c,v)) \\
+ &amp; = &amp; \ngcd(a,b).
+\end{eqnarray*}\]</span> By the uniqueness of quotients by nonzero divisors, <span class="math display">\[\nquo(\ngcd(a,b),c) = \ngcd(\nquo(a,c),\nquo(b,c))\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>gcd</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; gcd ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> gcd a b <span class="fu">=</span> (bailoutRec phi beta psi omega) (next <span class="fu">$</span> plus a b) (a,b)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     phi     (_,b) <span class="fu">=</span> b
+<span class="ot">&gt;</span>     beta  _ (_,b) <span class="fu">=</span> b <span class="fu">==</span> zero
+<span class="ot">&gt;</span>     psi   _ (a,_) <span class="fu">=</span> a
+<span class="ot">&gt;</span>     omega _ (a,b) <span class="fu">=</span> (b, rem a b)</code></pre></div>
+<p>Property tests for <code>gcd</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- gcd(a,0) == a and gcd(0,a) == a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_zero _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ a <span class="fu">==</span> gcd a zero
+<span class="ot">&gt;</span>   , a <span class="fu">==</span> gcd zero a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(a,next(0)) == next(0) and gcd(next(0),a) == next(0)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_one _ a <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ (next zero) <span class="fu">==</span> gcd a (next zero)
+<span class="ot">&gt;</span>   , (next zero) <span class="fu">==</span> gcd (next zero) a
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(a,b) == gcd(b,rem(a,b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_rem ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_rem _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (gcd a b) <span class="fu">==</span> (gcd b (rem a b))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(a,b) == gcd(b,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_commutative _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (gcd a b) <span class="fu">==</span> (gcd b a)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- div(gcd(a,b),a) and div(gcd(a,b),b)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_div_args ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_div_args _ a b <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ div (gcd a b) a
+<span class="ot">&gt;</span>   , div (gcd a b) b
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(a,a) = a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_idempotent ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_idempotent _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (gcd a a) <span class="fu">==</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- gcd(gcd(a,b),c) == gcd(a,gcd(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_associative _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (gcd (gcd a b) c) <span class="fu">==</span> (gcd a (gcd b c))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- times(gcd(a,b),c) == gcd(times(a,c),times(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_distributive_times _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (times (gcd a b) c) <span class="fu">==</span> (gcd (times a c) (times b c))</code></pre></div>
+<p>And the suite:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for gcd</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_gcd t maxSize numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_gcd_zero t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_one t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_rem t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_commutative t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_div_args t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_idempotent t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_associative t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_distributive_times t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

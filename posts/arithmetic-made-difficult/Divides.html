@@ -50,11 +50,13 @@ Posted on 2017-04-09 by nbloomf
 \(\newcommand{\nats}{\mathbb{N}}\)
 \(\newcommand{\zero}{\mathsf{0}}\)
 \(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
+\(\newcommand{\nequal}{\mathsf{eq}}\)
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
@@ -66,6 +68,9 @@ Posted on 2017-04-09 by nbloomf
 \(\newcommand{\nquo}{\mathsf{quo}}\)
 \(\newcommand{\nrem}{\mathsf{rem}}\)
 \(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -144,7 +149,7 @@ Suppose now that there is a natural number <span class="math inline">\(c\)</span
  &amp; = &amp; \ntimes(\ntimes(h,k),b) \\
  &amp; = &amp; \ntimes(\ntimes(h,k),\next(d));
 \end{eqnarray*}\]</span> so we have <span class="math inline">\(\ntimes(h,k) = \next(\zero)\)</span>, and thus <span class="math inline">\(h = k = \next(\zero)\)</span>, so that <span class="math inline">\(a = b\)</span> as claimed.</li>
-<li>We have <span class="math inline">\(h,k \in \nats\)</span> such that <span class="math inline">\(\b = \ntimes(h,a)\)</span> and <span class="math inline">\(c = \ntimes(k,b)\)</span>. now <span class="math display">\[c = \ntimes(\ntimes(h,k),a),\]</span> and thus <span class="math inline">\(\ndiv(a,c)\)</span>.</li>
+<li>We have <span class="math inline">\(h,k \in \nats\)</span> such that <span class="math inline">\(b = \ntimes(h,a)\)</span> and <span class="math inline">\(c = \ntimes(k,b)\)</span>. now <span class="math display">\[c = \ntimes(\ntimes(h,k),a),\]</span> and thus <span class="math inline">\(\ndiv(a,c)\)</span>.</li>
 </ol>
 </p>
 </div>
@@ -152,10 +157,11 @@ Suppose now that there is a natural number <span class="math inline">\(c\)</span
 <p>And <span class="math inline">\(\ndiv\)</span> interacts with the rest of arithmetic.</p>
 <div class="result">
 <div class="thm">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. We have the following.</p>
+<p>Let <span class="math inline">\(a,b,c,d \in \nats\)</span>. We have the following.</p>
 <ol style="list-style-type: decimal">
 <li><span class="math inline">\(\ndiv(a,\ntimes(b,a))\)</span>.</li>
 <li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span> then <span class="math inline">\(\ndiv(c,\nplus(a,b))\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(d,a)\)</span> and <span class="math inline">\(\ndiv(d,c)\)</span> and <span class="math inline">\(\nplus(a,b) = c\)</span>, then <span class="math inline">\(\ndiv(d,b)\)</span>.</li>
 <li>If <span class="math inline">\(b \neq \zero\)</span> and <span class="math inline">\(\ndiv(a,b)\)</span> then <span class="math inline">\(\nleq(a,b)\)</span>.</li>
 </ol>
 </div>
@@ -168,6 +174,13 @@ Suppose now that there is a natural number <span class="math inline">\(c\)</span
  &amp; = &amp; \nplus(\ntimes(h,c),\ntimes(k,c)) \\
  &amp; = &amp; \ntimes(\nplus(h,k),c)
 \end{eqnarray*}\]</span> as needed.</li>
+<li>We consider two cases: either <span class="math inline">\(d = \zero\)</span> or <span class="math inline">\(d = \next(m)\)</span> for some <span class="math inline">\(m\)</span>. If <span class="math inline">\(d = \zero\)</span>, then we have <span class="math inline">\(a = c = \zero\)</span>, and thus <span class="math inline">\(b = \zero\)</span>. So <span class="math inline">\(\ndiv(d,b)\)</span> as claimed. Suppose now that <span class="math inline">\(d = \next(m)\)</span>. Now <span class="math inline">\(a = \ntimes(d,u)\)</span> and <span class="math inline">\(c = \ntimes(d,v)\)</span> for some <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>. Letting <span class="math inline">\((q,r) = \ndivalg(b,d)\)</span>, we have <span class="math display">\[b = \nplus(\ntimes(q,d),r.\]</span> Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ntimes(d,v) \\
+ &amp; = &amp; c \\
+ &amp; = &amp; \nplus(a,b) \\
+ &amp; = &amp; \nplus(\ntimes(d,u),\nplus(\ntimes(q,d),r)) \\
+ &amp; = &amp; \nplus(\ntimes(d,\nplus(u,q)),r)
+\end{eqnarray*}\]</span> so that <span class="math display">\[r = \nminus(\ntimes(d,v),\ntimes(d,\nplus(u,q))) = \ntimes(d,\nminus(v,\nplus(u,q))).\]</span> Now <span class="math inline">\(\nleq(r,m)\)</span>, so if <span class="math inline">\(\nminus(v,\nplus(u,q)) \neq \zero\)</span> we have <span class="math inline">\(\nleq(\next(m),m)\)</span>, a contradiction. So we must have <span class="math inline">\(\nminus(v,\nplus(u,q)) = \zero\)</span>, and thus <span class="math inline">\(r = \zero\)</span>. So <span class="math inline">\(\ndiv(d,b)\)</span> as claimed.</li>
 <li>Say <span class="math inline">\(b = \ntimes(k,a)\)</span>; since <span class="math inline">\(b \neq \zero\)</span>, we must also have <span class="math inline">\(k \neq \zero\)</span>; say <span class="math inline">\(k = \next(d)\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; b \\
  &amp; = &amp; \ntimes(k,a) \\
@@ -175,6 +188,52 @@ Suppose now that there is a natural number <span class="math inline">\(c\)</span
  &amp; = &amp; \nplus(\ntimes(k,a),a)
 \end{eqnarray*}\]</span> so that <span class="math inline">\(\nleq(a,b)\)</span>.</li>
 </ol>
+</p>
+</div>
+</div>
+<p>Some more.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c,d \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li>If <span class="math inline">\(\ndiv(b,a)\)</span> and <span class="math inline">\(c \neq \zero\)</span>, then <span class="math display">\[\nquo(\ntimes(a,c),\ntimes(b,c)) = \nquo(a,b).\]</span></li>
+<li>If <span class="math inline">\(\ndiv(b,a)\)</span>, then <span class="math inline">\(\nquo(\ntimes(c,a),b) = \ntimes(c,\nquo(a,b))\)</span>.</li>
+<li>If <span class="math inline">\(\ndiv(c,a)\)</span>, <span class="math inline">\(n \neq \zero\)</span>, and <span class="math inline">\(\ntimes(a,b) = \ntimes(c,d)\)</span>, then <span class="math inline">\(\ndiv(b,d)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We consider two cases: either <span class="math inline">\(b = \zero\)</span> or <span class="math inline">\(b \neq \zero\)</span>. If <span class="math inline">\(b = \zero\)</span> then we have <span class="math inline">\(a = \zero\)</span>, and <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nquo(a,b) \\
+ &amp; = &amp; \nquo(\zero,\zero) \\
+ &amp; = &amp; \nquo(\ntimes(\zero,c),\ntimes(\zero,c)) \\
+ &amp; = &amp; \nquo(\ntimes(a,c),\ntimes(b,c))
+\end{eqnarray*}\]</span> as claimed. Suppose instead that <span class="math inline">\(b \neq \zero\)</span>; say <span class="math inline">\(b = \next(m)\)</span>. Since <span class="math inline">\(\ndiv(b,a)\)</span>, we have <span class="math inline">\(a = \ntimes(d,b)\)</span> for some <span class="math inline">\(d\)</span>; since <span class="math inline">\(\nleq(\zero,m)\)</span>, by the uniqueness of quotients by nonzero divisors we have <span class="math inline">\(d = \nquo(a,b)\)</span>. But also <span class="math display">\[\ntimes(a,c) = \ntimes(d,\ntimes(b,c)),\]</span> and since <span class="math inline">\(\ntimes(b,c) \neq \zero\)</span> we again have <span class="math display">\[d = \nquo(\ntimes(a,c),\ntimes(b,c))\]</span> by the uniqueness of quotients by nonzero divisors. Thus <span class="math display">\[\nquo(a,b) = \nquo(\ntimes(a,c),\ntimes(b,c))\]</span> as claimed.</li>
+<li>We consider two cases: either <span class="math inline">\(b = \zero\)</span> or <span class="math inline">\(b \neq \zero\)</span>. If <span class="math inline">\(b = \zero\)</span>, we have <span class="math inline">\(a = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nquo(\ntimes(c,a),b) \\
+ &amp; = &amp; \nquo(\zero,\zero) \\
+ &amp; = &amp; \zero \\
+ &amp; = &amp; \ntimes(c,\zero) \\
+ &amp; = &amp; \ntimes(c,\nquo(a,b))
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(b \neq \zero\)</span>; say <span class="math inline">\(b = \next(m)\)</span>. Now say <span class="math inline">\(a = \ntimes(q,b)\)</span>, and by the uniqueness of quotients by a nonzero divisor, we have <span class="math inline">\(q = \nquo(a,b)\)</span>. Now <span class="math inline">\(\ntimes(c,a) = \ntimes(\ntimes(c,q),b)\)</span>, and again by the uniqueness of quotients by a nonzero divisor we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nquo(\ntimes(c,a),b) \\
+ &amp; = &amp; \ntimes(c,q) \\
+ &amp; = &amp; \ntimes(c,\nquo(a,b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Say <span class="math inline">\(a = \ntimes(c,u)\)</span>. Now <span class="math display">\[\ntimes(c,\ntimes(u,b)) = \ntimes(c,d),\]</span> so that <span class="math inline">\(d = \ntimes(u,b)\)</span>. Thus <span class="math inline">\(\ndiv(b,d)\)</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>We’ll call the next result the Cross Multiplication Theorem.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c,d \in \nats\)</span> such that <span class="math inline">\(\ndiv(b,a)\)</span> and <span class="math inline">\(\ndiv(d,c)\)</span> and <span class="math inline">\(b, d \neq \zero\)</span>. Then <span class="math display">\[\ntimes(a,d) = \ntimes(b,c)\]</span> if and only if <span class="math inline">\(\nquo(a,b) = \nquo(c,d).\)</span>$</p>
+</div>
+<div class="proof">
+<p>
+Since <span class="math inline">\(b\)</span> and <span class="math inline">\(d\)</span> are both not zero, using the uniqueness of quotients by nonzero divisors we have <span class="math display">\[\ntimes(a,d) = \ntimes(b,c)\]</span> if and only if <span class="math display">\[\nquo(\ntimes(a,d),b) = c\]</span> if and only if <span class="math display">\[\ntimes(d,\nquo(a,b)) = c\]</span> if and only if <span class="math display">\[\nquo(a,b) = \nquo(c,d)\]</span> as claimed.
 </p>
 </div>
 </div>

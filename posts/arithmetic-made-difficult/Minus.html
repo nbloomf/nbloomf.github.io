@@ -50,11 +50,13 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\nats}{\mathbb{N}}\)
 \(\newcommand{\zero}{\mathsf{0}}\)
 \(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
 \(\newcommand{\prev}{\mathsf{prev}}\)
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
+\(\newcommand{\nequal}{\mathsf{eq}}\)
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
 \(\newcommand{\nleq}{\mathsf{leq}}\)
@@ -66,6 +68,9 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\nquo}{\mathsf{quo}}\)
 \(\newcommand{\nrem}{\mathsf{rem}}\)
 \(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -183,6 +188,7 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <li>If <span class="math inline">\(\nminus(a,b) = \nminus(c,b) \in \nats\)</span>, then <span class="math inline">\(a = c\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(b,a) \in \nats\)</span>, then <span class="math inline">\(\nminus(\next(b),a) = \next(\nminus(b,a))\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(b,a) \in \nats\)</span>, then <span class="math inline">\(\nminus(b,\nminus(b,a)) = a\)</span>.</li>
+<li>If <span class="math inline">\(\nminus(a,b) \in \nats\)</span>, then <span class="math inline">\(\nminus(\nplus(a,c),b) = \nplus(\nminus(a,b),c)\)</span>.</li>
 </ol>
 </div>
 <div class="proof">
@@ -193,6 +199,13 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <li>Say <span class="math display">\[\nminus(a,b) = d = \nminus(c,b),\]</span> with <span class="math inline">\(d \in \nats\)</span>. Now <span class="math display">\[a = \nplus(b,d) = c\]</span> as claimed.</li>
 <li>Say <span class="math inline">\(\nminus(b,a) = c\)</span>. Now <span class="math inline">\(\nplus(a,c) = b\)</span>, so that <span class="math display">\[\nplus(a,\next(c)) = \next(\nplus(a,c)) = \next(b).\]</span> Thus we have <span class="math display">\[\nminus(\next(b),a) = \next(c) = \next(\nminus(b,a))\]</span> as claimed.</li>
 <li>Say <span class="math inline">\(\nminus(b,a) = c\)</span>. Now <span class="math inline">\(b = \nplus(a,c)\)</span>, so that <span class="math inline">\(a = \nminus(b,\nminus(b,a))\)</span>.</li>
+<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, note that <span class="math display">\[\nminus(\nplus(a,c),b) = \nminus(a,b) = \nplus(\nminus(a,b),c)\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(c\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nminus(\nplus(a,\next(c)),b) \\
+ &amp; = &amp; \nminus(\next(\nplus(a,c)),b) \\
+ &amp; = &amp; \next(\nminus(\nplus(a,c),b)) \\
+ &amp; = &amp; \next(\nplus(\nminus(a,b),c)) \\
+ &amp; = &amp; \nplus(\nminus(a,b),\next(c))
+\end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </p>
 </div>
@@ -205,7 +218,26 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <div class="proof">
 <p>
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, if <span class="math inline">\(\nminus(\zero,b) = \ast\)</span> we have <span class="math inline">\(b \neq \zero\)</span> and <span class="math inline">\(\nminus(b,\zero) = b \in \nats\)</span>.</p>
-For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Suppose further that <span class="math inline">\(\nminus(\next(a),b) = \ast\)</span>. If <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(a),\zero) = \zero\)</span> is false, so the implication holds vacuously. If <span class="math inline">\(b = \next(d)\)</span>, then we have <span class="math display">\[\nminus(\next(a),b) = \nminus(\next(a),\next(d)) = \nminus(a,d).\]</span> By the induction hypothesis we have <span class="math display">\[\nminus(d,a) = c$, so that \]</span>(b,a) = ((d),(a)) = c.$$
+For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Suppose further that <span class="math inline">\(\nminus(\next(a),b) = \ast\)</span>. If <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(a),\zero) = \zero\)</span> is false, so the implication holds vacuously. If <span class="math inline">\(b = \next(d)\)</span>, then we have <span class="math display">\[\nminus(\next(a),b) = \nminus(\next(a),\next(d)) = \nminus(a,d).\]</span> By the induction hypothesis we have <span class="math display">\[\nminus(d,a) = c,\]</span> so that <span class="math display">\[\nminus(b,a) = \nminus(\next(d),\next(a)) = c.\]</span>
+</p>
+</div>
+</div>
+<p>One more.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. If <span class="math inline">\(\nminus(a,b) \in \nats\)</span>, then <span class="math display">\[\nminus(\ntimes(c,a),\ntimes(c,b)) = \ntimes(c,\nminus(a,b))\]</span> for all <span class="math inline">\(c \in \nats\)</span>.</p>
+</div>
+<div class="proof">
+<p>
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, suppose we have <span class="math inline">\(\nminus(a,b) \in \nats\)</span>; then <span class="math inline">\(b = \zero\)</span>. Now <span class="math display">\[\nminus(\ntimes(c,a),(\ntimes(c,b)) = \nminus(\zero,\zero) = \zero\]</span> and <span class="math display">\[\ntimes(c,\nminus(a,b)) = \ntimes(c,\zero) = \zero\]</span> as claimed.</p>
+For the inductive step, suppose the equality holds for some <span class="math inline">\(a \in \nats\)</span> and suppose that <span class="math inline">\(\nminus(\next(a),b) \in \nats\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nminus(\ntimes(c,\next(a)),\ntimes(c,b)) \\
+ &amp; = &amp; \nminus(\nplus(\ntimes(c,a),c),\ntimes(c,b)) \\
+ &amp; = &amp; \nplus(\nminus(\ntimes(c,a),\ntimes(c,b)),c) \\
+ &amp; = &amp; \nplus(\ntimes(c,\nminus(a,b)),c) \\
+ &amp; = &amp; \ntimes(c,\next(\nminus(a,b))) \\
+ &amp; = &amp; \ntimes(c,\nminus(\next(a),b))
+\end{eqnarray*}\]</span> as needed.
 </p>
 </div>
 </div>
