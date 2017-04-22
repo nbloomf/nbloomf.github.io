@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Iterative Sets Redux</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Iterative Sets Redux</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-22 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+<!--- natural number arithmetic ---->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- list -->
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\foldl}[2]{\mathsf{foldl}(#1,#2)}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>Warning: this post is super handwavy!</p>
+<p>To recap what we’ve done so far: we assumed the existence of a set, <span class="math inline">\(\nats\)</span>, with a special element <span class="math inline">\(\zero\)</span> and a map <span class="math inline">\(\next : \nats \rightarrow \nats\)</span>, and a recursion operator <span class="math inline">\(\natrec{e}{\varphi}\)</span> that allowed us to construct recursive maps from <span class="math inline">\(\nats\)</span>. On this basis we were able to show that <span class="math inline">\(\nats\)</span> satisfies the Peano axioms. We were also able to define the “usual” arithmetic on <span class="math inline">\(\nats\)</span> and show that it behaves as expected, and moreover these definitions were made <em>executable</em> by implementing <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and some other, auxilliary recursion operators in software. I’m using Haskell here out of convenience, but any language with first-class functions could also work.</p>
+<p>This is a nice combination; by working with <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and its friends we can build programs and prove things about them simultaneously. If such things interest you, two questions arise:</p>
+<ol style="list-style-type: decimal">
+<li>We assumed the existence of <span class="math inline">\(\nats\)</span>. Is there a more fundamental basis or principle we can use to argue that it exists?</li>
+<li><span class="math inline">\(\nats\)</span>, while useful, is a very special thing. Are there other interesting mathematical or computational objects that can be similarly characterized and reasoned about?</li>
+</ol>
+<p>In this post we’ll see that the answer to both questions is <em>yes</em>. As it turns out, with the right framework we can think of <span class="math inline">\(\nats\)</span> as having been produced by a process of “recursivization”, and this process generalizes to produce a vast family of other “structures”.</p>
+<p>To see how this works let’s revisit our old friends the <em>iterative sets</em> again, this time from a different perspective. Recall the definition.</p>
+<div class="result">
+<div class="defn">
+<p>
+A set <span class="math inline">\(A\)</span> with a distinguished element <span class="math inline">\(e\)</span> and a distinguished function <span class="math inline">\(\varphi : A \rightarrow A\)</span> is called an <em>iterative set</em>.
+</p>
+</div>
+</div>
+<p>So an iterative set is (1) a set, with (2) an element, and (3) a function. It turns out we can think of <em>elements</em> of sets as <em>functions</em> from the one-element set <span class="math inline">\(1 = \{\ast\}\)</span>. More precisely, if <span class="math inline">\(e \in A\)</span>, we can identify <span class="math inline">\(e\)</span> with the map <span class="math inline">\(e^\prime : 1 \rightarrow A\)</span> given by <span class="math inline">\(e^\prime(\ast) = e\)</span>. From now on I’ll make this identification implicitly.</p>
+<p>So an iterative set is (1) a set <span class="math inline">\(A\)</span>, with (2) a map <span class="math inline">\(1 \rightarrow A\)</span>, and (3) a map <span class="math inline">\(A \rightarrow A\)</span>. We can make this even more succinct. In general, given two mappings <span class="math inline">\(U \rightarrow X\)</span> and <span class="math inline">\(V \rightarrow X\)</span>, we can “bundle” them together as a single map <span class="math inline">\(U+V \rightarrow X\)</span>. So an alternate definition for iterative sets is the following.</p>
+<div class="result">
+<div class="defn">
+<p>
+An <em>iterative set</em> is a set <span class="math inline">\(A\)</span> with a mapping <span class="math inline">\(\theta : 1+A \rightarrow A\)</span>.
+</p>
+</div>
+</div>
+<p>All we’ve done here is recast the iterative set data in terms of mappings. And in this language, iterative set homomorphisms have a nice characterization as well:</p>
+<div class="result">
+<div class="defn">
+<p>
+Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be iterative sets with mappings <span class="math inline">\(\theta_A : 1+A \rightarrow A\)</span> and <span class="math inline">\(\theta_B : 1+B \rightarrow B\)</span>. A map <span class="math inline">\(\varphi : A \rightarrow B\)</span> is called an <em>iterative set homomorphism</em> if the following diagram commutes. <span class="math display">\[\require{AMScd}
+\begin{CD}
+1+A @&gt;{1+\varphi}&gt;&gt; 1+B\\
+@V{\theta_A}VV @VV{\theta_B}V \\
+A @&gt;&gt;{\varphi}&gt; B
+\end{CD}\]</span>
+</p>
+</div>
+</div>
+<p>Let’s stick this in our back pocket for now.</p>
+<h2 id="categories-and-functors">Categories and Functors</h2>
+<p>This series of posts is not really about category theory, but at this point we need a little theory to really understand <span class="math inline">\(\nats\)</span>. A <em>category</em> is a collection <span class="math inline">\(\mathcal{C}\)</span> of <em>objects</em> and <em>morphisms</em>, subject to the following rules.</p>
+<ol style="list-style-type: decimal">
+<li>To each morphism <span class="math inline">\(f\)</span> we can associate two objects, <span class="math inline">\(\dom(f)\)</span> and <span class="math inline">\(\cod(f)\)</span>, called the <em>domain</em> and <em>codomain</em> of <span class="math inline">\(f\)</span>, respectively. If <span class="math inline">\(\dom(f) = A\)</span> and <span class="math inline">\(\cod(f) = B\)</span>, we write <span class="math inline">\(f : A \rightarrow B\)</span>.</li>
+<li>If <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> are morphisms and <span class="math inline">\(\dom(g) = \cod(f)\)</span>, then there is a morphism <span class="math inline">\(g \circ f\)</span> with <span class="math inline">\(\dom(g \circ f) = \dom(f)\)</span> and <span class="math inline">\(\cod(g \circ f) = \cod(g)\)</span>.</li>
+<li>If <span class="math inline">\(A\)</span> is an object, then there is a morphism <span class="math inline">\(\id_A : A \rightarrow A\)</span> with the property that <span class="math inline">\(\id_A \circ f = f\)</span> when <span class="math inline">\(\cod(f) = A\)</span> and <span class="math inline">\(g \circ \id_A = g\)</span> when <span class="math inline">\(\dom(g) = A\)</span>.</li>
+</ol>
+<p>I’m being intentionally vague about exactly what “collection” means. For our purposes it doesn’t matter too much.</p>
+<p>A morphism <span class="math inline">\(f : A \rightarrow B\)</span> is called <em>left invertible</em> if there is another morphism <span class="math inline">\(g\)</span> such that <span class="math inline">\(g \circ f = \id_A\)</span>, and is called <em>right invertible</em> if there is another morphism <span class="math inline">\(h\)</span> such that <span class="math inline">\(f \circ h = \id_B\)</span>. If <span class="math inline">\(f\)</span> is both left and right invertible we say it is an <em>isomorphism</em>. Two objects which are connected by an isomorphism are, in an abstract sense, indistinguishable from each other.</p>
+<p>Categories occasionally contain special objects. For instance, suppose there is an object <span class="math inline">\(X\)</span> with the property that for <em>every</em> object <span class="math inline">\(Y\)</span>, there is a <em>unique</em> morphism <span class="math inline">\(X \rightarrow Y\)</span>. If this happens, we say that <span class="math inline">\(X\)</span> is an <em>initial object</em>. Analogously, if <span class="math inline">\(X\)</span> is such that there is a unique morphism <span class="math inline">\(Y \rightarrow X\)</span> for any object <span class="math inline">\(Y\)</span>, we say that <span class="math inline">\(X\)</span> is a <em>terminal object</em>. Initial and terminal objects – if they exist – are unique up to isomorphism.</p>
+<p>Categories represent a kind of structure. The structure-preserving “maps” are called <em>functors</em>, and come in two flavors, called <em>covariant</em> and <em>contravariant</em>. Given two categories <span class="math inline">\(\mathcal{C}\)</span> and <span class="math inline">\(\mathcal{D}\)</span>, a <em>covariant functor</em> <span class="math inline">\(F : \mathcal{C} \rightarrow \mathcal{D}\)</span> associates each object <span class="math inline">\(X\)</span> in <span class="math inline">\(\mathcal{C}\)</span> to an object <span class="math inline">\(F(X)\)</span> in <span class="math inline">\(\mathcal{D}\)</span>, and each morphism <span class="math inline">\(f : A \rightarrow B\)</span> in <span class="math inline">\(\mathcal{C}\)</span> to a morphism <span class="math inline">\(F(f) : F(A) \rightarrow F(B)\)</span> subject to the following rules.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(F(\id_X) = \id_{F(X)}\)</span> for all objects <span class="math inline">\(X\)</span> in <span class="math inline">\(\mathcal{C}\)</span>.</li>
+<li><span class="math inline">\(F(g \circ f) = F(g) \circ F(f)\)</span> for all morphisms <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> in <span class="math inline">\(\mathcal{C}\)</span> with <span class="math inline">\(\dom(g) = \cod(f)\)</span>.</li>
+</ol>
+<p>The <em>contravariant functors</em> are similar, except that <span class="math inline">\(F\)</span> associates <span class="math inline">\(f : A \rightarrow B\)</span> to <span class="math inline">\(F(f) : F(B) \rightarrow F(A)\)</span> and condition (2) is replaced by</p>
+<ol start="2" style="list-style-type: decimal">
+<li><span class="math inline">\(F(g \circ f) = F(f) \circ F(g)\)</span> for all morphisms <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> in <span class="math inline">\(\mathcal{C}\)</span> with <span class="math inline">\(\dom(g) = \cod(f)\)</span>.</li>
+</ol>
+<p>(Intuitively, covariant functors preserve arrows, while contravariant functors reverse them.) Generally functors “map” between different categories, but lots of interesting functors map one category back to itself. These are called <em>endofunctors</em>.</p>
+<p>Categories occasionally have some additional internal structure. For example, given two objects <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>, a third object <span class="math inline">\(X\)</span> is called their <em>product</em> if there exist two maps <span class="math inline">\(\pi_A : X \rightarrow A\)</span> and <span class="math inline">\(\pi_B : X \rightarrow B\)</span> with the property that if we have an object <span class="math inline">\(Z\)</span> and two maps <span class="math inline">\(\varphi_A : Z \rightarrow A\)</span> and <span class="math inline">\(\varphi_B : Z \rightarrow B\)</span>, then there is a unique map <span class="math inline">\(\Theta : Z \rightarrow X\)</span> such that <span class="math inline">\(\varphi_A = \pi_A \circ \Theta\)</span> and <span class="math inline">\(\varphi_B = \pi_B \circ \Theta\)</span>. That is, a unique <span class="math inline">\(\Theta\)</span> such that the following diagram commutes. <span class="math display">\[\require{AMScd}
+\begin{CD}
+Z @= Z @= Z\\
+@V{\varphi_A}VV @VV{\Theta}V @VV{\varphi_B}V \\
+A @&lt;&lt;{\pi_A}&lt; X @&gt;&gt;{\pi_B}&gt; B
+\end{CD}\]</span> If such an object <span class="math inline">\(X\)</span> exists, it is unique up to isomorphism. When this happens – a thing exists and is unique – it is useful to introduce notation for it. So the product of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> (if it exists) is denoted <span class="math inline">\(A \times B\)</span>.</p>
+<p>There is an analogous concept to the product, called the <em>coproduct</em>, obtained by reversing the direction of the arrows. Given objects <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span>, an object <span class="math inline">\(X\)</span> is called a <em>coproduct</em> of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> if there are morphisms <span class="math inline">\(\iota_A : A \rightarrow X\)</span> and <span class="math inline">\(\iota_B : B \rightarrow X\)</span> such that if <span class="math inline">\(Z\)</span> is an object and <span class="math inline">\(\psi_A : A \rightarrow Z\)</span> and <span class="math inline">\(\psi_B : B \rightarrow Z\)</span> morphisms, there is a unique morphism <span class="math inline">\(\Theta : X \rightarrow Z\)</span> such that <span class="math inline">\(\psi_A = \Theta \circ \iota_A\)</span> and <span class="math inline">\(\psi_B = \Theta \circ \iota_B\)</span>. That is, a unique <span class="math inline">\(\Theta\)</span> such that the following diagram commutes. <span class="math display">\[\require{AMScd}
+\begin{CD}
+A @&gt;{\iota_A}&gt;&gt; X @&lt;{\iota_B}&lt;&lt; B \\
+@V{\psi_A}VV @VV{\Theta}V @VV{\psi_B}V \\
+Z @= Z @= Z
+\end{CD}\]</span> Again, if such an object <span class="math inline">\(X\)</span> exists, it is unique up to isomorphism. We denote the coproduct of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> (if it exists) by <span class="math inline">\(A+B\)</span>.</p>
+<p>Now the “collection” of sets and set functions form a category, and products and coproducts exist between any two sets: the cartesian product and the disjoint sum.</p>
+<p>The notation for products and coproducts is suggestive of arithmetic, and indeed <span class="math inline">\(\times\)</span> and <span class="math inline">\(+\)</span> as “operations” on a category enjoy some familiar properties. More germane for us, though, is that they can be used to construct <em>polynomial endofunctors</em>. Waving over a bunch of details, we can construct a family endofunctors on a category using the following.</p>
+<ol style="list-style-type: decimal">
+<li>The so-called <em>identity functor</em> <span class="math inline">\(F\)</span>, with <span class="math inline">\(F(X) = X\)</span> and <span class="math inline">\(F(f) = f\)</span> for objects <span class="math inline">\(X\)</span> and morphisms <span class="math inline">\(f\)</span>.</li>
+<li>If <span class="math inline">\(A\)</span> is an object, the so-called <em>constant functor</em> <span class="math inline">\(F\)</span> with <span class="math inline">\(F(X) = A\)</span> and <span class="math inline">\(F(f) = \id_A\)</span> for all objects <span class="math inline">\(X\)</span> and morphisms <span class="math inline">\(f\)</span>.</li>
+<li>If <span class="math inline">\(F\)</span> and <span class="math inline">\(G\)</span> are functors, the <em>product functor</em> <span class="math inline">\(F \times G\)</span>, with <span class="math inline">\((F \times G)(X) = F(X) \times G(X)\)</span> and <span class="math inline">\((F \times G)(f) = F(f) \times G(f)\)</span> for all objects <span class="math inline">\(X\)</span> and morphisms <span class="math inline">\(f\)</span>.</li>
+<li>If <span class="math inline">\(F\)</span> and <span class="math inline">\(G\)</span> are functors, the <em>coproduct functor</em> <span class="math inline">\(F + G\)</span>, with <span class="math inline">\((F+G)(X) = F(X)+G(X)\)</span> and <span class="math inline">\((F+G)(f) = F(f)+G(f)\)</span> for all objects <span class="math inline">\(X\)</span> and morphisms <span class="math inline">\(f\)</span>.</li>
+</ol>
+<p>Functors which are built using a finite number of applications of these production rules are called <em>polynomial endofunctors</em>.</p>
+<p>Looking back, there appears to be a polynomial endofunctor hidden in our definition of inductive sets.</p>
+<div class="result">
+<div class="defn">
+<p>
+Let <span class="math inline">\(F\)</span> be the polynomial functor <span class="math inline">\(F(X) = 1+X\)</span>. An <em>iterative set</em> is a set <span class="math inline">\(A\)</span> with a mapping <span class="math inline">\(\theta_A : F(A) \rightarrow A\)</span>.
+</p>
+</div>
+</div>
+<p>With this example in mind, we make the following definition.</p>
+<div class="result">
+<div class="defn">
+<p>Let <span class="math inline">\(\mathcal{C}\)</span> be a category and <span class="math inline">\(F\)</span> a covariant endofunctor on <span class="math inline">\(\mathcal{C}\)</span>. An <span class="math inline">\(F\)</span>-algebra is an object <span class="math inline">\(A\)</span> coupled with a morphism <span class="math inline">\(\theta_A : F(A) \rightarrow A\)</span>.</p>
+<p>Given two <span class="math inline">\(F\)</span>-algebras <span class="math inline">\((A,\theta_A)\)</span> and <span class="math inline">\((B,\theta_B)\)</span>, an <span class="math inline">\(F\)</span>-algebra homomorphism is a morphism <span class="math inline">\(\varphi : A \rightarrow B\)</span> such that <span class="math inline">\(F(\varphi) \circ \theta_B = \theta_A \circ \varphi\)</span>. That is, a morphism <span class="math inline">\(\varphi\)</span> such that the following diagram commutes. <span class="math display">\[\require{AMScd}
+\begin{CD}
+F(A) @&gt;{F(\varphi)}&gt;&gt; F(B)\\
+@V{\theta_A}VV @VV{\theta_B}V \\
+A @&gt;&gt;{\varphi}&gt; B
+\end{CD}\]</span></p>
+</div>
+</div>
+<p>Now it can be shown that the collection of <span class="math inline">\(F\)</span>-algebras and <span class="math inline">\(F\)</span>-algebra homomorphisms form a category. And now the natural numbers have a very nice characterization.</p>
+<div class="result">
+<div class="defn">
+<p><span class="math inline">\(\nats\)</span> is the initial <span class="math inline">\(F\)</span>-algebra of the functor <span class="math inline">\(F(X) = 1+X\)</span>.</p>
+</div>
+</div>
+<p>Recall that an object in a category is called <em>initial</em> if there is exactly one morphism from it to any other given object. In the case of <span class="math inline">\(\nats\)</span>, the unique morphism is precisely <span class="math inline">\(\natrec{\ast}{\ast}\)</span>.</p>
+<p>Now I am not too interested at the moment in digging into the conditions under which a given functor <em>has</em> an initial algebra; I am happy enough using the existence of an initial algebra as the basis for reasoning about recursively defined programs. So this is as far as I will take this business about categories. We will only be interested in a small handful of concrete polynomial endofunctors, and each time we see one, we will just add an axiom assuming that it has an initial algebra – as we did with <span class="math inline">\(\nats\)</span>.</p>
+<p>Now if an initial algebra <span class="math inline">\(A\)</span> exists for <span class="math inline">\(F\)</span>, it turns out that this algebra acts like a <em>fixed point</em> up to isomorphism – in fact, the algebra morphism <span class="math inline">\(F(A) \rightarrow A\)</span> is an isomorphism. This will allow us to define <span class="math inline">\(A\)</span> recursively, as we did with <span class="math inline">\(\nats\)</span>. One hitch we have to worry about is that the initial algebra of a functor is its <em>least</em> fixed point, in the sense that there is a unique “injection” from the least fixed point to any other fixed point. Why is this relevant? It is tricky to impose this minimality condition on a Haskell type. For example, all along we’ve been implicitly assuming that every element of <span class="math inline">\(\nats\)</span> is somehow “finite” (whatever that means) – obtained by a finite number of applications of <span class="math inline">\(\next\)</span> to <span class="math inline">\(\zero\)</span>. But Haskell will happily typecheck an expression like</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">omega ::</span> <span class="dt">Nat</span>
+omega <span class="fu">=</span> next omega</code></pre></div>
+<p>What’s going on here is that the <code>Nat</code> type doesn’t quite model <span class="math inline">\(\nats\)</span>. By definition it is a fixed point of the functor <span class="math inline">\(F(X) = 1+X\)</span>, but it is not the <em>least</em> fixed point. (I want to say it is the greatest fixed point, but I’m not sure about that.)</p>
+<p>What should we do about this? Certainly this problem will pop up again. There are more powerful type systems that can enforce the minimalness of fixed points, but we’d prefer not to require too much type-fanciness. I think it is enough to simply require that recursion be defined using initial algebra maps like <span class="math inline">\(\natrec{\ast}{\ast}\)</span>; this requirement would make a definition like <code>omega</code> illegal.</p>
+<p>So, in summary, given a functor <span class="math inline">\(F\)</span> the <span class="math inline">\(F\)</span>-algebras are a family of structures, and the process of constructing an initial algebra for <span class="math inline">\(F\)</span> is a kind of uniform “recursivization”. From now on we will define recursive sets simply by assuming that such an initial algebra exists.</p>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

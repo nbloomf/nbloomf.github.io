@@ -43,6 +43,7 @@
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Hakyll.Shortcode</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span> (mconcat)
 <span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span> <span class="kw">as</span> <span class="dt">S</span> (fromList, union)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Regex</span> (subRegex, mkRegex)
@@ -119,30 +120,36 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <p>The <code>matchPosts</code> rule is a little different from the others we’ve seen so far. It handles blog posts. But instead of listing out the source files by name, we capture them in a glob: <code>&quot;posts/*&quot;</code>. These work similarly to shell globs but (as usual) have their own quirks; see the <a href="https://jaspervdj.be/hakyll/reference/Hakyll-Core-Identifier-Pattern.html">documentation</a> for details.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchPosts ::</span> <span class="dt">Tags</span> <span class="ot">-&gt;</span> <span class="dt">Rules</span> ()
 <span class="ot">&gt;</span> matchPosts tags <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   match <span class="st">&quot;posts/**&quot;</span> <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   match (anyPattern [<span class="st">&quot;posts/**.md&quot;</span>, <span class="st">&quot;posts/**.lhs&quot;</span>]) <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>     route <span class="fu">$</span> setExtension <span class="st">&quot;html&quot;</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     <span class="kw">let</span> ctx <span class="fu">=</span> postWithTagsCtx tags
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyShortcodes allServices
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;</span>             <span class="st">&quot;literate-haskell&quot;</span> <span class="st">&quot;templates/literate-haskell.html&quot;</span> ctx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;</span>             <span class="st">&quot;software-tools-in-haskell&quot;</span> <span class="st">&quot;templates/sth-tools.html&quot;</span> ctx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;</span>             <span class="st">&quot;arithmetic-made-difficult&quot;</span> <span class="st">&quot;templates/amd.html&quot;</span> ctx
-<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;</span>             <span class="st">&quot;project-euler&quot;</span> <span class="st">&quot;templates/project-euler-solutions.html&quot;</span> ctx
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyTagTemplates ctx
+<span class="ot">&gt;</span>             [ (<span class="st">&quot;literate-haskell&quot;</span>,
+<span class="ot">&gt;</span>                 <span class="st">&quot;templates/literate-haskell.html&quot;</span>)
+<span class="ot">&gt;</span>             , (<span class="st">&quot;software-tools-in-haskell&quot;</span>,
+<span class="ot">&gt;</span>                 <span class="st">&quot;templates/sth-tools.html&quot;</span>)
+<span class="ot">&gt;</span>             , (<span class="st">&quot;arithmetic-made-difficult&quot;</span>,
+<span class="ot">&gt;</span>                 <span class="st">&quot;templates/amd.html&quot;</span>)
+<span class="ot">&gt;</span>             , (<span class="st">&quot;project-euler&quot;</span>,
+<span class="ot">&gt;</span>                 <span class="st">&quot;templates/project-euler-solutions.html&quot;</span>)
+<span class="ot">&gt;</span>             ]
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/default.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> relativizeUrls</code></pre></div>
-<p>Here we also used a custom compiler, <code>loadAndApplyTemplateIfTagged</code>, which loads a given template only if a post has a given tag. This is a cheap way to give some and only some posts a custom header or style.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> loadAndApplyTemplateIfTagged
-<span class="ot">&gt;   ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Identifier</span> <span class="ot">-&gt;</span> <span class="dt">Context</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Item</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Compiler</span> (<span class="dt">Item</span> <span class="dt">String</span>)
-<span class="ot">&gt;</span> loadAndApplyTemplateIfTagged tag template context x <span class="fu">=</span> <span class="kw">do</span>
+<p>Here we also used a custom compiler, <code>applyTagTemplate</code>, which loads a given template only if a post has a given tag. This is a cheap way to give some and only some posts a custom header or style.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> applyTagTemplates ctx ts x <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     foo z (tag,temp) <span class="fu">=</span> applyTagTemplate tag temp ctx z
+<span class="ot">&gt;</span>   <span class="kw">in</span> foldM foo x ts
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> applyTagTemplate tag template context x <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   path <span class="ot">&lt;-</span> getUnderlying
 <span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> getTags path
 <span class="ot">&gt;</span>   <span class="kw">if</span> elem tag tags

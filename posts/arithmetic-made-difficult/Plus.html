@@ -44,9 +44,21 @@ Posted on 2014-06-01 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
+<!-- basic maps -->
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
 
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+<!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
 \(\newcommand{\zero}{\mathsf{0}}\)
 \(\newcommand{\next}{\mathsf{next}}\)
@@ -56,6 +68,7 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
 
+<!--- natural number arithmetic ---->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
 \(\newcommand{\nplus}{\mathsf{plus}}\)
 \(\newcommand{\ntimes}{\mathsf{times}}\)
@@ -71,17 +84,23 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\ngcd}{\mathsf{gcd}}\)
 \(\newcommand{\ncoprime}{\mathsf{coprime}}\)
 \(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
 
-\(\newcommand{\bool}{\mathbb{B}}\)
-\(\newcommand{\btrue}{\mathsf{true}}\)
-\(\newcommand{\bfalse}{\mathsf{false}}\)
-\(\newcommand{\bnot}{\mathsf{not}}\)
-\(\newcommand{\band}{\mathsf{and}}\)
-\(\newcommand{\bor}{\mathsf{or}}\)
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
 
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
+<!-- list -->
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\foldl}[2]{\mathsf{foldl}(#1,#2)}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -90,7 +109,7 @@ Posted on 2014-06-01 by nbloomf
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Plus.lhs">the source</a> into GHCi and play along.</p>
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Plus</span>
-<span class="ot">&gt;</span>   ( plus, _test_plus
+<span class="ot">&gt;</span>   ( plus, _test_plus, main_plus
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
@@ -129,8 +148,21 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <div class="proof">
 <p>
 <ol style="list-style-type: decimal">
-<li>Note that <span class="math display">\[\nplus(\zero,a) = \simprec{\id}{\mu}(\zero,a) = \id(a) = a.\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the first equality. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}  &amp; &amp; \nplus(\next(a),\zero) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\zero) \\ &amp; = &amp; \mu(a, \zero, \simprec{\id}{\mu}(a,\zero)) \\ &amp; = &amp; \mu(a, \zero, \nplus(a, \zero)) \\ &amp; = &amp; \mu(a,\zero,a) \\ &amp; = &amp; \next(a) \end{eqnarray*}\]</span> as needed.</li>
-<li>Note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),b) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),b) \\ &amp; = &amp; \mu(a,b,\simprec{\id}{\mu}(a,b)) \\ &amp; = &amp; \mu(a,b,\nplus(a,b)) \\ &amp; = &amp; \next(\nplus(a,b)). \end{eqnarray*}\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\zero,\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\zero,\next(b)) \\ &amp; = &amp; \id(\next(b)) \\ &amp; = &amp; \next(b). \end{eqnarray*}\]</span> For the inductive step, suppose we have <span class="math inline">\(\next(\nplus(a,b)) = \nplus(a,\next(b))\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\next(b)) \\ &amp; = &amp; \mu(a, \next(b), \simprec{\id}{\mu}(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \nplus(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \next(\nplus(a,b))) \\ &amp; = &amp; \next(\next(\nplus(a,b))) \\ &amp; = &amp; \next(\nplus(\next(a),b)) \end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\nplus(\zero,a) = \simprec{\id}{\mu}(\zero,a) = \id(a) = a.\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the first equality. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(\next(a),\zero) \\
+ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\zero) \\
+ &amp; = &amp; \mu(a, \zero, \simprec{\id}{\mu}(a,\zero)) \\
+ &amp; = &amp; \mu(a, \zero, \nplus(a, \zero)) \\
+ &amp; = &amp; \mu(a,\zero,a) \\
+ &amp; = &amp; \next(a)
+\end{eqnarray*}\]</span> as needed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(\next(a),b) \\
+ &amp; = &amp; \simprec{\id}{\mu}(\next(a),b) \\
+ &amp; = &amp; \mu(a,b,\simprec{\id}{\mu}(a,b)) \\
+ &amp; = &amp; \mu(a,b,\nplus(a,b)) \\
+ &amp; = &amp; \next(\nplus(a,b)).
+\end{eqnarray*}\]</span> We show the second equality by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\zero,\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\zero,\next(b)) \\ &amp; = &amp; \id(\next(b)) \\ &amp; = &amp; \next(b). \end{eqnarray*}\]</span> For the inductive step, suppose we have <span class="math inline">\(\next(\nplus(a,b)) = \nplus(a,\next(b))\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),\next(b)) \\ &amp; = &amp; \simprec{\id}{\mu}(\next(a),\next(b)) \\ &amp; = &amp; \mu(a, \next(b), \simprec{\id}{\mu}(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \nplus(a, \next(b))) \\ &amp; = &amp; \mu(a, \next(b), \next(\nplus(a,b))) \\ &amp; = &amp; \next(\next(\nplus(a,b))) \\ &amp; = &amp; \next(\nplus(\next(a),b)) \end{eqnarray*}\]</span> as needed.</li>
 <li>We will show this by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\nplus(\zero,b),c) = \nplus(b,c) = \nplus(\zero,\nplus(b,c)).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\nplus(\next(a),b),c) \\ &amp; = &amp; \nplus(\next(\nplus(a,b)),c) \\ &amp; = &amp; \next(\nplus(\nplus(a,b),c)) \\ &amp; = &amp; \next(\nplus(a, \nplus(b,c))) \\ &amp; = &amp; \nplus(\next(a), \nplus(b,c)) \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\zero,b) = b = \nplus(b,\zero).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nplus(\next(a),b) \\ &amp; = &amp; \next(\nplus(a,b)) \\ &amp; = &amp; \next(\nplus(b,a)) \\ &amp; = &amp; \nplus(b, \next(a))\end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, note that if <span class="math inline">\(\nplus(\zero,a) = \nplus(\zero,b)\)</span>, then we have <span class="math display">\[a = \nplus(\zero,a) = \nplus(\zero,b) = b.\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(c\)</span>. Now if <span class="math display">\[\nplus(\next(c),a)) = \nplus(\next(c),b),\]</span> then <span class="math display">\[\next(\nplus(c,a)) = \next(\nplus(c,b))\]</span> so that <span class="math display">\[\nplus(c,a) = \nplus(c,b)\]</span> and thus <span class="math inline">\(a = b\)</span> as needed.</li>
@@ -188,13 +220,10 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
 <span class="ot">&gt;</span>       }</code></pre></div>
-<p>Sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> _test_plus (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">100</span> <span class="dv">1000</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">1000</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">1000</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">1000</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">1000</span> tests<span class="fu">.</span></code></pre></div>
 <p>woo!</p>
+<p>I will also provide a <code>main</code> function so my build scripts for this blog can automatically compile and run the tests.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_plus ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_plus <span class="fu">=</span> _test_plus (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">100</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

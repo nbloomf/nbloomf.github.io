@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.github.io - Exponentiation</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../about.html">About</a>
+    <a href="../../projects.html">Projects</a>
+    <a href="../../contact.html">Contact</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Exponentiation</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-04-21 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathsf{and}}\)
+\(\newcommand{\bor}{\mathsf{or}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+\(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
+\(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
+\(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+
+<!--- natural number arithmetic ---->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- list -->
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\foldl}[2]{\mathsf{foldl}(#1,#2)}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Exponentiation.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Exponentiation</span>
+<span class="ot">&gt;</span>   ( power, _test_power, main_power
+<span class="ot">&gt;</span>   ) <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd, lcm)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">DivisionAlgorithm</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Divides</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GreatestCommonDivisor</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">CoprimeTo</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LeastCommonMultiple</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<p>We defined <span class="math inline">\(\ntimes\)</span> as iterated addition; similarly, exponentiation is iterated multiplication. We’ll call this function <span class="math inline">\(\npower\)</span>.</p>
+<div class="result">
+<div class="defn">
+<p>
+Define <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> by <span class="math inline">\(\varphi(a) = \next(\zero)\)</span>, and define <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> by <span class="math inline">\(\mu(k,a,b) = \ntimes(b,a)\)</span>. We define <span class="math inline">\(\npower : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\npower(a,b) = \simprec{\varphi}{\mu}(b,a).\]</span>
+</p>
+</div>
+</div>
+<p>Some special cases:</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\npower(a,\zero) = \next(\zero)\)</span>.</li>
+<li><span class="math inline">\(\npower(a,\next(\zero)) = a\)</span>.</li>
+<li><span class="math inline">\(\npower(\zero,\next(a)) = \zero\)</span>.</li>
+<li><span class="math inline">\(\npower(\next(\zero),a) = \next(\zero)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\zero) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\zero,a) \\
+ &amp; = &amp; \varphi(a) \\
+ &amp; = &amp; \next(\zero).
+\end{eqnarray*}\]</span></li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\next(\zero)) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\next(\zero),a) \\
+ &amp; = &amp; \ntimes(a,\simprec{\varphi}{\mu}(\zero,a)) \\
+ &amp; = &amp; \ntimes(a,\next(\zero)) \\
+ &amp; = &amp; a.
+\end{eqnarray*}\]</span></li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(\zero,\next(a)) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\next(a),\zero) \\
+ &amp; = &amp; \ntimes(\zero,\npower(a,\zero)) \\
+ &amp; = &amp; \zero.
+\end{eqnarray*}\]</span></li>
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\npower(\next(\zero),\zero) = \next(\zero)\)</span> by (1). For the inductive step, suppose <span class="math inline">\(\npower(\next(\zero),a) = \next(\zero)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(\next(\zero),\next(a)) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\next(a),\next(\zero)) \\
+ &amp; = &amp; \ntimes(\next(\zero),\simprec{\varphi}{\mu}(a,\next(\zero))) \\
+ &amp; = &amp; \ntimes(\next(\zero),\npower(\next(\zero),a)) \\
+ &amp; = &amp; \npower(\next(\zero),a) \\
+ &amp; = &amp; \next(\zero)
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>And interaction with <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\npower(a,\next(b)) = \ntimes(a,\npower(a,b))\)</span>.</li>
+<li><span class="math inline">\(\npower(a,\nplus(b,c)) = \ntimes(\npower(a,b),\npower(a,c))\)</span>.</li>
+<li><span class="math inline">\(\npower(a,\ntimes(b,c)) = \npower(\npower(a,b),c)\)</span>.</li>
+<li><span class="math inline">\(\npower(\ntimes(a,b),c) = \ntimes(\npower(a,c),\npower(b,c))\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\next(b)) \\
+ &amp; = &amp; \simprec{\varphi}{\mu}(\next(b),a) \\
+ &amp; = &amp; \ntimes(a,\simprec{\varphi}{\mu}(b,a)) \\
+ &amp; = &amp; \ntimes(a,\npower(a,b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\nplus(b,c)) \\
+ &amp; = &amp; \npower(a,\nplus(b,\zero)) \\
+ &amp; = &amp; \npower(a,b) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\next(\zero)) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\npower(a,\zero)) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\npower(a,c)).
+\end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for some <span class="math inline">\(c \in \nats\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\nplus(b,\next(c))) \\
+ &amp; = &amp; \npower(a,\next(\nplus(b,c))) \\
+ &amp; = &amp; \ntimes(a,\npower(a,\nplus(b,c))) \\
+ &amp; = &amp; \ntimes(a,\ntimes(\npower(a,b),\npower(a,c))) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\ntimes(a,\npower(a,c))) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\npower(a,\next(c)))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\ntimes(b,c)) \\
+ &amp; = &amp; \npower(a,\ntimes(b,\zero)) \\
+ &amp; = &amp; \npower(a,\zero) \\
+ &amp; = &amp; \next(\zero) \\
+ &amp; = &amp; \npower(\npower(a,b),\zero) \\
+ &amp; = &amp; \npower(\npower(a,b),c).
+\end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for some <span class="math inline">\(c\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(a,\ntimes(b,\next(c))) \\
+ &amp; = &amp; \npower(a,\nplus(b,\ntimes(b,c))) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\npower(a,\ntimes(b,c))) \\
+ &amp; = &amp; \ntimes(\npower(a,b),\npower(\npower(a,b),c)) \\
+ &amp; = &amp; \npower(\npower(a,b),\next(c))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(\ntimes(a,b),c) \\
+ &amp; = &amp; \npower(\ntimes(a,b),\zero) \\
+ &amp; = &amp; \next(\zero) \\
+ &amp; = &amp; \ntimes(\next(\zero),\next(\zero)) \\
+ &amp; = &amp; \ntimes(\npower(a,\zero),\npower(b,\zero)) \\
+ &amp; = &amp; \ntimes(\npower(a,c),\npower(b,c)).
+\end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for some <span class="math inline">\(c\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \npower(\ntimes(a,b),\next(c)) \\
+ &amp; = &amp; \ntimes(\ntimes(a,b),\npower(\ntimes(a,b),c)) \\
+ &amp; = &amp; \ntimes(\ntimes(a,b),\ntimes(\npower(a,c),\npower(b,c))) \\
+ &amp; = &amp; \ntimes(\ntimes(a,\npower(a,c))\ntimes(b,\npower(b,c))) \\
+ &amp; = &amp; \ntimes(\npower(a,\next(c)),\npower(b,\next(c)))
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
+<h2 id="implementation-and-testing">Implementation and Testing</h2>
+<p>Here’s <code>power</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; power ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> power a b <span class="fu">=</span> simpleRec phi mu b a
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     phi _     <span class="fu">=</span> next zero
+<span class="ot">&gt;</span>     mu  _ a b <span class="fu">=</span> times b a</code></pre></div>
+<p>Property tests:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- power(a,0) == 1</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_zero_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_zero_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power a zero) <span class="fu">==</span> (next zero)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- power(a,1) == a</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_one_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_one_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power a (next zero)) <span class="fu">==</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- power(a,0) == 1</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_zero_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_zero_left _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power zero (next a)) <span class="fu">==</span> zero
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- power(a,plus(b,c)) == times(power(a,b),power(a,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_plus_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_plus_right _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power a (plus b c)) <span class="fu">==</span> times (power a b) (power a c)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- power(a,times(b,c)) == power(power(a,b),c)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_times_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_times_right _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power a (times b c)) <span class="fu">==</span> power (power a b) c
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- power(times(a,b),c) == times(power(a,c),power(b,c))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power_times_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_power_times_left _ a b c <span class="fu">=</span>
+<span class="ot">&gt;</span>   (power (times a b) c) <span class="fu">==</span> times (power a c) (power b c)</code></pre></div>
+<p>And the suite:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for power</span>
+<span class="ot">&gt;</span> _<span class="ot">test_power ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_power t maxSize numCases <span class="fu">=</span> sequence_
+<span class="ot">&gt;</span>   [ quickCheckWith args (_test_power_zero_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_power_one_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_power_zero_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_power_plus_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_power_times_right t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_power_times_left t)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
+<span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
+<span class="ot">&gt;</span>       }</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_power ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_power <span class="fu">=</span> _test_power (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">5</span> <span class="dv">30</span></code></pre></div>
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
