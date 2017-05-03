@@ -47,10 +47,14 @@ Posted on 2017-05-06 by nbloomf
 <!-- basic maps -->
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- tuples -->
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\swap}{\mathsf{swap}}\)
 \(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -113,6 +117,8 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\range}{\mathsf{range}}\)
 \(\newcommand{\zip}{\mathsf{zip}}\)
 \(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -239,12 +245,20 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 <p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets.</p>
 <p>Define <span class="math inline">\(\swap : A \times B \rightarrow B \times A\)</span> by <span class="math display">\[\swap(a,b) = (b,a).\]</span></p>
 <p>Define <span class="math inline">\(\pair : U^A \times V^B \rightarrow (U \times V)^{A \times B}\)</span> by <span class="math display">\[\pair(f,g)(a,b) = (f(a),g(b)).\]</span></p>
+<p>Define <span class="math inline">\(\assocL : A \times (B \times C) \rightarrow (A \times B) \times C\)</span> by <span class="math display">\[\assocL(a,(b,c)) = ((a,b),c).\]</span></p>
+<p>Define <span class="math inline">\(\assocR : (A \times B) \times C \rightarrow A \times (B \times C)\)</span> by <span class="math display">\[\assocR((a,b),c) = (a,(b,c)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; swap ::</span> (a,b) <span class="ot">-&gt;</span> (b,a)
 <span class="ot">&gt;</span> swap (a,b) <span class="fu">=</span> (b,a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt; pair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> (a,b) <span class="ot">-&gt;</span> (u,v)
-<span class="ot">&gt;</span> pair f g (a,b) <span class="fu">=</span> (f a, g b)</code></pre></div>
+<span class="ot">&gt;</span> pair f g (a,b) <span class="fu">=</span> (f a, g b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; assocL ::</span> (a,(b,c)) <span class="ot">-&gt;</span> ((a,b),c)
+<span class="ot">&gt;</span> assocL (a,(b,c)) <span class="fu">=</span> ((a,b),c)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; assocR ::</span> ((a,b),c) <span class="ot">-&gt;</span> (a,(b,c))
+<span class="ot">&gt;</span> assocR ((a,b),c) <span class="fu">=</span> (a,(b,c))</code></pre></div>
 </p>
 </div>
 </div>
@@ -357,6 +371,66 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \nmin(\length(\cons(a,z)),\length(\cons(b,y))) \\
  &amp; = &amp; \nmin(x),\length(\cons(b,y))) \\
 \end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\zip\)</span> is kind of associative:</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\zip(\zip(x,y),z) = \map(\assocL)(\zip(x,\zip(y,z)))\)</span>.</li>
+<li><span class="math inline">\(\zip(x,\zip(y,z)) = \map(\assocR)(\zip(\zip(x,y),z))\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\zip(x,y),z) \\
+ &amp; = &amp; \zip(\zip(\nil,y),z) \\
+ &amp; = &amp; \zip(\nil,z) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zip(\nil,\zip(y,z)))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
+ &amp; = &amp; \zip(\zip(\cons(a,x),\nil),z) \\
+ &amp; = &amp; \zip(\nil,z) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\nil)) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\zip(\nil,z))) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\zip(y,z)))
+\end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
+ &amp; = &amp; \zip(\zip(\cons(a,x),y),\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\nil)) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\zip(y,z)))
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span> and <span class="math inline">\(z = \cons(c,v)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
+ &amp; = &amp; \zip(\zip(\cons(a,x),\cons(b,u)),\cons(c,v)) \\
+ &amp; = &amp; \zip(\cons((a,b),\zip(x,u)),\cons(c,v)) \\
+ &amp; = &amp; \cons(((a,b),c),\zip(\zip(x,u),v)) \\
+ &amp; = &amp; \cons(\assocL(a,(b,c)),\map(\assocL)(\zip(x,\zip(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\cons((a,(b,c)),\zip(x,\zip(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\cons((b,c),\zip(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\zip(\cons(b,u),\cons(c,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zip(\cons(a,x),\zip(y,z))) \\
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(x,\zip(y,z)) \\
+ &amp; = &amp; \id(\zip(x,\zip(y,z))) \\
+ &amp; = &amp; \map(\id)(\zip(x,\zip(y,z))) \\
+ &amp; = &amp; \map(\assocR \circ \assocL)(\zip(x,\zip(y,z))) \\
+ &amp; = &amp; \map(\assocR)(\map(\assocL)(\zip(x,\zip(y,z)))) \\
+ &amp; = &amp; \map(\assocR)(\zip(\zip(x,y),z)) 
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
 </p>
 </div>
 </div>
@@ -569,6 +643,74 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
+<p><span class="math inline">\(\zipPad\)</span> is also kind of associative:</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(\alpha \in A\)</span>, <span class="math inline">\(\beta \in B\)</span>, <span class="math inline">\(\gamma \in C\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(x,y),z) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z))).
+\end{eqnarray*}\]</span></li>
+<li><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z)) \\
+ &amp; = &amp; \map(\assocR)(\zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(x,y),z)).
+\end{eqnarray*}\]</span></li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(x,y),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\nil,y),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\nil,z) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\nil,\zipPad(\beta,\gamma)(y,z))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z)))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),y),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),\nil),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\nil,z) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\nil)) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zipPad(\beta,\gamma)(\nil,z))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zipPad(\beta,\gamma)(y,z)))
+\end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),y),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),y),\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \map(\assocL)(\nil) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\nil)) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zipPad(\beta,\gamma)(y,\nil))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zipPad(\beta,\gamma)(y,z))) \\
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span> and <span class="math inline">\(z = \cons(c,v)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),y),z) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(\cons(a,x),\cons(b,u)),\cons(c,v)) \\
+ &amp; = &amp; \zipPad((\alpha,\beta),\gamma)(\cons((a,b),\zipPad(\alpha,\beta)(x,u)),\cons(c,v)) \\
+ &amp; = &amp; \cons(((a,b),c),\zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(x,u),v)) \\
+ &amp; = &amp; \cons(\assocL(a,(b,c)),\map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\cons((a,(b,c)),\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\cons((b,c),\zipPad(\beta,\gamma)(u,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zipPad(\beta,\gamma)(\cons(b,u),\cons(c,v)))) \\
+ &amp; = &amp; \map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(\cons(a,x),\zip(y,z))) \\
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z)) \\
+ &amp; = &amp; \id(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z))) \\
+ &amp; = &amp; \map(\id)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z))) \\
+ &amp; = &amp; \map(\assocR \circ \assocL)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z))) \\
+ &amp; = &amp; \map(\assocR)(\map(\assocL)(\zipPad(\alpha,(\beta,\gamma))(x,\zipPad(\beta,\gamma)(y,z)))) \\
+ &amp; = &amp; \map(\assocR)(\zipPad((\alpha,\beta),\gamma)(\zipPad(\alpha,\beta)(x,y),z))
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>A utility for type fixing:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
@@ -586,6 +728,20 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_zip_length _ x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   (length (zip x y)) <span class="fu">==</span> (min (length x) (length y))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- zip(zip(x,y),z) == map(assocL)zip(x,zip(y,z))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zip_zip_left ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zip_zip_left _ x y z <span class="fu">=</span>
+<span class="ot">&gt;</span>   (zip (zip x y) z) <span class="ot">`listEq`</span> map assocL (zip x (zip y z))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- zip(zip(x,y),z) == map(assocR)zip(x,zip(y,z))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zip_zip_right ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zip_zip_right _ x y z <span class="fu">=</span>
+<span class="ot">&gt;</span>   (zip x (zip y z)) <span class="ot">`listEq`</span> map assocR (zip (zip x y) z)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- zip'(x,y) == zip(x,y)</span>
@@ -609,6 +765,26 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span>   (length (zipPad u v x y)) <span class="fu">==</span> (max (length x) (length y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- zipPad((a,b),c)(zipPad(a,b)(x,y),z)</span>
+<span class="ot">&gt;</span> <span class="co">--   == map(assocL)zipPad(a,(b,c))(x,zipPad(b,c)(y,z))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zipPad_zipPad_left ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zipPad_zipPad_left _ a b c x y z <span class="fu">=</span>
+<span class="ot">&gt;</span>   listEq
+<span class="ot">&gt;</span>     (zipPad (a,b) c (zipPad a b x y) z)
+<span class="ot">&gt;</span>     (map assocL (zipPad a (b,c) x (zipPad b c y z)))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- zipPad((a,b),c)(zipPad(a,b)(x,y),z)</span>
+<span class="ot">&gt;</span> <span class="co">--   == map(assocR)zipPad(a,(b,c))(x,zipPad(b,c)(y,z))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zipPad_zipPad_right ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zipPad_zipPad_right _ a b c x y z <span class="fu">=</span>
+<span class="ot">&gt;</span>   listEq
+<span class="ot">&gt;</span>     (zipPad a (b,c) x (zipPad b c y z))
+<span class="ot">&gt;</span>     (map assocR (zipPad (a,b) c (zipPad a b x y) z))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- zipPad'(x,y) == zipPad(x,y)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_zipPad_alt ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
@@ -621,10 +797,14 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> _test_zip t n maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_zip_swap t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_zip_length t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_zip_zip_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_zip_zip_right t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_zip_alt t)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_zipPad_swap t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_zipPad_length t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_zipPad_zipPad_left t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_zipPad_zipPad_right t)
 <span class="ot">&gt;</span>   , quickCheckWith args (_test_zipPad_alt t)
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span>   <span class="kw">where</span>
