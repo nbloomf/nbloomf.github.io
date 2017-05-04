@@ -121,6 +121,8 @@ Posted on 2017-04-29 by nbloomf
 \(\newcommand{\suffix}{\mathsf{suffix}}\)
 \(\newcommand{\lcp}{\mathsf{lcp}}\)
 \(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -142,7 +144,8 @@ Posted on 2017-04-29 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Length</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">At</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll explore one of the most useful functions on <span class="math inline">\(\lists{A}\)</span>: <span class="math inline">\(\map\)</span>. What <span class="math inline">\(\map\)</span> does is take a function <span class="math inline">\(A \rightarrow B\)</span> and a list in <span class="math inline">\(\lists{A}\)</span>, and apply the function “itemwise” to get a list in <span class="math inline">\(\lists{B}\)</span>.</p>
 <div class="result">
 <div class="defn">
@@ -346,17 +349,33 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\map\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- at(nil,k) == *</span>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- map(id)(x) == x</span>
 <span class="ot">&gt;</span> _<span class="ot">test_map_id ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_map_id _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (map id x) <span class="ot">`listEq`</span> x</code></pre></div>
+<span class="ot">&gt;</span>   (map id x) <span class="ot">`listEq`</span> x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- map(f)(cat(x,y)) == cat(map(f)(x),map(f)(y))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_map_cat ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_map_cat _ f x y <span class="fu">=</span>
+<span class="ot">&gt;</span>   (map f (cat x y)) <span class="ot">`listEq`</span> (cat (map f x) (map f y))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- map(f)(rev(x)) == rev(map(f)(x))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_map_rev ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_map_rev _ f x <span class="fu">=</span>
+<span class="ot">&gt;</span>   (map f (rev x)) <span class="ot">`listEq`</span> (rev (map f x))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for map</span>
-<span class="ot">&gt;</span> _<span class="ot">test_map ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_map ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> _test_map t n maxSize numCases <span class="fu">=</span> sequence_
 <span class="ot">&gt;</span>   [ quickCheckWith args (_test_map_id t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_map_cat t)
+<span class="ot">&gt;</span>   , quickCheckWith args (_test_map_rev t)
 <span class="ot">&gt;</span>   ]
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
