@@ -117,12 +117,15 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\range}{\mathsf{range}}\)
 \(\newcommand{\zip}{\mathsf{zip}}\)
 \(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
 \(\newcommand{\prefix}{\mathsf{prefix}}\)
 \(\newcommand{\suffix}{\mathsf{suffix}}\)
 \(\newcommand{\lcp}{\mathsf{lcp}}\)
 \(\newcommand{\lcs}{\mathsf{lcs}}\)
 \(\newcommand{\all}{\mathsf{all}}\)
 \(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -132,7 +135,7 @@ Posted on 2017-04-23 by nbloomf
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Lists</span>
-<span class="ot">&gt;</span>   ( <span class="dt">List</span>(), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), foldr, tail, listEq
+<span class="ot">&gt;</span>   ( <span class="dt">List</span>(), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), foldr, tail, listEq, listEqBy
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, tail)
@@ -342,12 +345,15 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; listEq ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> listEq x y <span class="fu">=</span> <span class="kw">case</span> (listShape x, listShape y) <span class="kw">of</span>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; listEqBy ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> listEqBy f x y <span class="fu">=</span> <span class="kw">case</span> (listShape x, listShape y) <span class="kw">of</span>
 <span class="ot">&gt;</span>   (<span class="dt">Nil</span>,      <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">True</span>
 <span class="ot">&gt;</span>   (<span class="dt">Nil</span>,      <span class="dt">Cons</span> _ _) <span class="ot">-&gt;</span> <span class="dt">False</span>
 <span class="ot">&gt;</span>   (<span class="dt">Cons</span> _ _, <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">False</span>
-<span class="ot">&gt;</span>   (<span class="dt">Cons</span> a u, <span class="dt">Cons</span> b v) <span class="ot">-&gt;</span> (a <span class="fu">==</span> b) <span class="fu">&amp;&amp;</span> (listEq u v)</code></pre></div>
+<span class="ot">&gt;</span>   (<span class="dt">Cons</span> a u, <span class="dt">Cons</span> b v) <span class="ot">-&gt;</span> (f a b) <span class="fu">&amp;&amp;</span> (listEqBy f u v)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; listEq ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> listEq <span class="fu">=</span> listEqBy (<span class="fu">==</span>)</code></pre></div>
 <p>We’ll also throw in an <code>Arbitrary</code> instance for <code>List</code> here for use in testing later.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> a) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">List</span> a) <span class="kw">where</span>
 <span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>

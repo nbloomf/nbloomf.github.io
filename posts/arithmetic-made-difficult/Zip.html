@@ -117,12 +117,15 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\range}{\mathsf{range}}\)
 \(\newcommand{\zip}{\mathsf{zip}}\)
 \(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
 \(\newcommand{\prefix}{\mathsf{prefix}}\)
 \(\newcommand{\suffix}{\mathsf{suffix}}\)
 \(\newcommand{\lcp}{\mathsf{lcp}}\)
 \(\newcommand{\lcs}{\mathsf{lcs}}\)
 \(\newcommand{\all}{\mathsf{all}}\)
 \(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -131,7 +134,7 @@ Posted on 2017-05-06 by nbloomf
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Zip.lhs">the source</a> into GHCi and play along.</p>
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Zip</span>
-<span class="ot">&gt;</span>   ( zip, zipPad, _test_zip, main_zip
+<span class="ot">&gt;</span>   ( zip, zipPad, _test_zip, main_zip, swap, pair, assocL, assocR
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, length, head, tail, map, zip, min, max)
@@ -186,17 +189,16 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 </div>
 </div>
 <p>We can implement <span class="math inline">\(\zip\)</span> directly with <span class="math inline">\(\foldr{-}{-}\)</span> as in the definition.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">
-<span class="fu">&gt;</span><span class="ot"> zip' ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
-<span class="fu">&gt;</span> zip' <span class="fu">=</span> foldr epsilon phi
-<span class="fu">&gt;</span>   <span class="kw">where</span>
-<span class="fu">&gt;</span><span class="ot">     phi ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (t b <span class="ot">-&gt;</span> t (a,b)) <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
-<span class="fu">&gt;</span>     phi x f z <span class="fu">=</span> <span class="kw">case</span> listShape z <span class="kw">of</span>
-<span class="fu">&gt;</span>       <span class="dt">Nil</span>       <span class="ot">-&gt;</span> nil
-<span class="fu">&gt;</span>       <span class="dt">Cons</span> y ys <span class="ot">-&gt;</span> cons (x,y) (f ys)
-<span class="fu">&gt;</span>
-<span class="fu">&gt;</span><span class="ot">     epsilon ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
-<span class="fu">&gt;</span>     epsilon _ <span class="fu">=</span> nil</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; zip' ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
+<span class="ot">&gt;</span> zip' <span class="fu">=</span> foldr epsilon phi
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     phi ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> (t b <span class="ot">-&gt;</span> t (a,b)) <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
+<span class="ot">&gt;</span>     phi x f z <span class="fu">=</span> <span class="kw">case</span> listShape z <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nil</span>       <span class="ot">-&gt;</span> nil
+<span class="ot">&gt;</span>       <span class="dt">Cons</span> y ys <span class="ot">-&gt;</span> cons (x,y) (f ys)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     epsilon ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)
+<span class="ot">&gt;</span>     epsilon _ <span class="fu">=</span> nil</code></pre></div>
 <p>This does the job. But it’s also a little awkward; it constructs an intermediate list of functions. The following result suggests a more straightforward implementation.</p>
 <div class="result">
 <div class="thm">
@@ -716,9 +718,6 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>A utility for type fixing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\zip\)</span> and <span class="math inline">\(\zipPad\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- map(swap)(zip(x,y)) == zip(y,x)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_zip_swap ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
