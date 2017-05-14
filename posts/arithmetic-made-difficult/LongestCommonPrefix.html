@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Longest Common Prefix</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,14 +139,15 @@ Posted on 2017-05-09 by nbloomf
 <span class="ot">&gt;</span>   ( lcp, lcs, _test_lcp, main_lcp
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, map, zip)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lists</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Reverse</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Cat</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prefix</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>) 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll compute the <em>longest common prefix</em> of two strings (and while we’re at it, the <em>longest common suffix</em>). Given two lists <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, their longest common prefix is the longest list which is a prefix of both, just like it says on the tin. We’ll denote this function <span class="math inline">\(\lcp\)</span>, and we want it to have a signature like <span class="math display">\[\lists{A} \times \lists{A} \rightarrow \lists{A}.\]</span> To define <span class="math inline">\(\lcp\)</span> as a fold like <span class="math display">\[\lcp(x,y) = \foldr{\varepsilon}{\varphi}(x)(y)\]</span> we need <span class="math inline">\(\varepsilon : \lists{A}^{\lists{A}}\)</span> such that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nil \\
@@ -175,14 +178,14 @@ Let <span class="math inline">\(A\)</span> be a set. Define <span class="math in
 </div>
 </div>
 <p>We can translate <span class="math inline">\(\lcp\)</span> to Haskell directly as follows:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcp' ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcp' ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> lcp' <span class="fu">=</span> foldr epsilon phi
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     epsilon _ <span class="fu">=</span> nil
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     phi a f w <span class="fu">=</span> <span class="kw">case</span> listShape w <span class="kw">of</span>
 <span class="ot">&gt;</span>       <span class="dt">Nil</span>      <span class="ot">-&gt;</span> nil
-<span class="ot">&gt;</span>       <span class="dt">Cons</span> b u <span class="ot">-&gt;</span> <span class="kw">if</span> a <span class="fu">==</span> b
+<span class="ot">&gt;</span>       <span class="dt">Cons</span> b u <span class="ot">-&gt;</span> <span class="kw">if</span> a <span class="fu">====</span> b
 <span class="ot">&gt;</span>         <span class="kw">then</span> cons a (f u)
 <span class="ot">&gt;</span>         <span class="kw">else</span> nil</code></pre></div>
 <p>The next result suggests a more straightforward implementation.</p>
@@ -230,12 +233,12 @@ Let <span class="math inline">\(A\)</span> be a set. Define <span class="math in
 </div>
 </div>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcp ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcp ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> lcp x y <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Nil</span>      <span class="ot">-&gt;</span> nil
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> a u <span class="ot">-&gt;</span> <span class="kw">case</span> listShape y <span class="kw">of</span>
 <span class="ot">&gt;</span>     <span class="dt">Nil</span>      <span class="ot">-&gt;</span> nil
-<span class="ot">&gt;</span>     <span class="dt">Cons</span> b v <span class="ot">-&gt;</span> <span class="kw">if</span> a <span class="fu">==</span> b
+<span class="ot">&gt;</span>     <span class="dt">Cons</span> b v <span class="ot">-&gt;</span> <span class="kw">if</span> a <span class="fu">====</span> b
 <span class="ot">&gt;</span>       <span class="kw">then</span> cons a (lcp u v)
 <span class="ot">&gt;</span>       <span class="kw">else</span> nil</code></pre></div>
 <p>Now <span class="math inline">\(\lcp\)</span> lives up to the name (the <em>universal property</em> of <span class="math inline">\(\lcp\)</span>):</p>
@@ -476,13 +479,61 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
+<p>And <span class="math inline">\(\lcp\)</span> interacts with <span class="math inline">\(\map(f)\)</span> if <span class="math inline">\(f\)</span> is injective.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcp(x,y)) = \lcp(\map(f)(x),\map(f)(y)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \map(f)(\lcp(x,y)) \\
+ &amp; = &amp; \map(f)(\lcp(\nil,y)) \\
+ &amp; = &amp; \map(f)(\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \lcp(\nil,\map(f)(y)) \\
+ &amp; = &amp; \lcp(\map(f)(\nil),\map(f)(y)) \\
+ &amp; = &amp; \lcp(\map(f)(x),\map(f)(y))
+\end{eqnarray*}\]</span> as needed. Suppose now the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possitiblities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \map(f)(\lcp(\cons(a,x),y)) \\
+ &amp; = &amp; \map(f)(\lcp(\cons(a,x),\nil)) \\
+ &amp; = &amp; \map(f)(\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\nil) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(\nil)) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(y))
+\end{eqnarray*}\]</span> as needed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span>. If <span class="math inline">\(a = b\)</span>, we have <span class="math inline">\(f(a) = f(b)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \map(f)(\lcp(\cons(a,x),y)) \\
+ &amp; = &amp; \map(f)(\lcp(\cons(a,x),\cons(b,u))) \\
+ &amp; = &amp; \map(f)(\lcp(\cons(a,x),\cons(a,u))) \\
+ &amp; = &amp; \map(f)(\cons(a,\lcp(x,u))) \\
+ &amp; = &amp; \cons(f(a),\map(f)(\lcp(x,u))) \\
+ &amp; = &amp; \cons(f(a),\lcp(\map(f)(x),\map(f)(u))) \\
+ &amp; = &amp; \lcp(\cons(f(a),\map(f)(x)),\cons(f(a),\map(f)(u))) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(\cons(a,u))) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(\cons(b,u))) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(y))
+\end{eqnarray*}\]</span> as needed. On the other hand, if <span class="math inline">\(a \neq b\)</span>, then (since <span class="math inline">\(f\)</span> is injective) <span class="math inline">\(f(a) \neq f(b)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \map(f)(\lcp(\cons(a,x),y)) \\
+ &amp; = &amp; \map(f)(\lcp(\cons(a,x),\cons(b,u))) \\
+ &amp; = &amp; \map(f)(\lcp(x,u)) \\
+ &amp; = &amp; \lcp(\map(f)(x),\map(f)(u)) \\
+ &amp; = &amp; \lcp(\cons(f(a),\map(f)(x)),\cons(f(b),\map(f)(u))) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(\cons(b,u))) \\
+ &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(y))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
 <p>We can define the dual operation, longest common suffix, in terms of <span class="math inline">\(\lcp\)</span> like so.</p>
 <div class="result">
 <div class="defn">
 <p>
 <p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\lcs : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcs(x,y) = \rev(\lcp(\rev(x),\rev(y))).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcs ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcs ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> lcs x y <span class="fu">=</span> rev (lcp (rev x) (rev y))</code></pre></div>
 </p>
 </div>
@@ -596,116 +647,165 @@ Note that <span class="math display">\[\lcs(x,y) = x\]</span> if and only if <sp
 </p>
 </div>
 </div>
+<p>And <span class="math inline">\(\lcs\)</span> cooperates with <span class="math inline">\(\snoc\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(a,b \in A\)</span> we have <span class="math display">\[\lcs(\snoc(a,x),\snoc(b,y)) = \left\{\begin{array}{ll} \snoc(a,\lcs(x,y)) &amp; \mathrm{if}\ a = b \\ \nil &amp; \mathrm{if}\ a \neq b. \end{array}\right.\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \lcs(\snoc(a,x),\snoc(b,y)) \\
+ &amp; = &amp; \rev(\lcp(\rev(\snoc(a,x)),\rev(\snoc(b,y))) \\
+ &amp; = &amp; \rev(\lcp(\cons(a,\rev(x)),\cons(b,\rev(y)) \\
+ &amp; = &amp; Q.
+\end{eqnarray*}\]</span> If <span class="math inline">\(a = b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Q \\
+ &amp; = &amp; \rev(\cons(a,\lcp(\rev(x),\rev(y)))) \\
+ &amp; = &amp; \snoc(a,\rev(\lcp(\rev(x),\rev(y)))) \\
+ &amp; = &amp; \snoc(a,\lcs(x,y))
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Q \\
+ &amp; = &amp; \rev(\nil) \\
+ &amp; = &amp; \nil
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p>And <span class="math inline">\(\lcs\)</span> also interacts with <span class="math inline">\(\map(f)\)</span> if <span class="math inline">\(f\)</span> is injective.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcs(x,y)) = \lcs(\map(f)(x),\map(f)(y)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \map(f)(\lcs(x,y)) \\
+ &amp; = &amp; \map(f)(\rev(\lcp(\rev(x),\rev(y)))) \\
+ &amp; = &amp; \rev(\map(f)(\lcp(\rev(x),\rev(y)))) \\
+ &amp; = &amp; \rev(\lcp(\map(f)(\rev(x)),\map(f)(\rev(y)))) \\
+ &amp; = &amp; \rev(\lcp(\rev(\map(f)(x)),\rev(\map(f)(y)))) \\
+ &amp; = &amp; \lcs(\map(f)(x),\map(f)(y))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\lcp\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- lcp(x,y) == lcp'(x,y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_alt ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_alt _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcp x y) <span class="ot">`listEq`</span> (lcp' x y)
+<span class="ot">&gt;</span>   (lcp x y) <span class="fu">====</span> (lcp' x y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcp(x,x) == x</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_idempotent ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_idempotent _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcp x x) <span class="ot">`listEq`</span> x
+<span class="ot">&gt;</span>   (lcp x x) <span class="fu">====</span> x
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcp(x,y) == lcp(y,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_commutative ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_commutative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_commutative _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcp x y) <span class="ot">`listEq`</span> (lcp y x)
+<span class="ot">&gt;</span>   (lcp x y) <span class="fu">====</span> (lcp y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcp(lcp(x,y),z) == lcp(x,lcp(y,z))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_associative ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_associative _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcp (lcp x y) z) <span class="ot">`listEq`</span> (lcp x (lcp y z))
+<span class="ot">&gt;</span>   (lcp (lcp x y) z) <span class="fu">====</span> (lcp x (lcp y z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- cat(x,lcp(y,z)) == lcp(cat(x,y),cat(x,z))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_cat ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_cat _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat x (lcp y z)) <span class="ot">`listEq`</span> (lcp (cat x y) (cat x z))
+<span class="ot">&gt;</span>   (cat x (lcp y z)) <span class="fu">====</span> (lcp (cat x y) (cat x z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcp(x,y) == x iff prefix(x,y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_prefix ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_prefix _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   ((lcp x y) <span class="ot">`listEq`</span> x) <span class="fu">==</span> (prefix x y)
+<span class="ot">&gt;</span>   ((lcp x y) <span class="fu">====</span> x) <span class="fu">====</span> (prefix x y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- zip(lcp(x,y),lcp(u,v)) == lcp(zip(x,u),zip(y,v))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp_zip ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcp_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcp_zip _ x y u v <span class="fu">=</span>
-<span class="ot">&gt;</span>   (zip (lcp x y) (lcp u v)) <span class="ot">`listEq`</span> (lcp (zip x u) (zip y v))</code></pre></div>
+<span class="ot">&gt;</span>   (zip (lcp x y) (lcp u v)) <span class="fu">====</span> (lcp (zip x u) (zip y v))</code></pre></div>
 <p>Tests for <span class="math inline">\(\lcs\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- lcs(x,x) == x</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcs_idempotent ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcs_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcs_idempotent _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcs x x) <span class="ot">`listEq`</span> x
+<span class="ot">&gt;</span>   (lcs x x) <span class="fu">====</span> x
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcs(x,y) == lcs(y,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcs_commutative ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcs_commutative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcs_commutative _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcs x y) <span class="ot">`listEq`</span> (lcs y x)
+<span class="ot">&gt;</span>   (lcs x y) <span class="fu">====</span> (lcs y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcs(lcs(x,y),z) == lcs(x,lcs(y,z))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcs_associative ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcs_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcs_associative _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcs (lcs x y) z) <span class="ot">`listEq`</span> (lcs x (lcs y z))
+<span class="ot">&gt;</span>   (lcs (lcs x y) z) <span class="fu">====</span> (lcs x (lcs y z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- cat(lcs(x,y),z) == lcs(cat(x,z),cat(y,z))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcs_cat ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcs_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcs_cat _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat (lcs x y) z) <span class="ot">`listEq`</span> (lcs (cat x z) (cat y z))
+<span class="ot">&gt;</span>   (cat (lcs x y) z) <span class="fu">====</span> (lcs (cat x z) (cat y z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcs(x,y) == x iff suffix(x,y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcs_suffix ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcs_suffix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcs_suffix _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   ((lcs x y) <span class="ot">`listEq`</span> x) <span class="fu">==</span> (suffix x y)</code></pre></div>
+<span class="ot">&gt;</span>   ((lcs x y) <span class="fu">====</span> x) <span class="fu">====</span> (suffix x y)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for lcp and lcs</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcp ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a))
+<span class="ot">&gt;</span> _<span class="ot">test_lcp ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a))
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_lcp t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_lcp_alt t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_idempotent t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_commutative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_cat t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_prefix t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcp_zip t)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcs_idempotent t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcs_commutative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcs_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcs_cat t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcs_suffix t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_lcp t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_lcp_alt t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_idempotent t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_commutative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_associative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_cat t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_prefix t)
+<span class="ot">&gt;</span>   runTest args (_test_lcp_zip t)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_lcs_idempotent t)
+<span class="ot">&gt;</span>   runTest args (_test_lcs_commutative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcs_associative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcs_cat t)
+<span class="ot">&gt;</span>   runTest args (_test_lcs_suffix t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_lcp ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_lcp <span class="fu">=</span> _test_lcp (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_lcp <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

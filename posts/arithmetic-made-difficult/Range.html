@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Range</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-05-05 by nbloomf
 <span class="ot">&gt;</span>   ( range, _test_range, main_range
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, length, head, tail, map)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> 
@@ -150,6 +151,7 @@ Posted on 2017-05-05 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Map</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">UnfoldN</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>For our first application of <span class="math inline">\(\unfoldN\)</span> we’ll define a function, <span class="math inline">\(\range\)</span>, that constructs lists of natural numbers. There are a few ways to do this. We could take an argument <span class="math inline">\(n\)</span> and construct the list of natural numbers from <span class="math inline">\(\zero\)</span> to <span class="math inline">\(n\)</span>, but this is too specialized. We could instead take <em>two</em> arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> and construct the list of natural numbers from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span>, but we’ll have to check whether or not the arguments are in order. A third option – and the one we’ll take – is to take two arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and construct the list of the first <span class="math inline">\(b\)</span> natural numbers starting from <span class="math inline">\(a\)</span>.</p>
 <div class="result">
@@ -157,7 +159,7 @@ Posted on 2017-05-05 by nbloomf
 <p>
 <p>Define <span class="math inline">\(f : \nats \rightarrow \ast + \nats \times \nats\)</span> by <span class="math display">\[f(k) = (\next(k),k).\]</span> We then define <span class="math inline">\(\range : \nats \times \nats \rightarrow \lists{\nats}\)</span> by <span class="math display">\[\range(a,b) = \unfoldN(f,b,a).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; range ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t n
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; range ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t n
 <span class="ot">&gt;</span> range a b <span class="fu">=</span> unfoldN f b a
 <span class="ot">&gt;</span>   <span class="kw">where</span> f k <span class="fu">=</span> <span class="dt">Just</span> (next k, k)</code></pre></div>
 </p>
@@ -338,77 +340,77 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\range\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- range(a,next(b)) == cons(a,range(next(a),b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range_next_cons ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range_next_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_cons t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (cons a (range (next a) b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     x <span class="ot">`listEq`</span> y
+<span class="ot">&gt;</span>     x <span class="fu">====</span> y
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(a,next(b)) == snoc(plus(a,b),range(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range_next_snoc ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range_next_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_snoc t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (snoc (plus a b) (range a b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     x <span class="ot">`listEq`</span> y
+<span class="ot">&gt;</span>     x <span class="fu">====</span> y
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(a,plus(b,c)) == cat(range(a,b),range(plus(a,b),c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range_plus_right ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range_plus_right ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_plus_right t a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (plus b c)) <span class="ot">`withTypeOf`</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (plus b c)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (cat (range a b) (range (plus a b) c))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     x <span class="ot">`listEq`</span> y
+<span class="ot">&gt;</span>     x <span class="fu">====</span> y
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(next(a),b) == map(next,range(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range_next_left ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range_next_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_left t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (next a) b) <span class="ot">`withTypeOf`</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (next a) b) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (map next (range a b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     x <span class="ot">`listEq`</span> y
+<span class="ot">&gt;</span>     x <span class="fu">====</span> y
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(plus(a,b),c) == map(plus(a,-),range(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range_plus_left ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range_plus_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_plus_left t a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (plus a b) c) <span class="ot">`withTypeOf`</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (plus a b) c) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (map (plus a) (range b c))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     x <span class="ot">`listEq`</span> y</code></pre></div>
+<span class="ot">&gt;</span>     x <span class="fu">====</span> y</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for range</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_range t n maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_range_next_cons t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_range_next_snoc t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_range_plus_right t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_range_next_left t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_range_plus_left t n)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _<span class="ot">test_range ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_range t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_range_next_cons t)
+<span class="ot">&gt;</span>   runTest args (_test_range_next_snoc t)
+<span class="ot">&gt;</span>   runTest args (_test_range_plus_right t)
+<span class="ot">&gt;</span>   runTest args (_test_range_next_left t)
+<span class="ot">&gt;</span>   runTest args (_test_range_plus_left t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_range ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_range <span class="fu">=</span> _test_range (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Nat</span>) (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_range <span class="fu">=</span> _test_range (<span class="ot">nil ::</span> <span class="dt">ConsList</span> (<span class="dt">Nat</span> <span class="dt">Unary</span>)) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

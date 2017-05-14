@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Is Prime</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-20 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-20 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-20 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-04-20 by nbloomf
 <span class="ot">&gt;</span>   ( mindiv, prime, _test_prime, main_prime
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd, lcm)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
@@ -150,6 +151,7 @@ Posted on 2017-04-20 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">CoprimeTo</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LeastCommonMultiple</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, sequence_)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll nail down what it means for a natural number to be <em>prime</em>. Typically this is done by saying something like “a natural number other than 0 or 1 is prime if it is not divisible by any natural number besides itself and 1” and from there, arguing that this property can be checked using trial division. As is typical in this series, we will turn this around – <em>defining</em> primes to be those numbers which are detected by trial division (i.e. an algorithm) and then proving that such numbers have the divisibility properties we expect.</p>
 <p>In fact we’ll do a little more: instead of simply using trial division to detect whether a natural number <span class="math inline">\(n\)</span> is prime, we can use it to find the smallest divisor of <span class="math inline">\(n\)</span>. If the smallest divisor is <span class="math inline">\(n\)</span> itself, then <span class="math inline">\(n\)</span> is prime. To make this work we have to define “smallest divisor” in such a way that the trivial divisor <span class="math inline">\(\next(\zero)\)</span> is excluded. We will call this function that finds the smallest divisor <span class="math inline">\(\nmindiv\)</span>, and intuitively it should have the signature <span class="math inline">\(\nats \rightarrow \nats\)</span>.</p>
@@ -279,23 +281,25 @@ Let <span class="math inline">\(d = \ngcd(a,p)\)</span>. Now <span class="math i
 <span class="ot">&gt;</span>     omega a _ b <span class="fu">=</span> next b
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; prime ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> prime a
-<span class="ot">&gt;</span>   <span class="fu">|</span> leq a (next zero) <span class="fu">=</span> <span class="dt">False</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> otherwise         <span class="fu">=</span> a <span class="fu">==</span> mindiv a</code></pre></div>
+<span class="ot">&gt; prime ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> prime a <span class="fu">=</span> <span class="kw">if</span> leq a (next zero)
+<span class="ot">&gt;</span>   <span class="kw">then</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>   <span class="kw">else</span> a <span class="fu">====</span> mindiv a</code></pre></div>
 <p>Property tests:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- div(mindiv(a),a) == true</span>
-<span class="ot">&gt;</span> _<span class="ot">test_mindiv_div ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_mindiv_div ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_mindiv_div _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (div (mindiv a) a) <span class="fu">==</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   (div (mindiv a) a) <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- prime(mindiv(a)) == true</span>
-<span class="ot">&gt;</span> _<span class="ot">test_prime_mindiv ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_prime_mindiv ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_prime_mindiv _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> a <span class="fu">/=</span> zero <span class="fu">&amp;&amp;</span> a <span class="fu">/=</span> next zero
-<span class="ot">&gt;</span>     <span class="kw">then</span> (prime (mindiv a)) <span class="fu">==</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span></code></pre></div>
+<span class="ot">&gt;</span>   <span class="kw">if</span> (a <span class="fu">====</span> zero) <span class="fu">|||</span> (a <span class="fu">====</span> next zero)
+<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>     <span class="kw">else</span> (prime (mindiv a)) <span class="fu">====</span> <span class="dt">True</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for prime</span>
 <span class="ot">&gt;</span> _<span class="ot">test_prime ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
@@ -310,7 +314,7 @@ Let <span class="math inline">\(d = \ngcd(a,p)\)</span>. Now <span class="math i
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
 <span class="ot">&gt;</span>       }</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_prime ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_prime <span class="fu">=</span> _test_prime (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_prime <span class="fu">=</span> _test_prime (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

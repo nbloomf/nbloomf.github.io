@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - At</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-04-28 by nbloomf
 <span class="ot">&gt;</span>   ( at, _test_at, main_at
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, length, head, tail)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
@@ -149,6 +150,7 @@ Posted on 2017-04-28 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Cat</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Length</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In this post we’ll investigate <span class="math inline">\(\at\)</span>, which extracts the element at an arbitrary position in a list. First, we need <span class="math inline">\(\head\)</span>, which extracts the <em>first</em> element of a list. To a first approximation <span class="math inline">\(\head\)</span> has a signature like <span class="math display">\[\lists{A} \rightarrow A,\]</span> and certainly we want <span class="math inline">\(\head(\cons(a,x)) = a\)</span>. But what about <span class="math inline">\(\head(\nil)\)</span>? In this case there is no element to extract. Taking a cue from our definition of <span class="math inline">\(\nminus\)</span>, we will make <span class="math inline">\(\head\)</span> return not an <span class="math inline">\(A\)</span>, but a <span class="math inline">\(\ast + A\)</span>, letting the <span class="math inline">\(\ast\)</span> represent <span class="math inline">\(\head(\nil)\)</span>. Now <span class="math inline">\(\head\)</span> can be expressed as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span> as follows.</p>
 <div class="result">
@@ -156,7 +158,7 @@ Posted on 2017-04-28 by nbloomf
 <p>
 <p>Define <span class="math inline">\(\varphi : A \times (\ast + A) \rightarrow \ast + A\)</span> by <span class="math display">\[\varphi(a,b) = a.\]</span> Now we define <span class="math inline">\(\head : \lists{A} \rightarrow \ast + A\)</span> by <span class="math display">\[\head = \foldr{\ast}{\varphi}.\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; head ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; head ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
 <span class="ot">&gt;</span> head <span class="fu">=</span> foldr <span class="dt">Nothing</span> phi
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     phi a _ <span class="fu">=</span> <span class="dt">Just</span> a</code></pre></div>
@@ -207,11 +209,11 @@ If <span class="math inline">\(x \neq \nil\)</span>, we have <span class="math i
 <p>
 <p>Define <span class="math inline">\(\varphi : \lists{A} \rightarrow \ast + A\)</span> by <span class="math display">\[\varphi(a) = \ast,\]</span> <span class="math inline">\(\beta : \nats \times \lists{A} \rightarrow \bool\)</span> by <span class="math display">\[\beta(k,x) = \iszero(k) \bor \isnil(x),\]</span> <span class="math inline">\(\psi : \nats \times \lists{A} \rightarrow \ast + A\)</span> by <span class="math display">\[\psi(k,x) = \head(x),\]</span> and <span class="math inline">\(\omega : \nats \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\omega(k,x) = \tail(x).\]</span> We then define <span class="math inline">\(\at : \lists{A} \times \nats \rightarrow \ast + A\)</span> by <span class="math display">\[\at(x,k) = \bailrec{\varphi}{\beta}{\psi}{\omega}(k,x).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; at ::</span> (<span class="dt">Natural</span> n, <span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; at ::</span> (<span class="dt">Natural</span> n, <span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
 <span class="ot">&gt;</span> at x k <span class="fu">=</span> bailoutRec phi beta psi omega k x
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     phi   _   <span class="fu">=</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>     beta  k x <span class="fu">=</span> isZero k <span class="fu">||</span> isNil x
+<span class="ot">&gt;</span>     beta  k x <span class="fu">=</span> isZero k <span class="fu">|||</span> isNil x
 <span class="ot">&gt;</span>     psi   _ x <span class="fu">=</span> head x
 <span class="ot">&gt;</span>     omega _ x <span class="fu">=</span> tail x</code></pre></div>
 </p>
@@ -569,116 +571,132 @@ For the inductive step, suppose the implication holds for some <span class="math
 <span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\at\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- at(nil,k) == *</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_nil ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_nil z _ m <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">let</span> nil' <span class="fu">=</span> nil <span class="ot">`withTypeOf`</span> z <span class="kw">in</span>
-<span class="ot">&gt;</span>   (at nil' m) <span class="fu">==</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> _<span class="ot">test_at_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_nil z n m <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     nil' <span class="fu">=</span> nil <span class="ot">`withTypeOf`</span> z
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     (at nil' m) <span class="fu">====</span> <span class="dt">Nothing</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- at(cons(a,nil),next(0)) == *</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_single ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_at_single ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_single z k a <span class="fu">=</span>
+<span class="ot">&gt;</span> _test_at_single z n a <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     nil'  <span class="fu">=</span> nil  <span class="ot">`withTypeOf`</span> z
-<span class="ot">&gt;</span>     zero' <span class="fu">=</span> zero <span class="ot">`withTypeOf`</span> k
+<span class="ot">&gt;</span>     zero' <span class="fu">=</span> zero <span class="ot">`withTypeOf`</span> n
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     (at (cons a nil') (next zero')) <span class="fu">==</span> <span class="dt">Just</span> a
+<span class="ot">&gt;</span>     (at (cons a nil') (next zero')) <span class="fu">====</span> <span class="dt">Just</span> a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- at(cons(a,cons(b,nil)),next(next(0))) == *</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_double ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_at_double ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_double z k a b <span class="fu">=</span>
+<span class="ot">&gt;</span> _test_at_double z n a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     nil'  <span class="fu">=</span> nil  <span class="ot">`withTypeOf`</span> z
-<span class="ot">&gt;</span>     zero' <span class="fu">=</span> zero <span class="ot">`withTypeOf`</span> k
+<span class="ot">&gt;</span>     zero' <span class="fu">=</span> zero <span class="ot">`withTypeOf`</span> n
 <span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     (at (cons a (cons b nil')) (next (next zero'))) <span class="fu">==</span> <span class="dt">Just</span> b
+<span class="ot">&gt;</span>     (at (cons a (cons b nil')) (next (next zero'))) <span class="fu">====</span> <span class="dt">Just</span> b
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- at(cons(a,x),next(next(k))) == at(x,next(k))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_next_next_cons ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_at_next_next_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_at_next_next_cons z _ x a k <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     nil'  <span class="fu">=</span> nil  <span class="ot">`withTypeOf`</span> z
-<span class="ot">&gt;</span>   <span class="kw">in</span>
-<span class="ot">&gt;</span>     (at (cons a x) (next (next k))) <span class="fu">==</span> (at x (next k))
+<span class="ot">&gt;</span>   (at (cons a x) (next (next k))) <span class="fu">====</span> (at x (next k))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- at(x,length(x)) == head(rev(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_length_rev ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_length_rev z x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (at x (length x)) <span class="fu">==</span> (head (rev x))
+<span class="ot">&gt;</span> _<span class="ot">test_at_length_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_length_rev _ n x <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     (at x lx) <span class="fu">====</span> (head (rev x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(length(x),k)                   ==&gt; at(x,next(k)) == *</span>
 <span class="ot">&gt;</span> <span class="co">-- leq(next(0),k) &amp;&amp; leq(k,length(x)) ==&gt; at(x,next(k)) /= *</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_range ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_range _ x n <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> n <span class="fu">/=</span> zero <span class="fu">&amp;&amp;</span> leq n (length x)
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="kw">case</span> at x n <span class="kw">of</span>
-<span class="ot">&gt;</span>       <span class="dt">Just</span> _  <span class="ot">-&gt;</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">False</span>
-<span class="ot">&gt;</span>     <span class="kw">else</span> (at x n) <span class="fu">==</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span> _<span class="ot">test_at_range ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_range _ n x k <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> (not (isZero k)) <span class="fu">&amp;&amp;&amp;</span> (leq k lx)
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="kw">case</span> at x k <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Just</span> _  <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> (at x k) <span class="fu">====</span> <span class="dt">Nothing</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(k,length(x)) ==&gt; at(snoc(a,x),k) == at(x,k)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_snoc ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_snoc z x a k <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> (leq k (length x))
-<span class="ot">&gt;</span>     <span class="kw">then</span> (at (snoc a x) k) <span class="fu">==</span> (at x k)
-<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> _<span class="ot">test_at_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_snoc z n x a k <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> leq k lx
+<span class="ot">&gt;</span>       <span class="kw">then</span> (at (snoc a x) k) <span class="fu">====</span> (at x k)
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(k,length(x))       ==&gt; at(cat(x,y),k) == at(x,k)</span>
 <span class="ot">&gt;</span> <span class="co">-- leq(next(length(x)),k) ==&gt; at(cat(x,y),k) == at(y,minus(k,length(x)))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_cat ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_cat z x y k <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> (leq k (length x))
-<span class="ot">&gt;</span>     <span class="kw">then</span>
-<span class="ot">&gt;</span>       (at (cat x y) k) <span class="fu">==</span> (at x k)
-<span class="ot">&gt;</span>     <span class="kw">else</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span> <span class="dt">Just</span> m <span class="fu">=</span> minus k (length x) <span class="kw">in</span>
-<span class="ot">&gt;</span>       (at (cat x y) k) <span class="fu">==</span> (at y m)
+<span class="ot">&gt;</span> _<span class="ot">test_at_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_cat z n x y k <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> leq k lx
+<span class="ot">&gt;</span>       <span class="kw">then</span>
+<span class="ot">&gt;</span>         (at (cat x y) k) <span class="fu">====</span> (at x k)
+<span class="ot">&gt;</span>       <span class="kw">else</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           <span class="dt">Just</span> m <span class="fu">=</span> minus k lx
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           (at (cat x y) k) <span class="fu">====</span> (at y m)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- at(x,u) == at(rev(x),minus(next(length(x)),u))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at_rev ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_at_rev z x u <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">case</span> minus (next (length x)) u <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Just</span> v  <span class="ot">-&gt;</span> (at x u) <span class="fu">==</span> (at (rev x) v)
-<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">True</span></code></pre></div>
+<span class="ot">&gt;</span> _<span class="ot">test_at_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_at_rev z n x u <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> 
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> (length x) <span class="ot">`withTypeOf`</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> minus (next (length x)) u <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Just</span> v  <span class="ot">-&gt;</span> (at x u) <span class="fu">====</span> (at (rev x) v)
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">True</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for at</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_at ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_at t n maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_at_nil t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_single t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_double t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_next_next_cons t n)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_length_rev t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_range t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_snoc t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_cat t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_at_rev t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_at t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_at_nil t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_single t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_double t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_next_next_cons t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_length_rev t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_range t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_snoc t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_cat t n)
+<span class="ot">&gt;</span>   runTest args (_test_at_rev t n)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_at ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_at <span class="fu">=</span> _test_at (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_at <span class="fu">=</span> _test_at (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

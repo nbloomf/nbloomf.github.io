@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - The Division Algorithm</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,13 +139,13 @@ Posted on 2017-04-08 by nbloomf
 <span class="ot">&gt;</span>   ( divalg, quo, rem, _test_divalg, main_divalg
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (rem)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Finally we come to the first power tool for natural numbers: the division algorithm. Remember this theorem states that given any two natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, with <span class="math inline">\(b \neq \zero\)</span>, there is a <em>unique</em> pair of natural numbers <span class="math inline">\((q,r)\)</span> such that <span class="math inline">\(a = qb+r\)</span> and <span class="math inline">\(r\)</span> is not “too big”, specifically, <span class="math inline">\(r &lt; b\)</span>; this <span class="math inline">\(q\)</span> is called the <em>quotient</em> of <span class="math inline">\(a\)</span> by <span class="math inline">\(b\)</span>, and <span class="math inline">\(r\)</span> is the <em>remainder</em>.</p>
 <p>I like this result for several reasons. It ties together the three basic operations on <span class="math inline">\(\nats\)</span> – <span class="math inline">\(\next\)</span>, <span class="math inline">\(\nplus\)</span>, and <span class="math inline">\(\ntimes\)</span> – in a satisfying way, and it has two conclusions, one an equality and the other an inequality. It also has some really powerful applications. Notably, we’ll use the division algorithm to compute greatest common divisors and to compute fixed-radix representations of numbers.</p>
@@ -250,7 +252,7 @@ Say <span class="math inline">\(b = \next(m)\)</span>. Note that <span class="ma
 <span class="ot">&gt;</span> divalg <span class="fu">=</span> simpleRec phi mu
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     phi _ <span class="fu">=</span> (zero, zero)
-<span class="ot">&gt;</span>     mu _ b (q,r) <span class="fu">=</span> <span class="kw">if</span> b <span class="fu">==</span> next r
+<span class="ot">&gt;</span>     mu _ b (q,r) <span class="fu">=</span> <span class="kw">if</span> <span class="dt">Nat</span> b <span class="fu">====</span> <span class="dt">Nat</span> (next r)
 <span class="ot">&gt;</span>       <span class="kw">then</span> (next q, zero)
 <span class="ot">&gt;</span>       <span class="kw">else</span> (q, next r)
 <span class="ot">&gt;</span> 
@@ -263,85 +265,95 @@ Say <span class="math inline">\(b = \next(m)\)</span>. Note that <span class="ma
 <span class="ot">&gt;</span> rem a b <span class="fu">=</span> <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a b <span class="kw">in</span> r</code></pre></div>
 <p>Property tests:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- a == plus(times(q,b),r) where (q,r) = divalg(a,b)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_equality ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_equality ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_equality _ a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span> (q,r) <span class="fu">=</span> divalg a b <span class="kw">in</span>
-<span class="ot">&gt;</span>   a <span class="fu">==</span> plus (times q b) r
+<span class="ot">&gt;</span>   a <span class="fu">====</span> plus (times q b) r
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(r,b) where (_,r) = divalg(a,next(b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_inequality ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_inequality ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_inequality _ a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a (next b) <span class="kw">in</span>
 <span class="ot">&gt;</span>   leq r b
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- divalg(0,a) = (0,0)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_zero_left _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (divalg zero a) <span class="fu">==</span> (zero, zero)
+<span class="ot">&gt;</span>   (divalg zero a) <span class="fu">====</span> (zero, zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- divalg(a,0) = (0,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_zero_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_zero_right _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (divalg a zero) <span class="fu">==</span> (zero, a)
+<span class="ot">&gt;</span>   (divalg a zero) <span class="fu">====</span> (zero, a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- divalg(a,next(0)) = (a,0)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_one_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_one_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_one_right _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (divalg a (next zero)) <span class="fu">==</span> (a, zero)
+<span class="ot">&gt;</span>   (divalg a (next zero)) <span class="fu">====</span> (a, zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- if leq(a,b) then divalg(a,next(b)) = (0,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_leq ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_leq ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_leq _ a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">if</span> leq a b
-<span class="ot">&gt;</span>     <span class="kw">then</span> (divalg a (next b)) <span class="fu">==</span> (zero, a)
+<span class="ot">&gt;</span>     <span class="kw">then</span> (divalg a (next b)) <span class="fu">====</span> (zero, a)
 <span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- quo(times(a,next(b)),next(b)) = a</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_times_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_times_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_times_left _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (quo (times a (next b)) (next b)) <span class="fu">==</span> a
+<span class="ot">&gt;</span>   (quo (times a (next b)) (next b)) <span class="fu">====</span> a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- quo(a,b) = q where (q,_) = divalg(a,b)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_quo ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_quo ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_quo _ a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span> (q,_) <span class="fu">=</span> divalg a b <span class="kw">in</span>
-<span class="ot">&gt;</span>   q <span class="fu">==</span> quo a b
+<span class="ot">&gt;</span>   q <span class="fu">====</span> quo a b
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- rem(a,b) = r where (_,r) = divalg(a,b)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_divalg_rem ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_divalg_rem ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_divalg_rem _ a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a b <span class="kw">in</span>
-<span class="ot">&gt;</span>   r <span class="fu">==</span> rem a b</code></pre></div>
+<span class="ot">&gt;</span>   r <span class="fu">====</span> rem a b</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for divalg</span>
 <span class="ot">&gt;</span> _<span class="ot">test_divalg ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_divalg t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_divalg_equality t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_inequality t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_zero_left t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_zero_right t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_one_right t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_leq t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_times_left t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_quo t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_divalg_rem t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_divalg t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_divalg_equality t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_inequality t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_zero_left t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_zero_right t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_one_right t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_leq t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_times_left t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_quo t)
+<span class="ot">&gt;</span>   runTest args (_test_divalg_rem t)</code></pre></div>
+<p>And the main function.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_divalg ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_divalg <span class="fu">=</span> _test_divalg (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_divalg <span class="fu">=</span> _test_divalg (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

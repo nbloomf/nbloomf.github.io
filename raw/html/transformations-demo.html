@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<title>canvas1</title>
+<style type="text/css">
+  canvas {
+    border: 1px solid black;
+    width:  240px;
+    height: 240px;
+  }
+
+  div#widget {
+    text-align: center;
+  }
+
+  div#widget table {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  span.view {
+    float: right;
+    width: 40px;
+  }
+</style>
+
+<script type="text/javascript">
+  /* Primitive Equations */
+  var circle     = function (x,y) { return x*x + y*y - 1; };
+  var line       = function (x,y) { return y - x; };
+  var absval     = function (x,y) { return y - Math.abs(x); };
+  var quadratic  = function (x,y) { return y - x*x; };
+  var cubic      = function (x,y) { return y - x*x*x + x; };
+  var elliptic1  = function (x,y) { return y*y - x*x*x + 2*x; };
+  var elliptic2  = function (x,y) { return y*y - x*x*x + 2*x - 2; };
+  var ampersand  = function (x,y) {
+    return (y*y - x*x)*(x-1)*(2*x-3) - 4*Math.pow(x*x + y*y - 2*x, 2);
+  };
+  var lemniscate = function (x,y) {
+    return (x*x + y*y)*(x*x + y*y) - 2*(x*x - y*y);
+  };
+  var devil      = function (x,y) {
+    return y*y*(y*y - 16/25) - x*x*(x*x - 1);
+  };
+  var cubic2     = function (x,y) {
+    return x*x*x + x*y*y - 2*x*x + 4*x*y + y*y - 3*x - 4*y + 4;
+  };
+  var cubic3     = function (x,y) {
+    return x*y*y - x*x - y*y - 4*x - 4*y - 4;
+  };
+  var hyperelliptic1 = function (x,y) {
+    return y*y - x*(x-1)*(x-2)*(x+1)*(x+2);
+  };
+
+  // foo should be a "continuous" function of two real numbers.
+  // (Scare quotes because damn you floating point.)
+  // Looks at signs of foo at corners of a box about (i,j) to
+  // estimate whether foo is equal to 0 somewhere inside the box.
+  function findCrossing (foo, i, j) {
+    var a1 = foo(i-0, j-0);
+    var a2 = foo(i+1, j-0);
+    var a3 = foo(i-0, j+1);
+    var a4 = foo(i+1, j+1);
+    return (a1*a2 <= 0) || (a1*a3 <= 0) || (a1*a4 <= 0);
+  }
+
+  /* Cribbed from hacks.mozilla.org */
+  function plotEquation(fun) {
+    var canvas = document.getElementById('win');
+    var xDim = canvas.width;
+    var yDim = canvas.height;
+    var ctx = canvas.getContext('2d');
+    var imageData = ctx.getImageData(0, 0, xDim, yDim);
+    var data = imageData.data;
+
+    var xSemiDim = xDim / 2;
+    var ySemiDim = yDim / 2;
+
+    for (var y = 0; y < yDim; y++) {
+      for (var x = 0; x < xDim; x++) {
+        if (findCrossing(fun, x - xSemiDim, ySemiDim - y)) {
+          var index = (y * xDim + x) * 4;
+          data[index]   = 0;   // red
+          data[++index] = 0;   // green
+          data[++index] = 0;   // blue
+          data[++index] = 255; // alpha
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  /* Set constants back to defaults. */
+  function reset() {
+    document.getElementById('aSlider').value = 1;
+    document.getElementById('bSlider').value = 1;
+    document.getElementById('hSlider').value = 0;
+    document.getElementById('kSlider').value = 0;
+    document.getElementById('tSlider').value = 0;
+    draw();
+    return;
+  };
+
+  function drawAxes(ctx, xSemiDim, ySemiDim) {
+    ctx.beginPath();
+    ctx.moveTo(0,ySemiDim);
+    ctx.lineTo(2*xSemiDim,ySemiDim);
+    ctx.moveTo(xSemiDim,0);
+    ctx.lineTo(xSemiDim,2*ySemiDim);
+    ctx.strokeStyle='gray';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle="gray";
+    for (var i = 1; i < xSemiDim/15; i++) {
+      ctx.moveTo( i*15 + xSemiDim,  3 + ySemiDim);
+      ctx.lineTo( i*15 + xSemiDim, -3 + ySemiDim);
+      ctx.moveTo(-i*15 + xSemiDim,  3 + ySemiDim);
+      ctx.lineTo(-i*15 + xSemiDim, -3 + ySemiDim);
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.strokeStyle="gray";
+    for (var i = 1; i < ySemiDim/15; i++) {
+      ctx.moveTo( 3 + xSemiDim,  i*15 + ySemiDim);
+      ctx.lineTo(-3 + xSemiDim,  i*15 + ySemiDim);
+      ctx.moveTo( 3 + xSemiDim, -i*15 + ySemiDim);
+      ctx.lineTo(-3 + xSemiDim, -i*15 + ySemiDim);
+    }
+    ctx.stroke();
+
+    return;
+  };
+
+  function draw() {
+    var canvas = document.getElementById('win');
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawAxes(ctx, canvas.width/2, canvas.height/2);
+
+    var a = document.getElementById('aSlider').value;
+    var b = document.getElementById('bSlider').value;
+    var h = document.getElementById('hSlider').value / 15;
+    var k = document.getElementById('kSlider').value / 15;
+    var t = document.getElementById('tSlider').value;
+
+    var isInverted = document.getElementById('invertBox').checked;
+
+    document.getElementById('aView').innerHTML = a;
+    document.getElementById('bView').innerHTML = b;
+    document.getElementById('hView').innerHTML = Math.floor(100*h)/100;
+    document.getElementById('kView').innerHTML = Math.floor(100*k)/100;
+    document.getElementById('tView').innerHTML = t + '&deg;';
+
+    var transform = function(foo) {
+      return function(x,y) { return foo((x-h)/a, (y-k)/b); }
+    };
+    var rotate = function(foo) {
+      return function(x,y) {
+        var cosT = Math.cos(t*3.1415926/180);
+        var sinT = Math.sin(t*3.1415926/180);
+        return foo(x*cosT - y*sinT, x*sinT + y*cosT); }
+    };
+    var invert = function(foo) {
+      return function(x,y) { return foo(5*x/(x*x + y*y), 5*y/(x*x + y*y)); };
+    };
+    var shrink = function(foo) {
+      return function(x,y) { return foo(x*15, y*15); }
+    };
+    var expand = function(foo) {
+      return function(x,y) { return foo(x/15, y/15); }
+    };
+
+    var drawPlot = function(foo) {
+      if ( isInverted === true ) {
+        plotEquation(invert(rotate(shrink(transform(foo)))));
+      } else {
+        plotEquation(rotate(expand(transform(foo))));
+      }
+    };
+
+    var selection = document.getElementById('equation-type').value;
+
+    switch (selection) {
+      case 'circle':
+        drawPlot(circle);
+        break;
+      case 'line':
+        drawPlot(line);
+        break;
+      case 'absval':
+        drawPlot(absval);
+        break;
+      case 'elliptic':
+        drawPlot(elliptic1);
+        break;
+      case 'quadratic':
+        drawPlot(quadratic);
+        break;
+      case 'cubic':
+        drawPlot(cubic);
+        break;
+      case 'elliptic2':
+        drawPlot(elliptic2);
+        break;
+      case 'ampersand':
+        drawPlot(ampersand);
+        break;
+      case 'lemniscate':
+        drawPlot(lemniscate);
+        break;
+      case 'devil':
+        drawPlot(devil);
+        break;
+      case 'cubic2':
+        drawPlot(cubic2);
+        break;
+      case 'cubic3':
+        drawPlot(cubic3);
+        break;
+      case 'hyperelliptic1':
+        drawPlot(hyperelliptic1);
+        break;
+    }
+
+    return;
+  };
+</script>
+</head>
+
+
+
+<body onload="draw();">
+<div id="widget">
+<canvas id="win" width="240" height="240"></canvas>
+
+<table>
+<tr><td>a = <span id="aView" class="view"></span></td>
+  <td><input id="aSlider" type="range" max="4" min="-2" step="0.02" oninput="draw();" /></td>
+</tr>
+
+<tr><td>b = <span id="bView" class="view"></span></td>
+  <td><input id="bSlider" type="range" max="4" min="-2" step="0.02" oninput="draw();" /></td>
+</tr>
+
+<tr><td>h = <span id="hView" class="view"></span></td>
+  <td><input id="hSlider" type="range" max="105" min="-105" step="0.5" oninput="draw();" /></td>
+</tr>
+
+<tr><td>k = <span id="kView" class="view"></span></td>
+  <td><input id="kSlider" type="range" max="90" min="-90" step="0.5" oninput="draw();" /></td>
+</tr>
+
+<tr><td>t = <span id="tView" class="view"></span></td>
+  <td><input id="tSlider" type="range" max="180" min="-180" step="1" oninput="draw();" /></td>
+</tr>
+</table>
+
+<div>
+Equation Type: <select id="equation-type" onclick="draw();">
+  <option value="circle">Circle</option>
+  <option value="line">Line</option>
+  <option value="absval">Absolute Value</option>
+  <option value="quadratic">Quadratic</option>
+  <option value="cubic">Cubic 1</option>
+  <option value="cubic2">Cubic 2</option>
+  <option value="cubic3">Cubic 3</option>
+  <option value="elliptic">Elliptic 1</option>
+  <option value="elliptic2">Elliptic 2</option>
+  <option value="ampersand">Ampersand</option>
+  <option value="lemniscate">Lemniscate</option>
+  <option value="devil">Devil's Curve</option>
+  <option value="hyperelliptic1">Hyperelliptic 1</option>
+</select>
+</div>
+
+<div>
+Invert: <input id="invertBox" type="checkbox" onchange="draw();">
+</div>
+
+<div>
+<button type="button" onclick="reset();">Reset</button>
+</div>
+</div>
+</body>
+</html>

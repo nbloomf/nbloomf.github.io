@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Addition</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,9 +139,12 @@ Posted on 2014-06-01 by nbloomf
 <span class="ot">&gt;</span>   ( plus, _test_plus, main_plus
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span>(<span class="dt">Show</span>, <span class="dt">IO</span>, <span class="dt">Bool</span>(..), <span class="dt">Int</span>, id)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span></code></pre></div>
 <p>So far we’ve characterized the natural numbers via a unique mapping <span class="math display">\[\natrec{\ast}{\ast} : \nats \rightarrow A,\]</span> and we defined another parameterized mapping <span class="math display">\[\simprec{\ast}{\ast} : \nats \times A \rightarrow B.\]</span> From now on, when we want to define a mapping with one of these signatures, these prepackaged recursive maps may come in handy. What’s more, we can use the universal properties of these maps to define them in terms of <em>desired behavior</em>.</p>
 <p>Natural number addition has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define addition in terms of <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. To do this, we need to find mappings <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> and <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> that make <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> act like addition. For example, we want <span class="math inline">\(\next\)</span> to act like <span class="math inline">\(+1\)</span>, and <span class="math display">\[n = \zero + n = \simprec{\varphi}{\mu}(\zero,n) = \varphi(n),\]</span> and</p>
 <p><span class="math display">\[\begin{eqnarray*}
@@ -204,51 +209,58 @@ Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarro
 <span class="ot">&gt;</span>   <span class="kw">where</span> mu _ _ b <span class="fu">=</span> next b</code></pre></div>
 <p>We’ve proved a bunch of properties for <code>plus</code>, but it’s still a good idea to verify them. We can do this with <code>QuickCheck</code>. First we express each property to be tested as a boolean function. Note that each one takes an “extra” argument; this is just to fix the type of the function being tested. (There may be a better way to do this.)</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- a == plus(a,0) and a == plus(0,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_plus_zero _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ a <span class="fu">==</span> plus a zero
-<span class="ot">&gt;</span>   , a <span class="fu">==</span> plus zero a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_plus_zero ::</span> (<span class="dt">Natural</span> t)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Nat</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_plus_zero _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (a <span class="fu">====</span> plus a zero) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> plus zero a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- next(plus(a,b)) == plus(next(a),b)</span>
-<span class="ot">&gt;</span> <span class="co">-- next(plus(a,b)) == plus(a,next(b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus_next ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_plus_next _ a b <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (next <span class="fu">$</span> plus a b) <span class="fu">==</span> (plus (next a) b)
-<span class="ot">&gt;</span>   , (next <span class="fu">$</span> plus a b) <span class="fu">==</span> (plus a (next b))
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_plus_next_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_plus_next_left _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (next (plus a b)) <span class="fu">====</span> (plus (next a) b)
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- next(plus(a,b)) == plus(a,next(b))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_plus_next_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_plus_next_right _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (next (plus a b)) <span class="fu">====</span> (plus a (next b))
+<span class="ot">&gt;</span>   
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- plus(plus(a,b),c) == plus(a,plus(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_plus_associative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_plus_associative _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (plus (plus a b) c) <span class="fu">==</span> (plus a (plus b c))
+<span class="ot">&gt;</span>   (plus (plus a b) c) <span class="fu">====</span> (plus a (plus b c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- plus(a,b) == plus(b,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_plus_commutative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_plus_commutative _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (plus a b) <span class="fu">==</span> (plus b a)</code></pre></div>
+<span class="ot">&gt;</span>   (plus a b) <span class="fu">====</span> (plus b a)</code></pre></div>
 <p>We’ll wrap all these tests behind a single function, <code>_test_plus</code>, which takes the number of cases to check as an argument.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for plus</span>
-<span class="ot">&gt;</span> _<span class="ot">test_plus ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_plus t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_plus_zero t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_next t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_plus_commutative t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _<span class="ot">test_plus ::</span> (<span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_plus n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_plus_zero n)
+<span class="ot">&gt;</span>   runTest args (_test_plus_next_left n)
+<span class="ot">&gt;</span>   runTest args (_test_plus_next_right n)
+<span class="ot">&gt;</span>   runTest args (_test_plus_associative n)
+<span class="ot">&gt;</span>   runTest args (_test_plus_commutative n)</code></pre></div>
 <p>woo!</p>
 <p>I will also provide a <code>main</code> function so my build scripts for this blog can automatically compile and run the tests.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_plus ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_plus <span class="fu">=</span> _test_plus (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">100</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_plus <span class="fu">=</span> _test_plus (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

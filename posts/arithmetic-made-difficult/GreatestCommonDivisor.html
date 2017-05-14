@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Greatest Common Divisor</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-10 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-10 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-10 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-04-10 by nbloomf
 <span class="ot">&gt;</span>   ( gcd, _test_gcd, main_gcd
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
@@ -147,6 +148,7 @@ Posted on 2017-04-10 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">DivisionAlgorithm</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Divides</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll define the greatest common divisor of two natural numbers. The usual way to do this (in books I’ve seen) is to define what it means to say that <span class="math inline">\(d\)</span> is a greatest common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, then show (possibly nonconstructively) that any two <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> have a greatest common divisor, and finally establish the Euclidean algorithm that actually computes GCDs. We will work backwards: first <em>defining</em> the GCD of two natural numbers using the punchline of the Euclidean algorithm and then proving that the output of this function acts like the GCD.</p>
 <p>We’ll do this using bailout recursion. This definition will be trickier to work with than the others we’ve seen so far because the “countdown timer” is just for show – we don’t expect it to actually reach zero. For this reason reasoning about the recursive step is awkward.</p>
@@ -440,86 +442,90 @@ Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inli
 <h2 id="implementation-and-testing">Implementation and Testing</h2>
 <p>Here’s <code>gcd</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; gcd ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
-<span class="ot">&gt;</span> gcd a b <span class="fu">=</span> (bailoutRec phi beta psi omega) (next <span class="fu">$</span> plus a b) (a,b)
+<span class="ot">&gt;</span> gcd a b <span class="fu">=</span> (bailoutRec phi beta psi omega) (next (plus a b)) (a,b)
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     phi     (_,b) <span class="fu">=</span> b
-<span class="ot">&gt;</span>     beta  _ (_,b) <span class="fu">=</span> b <span class="fu">==</span> zero
+<span class="ot">&gt;</span>     beta  _ (_,b) <span class="fu">=</span> isZero b
 <span class="ot">&gt;</span>     psi   _ (a,_) <span class="fu">=</span> a
 <span class="ot">&gt;</span>     omega _ (a,b) <span class="fu">=</span> (b, rem a b)</code></pre></div>
 <p>Property tests for <code>gcd</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- gcd(a,0) == a and gcd(0,a) == a</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_gcd_zero _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ a <span class="fu">==</span> gcd a zero
-<span class="ot">&gt;</span>   , a <span class="fu">==</span> gcd zero a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_zero ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_zero _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (a <span class="fu">====</span> gcd a zero) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> gcd zero a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(a,next(0)) == next(0) and gcd(next(0),a) == next(0)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_one ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_one _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (next zero) <span class="fu">==</span> gcd a (next zero)
-<span class="ot">&gt;</span>   , (next zero) <span class="fu">==</span> gcd (next zero) a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span>   ((next zero) <span class="fu">====</span> gcd a (next zero))
+<span class="ot">&gt;</span>   ((next zero) <span class="fu">====</span> gcd (next zero) a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(a,b) == gcd(b,rem(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_rem ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_rem ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_rem _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (gcd a b) <span class="fu">==</span> (gcd b (rem a b))
+<span class="ot">&gt;</span>   (gcd a b) <span class="fu">====</span> (gcd b (rem a b))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(a,b) == gcd(b,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_commutative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_commutative _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (gcd a b) <span class="fu">==</span> (gcd b a)
+<span class="ot">&gt;</span>   (gcd a b) <span class="fu">====</span> (gcd b a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- div(gcd(a,b),a) and div(gcd(a,b),b)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_div_args ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_gcd_div_args _ a b <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ div (gcd a b) a
-<span class="ot">&gt;</span>   , div (gcd a b) b
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_div_args ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_gcd_div_args _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (div (gcd a b) a) <span class="fu">&amp;&amp;&amp;</span> (div (gcd a b) b)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(a,a) = a</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_idempotent ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_idempotent ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_idempotent _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (gcd a a) <span class="fu">==</span> a
+<span class="ot">&gt;</span>   (gcd a a) <span class="fu">====</span> a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(gcd(a,b),c) == gcd(a,gcd(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_associative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_associative _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (gcd (gcd a b) c) <span class="fu">==</span> (gcd a (gcd b c))
+<span class="ot">&gt;</span>   (gcd (gcd a b) c) <span class="fu">====</span> (gcd a (gcd b c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(gcd(a,b),c) == gcd(times(a,c),times(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_times ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_distributive_times _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times (gcd a b) c) <span class="fu">==</span> (gcd (times a c) (times b c))</code></pre></div>
+<span class="ot">&gt;</span>   (times (gcd a b) c) <span class="fu">====</span> (gcd (times a c) (times b c))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for gcd</span>
 <span class="ot">&gt;</span> _<span class="ot">test_gcd ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_gcd t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_gcd_zero t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_one t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_rem t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_commutative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_div_args t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_idempotent t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_distributive_times t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_gcd t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_gcd_zero t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_one t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_rem t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_commutative t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_div_args t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_idempotent t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_associative t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_distributive_times t)</code></pre></div>
+<p>And the main function:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_gcd ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_gcd <span class="fu">=</span> _test_gcd (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_gcd <span class="fu">=</span> _test_gcd (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

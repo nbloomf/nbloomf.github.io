@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Least Common Multiple</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-04-12 by nbloomf
 <span class="ot">&gt;</span>   ( lcm, _test_lcm, main_lcm
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (div, rem, gcd, lcm)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
@@ -149,6 +150,7 @@ Posted on 2017-04-12 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GreatestCommonDivisor</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">CoprimeTo</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Recall the following property of <span class="math inline">\(\nmax\)</span>: if <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmax(a,b))\)</span>. This statement fell out of the definition of <span class="math inline">\(\nmax\)</span> without much fuss, and may seem anticlimactic. But compare it to this analogous statement about <span class="math inline">\(\ngcd\)</span>: if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>. Now <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\ngcd\)</span> seem to play very similar roles. Where <span class="math inline">\(\nleq\)</span> is a kind of “additive order” on <span class="math inline">\(\nats\)</span> and <span class="math inline">\(\nmax\)</span> gives an additive ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, <span class="math inline">\(\ndiv\)</span> is a kind of “multiplicative order” and <span class="math inline">\(\ngcd\)</span> gives a multiplicative ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>. When an analogy this strong holds between two concepts in mathematics, it is frequently useful to see how far the analogy goes. To that end, today we will define the multiplicative counterpart to <span class="math inline">\(\nmin\)</span>.</p>
 <p>We don’t need recursion for this.</p>
@@ -441,85 +443,89 @@ Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inli
 <span class="ot">&gt;</span> lcm a b <span class="fu">=</span> quo (times a b) (gcd a b)</code></pre></div>
 <p>Property tests for <code>lcm</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- lcm(a,0) == 0 and lcm(0,a) == 0</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_lcm_zero _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ zero <span class="fu">==</span> lcm a zero
-<span class="ot">&gt;</span>   , zero <span class="fu">==</span> lcm zero a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_zero ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_zero _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (zero <span class="fu">====</span> lcm a zero) <span class="fu">&amp;&amp;&amp;</span> (zero <span class="fu">====</span> lcm zero a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(a,next(0)) == a and lcm(next(0),a) == a</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_lcm_one _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ a <span class="fu">==</span> lcm a (next zero)
-<span class="ot">&gt;</span>   , a <span class="fu">==</span> lcm (next zero) a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_one ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_one _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (a <span class="fu">====</span> lcm a (next zero)) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> lcm (next zero) a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- div(a,lcm(a,b)) and div(b,lcm(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_div_args ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_lcm_div_args _ a b <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ div a (lcm a b)
-<span class="ot">&gt;</span>   , div b (lcm a b)
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_div_args ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_lcm_div_args _ a b <span class="fu">=</span>
+<span class="ot">&gt;</span>   (div a (lcm a b)) <span class="fu">&amp;&amp;&amp;</span> (div b (lcm a b))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(a,a) = a</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_idempotent ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_idempotent ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcm_idempotent _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcm a a) <span class="fu">==</span> a
+<span class="ot">&gt;</span>   (lcm a a) <span class="fu">====</span> a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(a,b) == lcm(b,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_commutative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcm_commutative _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcm a b) <span class="fu">==</span> (lcm b a)
+<span class="ot">&gt;</span>   (lcm a b) <span class="fu">====</span> (lcm b a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(lcm(a,b),c) == lcm(a,lcm(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_associative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcm_associative _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcm (lcm a b) c) <span class="fu">==</span> (lcm a (lcm b c))
+<span class="ot">&gt;</span>   (lcm (lcm a b) c) <span class="fu">====</span> (lcm a (lcm b c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(times(c,a),times(c,b)) == times(c,lcm(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_times ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcm_distributive_times _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcm (times c a) (times c b)) <span class="fu">==</span> (times c (lcm a b))
+<span class="ot">&gt;</span>   (lcm (times c a) (times c b)) <span class="fu">====</span> (times c (lcm a b))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- lcm(gcd(c,a),gcd(c,b)) == gcd(c,lcm(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_gcd ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_lcm_distributive_gcd ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_lcm_distributive_gcd _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (lcm (gcd c a) (gcd c b)) <span class="fu">==</span> (gcd c (lcm a b))
+<span class="ot">&gt;</span>   (lcm (gcd c a) (gcd c b)) <span class="fu">====</span> (gcd c (lcm a b))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- gcd(lcm(c,a),lcm(c,b)) == lcm(c,gcd(a,b))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_lcm ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_gcd_distributive_lcm ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_gcd_distributive_lcm _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (gcd (lcm c a) (lcm c b)) <span class="fu">==</span> (lcm c (gcd a b))</code></pre></div>
+<span class="ot">&gt;</span>   (gcd (lcm c a) (lcm c b)) <span class="fu">====</span> (lcm c (gcd a b))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for lcm</span>
 <span class="ot">&gt;</span> _<span class="ot">test_lcm ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_lcm t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_lcm_zero t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_one t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_div_args t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_idempotent t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_commutative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_distributive_times t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_lcm_distributive_gcd t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_gcd_distributive_lcm t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_lcm t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_lcm_zero t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_one t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_div_args t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_idempotent t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_commutative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_associative t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_distributive_times t)
+<span class="ot">&gt;</span>   runTest args (_test_lcm_distributive_gcd t)
+<span class="ot">&gt;</span>   runTest args (_test_gcd_distributive_lcm t)</code></pre></div>
+<p>And the main function:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_lcm ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_lcm <span class="fu">=</span> _test_lcm (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_lcm <span class="fu">=</span> _test_lcm (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - UnfoldN</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-05-03 by nbloomf
 <span class="ot">&gt;</span>   ( unfoldN
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, length, head, tail, map)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lists</span>
@@ -148,6 +149,7 @@ Posted on 2017-05-03 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">At</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Map</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Maybe</span>(..))
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>So far we’ve developed a few functions that operate on lists. But we don’t have a convenient programmatic way to <em>construct</em> lists – we’ll remedy this today with a function called <span class="math inline">\(\unfoldN\)</span>. From the name, it sounds like unfold should be the “opposite” (or <em>dual</em>) of a fold. But the full story is a little more complicated than this; the true opposite to fold doesn’t operate on lists at all, but on <em>streams</em> (which we haven’t defined). Roughly speaking, <span class="math inline">\(\lists{A}\)</span> is an initial algebra, elements of <span class="math inline">\(\lists{A}\)</span> are required to be “finite”, and <span class="math inline">\(\foldr{\ast}{\ast}\)</span> condenses a <span class="math inline">\(\lists{A}\)</span> element to a single item. Streams, in contrast, are required to be “infinite” and collectively form a <em>terminal algebra</em> and their universal map expands a single item to an infinite structure. All that is to say that the <span class="math inline">\(\unfoldN\)</span> function we define here is <em>not</em> the real dual of <span class="math inline">\(\foldr{\ast}{\ast}\)</span> – which partly explains why it is so complicated looking.</p>
 <p>So what will <span class="math inline">\(\unfoldN\)</span> do? Roughly speaking, we’d like to be able to build up interesting lists of arbitrary size using a small amount of initial data. For example, here is a version of the signature for Haskell’s standard <code>unfoldr</code> function.</p>
@@ -214,7 +216,7 @@ Finally, suppose we have <span class="math inline">\(f(a) = (d,e)\)</span> with 
 </div>
 <h2 id="implementation">Implementation</h2>
 <p>We can implement <span class="math inline">\(\unfoldN\)</span> in terms of bailout recursion as in the definition.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unfoldN' ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unfoldN' ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a,b)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b
 <span class="ot">&gt;</span> unfoldN' f k a <span class="fu">=</span> bailoutRec phi (beta f) psi (omega f) k (a,nil)
 <span class="ot">&gt;</span>   <span class="kw">where</span>
@@ -270,9 +272,9 @@ Finally, suppose we have <span class="math inline">\(f(a) = (d,e)\)</span> with 
 </p>
 </div>
 </div>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unfoldN ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Natural</span> n)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unfoldN ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a,b)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b
-<span class="ot">&gt;</span> unfoldN f n a <span class="fu">=</span> <span class="kw">case</span> shapeOf n <span class="kw">of</span>
+<span class="ot">&gt;</span> unfoldN f n a <span class="fu">=</span> <span class="kw">case</span> natShape n <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Zero</span>   <span class="ot">-&gt;</span> nil
 <span class="ot">&gt;</span>   <span class="dt">Next</span> k <span class="ot">-&gt;</span> <span class="kw">case</span> f a <span class="kw">of</span>
 <span class="ot">&gt;</span>     <span class="dt">Nothing</span>    <span class="ot">-&gt;</span> nil

@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Less Than or Equal To</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-05 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-05 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-05 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,11 +139,13 @@ Posted on 2017-04-05 by nbloomf
 <span class="ot">&gt;</span>  ( leq, _test_leq, main_leq
 <span class="ot">&gt;</span>  ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Minus</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Next we’d like to nail down what it means for one natural number to be less than or equal to another. Note that while <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span> have signatures <span class="math display">\[\nats \times \nats \rightarrow \nats,\]</span> “less than or equal to” (which I will abbrebiate to <em>leq</em> from now on) does not. In fact <span class="math inline">\(\leq\)</span> is typically defined as a set of pairs. To make <span class="math inline">\(\leq\)</span> computable, we will instead (try to) define it as a function with signature <span class="math display">\[\nats \times \nats \rightarrow \bool.\]</span> In fact, we can make a reasonable attempt on <span class="math inline">\(\nleq\)</span> without using recursion at all.</p>
 <div class="result">
@@ -295,44 +299,48 @@ We have <span class="math inline">\(\nleq(a,b) = \btrue\)</span> if and only of 
 <span class="ot">&gt;</span>   <span class="dt">Just</span> _  <span class="ot">-&gt;</span> <span class="dt">True</span></code></pre></div>
 <p>And some property tests:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- leq(a,plus(a,b)) == True</span>
-<span class="ot">&gt;</span> _<span class="ot">test_leq_right_plus ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_leq_right_plus ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_leq_right_plus _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (leq a (plus a b)) <span class="fu">==</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   (leq a (plus a b)) <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(a,a) == True</span>
-<span class="ot">&gt;</span> _<span class="ot">test_leq_reflexive ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_leq_reflexive ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_leq_reflexive _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (leq a a) <span class="fu">==</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   (leq a a) <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(a,b) == leq(plus(a,c),plus(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_leq_plus ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_leq_plus ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_leq_plus _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (leq a b) <span class="fu">==</span> (leq (plus a c) (plus b c))
+<span class="ot">&gt;</span>   (leq a b) <span class="fu">====</span> (leq (plus a c) (plus b c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- leq(a,b) == leq(times(a,next(c)),times(b,next(c)))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_leq_times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_leq_times ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_leq_times _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (leq a b) <span class="fu">==</span> (leq (times a (next c)) (times b (next c)))</code></pre></div>
+<span class="ot">&gt;</span>   (leq a b) <span class="fu">====</span> (leq (times a (next c)) (times b (next c)))</code></pre></div>
 <p>And a test wrapper:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for leq</span>
 <span class="ot">&gt;</span> _<span class="ot">test_leq ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_leq t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_leq_reflexive t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_right_plus t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_plus t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_leq_times t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_leq t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_leq_reflexive t)
+<span class="ot">&gt;</span>   runTest args (_test_leq_right_plus t)
+<span class="ot">&gt;</span>   runTest args (_test_leq_plus t)
+<span class="ot">&gt;</span>   runTest args (_test_leq_times t)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_leq ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_leq <span class="fu">=</span> _test_leq (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">50</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_leq <span class="fu">=</span> _test_leq (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

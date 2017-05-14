@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Cat</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,11 +139,12 @@ Posted on 2017-04-25 by nbloomf
 <span class="ot">&gt;</span>   ( cat, _test_cat, main_cat
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lists</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Reverse</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In this post we’ll consider the function that takes two lists and appends one to the “end” of the other. This function is known as <span class="math inline">\(\cat\)</span>, which is short for <em>catenate</em> – a jargony word that means <em>to connect in a series</em>.</p>
 <div class="result">
@@ -149,7 +152,7 @@ Posted on 2017-04-25 by nbloomf
 <p>
 <p>We define a map <span class="math inline">\(\cat : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\cat(x,y) = \foldr{y}{\cons}(x).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; cat ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; cat ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> cat x y <span class="fu">=</span> foldr y cons x</code></pre></div>
 </p>
 </div>
@@ -322,61 +325,67 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\cat\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- cat(nil,x) == x and cat(x,nil) == x</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_nil ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_nil _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ a <span class="ot">`listEq`</span> cat nil a
-<span class="ot">&gt;</span>   , a <span class="ot">`listEq`</span> cat a nil
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> _<span class="ot">test_cat_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_cat_nil _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   (a <span class="fu">====</span> cat nil a) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> cat a nil)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- cat(x,cons(a,y)) == cat(snoc(a,x),y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_cons_snoc ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_cat_cons_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_cat_cons_snoc _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat x (cons a y)) <span class="ot">`listEq`</span> (cat (snoc a x) y)
+<span class="ot">&gt;</span>   (cat x (cons a y)) <span class="fu">====</span> (cat (snoc a x) y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- cons(a,cat(x,y)) == cat(cons(a,x),y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_cons ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_cat_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_cat_cons _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cons a (cat x y)) <span class="ot">`listEq`</span> (cat (cons a x) y)
+<span class="ot">&gt;</span>   (cons a (cat x y)) <span class="fu">====</span> (cat (cons a x) y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- snoc(a,cat(x,y)) == cat(x,snoc(a,y))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_snoc ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_cat_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_cat_snoc _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (snoc a (cat x y)) <span class="ot">`listEq`</span> (cat x (snoc a y))
+<span class="ot">&gt;</span>   (snoc a (cat x y)) <span class="fu">====</span> (cat x (snoc a y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- cat(cat(x,y),z) == cat(x,cat(y,z))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_associative ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_cat_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_cat_associative _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat (cat x y) z) <span class="ot">`listEq`</span> (cat x (cat y z))
+<span class="ot">&gt;</span>   (cat (cat x y) z) <span class="fu">====</span> (cat x (cat y z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- rev(cat(x,y)) == cat(rev(y),rev(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_rev ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_cat_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_cat_rev _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (rev (cat x y)) <span class="ot">`listEq`</span> (cat (rev x) (rev y))</code></pre></div>
+<span class="ot">&gt;</span>   (rev (cat x y)) <span class="fu">====</span> (cat (rev y) (rev x))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for cat</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a))
+<span class="ot">&gt;</span> _<span class="ot">test_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> (t a))
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_cat t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_cat_nil t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_cat_cons_snoc t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_cat_cons t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_cat_snoc t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_cat_associative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_cat_rev t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_cat t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_cat_nil t)
+<span class="ot">&gt;</span>   runTest args (_test_cat_cons_snoc t)
+<span class="ot">&gt;</span>   runTest args (_test_cat_cons t)
+<span class="ot">&gt;</span>   runTest args (_test_cat_snoc t)
+<span class="ot">&gt;</span>   runTest args (_test_cat_associative t)
+<span class="ot">&gt;</span>   runTest args (_test_cat_rev t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_cat ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_cat <span class="fu">=</span> _test_cat (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_cat <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

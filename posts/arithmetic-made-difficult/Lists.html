@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Lists</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -134,11 +136,15 @@ Posted on 2017-04-23 by nbloomf
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Lists.lhs">the source</a> into GHCi and play along.</p>
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleContexts #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Lists</span>
-<span class="ot">&gt;</span>   ( <span class="dt">List</span>(), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), foldr, tail, listEq, listEqBy
+<span class="ot">&gt;</span>   ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>()
+<span class="ot">&gt;</span>   , isNil, tail, foldr
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, tail)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>(..), (++), id, return, (.))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec{\ast}{\ast}\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves.</p>
@@ -166,45 +172,58 @@ If <span class="math inline">\(x \in \lists{A}\)</span>, then either <span class
 \end{array}\]</span></p>
 <p>We will wrap this definition up in code both as a concrete type and as a type class, so that later we can give alternative implementations.</p>
 <p>First the concrete type:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">N</span> <span class="fu">|</span> <span class="dt">C</span> a (<span class="dt">List</span> a)
-<span class="ot">&gt;</span>  
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">List</span> a) <span class="kw">where</span>
-<span class="ot">&gt;</span>   show <span class="dt">N</span>        <span class="fu">=</span> <span class="st">&quot;N&quot;</span>
-<span class="ot">&gt;</span>   show (<span class="dt">C</span> x xs) <span class="fu">=</span> <span class="st">&quot;C &quot;</span> <span class="fu">++</span> show x <span class="fu">++</span> <span class="st">&quot; -- &quot;</span> <span class="fu">++</span> show xs</code></pre></div>
-<p>And the class:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">ListShape</span> a t <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a (t a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">ConsList</span> a <span class="fu">=</span> <span class="dt">N</span> <span class="fu">|</span> <span class="dt">C</span> a (<span class="dt">ConsList</span> a)
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">ListOf</span> t <span class="kw">where</span>
-<span class="ot">&gt;   toList ::</span> t a <span class="ot">-&gt;</span> <span class="dt">List</span> a
-<span class="ot">&gt;   fromList ::</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> t a
+<span class="ot">&gt;</span>  
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   show <span class="dt">N</span>        <span class="fu">=</span> <span class="st">&quot;()&quot;</span>
+<span class="ot">&gt;</span>   show (<span class="dt">C</span> x xs) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> show x <span class="fu">++</span> show xs <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> a) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     xs <span class="ot">&lt;-</span> arbitrary
+<span class="ot">&gt;</span>     return (list xs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   shrink  <span class="dt">N</span>      <span class="fu">=</span> []
+<span class="ot">&gt;</span>   shrink (<span class="dt">C</span> _ x) <span class="fu">=</span> [x]</code></pre></div>
+<p>And the class:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">ListShape</span> a t
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Nil</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Cons</span> a (t a)
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> <span class="dt">Show</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">List</span> t <span class="kw">where</span>
+<span class="ot">&gt;   toConsList   ::</span> t a <span class="ot">-&gt;</span> <span class="dt">ConsList</span> a
+<span class="ot">&gt;   fromConsList ::</span> <span class="dt">ConsList</span> a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;   nil ::</span> t a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;   cons ::</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;   listShape ::</span> t a <span class="ot">-&gt;</span> <span class="dt">ListShape</span> a t
-<span class="ot">&gt;</span>   listShape x <span class="fu">=</span> <span class="kw">case</span> listShape <span class="fu">$</span> toList x <span class="kw">of</span>
+<span class="ot">&gt;</span>   listShape x <span class="fu">=</span> <span class="kw">case</span> listShape (toConsList x) <span class="kw">of</span>
 <span class="ot">&gt;</span>     <span class="dt">Nil</span>       <span class="ot">-&gt;</span> <span class="dt">Nil</span>
-<span class="ot">&gt;</span>     <span class="dt">Cons</span> a as <span class="ot">-&gt;</span> <span class="dt">Cons</span> a (fromList as)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;   isNil ::</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span>   isNil x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Nil</span>      <span class="ot">-&gt;</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>     <span class="dt">Cons</span> _ _ <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>     <span class="dt">Cons</span> a as <span class="ot">-&gt;</span> <span class="dt">Cons</span> a (fromConsList as)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;   list ::</span> [a] <span class="ot">-&gt;</span> t a
-<span class="ot">&gt;</span>   list xs <span class="fu">=</span> fromList <span class="fu">$</span> list xs</code></pre></div>
-<p>And the instance.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">ListOf</span> <span class="dt">List</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   toList <span class="fu">=</span> id
-<span class="ot">&gt;</span>   fromList <span class="fu">=</span> id
+<span class="ot">&gt;</span>   list xs <span class="fu">=</span> fromConsList (list xs)
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   nil <span class="fu">=</span> <span class="dt">N</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; isNil ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isNil x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nil</span>      <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   <span class="dt">Cons</span> _ _ <span class="ot">-&gt;</span> <span class="dt">False</span></code></pre></div>
+<p>And the instance.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">List</span> <span class="dt">ConsList</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   toConsList   <span class="fu">=</span> id
+<span class="ot">&gt;</span>   fromConsList <span class="fu">=</span> id
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   nil  <span class="fu">=</span> <span class="dt">N</span>
 <span class="ot">&gt;</span>   cons <span class="fu">=</span> <span class="dt">C</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   listShape x <span class="fu">=</span> <span class="kw">case</span> x <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">N</span>      <span class="ot">-&gt;</span> <span class="dt">Nil</span>
-<span class="ot">&gt;</span>     <span class="dt">C</span> a as <span class="ot">-&gt;</span> <span class="dt">Cons</span> a as
+<span class="ot">&gt;</span>   listShape  <span class="dt">N</span>      <span class="fu">=</span> <span class="dt">Nil</span>
+<span class="ot">&gt;</span>   listShape (<span class="dt">C</span> a x) <span class="fu">=</span> <span class="dt">Cons</span> a x
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   list m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span>
 <span class="ot">&gt;</span>     []     <span class="ot">-&gt;</span> <span class="dt">N</span>
@@ -234,7 +253,7 @@ If <span class="math inline">\(x \in \lists{A}\)</span>, then either <span class
 </div>
 </div>
 <p>Here is a naive implementation of <span class="math inline">\(\foldr{\ast}{\ast}\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; foldr ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; foldr ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b
 <span class="ot">&gt;</span> foldr e phi x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Nil</span>       <span class="ot">-&gt;</span> e
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> a as <span class="ot">-&gt;</span> phi a (foldr e phi as)</code></pre></div>
@@ -305,10 +324,33 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tail ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tail ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a
 <span class="ot">&gt;</span> tail x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Nil</span>      <span class="ot">-&gt;</span> nil
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> _ y <span class="ot">-&gt;</span> y</code></pre></div>
+<p>One more bit of wierdness. Just like with <code>Natural</code>, even though it makes sense to define an <code>Equal</code> instance against <code>ListOf</code>, the naive way to do it,</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Equal</span> a, <span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (t a) <span class="kw">where</span>
+  <span class="fu">...</span></code></pre></div>
+<p>is undecidable. But we can get around this with a simple wrapper type:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">newtype</span> <span class="dt">ListOf</span> t a <span class="fu">=</span> <span class="dt">ListOf</span> {<span class="ot"> unListOf ::</span> t a }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> <span class="dt">List</span> (<span class="dt">ListOf</span> t) <span class="kw">where</span>
+<span class="ot">&gt;</span>   toConsList   <span class="fu">=</span> toConsList <span class="fu">.</span> unListOf
+<span class="ot">&gt;</span>   fromConsList <span class="fu">=</span> <span class="dt">ListOf</span> <span class="fu">.</span> fromConsList
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   nil      <span class="fu">=</span> <span class="dt">ListOf</span> nil
+<span class="ot">&gt;</span>   cons a x <span class="fu">=</span> <span class="dt">ListOf</span> (cons a (unListOf x))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">List</span> t, <span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">ListOf</span> t a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   show <span class="fu">=</span> show <span class="fu">.</span> toConsList
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> (t a)) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">ListOf</span> t a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     x <span class="ot">&lt;-</span> arbitrary
+<span class="ot">&gt;</span>     return (<span class="dt">ListOf</span> x)</code></pre></div>
+<h2 id="equality">Equality</h2>
 <p>And some properties of equality:</p>
 <div class="result">
 <div class="thm">
@@ -345,23 +387,12 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; listEqBy ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> listEqBy f x y <span class="fu">=</span> <span class="kw">case</span> (listShape x, listShape y) <span class="kw">of</span>
-<span class="ot">&gt;</span>   (<span class="dt">Nil</span>,      <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>   (<span class="dt">Nil</span>,      <span class="dt">Cons</span> _ _) <span class="ot">-&gt;</span> <span class="dt">False</span>
-<span class="ot">&gt;</span>   (<span class="dt">Cons</span> _ _, <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">False</span>
-<span class="ot">&gt;</span>   (<span class="dt">Cons</span> a u, <span class="dt">Cons</span> b v) <span class="ot">-&gt;</span> (f a b) <span class="fu">&amp;&amp;</span> (listEqBy f u v)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; listEq ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> listEq <span class="fu">=</span> listEqBy (<span class="fu">==</span>)</code></pre></div>
-<p>We’ll also throw in an <code>Arbitrary</code> instance for <code>List</code> here for use in testing later.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> a) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">List</span> a) <span class="kw">where</span>
-<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     xs <span class="ot">&lt;-</span> arbitrary
-<span class="ot">&gt;</span>     return <span class="fu">$</span> list xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   shrink <span class="dt">N</span>       <span class="fu">=</span> []
-<span class="ot">&gt;</span>   shrink (<span class="dt">C</span> _ x) <span class="fu">=</span> [x]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (<span class="dt">ListOf</span> t a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   eq x y <span class="fu">=</span> <span class="kw">case</span> (listShape x, listShape y) <span class="kw">of</span>
+<span class="ot">&gt;</span>     (<span class="dt">Nil</span>,      <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>     (<span class="dt">Nil</span>,      <span class="dt">Cons</span> _ _) <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>     (<span class="dt">Cons</span> _ _, <span class="dt">Nil</span>     ) <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>     (<span class="dt">Cons</span> a u, <span class="dt">Cons</span> b v) <span class="ot">-&gt;</span> (eq a b) <span class="fu">&amp;&amp;&amp;</span> (eq u v)</code></pre></div>
 
 
 <!-- END BODY -->

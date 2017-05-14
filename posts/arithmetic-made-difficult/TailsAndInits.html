@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Tails and Inits</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -133,12 +135,12 @@ Posted on 2017-05-12 by nbloomf
 
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/TailsAndInits.lhs">the source</a> into GHCi and play along.</p>
 
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">TailsAndInits</span>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">TailsAndInits</span>
 <span class="ot">&gt;</span>   ( tails, inits, _test_tails_inits, main_tails_inits
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, map, zip, all, any, tail, length)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lists</span>
@@ -148,8 +150,10 @@ Posted on 2017-05-12 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Cat</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prefix</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LongestCommonPrefix</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">AllAndAny</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, (.))
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll construct the lists of all suffixes (<span class="math inline">\(\tails\)</span>) and prefixes (<span class="math inline">\(\inits\)</span>) of a list. Starting with <span class="math inline">\(\tails\)</span>: this function should have a signature like <span class="math display">\[\lists{A} \rightarrow \lists{\lists{A}}.\]</span> Here’s how I did it: we have (almost) one suffix for each item in the list – the suffix starting at that item – plus the empty suffix. This suggests we can define <span class="math inline">\(\tails\)</span> as a fold. The hitch is in the return type; fold prefers to decompose a list, while it appears that <span class="math inline">\(\tails\)</span> is building a list up. As usual, the way to handle this is by folding a list of <em>functions</em>. The only way I can see to do this is by defining <span class="math inline">\(\tails\)</span> as <span class="math display">\[\tails(x) = \foldr{\varepsilon}{\varphi}(x)(x)\]</span> for some appropriate <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span>. Unpacking this using the behavior we want, I get the following definition.</p>
@@ -161,7 +165,7 @@ Let <span class="math inline">\(A\)</span> be a set. Define <span class="math in
 </div>
 </div>
 <p>We can translate <span class="math inline">\(\tails\)</span> to Haskell directly as follows:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tails' ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tails' ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
 <span class="ot">&gt;</span> tails' x <span class="fu">=</span> foldr epsilon phi x x
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     epsilon w <span class="fu">=</span> cons w nil
@@ -199,17 +203,34 @@ Let <span class="math inline">\(A\)</span> be a set. Define <span class="math in
 </div>
 </div>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tails ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tails ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
 <span class="ot">&gt;</span> tails x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Nil</span>      <span class="ot">-&gt;</span> cons nil nil
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> a w <span class="ot">-&gt;</span> cons (cons a w) (tails w)</code></pre></div>
+<p>Special case.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a sets. For all <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\tails(\cons(a,\nil)) = \cons(\cons(a,\nil),\cons(\nil,\nil)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\cons(a,\nil)) \\
+ &amp; = &amp; \cons(\cons(a,\nil),\tails(\nil)) \\
+ &amp; = &amp; \cons(\cons(a,\nil),\cons(\nil,\nil))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\map\)</span>:</p>
 <div class="result">
 <div class="thm">
 <p>
 Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\tails(\map(f)(x)) = \map(\map(f))(\tails(x)).\]</span>
 </p>
 </div>
-<p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\map\)</span>:</p>
 <div class="proof">
 <p>
 We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -254,9 +275,111 @@ We proceed by list induction. For the base case <span class="math inline">\(x = 
 </p>
 </div>
 </div>
+<p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\snoc\)</span>:</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\tails(\snoc(a,x)) = \snoc(\nil,\map(\snoc(a,-))(\tails(x))).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(x))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(\nil))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\cons(\nil,\nil))) \\
+ &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\map(\snoc(a,-))(\nil))) \\
+ &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\nil)) \\
+ &amp; = &amp; \cons(\snoc(a,\nil),\snoc(\nil,\nil)) \\
+ &amp; = &amp; \cons(\cons(a,\nil),\cons(\nil,\nil)) \\
+ &amp; = &amp; \tails(\cons(a,\nil)) \\
+ &amp; = &amp; \tails(\snoc(a,\nil)) \\
+ &amp; = &amp; \tails(\snoc(a,x))
+\end{eqnarray*}\]</span> as claimed. Suppose now that the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\snoc(a,\cons(b,x))) \\
+ &amp; = &amp; \tails(\cons(b,\snoc(a,x))) \\
+ &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\tails(\snoc(a,x))) \\
+ &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\snoc(\nil,\map(\snoc(a,-))(\tails(x)))) \\
+ &amp; = &amp; \snoc(\nil,\cons(\cons(b,\snoc(a,x)),\map(\snoc(a,-))(\tails(x)))) \\
+ &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\cons(b,x)),\map(\snoc(a,-))(\tails(x)))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\cons(\cons(b,x),\tails(x)))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(\cons(b,x))))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
+<p>And <span class="math inline">\(\tails\)</span> distributes over <span class="math inline">\(\lcs\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\lcs(\cons(\nil,\nil),\tails(x)) = \cons(\nil,\nil)\)</span>.</li>
+<li><span class="math inline">\(\tails(\lcs(x,y)) = \lcs(\tails(x),\tails(y))\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \lcs(\cons(\nil,\nil),\tails(x)) \\
+ &amp; = &amp; \lcs(\cons(\nil,\nil),\cons(\nil,\nil)) \\
+ &amp; = &amp; \cons(\nil,\nil)
+\end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math inline">\(\lcs(\cons(\nil,\nil),\tails(x)) = \cons(\nil,\nil)\)</span>, so that <span class="math inline">\(\tails(x) = \cat(w,\cons(\nil,\nil))\)</span> for some <span class="math inline">\(w\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\cons(a,x)) \\
+ &amp; = &amp; \cons(\cons(a,x),\tails(x)) \\
+ &amp; = &amp; \cons(\cons(a,x),\cat(w,\cons(\nil,\nil))) \\
+ &amp; = &amp; \cat(\cons(\cons(a,x),w),\cons(\nil,\nil))),
+\end{eqnarray*}\]</span> and thus <span class="math display">\[\lcs(\cons(\nil,\nil),\cons(a,x)) = \cons(\nil,\nil)\]</span> as claimed.</li>
+<li>We proceed by list induction on <span class="math inline">\(\length(x)\)</span>. For the base case <span class="math inline">\(\length(x) = \zero\)</span> we have <span class="math inline">\(x = \nil\)</span>. Then (using (1)) <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\lcs(x,y)) \\
+ &amp; = &amp; \tails(\lcs(\nil,y)) \\
+ &amp; = &amp; \tails(\nil) \\
+ &amp; = &amp; \cons(\nil,\nil) \\
+ &amp; = &amp; \lcs(\cons(\nil,\nil),\tails(y)) \\
+ &amp; = &amp; \lcs(\tails(\nil),\tails(y)) \\
+ &amp; = &amp; \lcs(\tails(x),\tails(y))
+\end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> whenever <span class="math inline">\(\length(x) = n\)</span>, and suppose we have <span class="math inline">\(x \in \lists{A}\)</span> with <span class="math inline">\(\length(x) = \next(n)\)</span>. Note that <span class="math inline">\(x =\cons(a,v) \neq \nil\)</span> for some <span class="math inline">\(v\)</span> with <span class="math inline">\(\length(v) = n\)</span>; in particular <span class="math inline">\(x = \cons(a,v) = \snoc(d,u)\)</span> for some <span class="math inline">\(u\)</span> and <span class="math inline">\(d\)</span> with <span class="math inline">\(\length(u) = n\)</span>. We consider two cases for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\lcs(x,y)) \\
+ &amp; = &amp; \tails(\lcs(x,\nil)) \\
+ &amp; = &amp; \tails(\nil) \\
+ &amp; = &amp; \cons(\nil,\nil) \\
+ &amp; = &amp; \lcs(\tails(x),\cons(\nil,\nil)) \\
+ &amp; = &amp; \lcs(\tails(x),\tails(\nil)) \\
+ &amp; = &amp; \lcs(\tails(x),\tails(y))
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(y \neq \nil\)</span>; then we have <span class="math inline">\(y = \snoc(b,w)\)</span> for some <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(w \in \lists{A}\)</span>. Suppose <span class="math inline">\(d = b\)</span>. Note that the function <span class="math inline">\(\snoc(d,-) = \cat(-,\cons(d,\nil))\)</span> in injective. Using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \tails(\lcs(x,y)) \\
+ &amp; = &amp; \tails(\lcs(\snoc(d,u),\snoc(b,w))) \\
+ &amp; = &amp; \tails(\snoc(d,\lcs(u,w))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(d,-))(\tails(\lcs(u,w)))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(d,-))(\lcs(\tails(u),\tails(w)))) \\
+ &amp; = &amp; \snoc(\nil,\lcs(\map(\snoc(d,-))(\tails(u)),\map(\snoc(d,-))(\tails(w)))) \\
+ &amp; = &amp; \lcs(\snoc(\nil,\map(\snoc(d,-))(\tails(u))),\snoc(\nil,\map(\snoc(d,-))(\tails(w)))) \\
+ &amp; = &amp; \lcs(\tails(\snoc(d,u)),\tails(\snoc(d,w))) \\
+ &amp; = &amp; \lcs(\tails(\snoc(d,u)),\tails(\snoc(b,w))) \\
+ &amp; = &amp; \lcs(\tails(x),\tails(y))
+\end{eqnarray*}\]</span> as needed. Now suppose <span class="math inline">\(d \neq b\)</span>. In this case we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \lcs(\tails(x),\tails(y)) \\
+ &amp; = &amp; \lcs(\tails(\snoc(d,u)),\tails(\snoc(b,w))) \\
+ &amp; = &amp; \lcs(\snoc(\nil,\map(\snoc(d,-))(\tails(u))),\snoc(\nil,\map(\snoc(b,-))(\tails(w)))) \\
+ &amp; = &amp; \snoc(\nil,\lcs(\map(\snoc(d,-))(\tails(u)),\map(\snoc(b,-))(\tails(w)))) \\
+ &amp; = &amp; \snoc(\nil,Q).
+\end{eqnarray*}\]</span> Consider this <span class="math inline">\(Q\)</span>. If <span class="math inline">\(Q \neq \nil\)</span>, that is, <span class="math inline">\(Q = \cons(h,p)\)</span> for some <span class="math inline">\(h\)</span> and <span class="math inline">\(p\)</span>, note that <span class="math display">\[\snoc(d,q) = h = \snoc(b,q')\]</span> for some <span class="math inline">\(q\)</span> and <span class="math inline">\(q'\)</span>. But <span class="math inline">\(d \neq b\)</span> – a contradiction. So in fact <span class="math inline">\(Q = \nil\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \snoc(\nil,Q) \\
+ &amp; = &amp; \snoc(\nil,\nil) \\
+ &amp; = &amp; \cons(\nil,\nil) \\
+ &amp; = &amp; \tails(\nil) \\
+ &amp; = &amp; \tails(\lcs(\snoc(d,u),\snoc(b,w))) \\
+ &amp; = &amp; \tails(\lcs(x,y))
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</p>
+</div>
+</div>
 <p>Next we’ll define <span class="math inline">\(\inits\)</span> in terms of <span class="math inline">\(\tails\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; inits ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
-<span class="ot">&gt;</span> inits x <span class="fu">=</span> map rev (tails (rev x))</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; inits ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)
+<span class="ot">&gt;</span> inits <span class="fu">=</span> rev <span class="fu">.</span> map rev <span class="fu">.</span> tails <span class="fu">.</span> rev</code></pre></div>
 <p><span class="math inline">\(\inits\)</span> interacts with <span class="math inline">\(\map\)</span>:</p>
 <div class="result">
 <div class="thm">
@@ -268,12 +391,13 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 <p>
 Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \inits(\map(f)(x)) \\
- &amp; = &amp; \map(\rev)(\tails(\rev(\map(f)(x)))) \\
- &amp; = &amp; \map(\rev)(\tails(\map(f)(\rev(x)))) \\
- &amp; = &amp; \map(\rev)(\map(\map(f))(\tails(\rev(x)))) \\
- &amp; = &amp; \map(\rev \circ \map(f))(\tails(\rev(x))) \\
- &amp; = &amp; \map(\map(f) \circ \rev)(\tails(\rev(x))) \\
- &amp; = &amp; \map(\map(f))(\map(\rev)(\tails(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\rev)(\tails(\rev(\map(f)(x))))) \\
+ &amp; = &amp; \rev(\map(\rev)(\tails(\map(f)(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\rev)(\map(\map(f))(\tails(\rev(x))))) \\
+ &amp; = &amp; \rev(\map(\rev \circ \map(f))(\tails(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\map(f) \circ \rev)(\tails(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\map(f))(\map(\rev)(\tails(\rev(x))))) \\
+ &amp; = &amp; \map(\map(f))(\rev(\map(\rev)(\tails(\rev(x))))) \\
  &amp; = &amp; \map(\map(f))(\inits(x))
 \end{eqnarray*}\]</span> as claimed.
 </p>
@@ -287,8 +411,9 @@ Let <span class="math inline">\(A\)</span> be a set. For all <span class="math i
 </div>
 <div class="proof">
 <p>
-Note that <span class="math display">\[begin{eqnarray*}
+Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\inits(x)) \\
+ &amp; = &amp; \length(\rev(\map(\rev)(\tails(\rev(x))))) \\
  &amp; = &amp; \length(\map(\rev)(\tails(\rev(x)))) \\
  &amp; = &amp; \length(\tails(\rev(x))) \\
  &amp; = &amp; \next(\length(\rev(x))) \\
@@ -297,61 +422,117 @@ Note that <span class="math display">\[begin{eqnarray*}
 </p>
 </div>
 </div>
+<p>Finally, <span class="math inline">\(\inits\)</span> distributes over <span class="math inline">\(\lcp\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\lcp(x,y)) = \lcp(\inits(x),\inits(y)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+Note that <span class="math inline">\(\rev\)</span> is injective. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \lcp(\inits(x),\inits(y)) \\
+ &amp; = &amp; \lcp(\rev(\map(\rev)(\tails(\rev(x)))),\rev(\map(\rev)(\tails(\rev(y))))) \\
+ &amp; = &amp; \rev(\lcs(\map(\rev)(\tails(\rev(x))),\map(\rev)(\tails(\rev(y))))) \\
+ &amp; = &amp; \rev(\map(\rev)(\lcs(\tails(\rev(x)),\tails(\rev(y))))) \\
+ &amp; = &amp; \rev(\map(\rev)(\tails(\lcs(\rev(x),\rev(y))))) \\
+ &amp; = &amp; \rev(\map(\rev)(\tails(\rev(\lcp(x,y))))) \\
+ &amp; = &amp; \inits(\lcp(x,y))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
+<p>A utility for type fixing:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\tails\)</span> and <span class="math inline">\(\inits\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- tails(x) == tails'(x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_tails_alt ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_tails_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_tails_alt _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   listEqBy listEq (tails x) (tails' x)
+<span class="ot">&gt;</span>   (tails x) <span class="fu">====</span> (tails' x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- tails(map(f)(x)) == map(map(f))(tails(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_tails_map ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_tails_map ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_tails_map _ f x <span class="fu">=</span>
-<span class="ot">&gt;</span>   listEqBy listEq (tails (map f x)) (map (map f) (tails x))
+<span class="ot">&gt;</span>   (tails (map f x)) <span class="fu">====</span> (map (map f) (tails x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- length(tails(x)) == next(length(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_tails_length ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_tails_length _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (length (tails x)) <span class="fu">==</span> (next (length x))
+<span class="ot">&gt;</span> _<span class="ot">test_tails_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_tails_length _ n x <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     (length (tails x)) <span class="fu">====</span> (next lx)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- tails(snoc(a,x)) == snoc(nil,map(snoc(a,-))(tails(x)))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_tails_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_tails_snoc _ a x <span class="fu">=</span>
+<span class="ot">&gt;</span>   (tails (snoc a x)) <span class="fu">====</span> (snoc nil (map (snoc a) (tails x)))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- tails(lcs(x,y)) == lcs(tails(x),tails(y))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_tails_lcs ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_tails_lcs _ x y <span class="fu">=</span>
+<span class="ot">&gt;</span>   (tails (lcs x y)) <span class="fu">====</span> (lcs (tails x) (tails y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- inits(map(f)(x)) == map(map(f))(inits(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_inits_map ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_inits_map ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_inits_map _ f x <span class="fu">=</span>
-<span class="ot">&gt;</span>   listEqBy listEq (inits (map f x)) (map (map f) (inits x))
+<span class="ot">&gt;</span>   (inits (map f x)) <span class="fu">====</span> (map (map f) (inits x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- length(inits(x)) == next(length(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_inits_length ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_inits_length _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (length (inits x)) <span class="fu">==</span> (next (length x))</code></pre></div>
+<span class="ot">&gt;</span> _<span class="ot">test_inits_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_inits_length _ n x <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     (length (inits x)) <span class="fu">====</span> (next lx)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- inits(lcp(x,y)) == lcp(inits(x),inits(y))</span>
+<span class="ot">&gt;</span> _<span class="ot">test_inits_lcp ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_inits_lcp _ x y <span class="fu">=</span>
+<span class="ot">&gt;</span>   (inits (lcp x y)) <span class="fu">====</span> (lcp (inits x) (inits y))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for tails and inits</span>
-<span class="ot">&gt;</span> _<span class="ot">test_tails_inits ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Eq</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a))
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_tails_inits t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_tails_alt t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_tails_map t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_tails_length t)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_inits_map t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_inits_length t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _<span class="ot">test_tails_inits ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_tails_inits t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_tails_alt t)
+<span class="ot">&gt;</span>   runTest args (_test_tails_map t)
+<span class="ot">&gt;</span>   runTest args (_test_tails_length t n)
+<span class="ot">&gt;</span>   runTest args (_test_tails_snoc t)
+<span class="ot">&gt;</span>   runTest args (_test_tails_lcs t)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_inits_map t)
+<span class="ot">&gt;</span>   runTest args (_test_inits_length t n)
+<span class="ot">&gt;</span>   runTest args (_test_inits_lcp t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_tails_inits ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_tails_inits <span class="fu">=</span> _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_tails_inits <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

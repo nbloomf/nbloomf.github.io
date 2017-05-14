@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Unzip</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-05-07 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-05-07 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-05-07 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,8 +139,7 @@ Posted on 2017-05-07 by nbloomf
 <span class="ot">&gt;</span>   ( unzip, _test_unzip, main_unzip
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> <span class="kw">hiding</span> (foldr, foldl', foldl, length, head, tail, map, zip, unzip)
-<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">MaxAndMin</span>
@@ -153,6 +154,7 @@ Posted on 2017-05-07 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Range</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, uncurry)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we will define a kind of one-sided inverse of <span class="math inline">\(\zip\)</span>, called <span class="math inline">\(\unzip\)</span>. Recall that <span class="math inline">\(\zip\)</span> has signature <span class="math display">\[\lists{A} \times \lists{B} \rightarrow \lists{A \times B}.\]</span> An inverse will then have signature <span class="math display">\[\lists{A \times B} \rightarrow \lists{A} \times \lists{B},\]</span> and should “undo” the zipping. As usual we’d like to define this as a fold if possible; to that end we need <span class="math inline">\(\varepsilon : \lists{A} \times \lists{B}\)</span> and <span class="math display">\[\varphi : (A \times B) \times (\lists{A} \times \lists{B}) \rightarrow \lists{A} \times \lists{B}\]</span> such that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\nil,\nil) \\
@@ -172,7 +174,7 @@ Posted on 2017-05-07 by nbloomf
 <p>
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\varphi : (A \times B) \times (\lists{A} \times \lists{B}) \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\varphi((a,b),(u,v)) = (\cons(a,u),\cons(b,v).\]</span> We then define <span class="math inline">\(\unzip : \lists{A \times B} \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\unzip(x) = \foldr{(\nil,\nil)}{\varphi}(x).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unzip ::</span> (<span class="dt">ListOf</span> t) <span class="ot">=&gt;</span> t (a,b) <span class="ot">-&gt;</span> (t a, t b)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; unzip ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t (a,b) <span class="ot">-&gt;</span> (t a, t b)
 <span class="ot">&gt;</span> unzip <span class="fu">=</span> foldr (nil,nil) phi
 <span class="ot">&gt;</span>   <span class="kw">where</span>
 <span class="ot">&gt;</span>     phi (a,b) (u,v) <span class="fu">=</span> (cons a u, cons b v)</code></pre></div>
@@ -300,35 +302,35 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\unzip\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- zip(unzip(x)) == x</span>
-<span class="ot">&gt;</span> _<span class="ot">test_unzip_zip ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (a,a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_unzip_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t (a,a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_unzip_zip _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   ((uncurry zip) (unzip x)) <span class="ot">`listEq`</span> x
+<span class="ot">&gt;</span>   ((uncurry zip) (unzip x)) <span class="fu">====</span> x
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- swap(unzip(x)) == unzip(map(swap)(x))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_unzip_swap ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Eq</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (a,a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_unzip_swap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t (a,a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_unzip_swap _ x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (\(a,b) (c,d) <span class="ot">-&gt;</span> (listEq a c) <span class="fu">&amp;&amp;</span> (listEq b d))
-<span class="ot">&gt;</span>     (unzip (map swap x))
-<span class="ot">&gt;</span>     (swap (unzip x))</code></pre></div>
+<span class="ot">&gt;</span>   (unzip (map swap x)) <span class="fu">====</span> (swap (unzip x))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for unzip</span>
-<span class="ot">&gt;</span> _<span class="ot">test_unzip ::</span> (<span class="dt">ListOf</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> (t (n,n)), <span class="dt">Show</span> (t (n,n)))
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_unzip t n maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_unzip_zip t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_unzip_swap t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _<span class="ot">test_unzip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> (t (a,a)), <span class="dt">Show</span> (t (a,a)))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_unzip t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_unzip_zip t)
+<span class="ot">&gt;</span>   runTest args (_test_unzip_swap t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_unzip ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_unzip <span class="fu">=</span> _test_unzip (<span class="ot">nil ::</span> <span class="dt">List</span> <span class="dt">Nat</span>) (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_unzip <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_unzip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_unzip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

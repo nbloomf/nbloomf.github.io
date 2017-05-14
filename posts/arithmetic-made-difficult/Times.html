@@ -7,10 +7,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>nbloomf.github.io - Multiplication</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
-<link rel="icon" href="../../icon/favicon-32.png" />
-<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../icon/favicon-57.png" />
-<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../icon/favicon-114.png" />
-<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../icon/favicon-152.png" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 </head>
@@ -22,9 +22,9 @@
   </div>
   <div id="navigation">
     <a href="../../index.html">Home</a>
-    <a href="../../about.html">About</a>
-    <a href="../../projects.html">Projects</a>
-    <a href="../../contact.html">Contact</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -48,14 +48,6 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\id}{\mathsf{id}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
 
-<!-- tuples -->
-\(\newcommand{\fst}{\mathsf{first}}\)
-\(\newcommand{\snd}{\mathsf{second}}\)
-\(\newcommand{\swap}{\mathsf{swap}}\)
-\(\newcommand{\pair}{\mathsf{pair}}\)
-\(\newcommand{\assocL}{\mathsf{assocL}}\)
-\(\newcommand{\assocR}{\mathsf{assocR}}\)
-
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
 \(\newcommand{\btrue}{\mathsf{true}}\)
@@ -63,6 +55,15 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\swap}{\mathsf{swap}}\)
+\(\newcommand{\pair}{\mathsf{pair}}\)
+\(\newcommand{\assocL}{\mathsf{assocL}}\)
+\(\newcommand{\assocR}{\mathsf{assocR}}\)
 
 <!-- natural numbers -->
 \(\newcommand{\nats}{\mathbb{N}}\)
@@ -126,6 +127,7 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\any}{\mathsf{any}}\)
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,9 +139,11 @@ Posted on 2017-03-31 by nbloomf
 <span class="ot">&gt;</span>  ( times, _test_times, main_times
 <span class="ot">&gt;</span>  ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>(..), <span class="dt">IO</span>, <span class="dt">Int</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Natural number multiplication has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define it as <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span> for some appropriate <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>. Using the universal property of simple recursion and how we want multiplication to behave, note that on the one hand we want <span class="math inline">\(\Theta(\zero,m) = \zero\)</span> for all <span class="math inline">\(m\)</span>, while on the other hand we have <span class="math inline">\(\Theta(\zero,m) = \varphi(m)\)</span>. So apparently we need <span class="math inline">\(\varphi(m) = \zero\)</span> for all <span class="math inline">\(m\)</span>.</p>
 <p>Similarly, we want <span class="math inline">\(\Theta(\next(n),m) = \nplus(\Theta(n,m),m)\)</span>, but we also have <span class="math display">\[\Theta(\next(n),m) = \mu(n,m,\Theta(n,m)).\]</span> So apparently we need <span class="math inline">\(\mu(n,m,k) = \nplus(k,m)\)</span>.</p>
@@ -147,7 +151,13 @@ Posted on 2017-03-31 by nbloomf
 <div class="result">
 <div class="defn">
 <p>
-Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \simprec{\varphi}{\mu}.\]</span>
+<p>Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \simprec{\varphi}{\mu}.\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
+<span class="ot">&gt;</span> times <span class="fu">=</span> simpleRec phi mu
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> zero
+<span class="ot">&gt;</span>     mu _ a b <span class="fu">=</span> plus b a</code></pre></div>
 </p>
 </div>
 </div>
@@ -186,95 +196,99 @@ Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be gi
 </div>
 </div>
 <h2 id="implementation-and-testing">Implementation and Testing</h2>
-<p>Here’s <code>times</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; times ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t
-<span class="ot">&gt;</span> times <span class="fu">=</span> simpleRec phi mu
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     phi _ <span class="fu">=</span> zero
-<span class="ot">&gt;</span>     mu _ a b <span class="fu">=</span> plus b a</code></pre></div>
-<p>As with <code>plus</code>, it’s a good idea to test the properties of <code>times</code>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- 0 == times(a,0) and 0 == times(0,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_zero ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_times_zero _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ zero <span class="fu">==</span> times a zero
-<span class="ot">&gt;</span>   , zero <span class="fu">==</span> times zero a
-<span class="ot">&gt;</span>   ]
+<p>As with <span class="math inline">\(\nplus\)</span>, it’s a good idea to test the properties of <span class="math inline">\(\ntimes\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- 0 == times(0,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_zero_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_zero_left _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   zero <span class="fu">====</span> times zero a
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- a == times(a,1) and a == times(1,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_one ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_times_one _ a <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ a <span class="fu">==</span> times a (next zero)
-<span class="ot">&gt;</span>   , a <span class="fu">==</span> times (next zero) a
-<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> <span class="co">-- 0 == times(a,0)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_zero_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_zero_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   zero <span class="fu">====</span> times a zero
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- a == times(1,a)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_one_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_one_left _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   a <span class="fu">====</span> times (next zero) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- a == times(a,1)</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_one_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_times_one_right _ a <span class="fu">=</span>
+<span class="ot">&gt;</span>   a <span class="fu">====</span> times a (next zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(next(a),b) == plus(times(a,b),b)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_next_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_next_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_next_left _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times (next a) b) <span class="fu">==</span> (plus (times a b) b)
+<span class="ot">&gt;</span>   (times (next a) b) <span class="fu">====</span> (plus (times a b) b)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(a,next(b)) == plus(times(a,b),a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_next_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_next_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_next_right _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times a (next b)) <span class="fu">==</span> (plus (times a b) a)
+<span class="ot">&gt;</span>   (times a (next b)) <span class="fu">====</span> (plus (times a b) a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(a,b) == times(b,a)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_commutative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_commutative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_commutative _ a b <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times a b) <span class="fu">==</span> (times b a)
+<span class="ot">&gt;</span>   (times a b) <span class="fu">====</span> (times b a)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(a,plus(b,c)) == plus(times(a,b),times(a,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_left ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_distributive_left _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times a (plus b c)) <span class="fu">==</span> (plus (times a b) (times a c))
+<span class="ot">&gt;</span>   (times a (plus b c)) <span class="fu">====</span> (plus (times a b) (times a c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(plus(a,b),c) == plus(times(a,c),times(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_right ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_distributive_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_distributive_right _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times (plus a b) c) <span class="fu">==</span> (plus (times a c) (times b c))
+<span class="ot">&gt;</span>   (times (plus a b) c) <span class="fu">====</span> (plus (times a c) (times b c))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- times(times(a,b),c) == times(a,times(b,c))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_times_associative ::</span> (<span class="dt">Natural</span> t) <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _<span class="ot">test_times_associative ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_times_associative _ a b c <span class="fu">=</span>
-<span class="ot">&gt;</span>   (times (times a b) c) <span class="fu">==</span> (times a (times b c))</code></pre></div>
+<span class="ot">&gt;</span>   (times (times a b) c) <span class="fu">====</span> (times a (times b c))</code></pre></div>
 <p>And one function to rule them all:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_times t maxSize numCases <span class="fu">=</span> sequence_
-<span class="ot">&gt;</span>   [ quickCheckWith args (_test_times_zero t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_one t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_next_left t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_next_right t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_commutative t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_distributive_left t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_distributive_right t)
-<span class="ot">&gt;</span>   , quickCheckWith args (_test_times_associative t)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span> _test_times t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
-<span class="ot">&gt;</span>       }</code></pre></div>
-<p>And a sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> _test_times (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">10</span> <span class="dv">10</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span>
-<span class="fu">+++</span> <span class="dt">OK</span>, passed <span class="dv">10</span> tests<span class="fu">.</span></code></pre></div>
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_times_zero_left t)
+<span class="ot">&gt;</span>   runTest args (_test_times_zero_right t)
+<span class="ot">&gt;</span>   runTest args (_test_times_one_left t)
+<span class="ot">&gt;</span>   runTest args (_test_times_one_right t)
+<span class="ot">&gt;</span>   runTest args (_test_times_next_left t)
+<span class="ot">&gt;</span>   runTest args (_test_times_next_right t)
+<span class="ot">&gt;</span>   runTest args (_test_times_commutative t)
+<span class="ot">&gt;</span>   runTest args (_test_times_distributive_left t)
+<span class="ot">&gt;</span>   runTest args (_test_times_distributive_right t)
+<span class="ot">&gt;</span>   runTest args (_test_times_associative t)</code></pre></div>
 <p>I used a much smaller number of test cases this time, because these run much more slowly than the tests for <code>plus</code>. The culprit is <code>_test_times_associative</code>. What’s happening is that multiplication of <code>Nat</code>s is inherently slow; it’s implemented as iterated addition, which itself is iterated <code>N</code>.</p>
 <p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_times ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_times <span class="fu">=</span> _test_times (<span class="ot">zero ::</span> <span class="dt">Nat</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_times <span class="fu">=</span> _test_times (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->
