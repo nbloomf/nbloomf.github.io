@@ -60,6 +60,7 @@ Posted on 2017-05-06 by nbloomf
 <!-- tuples -->
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
 \(\newcommand{\swap}{\mathsf{swap}}\)
 \(\newcommand{\pair}{\mathsf{pair}}\)
 \(\newcommand{\assocL}{\mathsf{assocL}}\)
@@ -136,10 +137,11 @@ Posted on 2017-05-06 by nbloomf
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Zip.lhs">the source</a> into GHCi and play along.</p>
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Zip</span>
-<span class="ot">&gt;</span>   ( zip, zipPad, _test_zip, main_zip, swap, pair, assocL, assocR
+<span class="ot">&gt;</span>   ( zip, zipPad, _test_zip, main_zip
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tuples</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">MaxAndMin</span>
@@ -246,30 +248,6 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> a as <span class="ot">-&gt;</span> <span class="kw">case</span> listShape y <span class="kw">of</span>
 <span class="ot">&gt;</span>     <span class="dt">Nil</span>       <span class="ot">-&gt;</span> nil
 <span class="ot">&gt;</span>     <span class="dt">Cons</span> b bs <span class="ot">-&gt;</span> cons (a,b) (zip as bs)</code></pre></div>
-<p><span class="math inline">\(\zip\)</span> will turn out to be pretty useful. Before establishing some properties for it, we need a few utility functions on pairs.</p>
-<div class="result">
-<div class="defn">
-<p>
-<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets.</p>
-<p>Define <span class="math inline">\(\swap : A \times B \rightarrow B \times A\)</span> by <span class="math display">\[\swap(a,b) = (b,a).\]</span></p>
-<p>Define <span class="math inline">\(\pair : U^A \times V^B \rightarrow (U \times V)^{A \times B}\)</span> by <span class="math display">\[\pair(f,g)(a,b) = (f(a),g(b)).\]</span></p>
-<p>Define <span class="math inline">\(\assocL : A \times (B \times C) \rightarrow (A \times B) \times C\)</span> by <span class="math display">\[\assocL(a,(b,c)) = ((a,b),c).\]</span></p>
-<p>Define <span class="math inline">\(\assocR : (A \times B) \times C \rightarrow A \times (B \times C)\)</span> by <span class="math display">\[\assocR((a,b),c) = (a,(b,c)).\]</span></p>
-<p>In Haskell:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; swap ::</span> (a,b) <span class="ot">-&gt;</span> (b,a)
-<span class="ot">&gt;</span> swap (a,b) <span class="fu">=</span> (b,a)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; pair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> (a,b) <span class="ot">-&gt;</span> (u,v)
-<span class="ot">&gt;</span> pair f g (a,b) <span class="fu">=</span> (f a, g b)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; assocL ::</span> (a,(b,c)) <span class="ot">-&gt;</span> ((a,b),c)
-<span class="ot">&gt;</span> assocL (a,(b,c)) <span class="fu">=</span> ((a,b),c)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; assocR ::</span> ((a,b),c) <span class="ot">-&gt;</span> (a,(b,c))
-<span class="ot">&gt;</span> assocR ((a,b),c) <span class="fu">=</span> (a,(b,c))</code></pre></div>
-</p>
-</div>
-</div>
 <p>Now <span class="math inline">\(\map(\swap) \circ \zip = \zip \circ \swap\)</span>:</p>
 <div class="result">
 <div class="thm">
