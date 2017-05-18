@@ -55,6 +55,7 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
 
 <!-- tuples -->
@@ -129,6 +130,7 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -137,12 +139,13 @@ Posted on 2014-04-01 by nbloomf
 <p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Booleans.lhs">the source</a> into GHCi and play along.</p>
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Booleans</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Bool</span>(<span class="dt">True</span>,<span class="dt">False</span>), not, and, (<span class="fu">&amp;&amp;&amp;</span>), or, (<span class="fu">|||</span>), ifThenElse
+<span class="ot">&gt;</span>   ( <span class="dt">Bool</span>(<span class="fu">..</span>), not, and, (<span class="fu">&amp;&amp;&amp;</span>), or, (<span class="fu">|||</span>), ifThenElse
 <span class="ot">&gt;</span>   , <span class="dt">Equal</span>, eq, (<span class="fu">====</span>)
-<span class="ot">&gt;</span>   , runTest, _test_boolean, main_boolean
+<span class="ot">&gt;</span>   , runTest, testLabel, <span class="dt">Show</span>, <span class="dt">String</span>, (<span class="fu">++</span>), <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(<span class="fu">..</span>)
+<span class="ot">&gt;</span>   , _test_boolean, main_boolean
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span>(<span class="dt">Show</span>(show), <span class="dt">IO</span>, <span class="dt">Bool</span>(..), <span class="dt">Int</span>, <span class="dt">Maybe</span>(..), putStrLn, (&gt;&gt;), return)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span>(<span class="dt">Show</span>(show), <span class="dt">IO</span>, <span class="dt">Bool</span>(..), <span class="dt">Int</span>, <span class="dt">Maybe</span>(..), putStrLn, (&gt;&gt;), return, (++), <span class="dt">String</span>)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span>
@@ -471,17 +474,22 @@ If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math di
 <span class="ot">&gt;</span> _<span class="ot">test_or_and ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_or_and p q r <span class="fu">=</span>
 <span class="ot">&gt;</span>   (or p (and q r)) <span class="fu">====</span> (and (or p q) (or p r))</code></pre></div>
-<p>One of our main uses for <code>Bool</code> will be checking the results of tests, so this is as good a place as any to introduce a QuickCheck helper function for this.</p>
+<p>One of our main uses for <code>Bool</code> will be checking the results of tests, so this is as good a place as any to introduce a couple of QuickCheck helper functions for this.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; runTest ::</span> <span class="dt">Testable</span> prop <span class="ot">=&gt;</span> <span class="dt">Args</span> <span class="ot">-&gt;</span> prop <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> runTest args prop <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   result <span class="ot">&lt;-</span> quickCheckWithResult args prop
 <span class="ot">&gt;</span>   <span class="kw">if</span> isSuccess result
-<span class="ot">&gt;</span>     <span class="kw">then</span> putStrLn (show result) <span class="fu">&gt;&gt;</span> return ()
-<span class="ot">&gt;</span>     <span class="kw">else</span> putStrLn (show result) <span class="fu">&gt;&gt;</span> exitFailure</code></pre></div>
+<span class="ot">&gt;</span>     <span class="kw">then</span> return ()
+<span class="ot">&gt;</span>     <span class="kw">else</span> putStrLn (show result) <span class="fu">&gt;&gt;</span> exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; testLabel ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> testLabel msg <span class="fu">=</span> putStrLn (<span class="st">&quot;\x1b[1;32m&quot;</span> <span class="fu">++</span> msg <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for booleans</span>
 <span class="ot">&gt;</span> _<span class="ot">test_boolean ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> _test_boolean size num <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Bool&quot;</span>
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num

@@ -55,6 +55,7 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\bnot}{\mathsf{not}}\)
 \(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
 \(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
 
 <!-- tuples -->
@@ -129,6 +130,7 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\tails}{\mathsf{tails}}\)
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -145,7 +147,7 @@ Posted on 2017-04-02 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Plus</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>(), <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>We’d eventually like to solve some equations; for instance, one of the simplest equations we can construct with the tools we have so far is <span class="math display">\[\nplus(a,x) = b\]</span> where <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> are in <span class="math inline">\(\nats\)</span>. Putting on our third-grader hat of course the solution to <span class="math inline">\(b = a+x\)</span> is <span class="math inline">\(x = b-a\)</span>. So we’ll call this solution “b minus a”. Our goal in this post is to give a constructive characterization for subtraction.</p>
 <p>There’s a hitch: whereas sums and products of natural numbers always exist, differences do not; <span class="math inline">\(5 - 2 = 3\)</span> is a natural number, but <span class="math inline">\(5 - 7 = ?\)</span> is not. So the signature of minus cannot be <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>. What is it then? How should we handle this?</p>
@@ -345,8 +347,10 @@ For the inductive step, suppose the equality holds for some <span class="math in
 <span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">True</span></code></pre></div>
 <p>And a suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_minus ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_minus t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_minus label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;minus: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>      { maxSuccess <span class="fu">=</span> numCases
@@ -361,7 +365,8 @@ For the inductive step, suppose the equality holds for some <span class="math in
 <span class="ot">&gt;</span>   runTest args (_test_minus_swap t)</code></pre></div>
 <p>And the runner:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_minus ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_minus <span class="fu">=</span> _test_minus (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_minus <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_minus <span class="st">&quot;Unary&quot;</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->
