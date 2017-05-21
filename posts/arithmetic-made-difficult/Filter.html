@@ -131,6 +131,7 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -155,7 +156,7 @@ Posted on 2017-05-13 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">AllAndAny</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TailsAndInits</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll nail down <span class="math inline">\(\filter\)</span>, which takes a list and a predicate on the items and “filters out” the items which satisfy the predicate. <span class="math inline">\(\filter\)</span> should have a signature like <span class="math display">\[\bool^A \times \lists{A} \rightarrow \lists{A}.\]</span> As usual, we want to define <span class="math inline">\(\filter\)</span> as a fold; say <span class="math display">\[\filter(p,x) = \foldr{\varepsilon}{\varphi}(x).\]</span> Where on the right hand side of that equation should the <span class="math inline">\(p\)</span> parameter go? Lets think out loud for a moment. On the one hand, we want <span class="math display">\[\begin{eqnarray*}
@@ -403,8 +404,10 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> _test_filter <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
 <span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_filter t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_filter label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;filter: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -419,8 +422,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_filter ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_filter <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_filter (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_filter (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_filter <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_filter <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

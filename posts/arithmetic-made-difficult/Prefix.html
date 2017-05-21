@@ -131,6 +131,7 @@ Posted on 2017-05-08 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -149,7 +150,7 @@ Posted on 2017-05-08 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Cat</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>The <span class="math inline">\(\cat\)</span> function on <span class="math inline">\(\lists{A}\)</span> is analogous to <span class="math inline">\(\nplus\)</span> on <span class="math inline">\(\nats\)</span>. Carrying this analogy further, <span class="math inline">\(\zip\)</span> and <span class="math inline">\(\zipPad\)</span> are analogous to <span class="math inline">\(\nmin\)</span> and <span class="math inline">\(\nmax\)</span>, respectively. When analogies like this occur in mathematics it can be fruitful to see how far they go. With that in mind, today we will explore the list-analogue of <span class="math inline">\(\nleq\)</span>. This role is played by two functions which we call <span class="math inline">\(\prefix\)</span> and <span class="math inline">\(\suffix\)</span>.</p>
 <p>Intuitively, <span class="math inline">\(\prefix\)</span> will detect when one list is an initial segment of another, while <span class="math inline">\(\suffix\)</span> detects when one list is a terminal segment of another. We’ll start with <span class="math inline">\(\prefix\)</span>. This function should have a signature like <span class="math display">\[\lists{A} \times \lists{A} \rightarrow \bool.\]</span> But how to define this as a fold? Taking a cue from our definition of <span class="math inline">\(\zip\)</span>, we’ll look for <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span> so that <span class="math display">\[\prefix(x,y) = \foldr{\varepsilon}{\varphi}(x)(y)\]</span> behaves as expected. So we want <span class="math display">\[\varepsilon : \bool^{\lists{A}}\]</span> such that <span class="math display">\[\begin{eqnarray*}
@@ -596,9 +597,13 @@ Conversely, suppose <span class="math inline">\(\suffix(y,\cons(a,x)) = \btrue\)
 <span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for prefix</span>
-<span class="ot">&gt;</span> _<span class="ot">test_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a))
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_prefix t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> _test_prefix <span class="ot">::</span>
+<span class="ot">&gt;</span>   ( <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_prefix label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;prefix &amp; suffix: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -616,8 +621,8 @@ Conversely, suppose <span class="math inline">\(\suffix(y,\cons(a,x)) = \btrue\)
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_prefix ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_prefix <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_prefix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_prefix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_prefix <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_prefix <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

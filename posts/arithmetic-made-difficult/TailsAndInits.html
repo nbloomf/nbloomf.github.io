@@ -131,6 +131,7 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -156,7 +157,7 @@ Posted on 2017-05-12 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LongestCommonPrefix</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">AllAndAny</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, (.))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll construct the lists of all suffixes (<span class="math inline">\(\tails\)</span>) and prefixes (<span class="math inline">\(\inits\)</span>) of a list. Starting with <span class="math inline">\(\tails\)</span>: this function should have a signature like <span class="math display">\[\lists{A} \rightarrow \lists{\lists{A}}.\]</span> Here’s how I did it: we have (almost) one suffix for each item in the list – the suffix starting at that item – plus the empty suffix. This suggests we can define <span class="math inline">\(\tails\)</span> as a fold. The hitch is in the return type; fold prefers to decompose a list, while it appears that <span class="math inline">\(\tails\)</span> is building a list up. As usual, the way to handle this is by folding a list of <em>functions</em>. The only way I can see to do this is by defining <span class="math inline">\(\tails\)</span> as <span class="math display">\[\tails(x) = \foldr{\varepsilon}{\varphi}(x)(x)\]</span> for some appropriate <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span>. Unpacking this using the behavior we want, I get the following definition.</p>
@@ -455,9 +456,6 @@ Note that <span class="math inline">\(\rev\)</span> is injective. Now <span clas
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>A utility for type fixing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\tails\)</span> and <span class="math inline">\(\inits\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- tails(x) == tails'(x)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_tails_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
@@ -521,9 +519,14 @@ Note that <span class="math inline">\(\rev\)</span> is injective. Now <span clas
 <span class="ot">&gt;</span>   (inits (lcp x y)) <span class="fu">====</span> (lcp (inits x) (inits y))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for tails and inits</span>
-<span class="ot">&gt;</span> _<span class="ot">test_tails_inits ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_tails_inits t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> _test_tails_inits <span class="ot">::</span>
+<span class="ot">&gt;</span>   ( <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">Natural</span> n
+<span class="ot">&gt;</span>   , <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_tails_inits label t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;tails &amp; inits: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -542,8 +545,8 @@ Note that <span class="math inline">\(\rev\)</span> is injective. Now <span clas
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_tails_inits ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_tails_inits <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_tails_inits <span class="st">&quot;ConsList Bool &amp; Unary&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_tails_inits <span class="st">&quot;ConsList Unary &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

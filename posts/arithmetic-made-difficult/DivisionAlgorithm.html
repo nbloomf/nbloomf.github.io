@@ -131,6 +131,7 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -148,7 +149,7 @@ Posted on 2017-04-08 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Times</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">LessThanOrEqualTo</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Finally we come to the first power tool for natural numbers: the division algorithm. Remember this theorem states that given any two natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, with <span class="math inline">\(b \neq \zero\)</span>, there is a <em>unique</em> pair of natural numbers <span class="math inline">\((q,r)\)</span> such that <span class="math inline">\(a = qb+r\)</span> and <span class="math inline">\(r\)</span> is not “too big”, specifically, <span class="math inline">\(r &lt; b\)</span>; this <span class="math inline">\(q\)</span> is called the <em>quotient</em> of <span class="math inline">\(a\)</span> by <span class="math inline">\(b\)</span>, and <span class="math inline">\(r\)</span> is the <em>remainder</em>.</p>
 <p>I like this result for several reasons. It ties together the three basic operations on <span class="math inline">\(\nats\)</span> – <span class="math inline">\(\next\)</span>, <span class="math inline">\(\nplus\)</span>, and <span class="math inline">\(\ntimes\)</span> – in a satisfying way, and it has two conclusions, one an equality and the other an inequality. It also has some really powerful applications. Notably, we’ll use the division algorithm to compute greatest common divisors and to compute fixed-radix representations of numbers.</p>
@@ -337,8 +338,10 @@ Say <span class="math inline">\(b = \next(m)\)</span>. Note that <span class="ma
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for divalg</span>
 <span class="ot">&gt;</span> _<span class="ot">test_divalg ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_divalg t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_divalg label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;divalg: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -356,7 +359,8 @@ Say <span class="math inline">\(b = \next(m)\)</span>. Note that <span class="ma
 <span class="ot">&gt;</span>   runTest args (_test_divalg_rem t)</code></pre></div>
 <p>And the main function.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_divalg ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_divalg <span class="fu">=</span> _test_divalg (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_divalg <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_divalg <span class="st">&quot;Unary&quot;</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

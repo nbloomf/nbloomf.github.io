@@ -131,6 +131,7 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -153,7 +154,7 @@ Posted on 2017-04-28 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Cat</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Length</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In this post we’ll investigate <span class="math inline">\(\at\)</span>, which extracts the element at an arbitrary position in a list. First, we need <span class="math inline">\(\head\)</span>, which extracts the <em>first</em> element of a list. To a first approximation <span class="math inline">\(\head\)</span> has a signature like <span class="math display">\[\lists{A} \rightarrow A,\]</span> and certainly we want <span class="math inline">\(\head(\cons(a,x)) = a\)</span>. But what about <span class="math inline">\(\head(\nil)\)</span>? In this case there is no element to extract. Taking a cue from our definition of <span class="math inline">\(\nminus\)</span>, we will make <span class="math inline">\(\head\)</span> return not an <span class="math inline">\(A\)</span>, but a <span class="math inline">\(\ast + A\)</span>, letting the <span class="math inline">\(\ast\)</span> represent <span class="math inline">\(\head(\nil)\)</span>. Now <span class="math inline">\(\head\)</span> can be expressed as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span> as follows.</p>
 <div class="result">
@@ -569,9 +570,6 @@ For the inductive step, suppose the implication holds for some <span class="math
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>A utility for type fixing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\at\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- at(nil,k) == *</span>
 <span class="ot">&gt;</span> _<span class="ot">test_at_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
@@ -679,9 +677,14 @@ For the inductive step, suppose the implication holds for some <span class="math
 <span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">True</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for at</span>
-<span class="ot">&gt;</span> _<span class="ot">test_at ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_at t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> _test_at <span class="ot">::</span>
+<span class="ot">&gt;</span>   ( <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
+<span class="ot">&gt;</span>   , <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_at label t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;at: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -699,7 +702,9 @@ For the inductive step, suppose the implication holds for some <span class="math
 <span class="ot">&gt;</span>   runTest args (_test_at_rev t n)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_at ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_at <span class="fu">=</span> _test_at (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_at <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_at <span class="st">&quot;ConsList Bool &amp; Unary&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_at <span class="st">&quot;ConsList Unary &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

@@ -131,6 +131,7 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -157,7 +158,7 @@ Posted on 2017-05-06 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">UnfoldN</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Range</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll define a really useful function on lists called <span class="math inline">\(\zip\)</span>. This map will take two lists, one in <span class="math inline">\(\lists{A}\)</span> and one in <span class="math inline">\(\lists{B}\)</span>, and return a list in <span class="math inline">\(\lists{A \times B}\)</span>. In progress, <span class="math inline">\(\zip\)</span>ping two lists looks something like this: <span class="math display">\[\begin{array}{ccccccccccc}
           &amp;   &amp;           &amp;   &amp;           &amp;           &amp; a_4 &amp; - &amp; a_5 &amp;   &amp;     \\
@@ -700,21 +701,18 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>A utility for type fixing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\zip\)</span> and <span class="math inline">\(\zipPad\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- map(swap)(zip(x,y)) == zip(y,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zip_swap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zip_swap _ x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zip_swap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zip_swap _ _ x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   (map swap (zip x y)) <span class="fu">====</span> (zip y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- length(zip(x,y)) == min(length(x),length(y))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zip_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zip_length _ n x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zip_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zip_length _ _ n x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
 <span class="ot">&gt;</span>   <span class="kw">in</span>
@@ -736,23 +734,23 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- zip'(x,y) == zip(x,y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zip_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zip_alt _ x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zip_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zip_alt _ _ x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   (zip' x y) <span class="fu">====</span> (zip x y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- map(swap)(zipPad(u,v)(x,y)) == zipPad(v,u)(y,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zipPad_swap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zipPad_swap _ u v x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zipPad_swap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zipPad_swap _ _ u v x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   (map swap (zipPad u v x y)) <span class="fu">====</span> (zipPad v u y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- length(zipPad(u,v)(x,y)) == max(length(x),length(y))</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zipPad_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zipPad_length _ n u v x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zipPad_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zipPad_length _ _ n u v x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     lx <span class="fu">=</span> length x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> n
 <span class="ot">&gt;</span>   <span class="kw">in</span>
@@ -780,40 +778,43 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- zipPad'(x,y) == zipPad(x,y)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_zipPad_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_zipPad_alt _ u v x y <span class="fu">=</span>
+<span class="ot">&gt;</span> _<span class="ot">test_zipPad_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_zipPad_alt _ _ u v x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   (zipPad' u v x y) <span class="fu">====</span> (zipPad u v x y)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for zip</span>
 <span class="ot">&gt;</span> _test_zip <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b
 <span class="ot">&gt;</span>   , <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
 <span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_zip t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_zip label t u n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;zip &amp; zipPad: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
 <span class="ot">&gt;</span>       }
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   runTest args (_test_zip_swap t)
-<span class="ot">&gt;</span>   runTest args (_test_zip_length t n)
+<span class="ot">&gt;</span>   runTest args (_test_zip_swap t u)
+<span class="ot">&gt;</span>   runTest args (_test_zip_length t u n)
 <span class="ot">&gt;</span>   runTest args (_test_zip_zip_left t)
 <span class="ot">&gt;</span>   runTest args (_test_zip_zip_right t)
-<span class="ot">&gt;</span>   runTest args (_test_zip_alt t)
+<span class="ot">&gt;</span>   runTest args (_test_zip_alt t u)
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   runTest args (_test_zipPad_swap t)
-<span class="ot">&gt;</span>   runTest args (_test_zipPad_length t n)
+<span class="ot">&gt;</span>   runTest args (_test_zipPad_swap t u)
+<span class="ot">&gt;</span>   runTest args (_test_zipPad_length t u n)
 <span class="ot">&gt;</span>   runTest args (_test_zipPad_zipPad_left t)
 <span class="ot">&gt;</span>   runTest args (_test_zipPad_zipPad_right t)
-<span class="ot">&gt;</span>   runTest args (_test_zipPad_alt t)</code></pre></div>
+<span class="ot">&gt;</span>   runTest args (_test_zipPad_alt t u)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_zip ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_zip <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_zip <span class="st">&quot;ConsList Bool &amp; ConsListBool &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_zip <span class="st">&quot;ConsList Unary &amp; ConsList Unary &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

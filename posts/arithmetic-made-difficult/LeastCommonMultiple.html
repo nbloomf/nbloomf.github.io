@@ -131,6 +131,7 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -153,7 +154,7 @@ Posted on 2017-04-12 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GreatestCommonDivisor</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">CoprimeTo</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Recall the following property of <span class="math inline">\(\nmax\)</span>: if <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmax(a,b))\)</span>. This statement fell out of the definition of <span class="math inline">\(\nmax\)</span> without much fuss, and may seem anticlimactic. But compare it to this analogous statement about <span class="math inline">\(\ngcd\)</span>: if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>. Now <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\ngcd\)</span> seem to play very similar roles. Where <span class="math inline">\(\nleq\)</span> is a kind of “additive order” on <span class="math inline">\(\nats\)</span> and <span class="math inline">\(\nmax\)</span> gives an additive ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, <span class="math inline">\(\ndiv\)</span> is a kind of “multiplicative order” and <span class="math inline">\(\ngcd\)</span> gives a multiplicative ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>. When an analogy this strong holds between two concepts in mathematics, it is frequently useful to see how far the analogy goes. To that end, today we will define the multiplicative counterpart to <span class="math inline">\(\nmin\)</span>.</p>
 <p>We don’t need recursion for this.</p>
@@ -509,8 +510,10 @@ Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inli
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for lcm</span>
 <span class="ot">&gt;</span> _<span class="ot">test_lcm ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_lcm t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_lcm label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;lcm: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -528,7 +531,8 @@ Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inli
 <span class="ot">&gt;</span>   runTest args (_test_gcd_distributive_lcm t)</code></pre></div>
 <p>And the main function:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_lcm ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_lcm <span class="fu">=</span> _test_lcm (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_lcm <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_lcm <span class="st">&quot;Unary&quot;</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

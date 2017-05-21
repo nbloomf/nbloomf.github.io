@@ -131,6 +131,7 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -156,7 +157,7 @@ Posted on 2017-05-20 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TailsAndInits</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Filter</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, (.))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll define a boolean function, <span class="math inline">\(\elt\)</span>, which detects whether or not a given <span class="math inline">\(a\)</span> is an item in a list. As usual we want to define <span class="math inline">\(\elt\)</span> as a fold: should we use a right fold or a left fold? Recall that the tradeoff between the two is that foldl is tail recursive, but foldr does not necessarily have to process the entire list. In this case, <span class="math inline">\(\elt(a,x)\)</span> should be able to return early once it sees an <span class="math inline">\(a\)</span>. So lets say <span class="math display">\[\elt(a,x) = \foldr{\varepsilon}{\varphi}(x).\]</span> Now what should <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span> be? Well, we want <span class="math display">\[\begin{eqnarray*}
@@ -404,8 +405,6 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\elt\)</span>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- elt'(a,x) == elt(a,x)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
@@ -462,8 +461,10 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> _test_elt <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
 <span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_elt t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_elt label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;elt: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -480,8 +481,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_elt ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_elt <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_elt <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_elt <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

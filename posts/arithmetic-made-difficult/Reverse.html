@@ -131,6 +131,7 @@ Posted on 2017-04-24 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -148,7 +149,7 @@ Posted on 2017-04-24 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">NaturalNumbers</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lists</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, (.))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In the last post we defined a set <span class="math inline">\(\lists{A}\)</span> with a special element <span class="math inline">\(\nil\)</span>, a map <span class="math inline">\(\cons : A \times \lists{A} \rightarrow \lists{A}\)</span>, and a universal map <span class="math inline">\(\foldr{\ast}{\ast}\)</span>. As you might guess we’ll be thinking of the elements of <span class="math inline">\(\lists{A}\)</span> as finite lists, and they will form a simple kind of data structure.</p>
 <p>In this post we’d like to address the following.</p>
@@ -390,6 +391,25 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span> foldl <span class="fu">!</span>e phi x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
 <span class="ot">&gt;</span>   <span class="dt">Nil</span>       <span class="ot">-&gt;</span> e
 <span class="ot">&gt;</span>   <span class="dt">Cons</span> a as <span class="ot">-&gt;</span> foldl (phi a e) phi as</code></pre></div>
+<p>Now <span class="math inline">\(\foldl{\ast}{\ast}\)</span> interacts with <span class="math inline">\(\snoc\)</span>:</p>
+<div class="result">
+<div class="thm">
+<p>
+We have <span class="math display">\[\foldl{e}{\varphi}(\snoc(a,x)) = \varphi(a,\foldl{e}{\varphi}(x).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldl{e}{\varphi}(\snoc(a,x)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\rev(\snoc(a,x))) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,\rev(x)) \\
+ &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(\rev(x)) \\
+ &amp; = &amp; \varphi(a,\foldl{e}{\varphi}(x))
+\end{eqnarray*}\]</span> as claimed.
+</p>
+</div>
+</div>
 <p>Now many list functions can be implemented in terms of either <span class="math inline">\(\foldr{\ast}{\ast}\)</span> or <span class="math inline">\(\foldl{\ast}{\ast}\)</span>, and depending on the function, one may be preferable over the other. For example, we will prefer the following implementation of <span class="math inline">\(\rev\)</span>.</p>
 <div class="result">
 <div class="thm">
@@ -411,9 +431,62 @@ Recall that <span class="math inline">\(\rev = \foldr{\nil}{\snoc}\)</span> by d
 </p>
 </div>
 </div>
+<p>A useful question to ask is this: under what circumstances can a function be defined using either a right fold or a left fold? The next result provides a sufficient condition.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, and suppose <span class="math inline">\(\varphi : A \times B \rightarrow B\)</span> has the property that <span class="math display">\[\varphi(a,\varphi(b,e)) = \varphi(b,\varphi(a,e))\]</span> for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(e \in B\)</span>. Then we have the following.</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(\foldr{e}{\varphi}(\snoc(a,x)) = \foldr{e}{\varphi}(\cons(a,x))\)</span>.</li>
+<li><span class="math inline">\(\foldr{e}{\varphi}(\rev(x)) = \foldr{e}{\varphi}(x)\)</span>.</li>
+<li>In particular, <span class="math inline">\(\foldr{e}{\varphi} = \foldl{e}{\varphi}\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We consider two cases. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr{e}{\varphi}(\snoc(a,\nil)) = \foldr{e}{\varphi}(\cons(a,\nil))\]</span> as claimed. Suppose instead that <span class="math inline">\(x = \cons(b,w)\)</span>; we now proceed by list induction on <span class="math inline">\(w\)</span>. For the base case <span class="math inline">\(w = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldr{e}{\varphi}(\snoc(a,\cons(b,\nil))) \\
+ &amp; = &amp; \foldr{\varphi(a,e)}{\varphi}(\cons(b,\nil)) \\
+ &amp; = &amp; \varphi(b,\foldr{\varphi(a,e)}{\varphi}(\nil)) \\
+ &amp; = &amp; \varphi(b,\varphi(a,e)) \\
+ &amp; = &amp; \varphi(a,\varphi(b,e)) \\
+ &amp; = &amp; \varphi(a,\varphi(b,\foldr{e}{\varphi}(\nil))) \\
+ &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(\cons(b,\nil))) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,\cons(b,\nil)))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(w\)</span> and let <span class="math inline">\(c \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldr{e}{\varphi}(\snoc(a,\cons(b,\cons(c,w)))) \\
+ &amp; = &amp; \foldr{\varphi(a,e)}{\varphi}(\cons(b,\cons(c,w))) \\
+ &amp; = &amp; \varphi(b,\foldr{\varphi(a,e)}{\varphi}(\cons(c,w))) \\
+ &amp; = &amp; \varphi(b,\varphi(c,\foldr{\varphi(a,e)}{\varphi}(w))) \\
+ &amp; = &amp; \varphi(b,\varphi(c,\foldr{e}{\varphi}(\snoc(a,w)))) \\
+ &amp; = &amp; \varphi(b,\varphi(c,\foldr{e}{\varphi}(\cons(a,w)))) \\
+ &amp; = &amp; \varphi(b,\varphi(c,\varphi(a,\foldr{e}{\varphi}(w)))) \\
+ &amp; = &amp; \varphi(b,\varphi(a,\varphi(c,\foldr{e}{\varphi}(w)))) \\
+ &amp; = &amp; \varphi(a,\varphi(b,\varphi(c,\foldr{e}{\varphi}(w)))) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,\cons(b,\cons(c,w))))
+\end{eqnarray*}\]</span> as needed.</li>
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldr{e}{\varphi}(\rev(x)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\rev(\nil)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\nil) \\
+ &amp; = &amp; \foldr{e}{\varphi}(x)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldr{e}{\varphi}(\rev(\cons(a,x))) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\snoc(a,\rev(x))) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,\rev(x))) \\
+ &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(\rev(x))) \\
+ &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,x))
+\end{eqnarray*}\]</span> as needed.</li>
+<li>This is a restatement of (2).</li>
+</ol>
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
+<p>Here are our property tests.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- snoc(a,cons(b,x)) == cons(b,snoc(a,x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_snoc_cons_commute ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
@@ -465,8 +538,10 @@ Recall that <span class="math inline">\(\rev = \foldr{\nil}{\snoc}\)</span> by d
 <span class="ot">&gt;</span> _test_rev <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a
 <span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_rev t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_rev label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;rev: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -482,8 +557,8 @@ Recall that <span class="math inline">\(\rev = \foldr{\nil}{\snoc}\)</span> by d
 <p>And the main function:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_rev ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_rev <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_rev (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_rev (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_rev <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_rev <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

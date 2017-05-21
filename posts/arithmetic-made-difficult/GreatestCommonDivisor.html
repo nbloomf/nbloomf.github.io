@@ -131,6 +131,7 @@ Posted on 2017-04-10 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -151,7 +152,7 @@ Posted on 2017-04-10 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">DivisionAlgorithm</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Divides</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>)
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll define the greatest common divisor of two natural numbers. The usual way to do this (in books I’ve seen) is to define what it means to say that <span class="math inline">\(d\)</span> is a greatest common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, then show (possibly nonconstructively) that any two <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> have a greatest common divisor, and finally establish the Euclidean algorithm that actually computes GCDs. We will work backwards: first <em>defining</em> the GCD of two natural numbers using the punchline of the Euclidean algorithm and then proving that the output of this function acts like the GCD.</p>
 <p>We’ll do this using bailout recursion. This definition will be trickier to work with than the others we’ve seen so far because the “countdown timer” is just for show – we don’t expect it to actually reach zero. For this reason reasoning about the recursive step is awkward.</p>
@@ -510,8 +511,10 @@ Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inli
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for gcd</span>
 <span class="ot">&gt;</span> _<span class="ot">test_gcd ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_gcd t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_gcd label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;gcd: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -528,7 +531,8 @@ Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inli
 <span class="ot">&gt;</span>   runTest args (_test_gcd_distributive_times t)</code></pre></div>
 <p>And the main function:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_gcd ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_gcd <span class="fu">=</span> _test_gcd (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_gcd <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_gcd <span class="st">&quot;Unary&quot;</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

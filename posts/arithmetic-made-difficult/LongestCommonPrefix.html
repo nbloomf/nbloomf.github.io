@@ -131,6 +131,7 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -150,7 +151,7 @@ Posted on 2017-05-09 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prefix</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>) 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>Today we’ll compute the <em>longest common prefix</em> of two strings (and while we’re at it, the <em>longest common suffix</em>). Given two lists <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, their longest common prefix is the longest list which is a prefix of both, just like it says on the tin. We’ll denote this function <span class="math inline">\(\lcp\)</span>, and we want it to have a signature like <span class="math display">\[\lists{A} \times \lists{A} \rightarrow \lists{A}.\]</span> To define <span class="math inline">\(\lcp\)</span> as a fold like <span class="math display">\[\lcp(x,y) = \foldr{\varepsilon}{\varphi}(x)(y)\]</span> we need <span class="math inline">\(\varepsilon : \lists{A}^{\lists{A}}\)</span> such that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nil \\
@@ -785,8 +786,10 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <span class="ot">&gt;</span> _test_lcp <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a
 <span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_lcp t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_lcp label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;lcp &amp; lcs: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -809,8 +812,8 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_lcp ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_lcp <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_lcp <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_lcp <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

@@ -131,6 +131,7 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\inits}{\mathsf{inits}}\)
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -154,7 +155,7 @@ Posted on 2017-05-05 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Map</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">UnfoldN</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>, <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(..))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ()
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>For our first application of <span class="math inline">\(\unfoldN\)</span> we’ll define a function, <span class="math inline">\(\range\)</span>, that constructs lists of natural numbers. There are a few ways to do this. We could take an argument <span class="math inline">\(n\)</span> and construct the list of natural numbers from <span class="math inline">\(\zero\)</span> to <span class="math inline">\(n\)</span>, but this is too specialized. We could instead take <em>two</em> arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> and construct the list of natural numbers from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span>, but we’ll have to check whether or not the arguments are in order. A third option – and the one we’ll take – is to take two arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and construct the list of the first <span class="math inline">\(b\)</span> natural numbers starting from <span class="math inline">\(a\)</span>.</p>
 <div class="result">
@@ -338,9 +339,6 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>A utility for type fixing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
 <p>Here are our property tests for <span class="math inline">\(\range\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- range(a,next(b)) == cons(a,range(next(a),b))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_next_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
@@ -397,9 +395,13 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for range</span>
-<span class="ot">&gt;</span> _<span class="ot">test_range ::</span> (<span class="dt">List</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_range t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> _test_range <span class="ot">::</span>
+<span class="ot">&gt;</span>   ( <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
+<span class="ot">&gt;</span>   , <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_range label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;range: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
 <span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> numCases
@@ -413,7 +415,8 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span>   runTest args (_test_range_plus_left t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_range ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_range <span class="fu">=</span> _test_range (<span class="ot">nil ::</span> <span class="dt">ConsList</span> (<span class="dt">Nat</span> <span class="dt">Unary</span>)) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span> main_range <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   _test_range <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> (<span class="dt">Nat</span> <span class="dt">Unary</span>)) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->
