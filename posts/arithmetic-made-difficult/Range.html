@@ -132,6 +132,7 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -342,10 +343,10 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <p>Here are our property tests for <span class="math inline">\(\range\)</span>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- range(a,next(b)) == cons(a,range(next(a),b))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_next_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_cons t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> (map <span class="dt">Nat</span> t)
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (cons a (range (next a) b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y
@@ -353,10 +354,10 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(a,next(b)) == snoc(plus(a,b),range(a,b))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_next_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_snoc t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (next b)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> (map <span class="dt">Nat</span> t)
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (snoc (plus a b) (range a b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y
@@ -364,10 +365,10 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(a,plus(b,c)) == cat(range(a,b),range(plus(a,b),c))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_plus_right ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_plus_right t a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (plus b c)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range a (plus b c)) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> (map <span class="dt">Nat</span> t)
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (cat (range a b) (range (plus a b) c))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y
@@ -375,10 +376,10 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(next(a),b) == map(next,range(a,b))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_next_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_next_left t a b <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (next a) b) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (next a) b) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> (map <span class="dt">Nat</span> t)
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (map next (range a b))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y
@@ -386,21 +387,21 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="co">-- range(plus(a,b),c) == map(plus(a,-),range(b,c))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_range_plus_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 <span class="ot">&gt;</span> _test_range_plus_left t a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (plus a b) c) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
+<span class="ot">&gt;</span>     x <span class="fu">=</span> (range (plus a b) c) <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> (map <span class="dt">Nat</span> t)
 <span class="ot">&gt;</span>     y <span class="fu">=</span> (map (plus a) (range b c))
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     x <span class="fu">====</span> y</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for range</span>
 <span class="ot">&gt;</span> _test_range <span class="ot">::</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
-<span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t (<span class="dt">Nat</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_range label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;range: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span>   ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
+<span class="ot">&gt;</span>   , <span class="dt">TypeName</span> (t n), <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_range t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;range: &quot;</span> <span class="fu">++</span> typeName t)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
@@ -416,7 +417,7 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_range ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_range <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_range <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> (<span class="dt">Nat</span> <span class="dt">Unary</span>)) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_range (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

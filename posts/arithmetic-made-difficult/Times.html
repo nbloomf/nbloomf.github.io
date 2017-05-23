@@ -132,6 +132,7 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -270,10 +271,10 @@ Posted on 2017-03-31 by nbloomf
 <span class="ot">&gt;</span> _test_times_associative _ a b c <span class="fu">=</span>
 <span class="ot">&gt;</span>   (times (times a b) c) <span class="fu">====</span> (times a (times b c))</code></pre></div>
 <p>And one function to rule them all:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">Natural</span> t, <span class="dt">Arbitrary</span> t, <span class="dt">Show</span> t)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_times label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;times: &quot;</span> <span class="fu">++</span> label)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_times n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;times: &quot;</span> <span class="fu">++</span> typeName n)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
@@ -281,21 +282,21 @@ Posted on 2017-03-31 by nbloomf
 <span class="ot">&gt;</span>       , maxSize    <span class="fu">=</span> maxSize
 <span class="ot">&gt;</span>       }
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   runTest args (_test_times_zero_left t)
-<span class="ot">&gt;</span>   runTest args (_test_times_zero_right t)
-<span class="ot">&gt;</span>   runTest args (_test_times_one_left t)
-<span class="ot">&gt;</span>   runTest args (_test_times_one_right t)
-<span class="ot">&gt;</span>   runTest args (_test_times_next_left t)
-<span class="ot">&gt;</span>   runTest args (_test_times_next_right t)
-<span class="ot">&gt;</span>   runTest args (_test_times_commutative t)
-<span class="ot">&gt;</span>   runTest args (_test_times_distributive_left t)
-<span class="ot">&gt;</span>   runTest args (_test_times_distributive_right t)
-<span class="ot">&gt;</span>   runTest args (_test_times_associative t)</code></pre></div>
+<span class="ot">&gt;</span>   runTest args (_test_times_zero_left n)
+<span class="ot">&gt;</span>   runTest args (_test_times_zero_right n)
+<span class="ot">&gt;</span>   runTest args (_test_times_one_left n)
+<span class="ot">&gt;</span>   runTest args (_test_times_one_right n)
+<span class="ot">&gt;</span>   runTest args (_test_times_next_left n)
+<span class="ot">&gt;</span>   runTest args (_test_times_next_right n)
+<span class="ot">&gt;</span>   runTest args (_test_times_commutative n)
+<span class="ot">&gt;</span>   runTest args (_test_times_distributive_left n)
+<span class="ot">&gt;</span>   runTest args (_test_times_distributive_right n)
+<span class="ot">&gt;</span>   runTest args (_test_times_associative n)</code></pre></div>
 <p>I used a much smaller number of test cases this time, because these run much more slowly than the tests for <code>plus</code>. The culprit is <code>_test_times_associative</code>. What’s happening is that multiplication of <code>Nat</code>s is inherently slow; it’s implemented as iterated addition, which itself is iterated <code>N</code>.</p>
 <p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_times ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_times <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_times <span class="st">&quot;Unary&quot;</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_times (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

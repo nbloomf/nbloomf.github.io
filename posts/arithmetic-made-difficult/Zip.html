@@ -132,6 +132,7 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -785,13 +786,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for zip</span>
 <span class="ot">&gt;</span> _test_zip <span class="ot">::</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a
-<span class="ot">&gt;</span>   , <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b
-<span class="ot">&gt;</span>   , <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
-<span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_zip label t u n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;zip &amp; zipPad: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span>   ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">TypeName</span> b, <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b
+<span class="ot">&gt;</span>   , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n
+<span class="ot">&gt;</span>   , <span class="dt">TypeName</span> (t a), <span class="dt">TypeName</span> (t b), <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_zip t u n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;zip &amp; zipPad: &quot;</span> <span class="fu">++</span> typeName t <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName u <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName n)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
@@ -813,8 +814,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_zip ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_zip <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_zip <span class="st">&quot;ConsList Bool &amp; ConsListBool &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_zip <span class="st">&quot;ConsList Unary &amp; ConsList Unary &amp; Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->

@@ -132,6 +132,7 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -141,6 +142,7 @@ Posted on 2017-04-23 by nbloomf
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
 <span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleContexts #-}</span>
+<span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Lists</span>
 <span class="ot">&gt;</span>   ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>()
 <span class="ot">&gt;</span>   , isNil, tail, foldr
@@ -148,7 +150,7 @@ Posted on 2017-04-23 by nbloomf
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (<span class="dt">Show</span>(..), (++), id, return, (.))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> ((++), return, undefined)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span></code></pre></div>
 <p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec{\ast}{\ast}\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves.</p>
@@ -182,6 +184,10 @@ If <span class="math inline">\(x \in \lists{A}\)</span>, then either <span class
 <span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span>
 <span class="ot">&gt;</span>   show <span class="dt">N</span>        <span class="fu">=</span> <span class="st">&quot;()&quot;</span>
 <span class="ot">&gt;</span>   show (<span class="dt">C</span> x xs) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> show x <span class="fu">++</span> show xs <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">TypeName</span> a) <span class="ot">=&gt;</span> <span class="dt">TypeName</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span>
+<span class="ot">&gt;</span>   typeName _ <span class="fu">=</span> <span class="st">&quot;ConsList &quot;</span> <span class="fu">++</span> (typeName (undefined<span class="ot"> ::</span> a))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> a) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span>

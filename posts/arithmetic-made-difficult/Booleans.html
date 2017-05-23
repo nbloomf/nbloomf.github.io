@@ -132,6 +132,7 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -142,12 +143,13 @@ Posted on 2014-04-01 by nbloomf
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Booleans</span>
 <span class="ot">&gt;</span>   ( <span class="dt">Bool</span>(<span class="fu">..</span>), not, and, (<span class="fu">&amp;&amp;&amp;</span>), or, (<span class="fu">|||</span>), ifThenElse
 <span class="ot">&gt;</span>   , <span class="dt">Equal</span>, eq, (<span class="fu">====</span>)
-<span class="ot">&gt;</span>   , runTest, testLabel, withTypeOf, <span class="dt">Show</span>, <span class="dt">String</span>, (<span class="fu">++</span>), <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(<span class="fu">..</span>), (<span class="fu">.</span>)
+<span class="ot">&gt;</span>   , runTest, testLabel, withTypeOf, <span class="dt">TypeName</span>(<span class="fu">..</span>)
+<span class="ot">&gt;</span>   , <span class="dt">Show</span>(<span class="fu">..</span>), <span class="dt">String</span>, (<span class="fu">++</span>), <span class="dt">Int</span>, <span class="dt">IO</span>, <span class="dt">Maybe</span>(<span class="fu">..</span>), (<span class="fu">.</span>), id
 <span class="ot">&gt;</span>   , _test_boolean, main_boolean
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Show</span>(show), <span class="dt">IO</span>, <span class="dt">Bool</span>(<span class="fu">..</span>), <span class="dt">Int</span>, <span class="dt">Maybe</span>(<span class="fu">..</span>)
+<span class="ot">&gt;</span>   ( <span class="dt">Show</span>(show), <span class="dt">IO</span>, <span class="dt">Bool</span>(<span class="fu">..</span>), <span class="dt">Int</span>, <span class="dt">Maybe</span>(<span class="fu">..</span>), id
 <span class="ot">&gt;</span>   , putStrLn, (<span class="fu">&gt;&gt;</span>), return, (<span class="fu">++</span>), <span class="dt">String</span>, (<span class="fu">.</span>)
 <span class="ot">&gt;</span>   )
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
@@ -538,7 +540,13 @@ We have four possibilities for <span class="math inline">\((p,q)\)</span>. If <s
 <span class="ot">&gt;</span> testLabel msg <span class="fu">=</span> putStrLn (<span class="st">&quot;\x1b[1;32m&quot;</span> <span class="fu">++</span> msg <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt; withTypeOf ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x</code></pre></div>
+<span class="ot">&gt;</span> withTypeOf x _ <span class="fu">=</span> x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">TypeName</span> t <span class="kw">where</span>
+<span class="ot">&gt;   typeName ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Bool</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   typeName _ <span class="fu">=</span> <span class="st">&quot;Bool&quot;</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for booleans</span>
 <span class="ot">&gt;</span> _<span class="ot">test_boolean ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()

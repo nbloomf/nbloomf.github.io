@@ -132,6 +132,7 @@ Posted on 2017-05-10 by nbloomf
 \(\newcommand{\filter}{\mathsf{filter}}\)
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -152,7 +153,7 @@ Posted on 2017-05-10 by nbloomf
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Zip</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prefix</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (const, (.))
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Prelude</span> (const)
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.Show.Functions</span></code></pre></div>
 <p>Today we’ll define two boolean functions for lists called <span class="math inline">\(\all\)</span> and <span class="math inline">\(\any\)</span>. Each one takes as an argument a predicate <span class="math inline">\(A \rightarrow \bool\)</span>, and then tests whether all or any of the items in a list of type <span class="math inline">\(\lists{A}\)</span> satisfy the predicate.</p>
@@ -512,11 +513,11 @@ Define <span class="math inline">\(\varphi : \bool^A \rightarrow A \times \bool 
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for all and any</span>
 <span class="ot">&gt;</span> _test_all_any <span class="ot">::</span>
-<span class="ot">&gt;</span>   ( <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
-<span class="ot">&gt;</span>   , <span class="dt">List</span> t
-<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_all_any label t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;all &amp; any: &quot;</span> <span class="fu">++</span> label)
+<span class="ot">&gt;</span>   ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
+<span class="ot">&gt;</span>   , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t
+<span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_all_any t maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;all &amp; any: &quot;</span> <span class="fu">++</span> typeName t)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   <span class="kw">let</span>
 <span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
@@ -540,8 +541,8 @@ Define <span class="math inline">\(\varphi : \bool^A \rightarrow A \times \bool 
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_all_any ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_all_any <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_all_any <span class="st">&quot;ConsList Bool&quot;</span>  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
-<span class="ot">&gt;</span>   _test_all_any <span class="st">&quot;ConsList Unary&quot;</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+<span class="ot">&gt;</span>   _test_all_any (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
+<span class="ot">&gt;</span>   _test_all_any (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
 
 
 <!-- END BODY -->
