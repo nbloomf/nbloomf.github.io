@@ -76,6 +76,7 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+\(\newcommand{\mutrec}[3]{\left\{\!\left[ #1, #2, #3 \right]\!\right\}}\)
 
 <!--- natural number arithmetic ---->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -96,6 +97,7 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
 \(\newcommand{\nisprime}{\mathsf{isPrime}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
 
 <!-- categories -->
 \(\newcommand{\dom}{\mathsf{dom}}\)
@@ -133,6 +135,13 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
 \(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -327,48 +336,102 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 </p>
 </div>
 </div>
+<p>One more.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,u,v \in \lists{A}\)</span>.</p>
+<ol style="list-style-type: decimal">
+<li>If <span class="math inline">\(x = \cat(x,v)\)</span> then <span class="math inline">\(v = \nil\)</span>.</li>
+<li>If <span class="math inline">\(x = \cat(u,x)\)</span> then <span class="math inline">\(u = \nil\)</span>.</li>
+<li>If <span class="math inline">\(x = \cat(u,\cat(x,v))\)</span> then <span class="math inline">\(u = v = \nil\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol style="list-style-type: decimal">
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, if <span class="math inline">\(x = \cat(x,v)\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nil \\
+ &amp; = &amp; x \\
+ &amp; = &amp; \cat(x,v) \\
+ &amp; = &amp; \cat(\nil,v) \\
+ &amp; = &amp; \nil
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\cons(a,x) = \cat(\cons(a,x),v)\)</span>. Then <span class="math display">\[\cons(a,x) = \cons(a,\cat(x,v)),\]</span> so that <span class="math inline">\(x = \cat(x,v)\)</span>, and by the inductive hypothesis, <span class="math inline">\(v = \nil\)</span> as needed.</li>
+<li>Suppose <span class="math inline">\(x = \cat(u,x)\)</span>. Then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \rev(x) \\
+ &amp; = &amp; \rev(\cat(u,x)) \\
+ &amp; = &amp; \cat(\rev(x),\rev(u));
+\end{eqnarray*}\]</span> by part (1) we have <span class="math inline">\(\rev(u) = \nil\)</span>, so that <span class="math display">\[u = \rev(\rev(u)) = \rev(\nil) = \nil\]</span> as claimed.</li>
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, if <span class="math inline">\(x = \cat(u,\cat(x,v))\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nil \\
+ &amp; = &amp; x \\
+ &amp; = &amp; \cat(u,\cat(x,v)) \\
+ &amp; = &amp; \cat(u,\cat(\nil,v)) \\
+ &amp; = &amp; \cat(u,v)
+\end{eqnarray*}\]</span> so that <span class="math inline">\(v = u = \nil\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\cons(a,x) = \cat(u,\cat(\cons(a,x),v))\)</span> for some <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>. We consider two possibilities for <span class="math inline">\(u\)</span>. If <span class="math inline">\(u = \cons(b,w)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cons(a,x) \\
+ &amp; = &amp; \cat(u,\cat(\cons(a,x),v)) \\
+ &amp; = &amp; \cat(\cons(b,w),\cat(\cons(a,x),v)) \\
+ &amp; = &amp; \cons(b,\cat(w,\cat(\cons(a,x),v))).
+\end{eqnarray*}\]</span> So in fact we have <span class="math inline">\(a = b\)</span>, and <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; x \\
+ &amp; = &amp; \cat(w,\cat(\cons(a,x),v)) \\
+ &amp; = &amp; \cat(\cat(w,\cons(a,x)),v) \\
+ &amp; = &amp; \cat(\cat(\snoc(a,w),x),v) \\
+ &amp; = &amp; \cat(\snoc(a,w),\cat(x,v)).
+\end{eqnarray*}\]</span> By the inductive hypothesis, we have <span class="math inline">\(\snoc(a,w) = \nil\)</span>, a contradiction. So we must have <span class="math inline">\(u = \nil\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cons(a,x) \\
+ &amp; = &amp; \cat(u,\cat(\cons(a,x),v)) \\
+ &amp; = &amp; \cat(\nil,\cat(\cons(a,x),v)) \\
+ &amp; = &amp; \cat(\cons(a,x),v)
+\end{eqnarray*}\]</span> so that <span class="math inline">\(v = u = \nil\)</span> as claimed.</li>
+</ol>
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\cat\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- cat(nil,x) == x and cat(x,nil) == x</span>
-<span class="ot">&gt;</span> _<span class="ot">test_cat_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_nil _ a <span class="fu">=</span>
-<span class="ot">&gt;</span>   (a <span class="fu">====</span> cat nil a) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> cat a nil)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_cat_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_nil _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;cat(nil,x) == x and cat(x,nil) == x&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a <span class="ot">-&gt;</span> (a <span class="fu">====</span> cat nil a) <span class="fu">&amp;&amp;&amp;</span> (a <span class="fu">====</span> cat a nil)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- cat(x,cons(a,y)) == cat(snoc(a,x),y)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_cat_cons_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_cons_snoc _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat x (cons a y)) <span class="fu">====</span> (cat (snoc a x) y)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_cons_snoc _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;cat(x,cons(a,y)) == cat(snoc(a,x),y)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x y <span class="ot">-&gt;</span> (cat x (cons a y)) <span class="fu">====</span> (cat (snoc a x) y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- cons(a,cat(x,y)) == cat(cons(a,x),y)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_cat_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_cons _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cons a (cat x y)) <span class="fu">====</span> (cat (cons a x) y)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_cons _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;cons(a,cat(x,y)) == cat(cons(a,x),y)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x y <span class="ot">-&gt;</span> (cons a (cat x y)) <span class="fu">====</span> (cat (cons a x) y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- snoc(a,cat(x,y)) == cat(x,snoc(a,y))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_cat_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_snoc _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (snoc a (cat x y)) <span class="fu">====</span> (cat x (snoc a y))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_snoc _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;snoc(a,cat(x,y)) == cat(x,snoc(a,y))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x y <span class="ot">-&gt;</span> (snoc a (cat x y)) <span class="fu">====</span> (cat x (snoc a y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- cat(cat(x,y),z) == cat(x,cat(y,z))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_cat_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_associative _ x y z <span class="fu">=</span>
-<span class="ot">&gt;</span>   (cat (cat x y) z) <span class="fu">====</span> (cat x (cat y z))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_associative _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;cat(cat(x,y),z) == cat(x,cat(y,z))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \x y z <span class="ot">-&gt;</span> (cat (cat x y) z) <span class="fu">====</span> (cat x (cat y z))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- rev(cat(x,y)) == cat(rev(y),rev(x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_cat_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_cat_rev _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (rev (cat x y)) <span class="fu">====</span> (cat (rev y) (rev x))</code></pre></div>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_cat_rev _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;rev(cat(x,y)) == cat(rev(y),rev(x))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \x y <span class="ot">-&gt;</span> (rev (cat x y)) <span class="fu">====</span> (cat (rev y) (rev x))</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for cat</span>
 <span class="ot">&gt;</span> _test_cat <span class="ot">::</span>

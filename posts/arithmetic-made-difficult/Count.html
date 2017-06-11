@@ -76,6 +76,7 @@ Posted on 2017-05-21 by nbloomf
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+\(\newcommand{\mutrec}[3]{\left\{\!\left[ #1, #2, #3 \right]\!\right\}}\)
 
 <!--- natural number arithmetic ---->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -96,6 +97,7 @@ Posted on 2017-05-21 by nbloomf
 \(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
 \(\newcommand{\nisprime}{\mathsf{isPrime}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
 
 <!-- categories -->
 \(\newcommand{\dom}{\mathsf{dom}}\)
@@ -133,6 +135,13 @@ Posted on 2017-05-21 by nbloomf
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
 \(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -363,63 +372,63 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\count\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- count(a,nil) == zero</span>
-<span class="ot">&gt;</span> _<span class="ot">test_count_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_nil t k a <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_count_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_nil t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,nil) == zero&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    nil'  <span class="fu">=</span> nil <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>    zero' <span class="fu">=</span> zero <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    (count a nil') <span class="fu">====</span> zero'
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- count(a,cons(a,nil)) == next(zero)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_count_one ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_one t k a <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_one t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,cons(a,nil)) == next(zero)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    nil' <span class="fu">=</span> nil <span class="ot">`withTypeOf`</span> <span class="dt">ListOf</span> t
 <span class="ot">&gt;</span>    one  <span class="fu">=</span> next zero <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    (count a (cons a nil')) <span class="fu">====</span> one
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- count(a,cons(a,nil)) == next(zero)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_count_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_rev t k a x <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_rev t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,cons(a,nil)) == next(zero)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a x <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    cx <span class="fu">=</span> count a x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    (count a (rev x)) <span class="fu">====</span> cx
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- count(a,cons(a,nil)) == next(zero)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_count_snoc_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_snoc_cons t k a b x <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_snoc_cons t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,cons(a,nil)) == next(zero)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a b x <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    cbx <span class="fu">=</span> count a (cons b x) <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    (count a (snoc b x)) <span class="fu">====</span> cbx
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- count(a,cat(x,y)) == plus(count(a,x),count(a,y))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_count_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_cat t k a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_cat t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,cat(x,y)) == plus(count(a,x),count(a,y))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a x y <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    cx <span class="fu">=</span> count a x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    (count a (cat x y)) <span class="fu">====</span> plus cx (count a y)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- count(a,x) == length(filter(eq(a,-),x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_count_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_count_length t k a x <span class="fu">=</span>
-<span class="ot">&gt;</span>  <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_count_length t k <span class="fu">=</span>
+<span class="ot">&gt;</span>  testName <span class="st">&quot;count(a,x) == length(filter(eq(a,-),x))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>  \a x <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>    cx <span class="fu">=</span> count a x <span class="ot">`withTypeOf`</span> <span class="dt">Nat</span> k
 <span class="ot">&gt;</span>  <span class="kw">in</span>
 <span class="ot">&gt;</span>    cx <span class="fu">====</span> (length (filter (eq a) x))</code></pre></div>

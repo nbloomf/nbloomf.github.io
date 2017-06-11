@@ -76,6 +76,7 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+\(\newcommand{\mutrec}[3]{\left\{\!\left[ #1, #2, #3 \right]\!\right\}}\)
 
 <!--- natural number arithmetic ---->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -96,6 +97,7 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
 \(\newcommand{\nisprime}{\mathsf{isPrime}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
 
 <!-- categories -->
 \(\newcommand{\dom}{\mathsf{dom}}\)
@@ -133,6 +135,13 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
 \(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -405,58 +414,107 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
+<p><span class="math inline">\(\elt\)</span> is an <span class="math inline">\(\any\)</span>:</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\elt(a,x) = \any(\beq(a,-),x).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,x) \\
+ &amp; = &amp; \elt(a,\nil) \\
+ &amp; = &amp; \bfalse \\
+ &amp; = &amp; \any(\beq(a,-),\nil) \\
+ &amp; = &amp; \any(\beq(a,-),x)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. We consider two possibilities. If <span class="math inline">\(a = b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\cons(b,x)) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \bif{\btrue}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \btrue \\
+ &amp; = &amp; \bor(\btrue,\any(\beq(a,-),x)) \\
+ &amp; = &amp; \bor(\beq(a,b),\any(\beq(a,-),x)) \\
+ &amp; = &amp; \any(\beq(a,-),\cons(b,x))
+\end{eqnarray*}\]</span> as needed. If <span class="math inline">\(a \neq b\)</span>, using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\cons(b,x)) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \bif{\bfalse}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \elt(a,x) \\
+ &amp; = &amp; \any(\beq(a,-),x) \\
+ &amp; = &amp; \bor(\bfalse,\any(\beq(a,-),x)) \\
+ &amp; = &amp; \bor(\beq(a,b),\any(\beq(a,-),x)) \\
+ &amp; = &amp; \any(\beq(a,-),\cons(b,x))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\elt\)</span> can detect when two lists are distinct:</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\elt(a,x) \neq \elt(a,y)\)</span>, then <span class="math inline">\(x \neq y\)</span>.
+</p>
+</div>
+<div class="proof">
+<p>
+The contrapositive of this statement is trivial and kind of silly looking: If <span class="math inline">\(x = y\)</span>, then <span class="math inline">\(\elt(a,x) = \elt(a,y)\)</span>. But notice that this theorem gives us a simple way to detect when two lists are distinct from each other.
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\elt\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- elt'(a,x) == elt(a,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_elt_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_alt _ a x <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt a x) <span class="fu">====</span> (elt' a x)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_elt_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_alt _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt'(a,x) == elt(a,x)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x <span class="ot">-&gt;</span> (elt a x) <span class="fu">====</span> (elt' a x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(a,nil) == false</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_nil x a <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_nil x <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(a,nil) == false&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a <span class="ot">-&gt;</span> <span class="kw">let</span>
 <span class="ot">&gt;</span>     nil' <span class="fu">=</span> nil <span class="ot">`withTypeOf`</span> x
 <span class="ot">&gt;</span>   <span class="kw">in</span>
 <span class="ot">&gt;</span>     (elt a nil') <span class="fu">====</span> <span class="dt">False</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(a,cat(x,y)) == or(elt(a,x),elt(a,y))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_cat _ a x y <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt a (cat x y)) <span class="fu">====</span> ((elt a x) <span class="fu">|||</span> (elt a y))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_cat _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(a,cat(x,y)) == or(elt(a,x),elt(a,y))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x y <span class="ot">-&gt;</span> (elt a (cat x y)) <span class="fu">====</span> ((elt a x) <span class="fu">|||</span> (elt a y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(a,x) == elt(a,rev(x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_rev _ a x <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt a x) <span class="fu">====</span> (elt a (rev x))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_rev _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(a,x) == elt(a,rev(x))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x <span class="ot">-&gt;</span> (elt a x) <span class="fu">====</span> (elt a (rev x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(y,tails(x)) == suffix(y,x)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_tails ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_tails _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt y (tails x)) <span class="fu">====</span> (suffix y x)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_tails _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(y,tails(x)) == suffix(y,x)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \x y <span class="ot">-&gt;</span> (elt y (tails x)) <span class="fu">====</span> (suffix y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(y,inits(x)) == prefix(y,x)</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_inits ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_inits _ x y <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt y (inits x)) <span class="fu">====</span> (prefix y x)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_inits _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(y,inits(x)) == prefix(y,x)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \x y <span class="ot">-&gt;</span> (elt y (inits x)) <span class="fu">====</span> (prefix y x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- elt(a,filter(eq(a,-),x)) == false</span>
 <span class="ot">&gt;</span> _<span class="ot">test_elt_filter_eq ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_elt_filter_eq _ a x <span class="fu">=</span>
-<span class="ot">&gt;</span>     (elt a (filter (not <span class="fu">.</span> eq a) x)) <span class="fu">====</span> <span class="dt">False</span></code></pre></div>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_elt_filter_eq _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;elt(a,filter(eq(a,-),x)) == false&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \a x <span class="ot">-&gt;</span> (elt a (filter (not <span class="fu">.</span> eq a) x)) <span class="fu">====</span> <span class="dt">False</span></code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for elt</span>
 <span class="ot">&gt;</span> _test_elt <span class="ot">::</span>

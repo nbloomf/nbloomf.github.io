@@ -76,6 +76,7 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\natrec}[2]{\left\langle\!\left\vert #1, #2 \right\vert\!\right\rangle}\)
 \(\newcommand{\simprec}[2]{\left[\!\left[ #1, #2 \right]\!\right]}\)
 \(\newcommand{\bailrec}[4]{\left(\!\left[ #1, #2, #3, #4 \right]\!\right)}\)
+\(\newcommand{\mutrec}[3]{\left\{\!\left[ #1, #2, #3 \right]\!\right\}}\)
 
 <!--- natural number arithmetic ---->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -96,6 +97,7 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
 \(\newcommand{\nisprime}{\mathsf{isPrime}}\)
 \(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
 
 <!-- categories -->
 \(\newcommand{\dom}{\mathsf{dom}}\)
@@ -133,6 +135,13 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\elt}{\mathsf{elt}}\)
 \(\newcommand{\count}{\mathsf{count}}\)
 \(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -244,8 +253,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p,\cons(a,x))) \\
  &amp; = &amp; \all(p,\cons(a,\filter(p,x))) \\
- &amp; = &amp; \and(p(a),\all(p,\filter(p,x))) \\
- &amp; = &amp; \and(\btrue,\btrue) \\
+ &amp; = &amp; \band(p(a),\all(p,\filter(p,x))) \\
+ &amp; = &amp; \band(\btrue,\btrue) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed, while if <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p,\cons(a,x))) \\
@@ -363,43 +372,117 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 </p>
 </div>
 </div>
+<p>And <span class="math inline">\(\filter\)</span> is idempotent.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p,\filter(p,x)) = \filter(p,x).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \filter(p,\filter(p,x)) \\
+ &amp; = &amp; \filter(p,\filter(p,\nil)) \\
+ &amp; = &amp; \filter(p,\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; x
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \filter(p,\filter(p,\cons(a,x))) \\
+ &amp; = &amp; \filter(p,\bif{p(a)}{\cons(a,\filter(p,x))}{\filter(p,x)}) \\
+ &amp; = &amp; \bif{p(a)}{\filter(p,\cons(a,\filter(p,x)))}{\filter(p,\filter(p,x))} \\
+ &amp; = &amp; \bif{p(a)}{\bif{p(a)}{\cons(a,\filter(p,x))}{\filter(p,x)}}{\filter(p,x)} \\
+ &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p,x))}{\filter(p,x)} \\
+ &amp; = &amp; \filter(p,\cons(a,x))
+\end{eqnarray*}\]</span> as needed
+</p>
+</div>
+</div>
+<p>One more.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate with <span class="math inline">\(x \in \lists{A}\)</span>. We have <span class="math display">\[\eq(x,\filter(p,x)) = \all(p,x).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \eq(x,\filter(p,x)) \\
+ &amp; = &amp; \eq(\nil,\filter(p,\nil)) \\
+ &amp; = &amp; \eq(\nil,\nil) \\
+ &amp; = &amp; \btrue \\
+ &amp; = &amp; \all(p,\nil) \\
+ &amp; = &amp; \all(p,x)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possibilities. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \eq(\cons(a,x),\filter(p,\cons(a,x)) \\
+ &amp; = &amp; \eq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p,x))}{\filter(p,x)}) \\
+ &amp; = &amp; \eq(\cons(a,x),\bif{\btrue}{\cons(a,\filter(p,x))}{\filter(p,x)}) \\
+ &amp; = &amp; \eq(\cons(a,x),\cons(a,\filter(p,x))) \\
+ &amp; = &amp; \band(\eq(a,a),\eq(x,\filter(p,x))) \\
+ &amp; = &amp; \band(\btrue,\eq(x,\filter(p,x))) \\
+ &amp; = &amp; \eq(x,\filter(p,x)) \\
+ &amp; = &amp; \all(p,x) \\
+ &amp; = &amp; \band(\btrue,\all(p,x)) \\
+ &amp; = &amp; \band(p(a),\all(p,x)) \\
+ &amp; = &amp; \all(p,\cons(a,x))
+\end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(p(a) = \bfalse\)</span>. Now <span class="math inline">\(\sublist(\filter(p,x),x) = \btrue\)</span>, and using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \eq(\cons(a,x),\filter(p,\cons(a,x)) \\
+ &amp; = &amp; \eq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p,x))}{\filter(p,x)}) \\
+ &amp; = &amp; \eq(\cons(a,x),\bif{\bfalse}{\cons(a,\filter(p,x))}{\filter(p,x)}) \\
+ &amp; = &amp; \eq(\cons(a,x),\filter(p,x)) \\
+ &amp; = &amp; \bfalse \\
+ &amp; = &amp; \band(\bfalse,\all(p,x)) \\
+ &amp; = &amp; \band(p(a),\all(p,x)) \\
+ &amp; = &amp; \all(p,\cons(a,x))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\filter\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- filter(p,x) == filter'(p,x)</span>
-<span class="ot">&gt;</span> _<span class="ot">test_filter_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_filter_alt _ p x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (filter p x) <span class="fu">====</span> (filter' p x)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_filter_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_alt _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;filter(p,x) == filter'(p,x)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (filter p x) <span class="fu">====</span> (filter' p x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- all(p,filter(p,x)) == true</span>
 <span class="ot">&gt;</span> _<span class="ot">test_filter_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_filter_all _ p x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (all p (filter p x)) <span class="fu">====</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_all _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,filter(p,x)) == true&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (all p (filter p x)) <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- filter(p,snoc(a,x)) == if(p(a),snoc(a,filter(p,x)),filter(p,x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_filter_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_filter_snoc _ p a x <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> p a <span class="fu">====</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_snoc _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;filter(p,snoc(a,x)) == if(p(a),snoc(a,filter(p,x)),filter(p,x))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p a x <span class="ot">-&gt;</span> <span class="kw">if</span> p a <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span>     <span class="kw">then</span> (filter p (snoc a x)) <span class="fu">====</span> (snoc a (filter p x))
 <span class="ot">&gt;</span>     <span class="kw">else</span> (filter p (snoc a x)) <span class="fu">====</span> (filter p x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- filter(p,rev(x)) == rev(filter(p,x))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_filter_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_filter_rev _ p x <span class="fu">=</span>
-<span class="ot">&gt;</span>   (filter p (rev x)) <span class="fu">====</span> (rev (filter p x))
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_rev _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;filter(p,rev(x)) == rev(filter(p,x))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (filter p (rev x)) <span class="fu">====</span> (rev (filter p x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- filter(p,cat(x,y)) == cat(filter(p,x),filter(p,y))</span>
 <span class="ot">&gt;</span> _<span class="ot">test_filter_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_filter_cat _ p x y <span class="fu">=</span>
-<span class="ot">&gt;</span>   (filter p (cat x y)) <span class="fu">====</span> (cat (filter p x) (filter p y))</code></pre></div>
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_cat _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;filter(p,cat(x,y)) == cat(filter(p,x),filter(p,y))&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p x y <span class="ot">-&gt;</span> (filter p (cat x y)) <span class="fu">====</span> (cat (filter p x) (filter p y))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_filter_eq_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_filter_eq_all _ <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;eq(x,filter(p,x)) == all(p,x)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (eq x (filter p x)) <span class="fu">====</span> (all p x)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for filter</span>
 <span class="ot">&gt;</span> _test_filter <span class="ot">::</span>
@@ -419,7 +502,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span>   runTest args (_test_filter_all t)
 <span class="ot">&gt;</span>   runTest args (_test_filter_snoc t)
 <span class="ot">&gt;</span>   runTest args (_test_filter_rev t)
-<span class="ot">&gt;</span>   runTest args (_test_filter_cat t)</code></pre></div>
+<span class="ot">&gt;</span>   runTest args (_test_filter_cat t)
+<span class="ot">&gt;</span>   runTest args (_test_filter_eq_all t)</code></pre></div>
 <p>And <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_filter ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_filter <span class="fu">=</span> <span class="kw">do</span>
