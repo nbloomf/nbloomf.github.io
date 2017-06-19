@@ -108,6 +108,7 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\cons}{\mathsf{cons}}\)
 \(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
 \(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
 \(\newcommand{\isnil}{\mathsf{isNil}}\)
 \(\newcommand{\tail}{\mathsf{tail}}\)
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -142,6 +143,8 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
@@ -154,7 +157,7 @@ Posted on 2017-04-23 by nbloomf
 <span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Lists</span>
 <span class="ot">&gt;</span>   ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ListShape</span>(<span class="fu">..</span>), <span class="dt">ListOf</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>()
-<span class="ot">&gt;</span>   , isNil, tail, foldr
+<span class="ot">&gt;</span>   , isNil, tail, foldr, uncons
 <span class="ot">&gt;</span>   ) <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Booleans</span>
@@ -386,6 +389,27 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>     x <span class="ot">&lt;-</span> arbitrary
 <span class="ot">&gt;</span>     return (<span class="dt">ListOf</span> (fromConsList x))</code></pre></div>
+<p>Recall that the “constructor” map <span class="math inline">\(F(X) \rightarrow X\)</span> of an initial <span class="math inline">\(F\)</span>-algebra <span class="math inline">\(X\)</span> is an isomorphism, so it must have an inverse. What is this inverse for <span class="math inline">\(\lists{A}\)</span>? The signature is <span class="math display">\[f : \lists{A} \rightarrow \ast + A \times \lists{A}.\]</span> And we expect that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ast \\
+ &amp; = &amp; (f \circ \theta)(\ast) \\
+ &amp; = &amp; f(\theta(\ast)) \\
+ &amp; = &amp; f(\nil),
+\end{eqnarray*}\]</span> and similarly <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (a,x) \\
+ &amp; = &amp; (f \circ \theta)(a,x) \\
+ &amp; = &amp; f(\theta(a,x)) \\
+ &amp; = &amp; f(\cons(a,x)).
+\end{eqnarray*}\]</span> With this in mind, we will call this <span class="math inline">\(f\)</span> <span class="math inline">\(\uncons\)</span>.</p>
+<div class="result">
+<div class="defn">
+<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math display">\[\uncons : \lists{A} \rightarrow \ast + A \times \lists{A}\]</span> by <span class="math display">\[\uncons(x) = \left\{\begin{array}{ll} \ast &amp; \mathrm{if}\ x = \nil \\ (a,u) &amp; \mathrm{if}\ x = \cons(a,u). \end{array}\right.\]</span></p>
+</div>
+</div>
+<p>In Haskell:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; uncons ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a, t a)
+<span class="ot">&gt;</span> uncons x <span class="fu">=</span> <span class="kw">case</span> listShape x <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dt">Nil</span>      <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   <span class="dt">Cons</span> a u <span class="ot">-&gt;</span> <span class="dt">Just</span> (a,u)</code></pre></div>
 <h2 id="equality">Equality</h2>
 <p>And some properties of equality:</p>
 <div class="result">
