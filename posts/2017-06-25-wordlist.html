@@ -1,0 +1,819 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Wordlist</title>
+<link rel="stylesheet" type="text/css" href="../css/default.css" />
+<link rel="icon" href="../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../index.html">Home</a>
+    <a href="../pages/about.html">About</a>
+    <a href="../pages/projects.html">Projects</a>
+    <a href="../pages/contact.html">Contact</a>
+    <a href="../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Wordlist</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-06-25 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-06-25-wordlist.lhs">the source</a> into GHCi and play along.</p>
+
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns         #-}</span>
+<span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE TypeSynonymInstances #-}</span>
+<span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances    #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad.Writer</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.FilePath</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List.Split</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.ParserCombinators.Parsec</span></code></pre></div>
+<p>For a project I’m fiddling with (to be written up at some point) I found myself wishing I had a machine-readable dictionary of English words, including parts of speech, pronunciations, and division into syllables. As I’m sure we all do from time to time. :) It doesn’t need to be fancy – just a tab delimited file with lines like</p>
+<pre><code>word   part_of_speech   IPA_pronunciation   syllables</code></pre>
+<p>for as many English words as I can get. Fortunately for me, there are several large databases of this sort available under open licenses. I was able to find these:</p>
+<ol style="list-style-type: decimal">
+<li>The <a href="https://en.wikipedia.org/wiki/Moby_Project">Moby Project</a> (public domain) by Grady Ward – a huge trove of data and the only reason I thought this project would be feasible. Can be downloaded from <a href="http://www.gutenberg.org/ebooks/author/1132?sort_order=title">Project Gutenberg</a>.</li>
+<li>The English <a href="https://en.wiktionary.org">Wiktionary</a> (CC-BY-SA/GFDL) – also a huge trove of pronunciations and parts of speech, but less structured than the Moby Project. Wiktionary makes database dumps available for download; I used the one from <a href="https://dumps.wikimedia.org/enwiktionary/20170620/">June 20, 2017</a>, but by the time you are reading this a more recent version will be up.</li>
+<li>The <a href="http://storage.googleapis.com/books/ngrams/books/datasetsv2.html">Google Books Ngrams Viewer</a> data (CC-BY-3.0) – specifically, the unigrams. This is more useful for the frequency data (to be used later) but also includes some part of speech data. Warning: these files are enormous.</li>
+<li>The <a href="https://wordnet.princeton.edu/">WordNet</a> project (idiosyncratic license, but seems to be permissive). Focused more on semantic relations among words, still a great resource.</li>
+<li>The <a href="http://www.ibiblio.org/webster/">GCIDE</a>, a.k.a. GNU Collaborative International Dictionary of English (GPL3, not surprisingly) – based on the public domain Webster’s Unabridged 1913 and supplemented with WordNet.</li>
+</ol>
+<p>There are probably other sources out there too, but this is a good start.</p>
+<p>To give away the punchline, the final database is available on <a href="https://github.com/nbloomf/wordlist">GitHub</a>. This post is an explanation of the scripts I used to generate that file.</p>
+<p>Clearly editing by hand is a non-starter. Instead we’ll build some small tools to parse our open dictionary data and merge it together the best we can manage.</p>
+<p>I’ll begin with the Moby Project data, since it explicitly contains everything I want – part of speech, pronunciation, and hyphenation (which a spot check indicates is a decent proxy for syllables). The first problem is that the Moby Project data isn’t encoded as UTF-8 text. This is reasonable, since unicode barely existed when the Moby Project was put in the public domain. Wikipedia indicates that it is encoded as “macintosh roman” text, which we can test with</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cat</span> foo.txt <span class="kw">|</span> <span class="kw">iconv</span> -f macintosh -t utf-8 <span class="kw">&gt;</span> foo-utf8.txt</code></pre></div>
+<p>replacing <code>foo</code> with whatever file needs to be converted. (I know this is a <a href="http://porkmail.org/era/unix/award.html">Useless Use of Cat</a> and I don’t care; having data flow in one direction makes more sense to me.) The line endings are also <code>CRLF</code>-style, which can be fixed with <code>sed</code> or (as I did) a text editor. Fixing up the encoding and line endings of the Moby files, I ended up with the following:</p>
+<ol style="list-style-type: decimal">
+<li><code>mwords.txt</code>: 354984 lines.</li>
+<li><code>mhyph.txt</code>: 187175 lines, with hyphenation points (other than spaces or hyphens that are part of the word) indicated by a “•” symbol.</li>
+<li><code>mpos.txt</code>: 233356 lines, with part(s) of speech given by a particular encoding scheme.</li>
+<li><code>mpron.txt</code>: 177267 lines, with IPA pronunciation using an ASCII encoding.</li>
+</ol>
+<p>In other words, jackpot. The data I want is there. It is, however, encoded, so we’ll have to do some tinkering to get it in the format I want. For example, a typical line in <code>mhyph.txt</code> looks like this:</p>
+<pre><code>so•da foun•tain</code></pre>
+<p>while a typical line in <code>mpos.txt</code> looks like this:</p>
+<pre><code>double-time\ti</code></pre>
+<p>and a typical line in <code>mpron.txt</code> looks like this:</p>
+<pre><code>flibbertigibbet 'fl/I/b/@/rt/i/,/dZ//I/b/I/t</code></pre>
+<p>Unifying all this will be a little more complicated and error-prone than my <code>awk</code> skills can handle, so I’ll use Haskell instead. This may turn out to be overkill, but we’ll see.</p>
+<p>My strategy will be something like this.</p>
+<ul>
+<li>First, define types for the data we eventually want to store in a database – namely, <code>Word</code>s.</li>
+<li>Write functions for rendering and parsing <code>Word</code>s in the format I want to use in the final database.</li>
+<li>Write functions to parse <code>Word</code>s from the textual formats in our open sources – the Moby files, and Wiktionary, and Google Ngrams.</li>
+<li>Finally, actually parse the data, merge it, and write it to a single flatfile database.</li>
+</ul>
+<p>Let’s get to it!</p>
+<h1 id="basic-types">Basic Types</h1>
+<p>About this database. Each record needs to represent a “word”. But what is a “word”, exactly? I’m not a linguist and am too lazy to look this up, but to my eye a word has the following things.</p>
+<ol style="list-style-type: decimal">
+<li>A <em>written</em> representation (how you write it),</li>
+<li>A <em>spoken</em> representation (how you say it),</li>
+<li>A <em>grammatical function</em> (how you use it), and</li>
+<li>A <em>meaning</em>.</li>
+</ol>
+<p>If two “words” are such that any of these items differ, then the words are different. For instance “close” (verb) and “close” (adjective) are spelled the same, but have different functions and pronunciations, so are different words. Likewise “run” (move by flapping your legs) and “run” (execute a computer program) are different words, despite being spelled and spoken the same way and both being nouns.</p>
+<p>Of course real language is not so clear cut. For instance, the written and spoken representations of a word don’t have to be unique (think US vs. UK spellings, or accents). But for my needs this is good enough. (I have to remember, this is for a specific project!)</p>
+<p>I will represent words using the following sum type. Note in particular that <code>part_of_speech</code>, <code>pronunciation</code>, and <code>syllables</code> are all <code>Maybe</code>s, while <code>spelling</code> is not, and a word can have at most one pronunciation. These choices privilege written words and “General American” pronunciations, but I’m ok with that for now.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Word</span> <span class="fu">=</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>   {<span class="ot"> spelling       ::</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> part_of_speech ::</span> <span class="dt">Maybe</span> <span class="dt">PartOfSpeech</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> pronunciation  ::</span> <span class="dt">Maybe</span> <span class="dt">Pronunciation</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> hyphenation    ::</span> <span class="dt">Maybe</span> <span class="dt">Hyphenation</span>
+<span class="ot">&gt;</span>   } <span class="kw">deriving</span> <span class="dt">Show</span></code></pre></div>
+<p>And a simple constructor:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; word ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span> word x <span class="fu">=</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>   { spelling       <span class="fu">=</span> x
+<span class="ot">&gt;</span>   , part_of_speech <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   , pronunciation  <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   , hyphenation    <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>Eventually we will want to store lists of words in text files. I’ll wrap functions to write and parse <code>Word</code>s behind the class <code>DictFormat</code>. Since parsing can fail, it will return a <code>Writer [String] t</code>rather than simply <code>t</code>; the <code>[String]</code> type is meant for logging error messages.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">DictFormat</span> t <span class="kw">where</span>
+<span class="ot">&gt;   writeDictFormat ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;   readDictFormat  ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] t</code></pre></div>
+<p>For example:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">DictFormat</span> <span class="dt">String</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat <span class="fu">=</span> id
+<span class="ot">&gt;</span>   readDictFormat  <span class="fu">=</span> return
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">DictFormat</span> t) <span class="ot">=&gt;</span> <span class="dt">DictFormat</span> (<span class="dt">Maybe</span> t) <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat <span class="dt">Nothing</span>  <span class="fu">=</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>   writeDictFormat (<span class="dt">Just</span> x) <span class="fu">=</span> writeDictFormat x
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   readDictFormat <span class="st">&quot;&quot;</span> <span class="fu">=</span> return <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   readDictFormat cs <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     x <span class="ot">&lt;-</span> readDictFormat cs
+<span class="ot">&gt;</span>     return x</code></pre></div>
+<p>And assuming <code>DictFormat</code> instances exist for <code>PartOfSpeech</code>, <code>Pronunciation</code>, and <code>Hyphenation</code>, we can define:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">DictFormat</span> <span class="dt">Word</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat w <span class="fu">=</span> intercalate <span class="st">&quot;\t&quot;</span>
+<span class="ot">&gt;</span>     [ writeDictFormat <span class="fu">$</span> spelling w
+<span class="ot">&gt;</span>     , writeDictFormat <span class="fu">$</span> part_of_speech w
+<span class="ot">&gt;</span>     , writeDictFormat <span class="fu">$</span> pronunciation w
+<span class="ot">&gt;</span>     , writeDictFormat <span class="fu">$</span> hyphenation w
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   readDictFormat cs <span class="fu">=</span> <span class="kw">case</span> wordsBy (<span class="fu">==</span> <span class="ch">'\t'</span>) cs <span class="kw">of</span>
+<span class="ot">&gt;</span>     [a,b,c,d] <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       sp  <span class="ot">&lt;-</span> readDictFormat a
+<span class="ot">&gt;</span>       pos <span class="ot">&lt;-</span> readDictFormat b
+<span class="ot">&gt;</span>       pro <span class="ot">&lt;-</span> readDictFormat c
+<span class="ot">&gt;</span>       hyp <span class="ot">&lt;-</span> readDictFormat d
+<span class="ot">&gt;</span>       return <span class="fu">$</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>         { spelling <span class="fu">=</span> sp
+<span class="ot">&gt;</span>         , part_of_speech <span class="fu">=</span> pos
+<span class="ot">&gt;</span>         , pronunciation  <span class="fu">=</span> pro
+<span class="ot">&gt;</span>         , hyphenation    <span class="fu">=</span> hyp
+<span class="ot">&gt;</span>         }
+<span class="ot">&gt;</span>     _ <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       tell <span class="fu">$</span> [<span class="st">&quot;Unrecognized format: &quot;</span> <span class="fu">++</span> cs]
+<span class="ot">&gt;</span>       return <span class="fu">$</span> word <span class="st">&quot;error&quot;</span></code></pre></div>
+<p>Now for the summand types. <code>PartOfSpeech</code> is (for now) determined by the possible values in the Moby data.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">PartOfSpeech</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Noun</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">NounSingular</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">NounPlural</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">NounPhrase</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Verb</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">VerbParticiple</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">VerbTransitive</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">VerbIntransitive</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Adjective</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Adverb</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Conjunction</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Preposition</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Interjection</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Pronoun</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">ArticleDefinite</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">ArticleIndefinite</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Nominative</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Unknown</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</code></pre></div>
+<p>For now we’ll use an ad-hoc <code>DictFormat</code> encoding of this type.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">DictFormat</span> <span class="dt">PartOfSpeech</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat x <span class="fu">=</span> <span class="kw">case</span> x <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Noun</span>              <span class="ot">-&gt;</span> <span class="st">&quot;n&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">NounSingular</span>      <span class="ot">-&gt;</span> <span class="st">&quot;n-s&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">NounPlural</span>        <span class="ot">-&gt;</span> <span class="st">&quot;n-pl&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">NounPhrase</span>        <span class="ot">-&gt;</span> <span class="st">&quot;n-ph&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Verb</span>              <span class="ot">-&gt;</span> <span class="st">&quot;v&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">VerbParticiple</span>    <span class="ot">-&gt;</span> <span class="st">&quot;v-p&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">VerbTransitive</span>    <span class="ot">-&gt;</span> <span class="st">&quot;v-t&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">VerbIntransitive</span>  <span class="ot">-&gt;</span> <span class="st">&quot;v-i&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Adjective</span>         <span class="ot">-&gt;</span> <span class="st">&quot;adj&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Adverb</span>            <span class="ot">-&gt;</span> <span class="st">&quot;adv&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Conjunction</span>       <span class="ot">-&gt;</span> <span class="st">&quot;conj&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Preposition</span>       <span class="ot">-&gt;</span> <span class="st">&quot;pre&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Interjection</span>      <span class="ot">-&gt;</span> <span class="st">&quot;int&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Pronoun</span>           <span class="ot">-&gt;</span> <span class="st">&quot;pro&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">ArticleDefinite</span>   <span class="ot">-&gt;</span> <span class="st">&quot;a-def&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">ArticleIndefinite</span> <span class="ot">-&gt;</span> <span class="st">&quot;a-ind&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Nominative</span>        <span class="ot">-&gt;</span> <span class="st">&quot;nom&quot;</span>
+<span class="ot">&gt;</span>     <span class="dt">Unknown</span>           <span class="ot">-&gt;</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   readDictFormat cs <span class="fu">=</span> <span class="kw">case</span> cs <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;n&quot;</span>     <span class="ot">-&gt;</span> return <span class="dt">Noun</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;n-s&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">NounSingular</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;n-pl&quot;</span>  <span class="ot">-&gt;</span> return <span class="dt">NounPlural</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;n-ph&quot;</span>  <span class="ot">-&gt;</span> return <span class="dt">NounPhrase</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;v&quot;</span>     <span class="ot">-&gt;</span> return <span class="dt">Verb</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;v-p&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">VerbParticiple</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;v-t&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">VerbTransitive</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;v-i&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">VerbIntransitive</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;adj&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Adjective</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;adv&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Adverb</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;conj&quot;</span>  <span class="ot">-&gt;</span> return <span class="dt">Conjunction</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;pre&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Preposition</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;int&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Interjection</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;pro&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Pronoun</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;a-def&quot;</span> <span class="ot">-&gt;</span> return <span class="dt">ArticleDefinite</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;a-ind&quot;</span> <span class="ot">-&gt;</span> return <span class="dt">ArticleIndefinite</span>
+<span class="ot">&gt;</span>     <span class="st">&quot;nom&quot;</span>   <span class="ot">-&gt;</span> return <span class="dt">Nominative</span>
+<span class="ot">&gt;</span>     _ <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       tell [<span class="st">&quot;Unrecognized part of speech: &quot;</span> <span class="fu">++</span> cs]
+<span class="ot">&gt;</span>       return <span class="dt">Unknown</span></code></pre></div>
+<p>Pronunciations will eventually be strings of IPA characters, but the Moby data uses an ASCII encoding of IPA. We’ll just store these as strings, without doing any kind of validation.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Pronunciation</span> <span class="fu">=</span> <span class="dt">Pron</span>
+<span class="ot">&gt;</span>   {<span class="ot"> unPron ::</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>   } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">DictFormat</span> <span class="dt">Pronunciation</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat <span class="fu">=</span> unPron
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   readDictFormat cs <span class="fu">=</span> return <span class="fu">$</span> <span class="dt">Pron</span> { unPron <span class="fu">=</span> cs }</code></pre></div>
+<p><code>Hyphenation</code> is a little trickier. In the Moby database, syllables of a given word are delimited by any of three different characters. Compound words have their parts separated by spaces, hyphenated words are divided by hyphens (of course), and the possible hyphenation points of a simple word are separated by bullets. These form a kind of hierarchy which we can model by saying that a “word” is a list of lists of lists of syllables, with the outer list delimited by spaces and the middle lists delimited by hyphens.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Hyphenation</span> <span class="fu">=</span> <span class="dt">Hyp</span>
+<span class="ot">&gt;</span>   {<span class="ot"> unHyp ::</span> [[[<span class="dt">String</span>]]]
+<span class="ot">&gt;</span>   } <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</code></pre></div>
+<p>This is a decent format for storing hyphenations, so I’ll steal it for our eventual final database.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">DictFormat</span> <span class="dt">Hyphenation</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   writeDictFormat <span class="fu">=</span>
+<span class="ot">&gt;</span>       intercalate <span class="st">&quot; &quot;</span>
+<span class="ot">&gt;</span>     <span class="fu">.</span> map (intercalate <span class="st">&quot;-&quot;</span>)
+<span class="ot">&gt;</span>     <span class="fu">.</span> map (map (intercalate <span class="st">&quot;•&quot;</span>))
+<span class="ot">&gt;</span>     <span class="fu">.</span> unHyp
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   readDictFormat <span class="fu">=</span>
+<span class="ot">&gt;</span>       return
+<span class="ot">&gt;</span>     <span class="fu">.</span> <span class="dt">Hyp</span>
+<span class="ot">&gt;</span>     <span class="fu">.</span> map (map (wordsBy (<span class="fu">==</span> <span class="ch">'•'</span>)))
+<span class="ot">&gt;</span>     <span class="fu">.</span> map (wordsBy (<span class="fu">==</span> <span class="ch">'-'</span>))
+<span class="ot">&gt;</span>     <span class="fu">.</span> wordsBy (<span class="fu">==</span> <span class="ch">' '</span>)</code></pre></div>
+<h1 id="parsing-moby-data">Parsing Moby Data</h1>
+<p>Next we’ll deal with parsing the Moby files. For reasons we’ll see in a moment, instead of parsing the files as lists of <code>Word</code>s, we’ll simply parse them as key-value pairs, keyed by the spelling of the word. For instance, the hyphenation file will become a <code>[(String, Hyphenation)]</code>. First we need a helper function to strip extra spaces from a string.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; stripSpaces ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span> stripSpaces <span class="fu">=</span>
+<span class="ot">&gt;</span>     reverse
+<span class="ot">&gt;</span>   <span class="fu">.</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
+<span class="ot">&gt;</span>   <span class="fu">.</span> reverse
+<span class="ot">&gt;</span>   <span class="fu">.</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)</code></pre></div>
+<p>Parsing the list of words alone is simple enough.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readWords ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [(<span class="dt">String</span>,())]
+<span class="ot">&gt;</span> readWords path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap (map stripSpaces <span class="fu">.</span> lines) <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   return <span class="fu">$</span> map (\x <span class="ot">-&gt;</span> (x, ())) raw</code></pre></div>
+<p>Parsing in the Moby hyphenations list is also not too bad; we just need to filter out the bullet characters to recover the original word.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readMobyHyph ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [(<span class="dt">String</span>, <span class="dt">Hyphenation</span>)]
+<span class="ot">&gt;</span> readMobyHyph path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;     parseRecord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">Hyphenation</span>)
+<span class="ot">&gt;</span>     parseRecord str <span class="fu">=</span>
+<span class="ot">&gt;</span>       ( stripSpaces <span class="fu">$</span> filter (<span class="fu">/=</span> <span class="ch">'•'</span>) str
+<span class="ot">&gt;</span>       , <span class="kw">let</span> (x,_) <span class="fu">=</span> runWriter <span class="fu">$</span> readDictFormat str <span class="kw">in</span> x
+<span class="ot">&gt;</span>       )
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap lines <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   return <span class="fu">$</span> map parseRecord raw</code></pre></div>
+<p>Parsing the part of speech file is a little trickier; each word can have several parts of speech, and the part of speech codes may be “invalid”. (I found a couple of POS codes that made no sense!)</p>
+<p>Part of speech information is stored in the Moby files using two different formats: one in the part of speech file, and another in the pronunciation file. We’ll define two functions for parsing both kinds.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mobyPOSCode ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">PartOfSpeech</span>
+<span class="ot">&gt;</span> mobyPOSCode c <span class="fu">=</span> <span class="kw">case</span> c <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="ch">'N'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">NounSingular</span>
+<span class="ot">&gt;</span>   <span class="ch">'p'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">NounPlural</span>
+<span class="ot">&gt;</span>   <span class="ch">'h'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">NounPhrase</span>
+<span class="ot">&gt;</span>   <span class="ch">'V'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">VerbParticiple</span>
+<span class="ot">&gt;</span>   <span class="ch">'t'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">VerbTransitive</span>
+<span class="ot">&gt;</span>   <span class="ch">'i'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">VerbIntransitive</span>
+<span class="ot">&gt;</span>   <span class="ch">'A'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adjective</span>
+<span class="ot">&gt;</span>   <span class="ch">'v'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adverb</span>
+<span class="ot">&gt;</span>   <span class="ch">'C'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Conjunction</span>
+<span class="ot">&gt;</span>   <span class="ch">'P'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Preposition</span>
+<span class="ot">&gt;</span>   <span class="ch">'!'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Interjection</span>
+<span class="ot">&gt;</span>   <span class="ch">'r'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Pronoun</span>
+<span class="ot">&gt;</span>   <span class="ch">'D'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">ArticleDefinite</span>
+<span class="ot">&gt;</span>   <span class="ch">'I'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">ArticleIndefinite</span>
+<span class="ot">&gt;</span>   <span class="ch">'o'</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Nominative</span>
+<span class="ot">&gt;</span>   _   <span class="ot">-&gt;</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown part of speech: &quot;</span> <span class="fu">++</span> [c]</code></pre></div>
+<p>Parsing the actual file:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readMobyPOS ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span> readMobyPOS path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;     makeWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span>     makeWord <span class="fu">!</span>word code <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">case</span> mobyPOSCode code <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Left</span> msg <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           tell [msg]
+<span class="ot">&gt;</span>           return []
+<span class="ot">&gt;</span>         <span class="dt">Right</span> pos <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           return [( stripSpaces word, pos )]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     parseRecord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span>     parseRecord <span class="fu">!</span>str <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (pos,drow) <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">'\\'</span>) <span class="fu">$</span> reverse str
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       <span class="kw">case</span> drow <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="ch">'\\'</span><span class="fu">:</span>x <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map (makeWord <span class="fu">$</span> reverse x) pos
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         _ <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           tell [<span class="st">&quot;Unexpected format: &quot;</span> <span class="fu">++</span> reverse drow]
+<span class="ot">&gt;</span>           return []
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap lines <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   <span class="kw">let</span> (dict,err) <span class="fu">=</span> runWriter <span class="fu">$</span> fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map parseRecord raw
+<span class="ot">&gt;</span>   
+<span class="ot">&gt;</span>   <span class="kw">case</span> err <span class="kw">of</span>
+<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return ()
+<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> <span class="st">&quot;parse errors in &quot;</span> <span class="fu">++</span> path
+<span class="ot">&gt;</span>       sequence_ <span class="fu">$</span> map putStrLn err
+<span class="ot">&gt;</span>       exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   return dict</code></pre></div>
+<p>Parsing pronunciations is also tricky. Some words have more than one pronunciation, depending on their part of speech. First a helper to parse part of speech codes.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mobyPronPOSCode ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">PartOfSpeech</span>
+<span class="ot">&gt;</span> mobyPronPOSCode s <span class="fu">=</span> <span class="kw">case</span> s <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;n&quot;</span>   <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Noun</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;v&quot;</span>   <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Verb</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;aj&quot;</span>  <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adjective</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;av&quot;</span>  <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adverb</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;inj&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Interjection</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;prp&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Preposition</span>
+<span class="ot">&gt;</span>   _     <span class="ot">-&gt;</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown part of speech: &quot;</span> <span class="fu">++</span> s</code></pre></div>
+<p>The pronunciations themselves are not stored using IPA, but rather a kind of ASCII encoding. The following helper function is my best attempt at converting one to the other. :) I had to correct some errors in the data by hand.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mobyToIPA ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] <span class="dt">String</span>
+<span class="ot">&gt;</span> mobyToIPA str <span class="fu">=</span> <span class="kw">case</span> str <span class="kw">of</span>
+<span class="ot">&gt;</span>   []               <span class="ot">-&gt;</span> return []
+<span class="ot">&gt;</span>   (<span class="ch">'('</span><span class="fu">:</span><span class="ch">'/'</span><span class="fu">:</span><span class="ch">'@'</span><span class="fu">:</span><span class="ch">'/'</span><span class="fu">:</span><span class="ch">')'</span><span class="fu">:</span>cs) <span class="ot">-&gt;</span> fmap (<span class="ch">'ə'</span><span class="fu">:</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'e'</span><span class="fu">:</span><span class="ch">'/'</span><span class="fu">:</span><span class="ch">'T'</span><span class="fu">:</span><span class="ch">'/'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɛð&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'/'</span> <span class="fu">:</span>cs)        <span class="ot">-&gt;</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'\''</span><span class="fu">:</span>cs)        <span class="ot">-&gt;</span> fmap (<span class="ch">'\''</span><span class="fu">:</span>)   <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">','</span> <span class="fu">:</span>cs)        <span class="ot">-&gt;</span> fmap (<span class="ch">','</span><span class="fu">:</span>)    <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'_'</span> <span class="fu">:</span>cs)        <span class="ot">-&gt;</span> fmap (<span class="ch">'#'</span><span class="fu">:</span>)    <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'.'</span> <span class="fu">:</span>cs)        <span class="ot">-&gt;</span> fmap (<span class="ch">'.'</span><span class="fu">:</span>)    <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">' '</span> <span class="fu">:</span>cs)        <span class="ot">-&gt;</span> fmap (<span class="ch">'.'</span><span class="fu">:</span>)    <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'['</span><span class="fu">:</span><span class="ch">'@'</span><span class="fu">:</span><span class="ch">']'</span><span class="fu">:</span>cs) <span class="ot">-&gt;</span> fmap (<span class="ch">'ɝ'</span><span class="fu">:</span>)    <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'('</span><span class="fu">:</span><span class="ch">'@'</span><span class="fu">:</span><span class="ch">')'</span><span class="fu">:</span>cs) <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɛə&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'t'</span><span class="fu">:</span><span class="ch">'S'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;tʃ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'@'</span><span class="fu">:</span><span class="ch">'r'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɜr&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'a'</span><span class="fu">:</span><span class="ch">'I'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;aɪ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'A'</span><span class="fu">:</span><span class="ch">'r'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɑr&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'A'</span><span class="fu">:</span><span class="ch">'U'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;aʊ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'d'</span><span class="fu">:</span><span class="ch">'Z'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;dʒ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'e'</span><span class="fu">:</span><span class="ch">'I'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;eɪ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'h'</span><span class="fu">:</span><span class="ch">'w'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;hw&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'O'</span><span class="fu">:</span><span class="ch">'i'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɔɪ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'o'</span><span class="fu">:</span><span class="ch">'U'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;oʊ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'o'</span><span class="fu">:</span><span class="ch">'u'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;aʊ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'e'</span><span class="fu">:</span><span class="ch">'R'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɛʁ&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'0'</span><span class="fu">:</span><span class="ch">'0'</span><span class="fu">:</span>cs)     <span class="ot">-&gt;</span> fmap (<span class="st">&quot;u&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'æ'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;æ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'&amp;'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;æ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'a'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;æ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'-'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ə&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'@'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ʌ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'A'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɑː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'b'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;b&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'c'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;k&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'d'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;d&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'D'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ð&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'E'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɛ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'e'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɛ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'f'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;f&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'g'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɡ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'h'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;h&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'i'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;iː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'I'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɪ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'j'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;j&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'k'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;k&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'l'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;l&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'m'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;m&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'n'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;n&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'N'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ŋ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'O'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɔː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'o'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɑ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'p'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;p&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'r'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;r&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'s'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;s&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'S'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ʃ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'t'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;t&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'T'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;θ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'u'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;uː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'U'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ʊ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'v'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;v&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'V'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ʋ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'w'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;w&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'z'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;z&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'Z'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ʒ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'R'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɹ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'y'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɜː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'x'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;x&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'W'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;w&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'Y'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;uː&quot;</span> <span class="fu">++</span>) <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   (<span class="ch">'3'</span><span class="fu">:</span>cs)         <span class="ot">-&gt;</span> fmap (<span class="st">&quot;ɝ&quot;</span> <span class="fu">++</span>)  <span class="fu">$</span> mobyToIPA cs
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>     tell <span class="fu">$</span> [<span class="st">&quot;Unidentified phoneme: &quot;</span> <span class="fu">++</span> str]
+<span class="ot">&gt;</span>     return str</code></pre></div>
+<p>Finally, the function that reads the pronunciation file.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readMobyPron ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [((<span class="dt">String</span>, <span class="dt">Maybe</span> <span class="dt">PartOfSpeech</span>), <span class="dt">Pronunciation</span>)]
+<span class="ot">&gt;</span> readMobyPron path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;     fixSpaces ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Char</span>
+<span class="ot">&gt;</span>     fixSpaces <span class="ch">'_'</span> <span class="fu">=</span> <span class="ch">' '</span>
+<span class="ot">&gt;</span>     fixSpaces c   <span class="fu">=</span> c
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     makeWord <span class="fu">!</span>word code <span class="fu">!</span>pron <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">if</span> code <span class="fu">==</span> <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span>         <span class="kw">then</span> return <span class="fu">$</span> return <span class="fu">$</span>
+<span class="ot">&gt;</span>           ( ( stripSpaces <span class="fu">$</span> map fixSpaces word, <span class="dt">Nothing</span> )
+<span class="ot">&gt;</span>           , <span class="dt">Pron</span> pron
+<span class="ot">&gt;</span>           )
+<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">case</span> mobyPronPOSCode code <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">Left</span> err <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>             tell [err]
+<span class="ot">&gt;</span>             return []
+<span class="ot">&gt;</span>           <span class="dt">Right</span> pos <span class="ot">-&gt;</span> return <span class="fu">$</span> return <span class="fu">$</span>
+<span class="ot">&gt;</span>             ( ( stripSpaces <span class="fu">$</span> map fixSpaces word, <span class="dt">Just</span> pos )
+<span class="ot">&gt;</span>             , <span class="dt">Pron</span> pron
+<span class="ot">&gt;</span>             )
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     parseRecord str <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span>
+<span class="ot">&gt;</span>         (stem,pron) <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">' '</span>) str
+<span class="ot">&gt;</span>         (word,pos)  <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">'/'</span>) stem
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       ipa <span class="ot">&lt;-</span> mobyToIPA (tail pron)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>       makeWord word (delete <span class="ch">'/'</span> pos) ipa
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap lines <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   <span class="kw">let</span> (dict,err) <span class="fu">=</span> runWriter <span class="fu">$</span> fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map parseRecord raw
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">case</span> err <span class="kw">of</span>
+<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return ()
+<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> <span class="st">&quot;parse errors in &quot;</span> <span class="fu">++</span> path
+<span class="ot">&gt;</span>       sequence_ <span class="fu">$</span> map putStrLn err
+<span class="ot">&gt;</span>       exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   return dict</code></pre></div>
+<p>woo</p>
+<h1 id="merging">Merging</h1>
+<p>Now that we can parse the Moby data to Haskell types, the big remaining question is how to merge all this data together. After trying a lot of dead ends I’ve settled on having a single, generic, <code>merge</code> function that takes a list of <code>Word</code>s and a list of “key-value” pairs, and attempts to update the <code>Word</code>s with the given data, or create new <code>Word</code>s if a given “key” does not exist, or report an error message if it can’t figure out what to do. This approach has the benefit that it does not depend on the source of our data, so eventually we can use it to merge in information from other sources.</p>
+<p>A couple of caveats about the following function: we must have that if <code>order x (keyOf y) == EQ</code>, then <code>match x y == True</code>. <code>mergeIO</code> will error out if it ever detects that this constraint does not hold.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> mergeIO
+<span class="ot">&gt;</span>   <span class="co">-- Error log</span>
+<span class="ot">&gt;   ::</span> FilePath
+<span class="ot">&gt;</span>   <span class="co">-- Extract the key of a word</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Word</span> <span class="ot">-&gt;</span> key)
+<span class="ot">&gt;</span>   <span class="co">-- Render a key</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (key <span class="ot">-&gt;</span> <span class="dt">String</span>)
+<span class="ot">&gt;</span>   <span class="co">-- Compare two keys</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (key <span class="ot">-&gt;</span> key <span class="ot">-&gt;</span> <span class="dt">Ordering</span>)
+<span class="ot">&gt;</span>   <span class="co">-- Check whether a key matches a Word</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (key <span class="ot">-&gt;</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span>   <span class="co">-- Update a Word with given key-value pair</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Word</span> <span class="ot">-&gt;</span> (key,val) <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] <span class="dt">Word</span>)
+<span class="ot">&gt;</span>   <span class="co">-- Create a new word from a key-value pair</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (key <span class="ot">-&gt;</span> val <span class="ot">-&gt;</span> <span class="dt">Word</span>)
+<span class="ot">&gt;</span>   <span class="co">-- Update data</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [(key,val)]
+<span class="ot">&gt;</span>   <span class="co">-- Dictionary</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span>   <span class="co">-- Updated dictionary</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> mergeIO errF keyOf print order match fiddle create keyval dict <span class="fu">=</span>
+<span class="ot">&gt;</span>   merge
+<span class="ot">&gt;</span>     (sortBy (\x y <span class="ot">-&gt;</span> order (fst x)   (fst y)  ) keyval)
+<span class="ot">&gt;</span>     (sortBy (\x y <span class="ot">-&gt;</span> order (keyOf x) (keyOf y)) dict)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     merge [] bs <span class="fu">=</span> return bs
+<span class="ot">&gt;</span>     merge as [] <span class="fu">=</span> return <span class="fu">$</span> map (uncurry create) as
+<span class="ot">&gt;</span>     merge us<span class="fu">@</span>((k,v)<span class="fu">:</span>as) (b<span class="fu">:</span>bs) <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">case</span> span (\(t,_) <span class="ot">-&gt;</span> match t b) us <span class="kw">of</span>
+<span class="ot">&gt;</span>         ([],vs) <span class="ot">-&gt;</span> <span class="kw">case</span> order k (keyOf b) <span class="kw">of</span>
+<span class="ot">&gt;</span>           <span class="dt">LT</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>             <span class="kw">let</span> w <span class="fu">=</span> create k v
+<span class="ot">&gt;</span>             ws <span class="ot">&lt;-</span> merge as (b<span class="fu">:</span>bs)
+<span class="ot">&gt;</span>             return (w<span class="fu">:</span>ws)
+<span class="ot">&gt;</span>           <span class="dt">GT</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>             ws <span class="ot">&lt;-</span> merge ((k,v)<span class="fu">:</span>as) bs
+<span class="ot">&gt;</span>             return (b<span class="fu">:</span>ws)
+<span class="ot">&gt;</span>           <span class="dt">EQ</span> <span class="ot">-&gt;</span> error <span class="fu">$</span> intercalate <span class="st">&quot; &quot;</span>
+<span class="ot">&gt;</span>             [ <span class="st">&quot;shouldn't happen!&quot;</span>
+<span class="ot">&gt;</span>             , print k
+<span class="ot">&gt;</span>             , print (keyOf b)
+<span class="ot">&gt;</span>             ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         (ks,vs) <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span> (xs,ys) <span class="fu">=</span> span (\c <span class="ot">-&gt;</span> match k c) bs
+<span class="ot">&gt;</span>           <span class="kw">let</span> (zs,errs) <span class="fu">=</span> runWriter <span class="fu">$</span> sequence <span class="fu">$</span> map (\m <span class="ot">-&gt;</span> foldM fiddle m ks) (b<span class="fu">:</span>xs)
+<span class="ot">&gt;</span>           appendFile errF <span class="fu">$</span> unlines errs
+<span class="ot">&gt;</span>           ws <span class="ot">&lt;-</span> merge vs ys
+<span class="ot">&gt;</span>           return (zs <span class="fu">++</span> ws)</code></pre></div>
+<p>By feeding <code>mergeIO</code> appropriate parameters, we recover specific “merge” functions for different kinds of data. For instance, <code>mergeStem</code> simply adds new words without any extra data.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> mergeStem
+<span class="ot">&gt;   ::</span> FilePath <span class="ot">-&gt;</span> [(<span class="dt">String</span>, ())] <span class="ot">-&gt;</span> [<span class="dt">Word</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> mergeStem errF <span class="fu">=</span> mergeIO errF spelling id compare match fiddle create
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     match ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>     match stem w <span class="fu">=</span> stem <span class="fu">==</span> spelling w
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     fiddle w _ <span class="fu">=</span> return w
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     create ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> () <span class="ot">-&gt;</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>     create stem _ <span class="fu">=</span> word stem</code></pre></div>
+<p>Next a helper to add a part of speech to a <code>Word</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; addPOS ::</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>) <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] <span class="dt">Word</span>
+<span class="ot">&gt;</span> addPOS w (stem,pos) <span class="fu">=</span> <span class="kw">if</span> stem <span class="fu">/=</span> spelling w
+<span class="ot">&gt;</span>   <span class="kw">then</span> return w
+<span class="ot">&gt;</span>   <span class="kw">else</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> part_of_speech w <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         return <span class="fu">$</span> w { part_of_speech <span class="fu">=</span> <span class="dt">Just</span> pos }
+<span class="ot">&gt;</span>       <span class="dt">Just</span> q <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> q <span class="fu">==</span> pos
+<span class="ot">&gt;</span>           <span class="kw">then</span> return ()
+<span class="ot">&gt;</span>           <span class="kw">else</span> tell <span class="fu">$</span> return <span class="fu">$</span> intercalate <span class="st">&quot;\t&quot;</span>
+<span class="ot">&gt;</span>             [<span class="st">&quot;Part of Speech&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;stem: \&quot;&quot;</span> <span class="fu">++</span> stem <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;new: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat pos <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;old: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat q <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             ]
+<span class="ot">&gt;</span>         return w</code></pre></div>
+<p>And with it, <code>mergePOS</code> can add a list of parts of speech into a dictionary.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> mergePOS
+<span class="ot">&gt;   ::</span> FilePath <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)] <span class="ot">-&gt;</span> [<span class="dt">Word</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> mergePOS errF <span class="fu">=</span> mergeIO errF spelling id compare match addPOS create
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     match ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>     match stem w <span class="fu">=</span> stem <span class="fu">==</span> spelling w
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     create ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">PartOfSpeech</span> <span class="ot">-&gt;</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>     create stem pos <span class="fu">=</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>       { spelling       <span class="fu">=</span> stem
+<span class="ot">&gt;</span>       , part_of_speech <span class="fu">=</span> <span class="dt">Just</span> pos
+<span class="ot">&gt;</span>       , pronunciation  <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       , hyphenation    <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       }</code></pre></div>
+<p>And a helper to add a hyphenation to a <code>Word</code>:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; addHyph ::</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">Hyphenation</span>) <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] <span class="dt">Word</span>
+<span class="ot">&gt;</span> addHyph w (stem,syl) <span class="fu">=</span> <span class="kw">if</span> stem <span class="fu">/=</span> spelling w
+<span class="ot">&gt;</span>   <span class="kw">then</span> return w
+<span class="ot">&gt;</span>   <span class="kw">else</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> hyphenation w <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">Nothing</span> <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         return <span class="fu">$</span> w { hyphenation <span class="fu">=</span> <span class="dt">Just</span> syl }
+<span class="ot">&gt;</span>       <span class="dt">Just</span> q <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>         <span class="kw">if</span> q <span class="fu">==</span> syl
+<span class="ot">&gt;</span>           <span class="kw">then</span> return ()
+<span class="ot">&gt;</span>           <span class="kw">else</span> tell <span class="fu">$</span> return <span class="fu">$</span> intercalate <span class="st">&quot;\t&quot;</span>
+<span class="ot">&gt;</span>             [ <span class="st">&quot;Hyphenation&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;stem: \&quot;&quot;</span> <span class="fu">++</span> stem <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;new: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat syl <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             , <span class="st">&quot;old: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat q <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>             ]
+<span class="ot">&gt;</span>         return w</code></pre></div>
+<p>And then <code>mergeHyph</code> can add a list of hyphenations into a dictionary.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> mergeHyph
+<span class="ot">&gt;   ::</span> FilePath <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Hyphenation</span>)] <span class="ot">-&gt;</span> [<span class="dt">Word</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> mergeHyph errF <span class="fu">=</span> mergeIO errF spelling id compare match addHyph create
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;     match ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Word</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>     match stem w <span class="fu">=</span> stem <span class="fu">==</span> spelling w
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     create ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Hyphenation</span> <span class="ot">-&gt;</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>     create stem syl <span class="fu">=</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>       { spelling       <span class="fu">=</span> stem
+<span class="ot">&gt;</span>       , part_of_speech <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       , pronunciation  <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       , hyphenation    <span class="fu">=</span> <span class="dt">Just</span> syl
+<span class="ot">&gt;</span>       }</code></pre></div>
+<p>Finally, pronunciations.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> mergePron
+<span class="ot">&gt;   ::</span> FilePath
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [((<span class="dt">String</span>, <span class="dt">Maybe</span> <span class="dt">PartOfSpeech</span>), <span class="dt">Pronunciation</span>)]
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> mergePron errF <span class="fu">=</span> mergeIO errF getKey print compare match fiddle create
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     getKey w <span class="fu">=</span> (spelling w, part_of_speech w)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     print (w, <span class="dt">Nothing</span>) <span class="fu">=</span> w
+<span class="ot">&gt;</span>     print (w, <span class="dt">Just</span> q)  <span class="fu">=</span> w <span class="fu">++</span> <span class="st">&quot; (&quot;</span> <span class="fu">++</span> writeDictFormat q <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     match (stem, <span class="dt">Nothing</span>)  w <span class="fu">=</span> stem <span class="fu">==</span> spelling w
+<span class="ot">&gt;</span>     match (stem, <span class="dt">Just</span> pos) w <span class="fu">=</span> and
+<span class="ot">&gt;</span>       [ stem <span class="fu">==</span> spelling w
+<span class="ot">&gt;</span>       , or
+<span class="ot">&gt;</span>         [ <span class="dt">Just</span> pos <span class="fu">==</span> part_of_speech w
+<span class="ot">&gt;</span>         , <span class="dt">Nothing</span>  <span class="fu">==</span> part_of_speech w
+<span class="ot">&gt;</span>         ]
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     fiddle w ((stem,pos),pron) <span class="fu">=</span> <span class="kw">case</span> pronunciation w <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return <span class="fu">$</span> w { pronunciation <span class="fu">=</span> <span class="dt">Just</span> pron }
+<span class="ot">&gt;</span>         <span class="dt">Just</span> u <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           <span class="kw">if</span> u <span class="fu">==</span> pron
+<span class="ot">&gt;</span>             <span class="kw">then</span> return w
+<span class="ot">&gt;</span>             <span class="kw">else</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>               tell <span class="fu">$</span> return <span class="fu">$</span> intercalate <span class="st">&quot;\t&quot;</span>
+<span class="ot">&gt;</span>                 [ <span class="st">&quot;Pronunciation&quot;</span>
+<span class="ot">&gt;</span>                 , <span class="st">&quot;stem: \&quot;&quot;</span> <span class="fu">++</span> stem <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>                 , <span class="st">&quot;pos: \&quot;&quot;</span> <span class="fu">++</span> show pos <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>                 , <span class="st">&quot;new: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat pron <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>                 , <span class="st">&quot;old: \&quot;&quot;</span> <span class="fu">++</span> writeDictFormat u <span class="fu">++</span> <span class="st">&quot;\&quot;&quot;</span>
+<span class="ot">&gt;</span>                 ]
+<span class="ot">&gt;</span>               return w
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     create (stem, pos) pron <span class="fu">=</span> <span class="dt">Word</span>
+<span class="ot">&gt;</span>       { spelling       <span class="fu">=</span> stem
+<span class="ot">&gt;</span>       , part_of_speech <span class="fu">=</span> pos
+<span class="ot">&gt;</span>       , pronunciation  <span class="fu">=</span> <span class="dt">Just</span> pron
+<span class="ot">&gt;</span>       , hyphenation    <span class="fu">=</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       }</code></pre></div>
+<p>Putting it together, <code>parseMoby</code> merges together all of the Moby data, recording errors to the file <code>error-moby.txt</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; parseMoby ::</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> parseMoby <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span> errFile <span class="fu">=</span> <span class="st">&quot;/home/nathan/code/wordlist/error-moby.txt&quot;</span>
+<span class="ot">&gt;</span>   writeFile errFile <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;parsing database&quot;</span>
+<span class="ot">&gt;</span>   hyph <span class="ot">&lt;-</span> readMobyHyph  <span class="st">&quot;/home/nathan/code/wordlist/moby/mhyph.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..mhyph&quot;</span>
+<span class="ot">&gt;</span>   pos  <span class="ot">&lt;-</span> readMobyPOS   <span class="st">&quot;/home/nathan/code/wordlist/moby/mpos.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..mpos&quot;</span>
+<span class="ot">&gt;</span>   pron <span class="ot">&lt;-</span> readMobyPron  <span class="st">&quot;/home/nathan/code/wordlist/moby/mpron.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..mpron&quot;</span>
+<span class="ot">&gt;</span>   wrds <span class="ot">&lt;-</span> readWords <span class="st">&quot;/home/nathan/code/wordlist/moby/mwords.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..mwords&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;merging&quot;</span>
+<span class="ot">&gt;</span>   return []
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergePOS  errFile pos
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergeHyph errFile hyph
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergePron errFile pron
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergeStem errFile wrds</code></pre></div>
+<p>To test what we have so far, <code>mainMoby</code> writes the consolidated Moby dictionary to <code>out-moby.txt</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mainMoby ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> mainMoby <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span> outFile <span class="fu">=</span> <span class="st">&quot;/home/nathan/code/wordlist/out-moby.txt&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   dict <span class="ot">&lt;-</span> parseMoby
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   writeFile outFile <span class="fu">$</span> unlines <span class="fu">$</span> map writeDictFormat dict
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="fu">$</span> <span class="st">&quot;Words: &quot;</span> <span class="fu">++</span> show (length dict)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<p>After fixing some small errors in the data by hand (reported by our parsers), running <code>mainMoby</code> produces two files: <code>out-moby.txt</code>, whose lines look like this:</p>
+<pre><code>epiphanize	v-t	ɪ'pɪfʌ,naɪz	e•piph•a•nize
+epiphanized	v-t		e•piph•a•nized
+epiphanizing	v-t		e•piph•a•niz•ing
+epiphanous			
+epiphany	n-s	ɛ'pɪfʌniː	e•piph•a•ny
+epipharyngeal			</code></pre>
+<p>And <code>error-moby.txt</code>, whose lines look like this:</p>
+<pre><code>Hyphenation	stem: &quot;zedoary&quot;	new: &quot;zed•o•a•ry&quot;	old: &quot;zed•o•ar•y&quot;
+Hyphenation	stem: &quot;zenith&quot;	new: &quot;ze•nith&quot;	old: &quot;zen•ith&quot;
+Hyphenation	stem: &quot;zincate&quot;	new: &quot;zin•cate&quot;	old: &quot;zinc•ate&quot;
+Pronunciation	stem: &quot;Elie&quot;	pos: &quot;Nothing&quot;	new: &quot;eɪ'liː&quot;	old: &quot;'ɛliː&quot;
+Pronunciation	stem: &quot;ay&quot;	pos: &quot;Just Adverb&quot;	new: &quot;aɪ&quot;	old: &quot;'eɪ&quot;</code></pre>
+<p>Woo! <code>out-moby.txt</code> is a tab-delimited list of words with part of speech, pronunciation, and hyphenation points. It has a <em>ton</em> of missing entries, which we can try to fill in later. But at 526462 lines it’s a decent start.</p>
+<h1 id="wiktionary">Wiktionary</h1>
+<p>Next we’ll use data from Wiktionary to fill as many gaps as we can. Wiktionary is a massive, collaboratively edited database with the goal of collecting every word in every language, and for the popular words in popular languages, it gets pretty close.</p>
+<p>I downloaded the <a href="https://dumps.wikimedia.org/enwiktionary/20170620/">June 20, 2017</a> database dump of the English Wiktionary, which (uncompressed) is a 5.1 GB XML file. But don’t let the file format fool you. :) Although the dump is a big XML file with a node for each word, the data <em>within</em> each entry is not really structured beyond being marked up with wiki tags and mostly standardized section headings.</p>
+<p>I made a shell pipeline using mostly <code>sed</code> that attempts to cleanly extract as much as possible. It throws out all definitions, since we don’t care about those, and without definitions things like synonyms and antonyms don’t make sense. We also throw out any information about languages other than English. What’s left is a bunch of words, sometimes with pronunciations in one or more dialects, and sometimes with one or more parts of speech attached. It turns out that a large number of entries either are or can “easily” be put into the form</p>
+<pre><code>word (pronunciation)? (noun)? (verb)? (adjective)? (adverb)?</code></pre>
+<p>I use <code>sed</code> to gradually get the entries in this form if possible, and <code>awk</code> to redirect such entries to a handful of files. Surprisingly (to me) this recovered over 99% of the entries in Wiktionary. This script is kind of a mess, so I’ll just link to it here.</p>
+<p>Anyway, running that script results in the following files:</p>
+<ol style="list-style-type: decimal">
+<li><code>words-only.txt</code>: These are entries with a stem only, no pronunciation or part of speech.</li>
+<li><code>pos-only.txt</code>: These are entries with at least one part of speech but no pronunciation.</li>
+<li><code>pronunciations-plus.txt</code>: These are entries with a pronunciation and zero or more parts of speech.</li>
+<li><code>diff-pron.txt</code>: These are entries the script recognizes as having different pronunciations depending on the part of speech. I’ll leave them alone for now.</li>
+<li><code>ipa-letters.txt</code>: These are initialisms; I’ll leave them alone for now.</li>
+<li><code>wiki-words.txt</code>: These are the entries the script didn’t recognize – the leftovers.</li>
+</ol>
+<p>A lot of the machinery for dealing with the Moby data can be reused; we just need to parse the cleaned up wiki data.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; wikiPOSCode ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">PartOfSpeech</span>
+<span class="ot">&gt;</span> wikiPOSCode c <span class="fu">=</span> <span class="kw">case</span> c <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;noun&quot;</span>      <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Noun</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;verb&quot;</span>      <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Verb</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;adjective&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adjective</span>
+<span class="ot">&gt;</span>   <span class="st">&quot;adverb&quot;</span>    <span class="ot">-&gt;</span> <span class="dt">Right</span> <span class="dt">Adverb</span>
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown part of speech: &quot;</span> <span class="fu">++</span> c</code></pre></div>
+<p>Parsing the actual file:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readWikiPOS ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span> readWikiPOS path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;     makeWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span>     makeWord <span class="fu">!</span>word code <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">case</span> wikiPOSCode code <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Left</span> msg <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           tell [msg]
+<span class="ot">&gt;</span>           return []
+<span class="ot">&gt;</span>         <span class="dt">Right</span> pos <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           return [( stripSpaces word, pos )]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;     parseRecord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Writer</span> [<span class="dt">String</span>] [(<span class="dt">String</span>, <span class="dt">PartOfSpeech</span>)]
+<span class="ot">&gt;</span>     parseRecord <span class="fu">!</span>str <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (stem,pos) <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">'\t'</span>) str
+<span class="ot">&gt;</span>       fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map (makeWord <span class="fu">$</span> stripSpaces stem) <span class="fu">$</span> words pos
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap lines <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   <span class="kw">let</span> (dict,err) <span class="fu">=</span> runWriter <span class="fu">$</span> fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map parseRecord raw
+<span class="ot">&gt;</span>   
+<span class="ot">&gt;</span>   <span class="kw">case</span> err <span class="kw">of</span>
+<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return ()
+<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> <span class="st">&quot;parse errors in &quot;</span> <span class="fu">++</span> path
+<span class="ot">&gt;</span>       sequence_ <span class="fu">$</span> map putStrLn err
+<span class="ot">&gt;</span>       exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   return dict</code></pre></div>
+<p>Pronunciations:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; readWikiPron ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> [((<span class="dt">String</span>, <span class="dt">Maybe</span> <span class="dt">PartOfSpeech</span>), <span class="dt">Pronunciation</span>)]
+<span class="ot">&gt;</span> readWikiPron path <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     makeWord <span class="fu">!</span>word pron <span class="fu">=</span>
+<span class="ot">&gt;</span>       return [( (stripSpaces word, <span class="dt">Nothing</span>), <span class="dt">Pron</span> pron )]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     makeWordPOS <span class="fu">!</span>word pron code <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">case</span> wikiPOSCode code <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Left</span> msg <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           tell [msg]
+<span class="ot">&gt;</span>           return []
+<span class="ot">&gt;</span>         <span class="dt">Right</span> pos <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           return [( (stripSpaces word, <span class="dt">Just</span> pos), <span class="dt">Pron</span> pron )]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     parseRecord <span class="fu">!</span>str <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> (stem,rest) <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">'\t'</span>) str
+<span class="ot">&gt;</span>       <span class="kw">let</span> (pron,pos)  <span class="fu">=</span> break (<span class="fu">==</span> <span class="ch">'\t'</span>) <span class="fu">$</span> tail rest
+<span class="ot">&gt;</span>       <span class="kw">case</span> words (filter (<span class="fu">/=</span> <span class="ch">'\t'</span>) pos) <span class="kw">of</span>
+<span class="ot">&gt;</span>         [] <span class="ot">-&gt;</span> makeWord stem pron
+<span class="ot">&gt;</span>         ps <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>           fmap concat <span class="fu">$</span> sequence
+<span class="ot">&gt;</span>             <span class="fu">$</span> map (makeWordPOS (stripSpaces stem) (filter (<span class="fu">/=</span> <span class="ch">'/'</span>) pron))
+<span class="ot">&gt;</span>             <span class="fu">$</span> ps
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   raw <span class="ot">&lt;-</span> fmap lines <span class="fu">$</span> readFile path
+<span class="ot">&gt;</span>   <span class="kw">let</span> (dict,err) <span class="fu">=</span> runWriter <span class="fu">$</span> fmap concat <span class="fu">$</span> sequence <span class="fu">$</span> map parseRecord raw
+<span class="ot">&gt;</span>   
+<span class="ot">&gt;</span>   <span class="kw">case</span> err <span class="kw">of</span>
+<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return ()
+<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>       putStrLn <span class="fu">$</span> <span class="st">&quot;parse errors in &quot;</span> <span class="fu">++</span> path
+<span class="ot">&gt;</span>       sequence_ <span class="fu">$</span> map putStrLn err
+<span class="ot">&gt;</span>       exitFailure
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   return dict</code></pre></div>
+<p>And now <code>parseWiki</code> attempts to merge the wiki data with a given dictionary.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; parseWiki ::</span> [<span class="dt">Word</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Word</span>]
+<span class="ot">&gt;</span> parseWiki dict <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span> errFile <span class="fu">=</span> <span class="st">&quot;/home/nathan/code/wordlist/error-wiki.txt&quot;</span>
+<span class="ot">&gt;</span>   writeFile errFile <span class="st">&quot;&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;parsing database&quot;</span>
+<span class="ot">&gt;</span>   wrds <span class="ot">&lt;-</span> readWords     <span class="st">&quot;/home/nathan/code/wordlist/wiki/words-only.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..words-only&quot;</span>
+<span class="ot">&gt;</span>   pos  <span class="ot">&lt;-</span> readWikiPOS   <span class="st">&quot;/home/nathan/code/wordlist/wiki/pos-only.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..pos-only&quot;</span>
+<span class="ot">&gt;</span>   pron <span class="ot">&lt;-</span> readWikiPron  <span class="st">&quot;/home/nathan/code/wordlist/wiki/pronunciation-plus.txt&quot;</span>
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;..pronunciation-plus&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="st">&quot;merging&quot;</span>
+<span class="ot">&gt;</span>   return dict
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergePOS  errFile pos
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergePron errFile pron
+<span class="ot">&gt;</span>     <span class="fu">&gt;&gt;=</span> mergeStem errFile wrds</code></pre></div>
+<p>Putting it all together: <code>main</code> parses and merges the Moby and Wiki data, writing the result to <code>data.txt</code> and any errors to <code>error-moby.txt</code> and <code>error-wiki.txt</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span> outFile <span class="fu">=</span> <span class="st">&quot;/home/nathan/code/wordlist/dict.txt&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   dict <span class="ot">&lt;-</span> parseMoby <span class="fu">&gt;&gt;=</span> parseWiki
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   writeFile outFile <span class="fu">$</span> unlines <span class="fu">$</span> map writeDictFormat dict
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   putStrLn <span class="fu">$</span> <span class="st">&quot;Words: &quot;</span> <span class="fu">++</span> show (length dict)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<p>Running <code>main</code> yields a dictionary of 1052625 words. I think this will do. Stay tuned for a write up of the project this is all prologue for. :)</p>
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>
