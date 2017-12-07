@@ -24,7 +24,6 @@
     <a href="../../index.html">Home</a>
     <a href="../../pages/about.html">About</a>
     <a href="../../pages/projects.html">Projects</a>
-    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -148,9 +147,11 @@ Posted on 2017-05-10 by nbloomf
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
-<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
 
-<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/AllAndAny.lhs">the source</a> into GHCi and play along.</p>
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/AllAndAny.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">AllAndAny</span>
 <span class="ot">&gt;</span>   ( all, any, _test_all_any, main_all_any
@@ -535,90 +536,90 @@ Note that <span class="math display">\[\begin{eqnarray*}
 </div>
 <h2 id="testing">Testing</h2>
 <p>Here are our property tests for <span class="math inline">\(\all\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; _test_all_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_all_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_alt _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,x) == all'(p,x)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (all p x) <span class="fu">====</span> (all' p x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_all_mapfold ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_all_mapfold ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_mapfold _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,x) == foldr(true,and)(map(p)(x))&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (all p x) <span class="fu">====</span> (foldr <span class="dt">True</span> (<span class="fu">&amp;&amp;&amp;</span>) (map p x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_all_not_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_all_not_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_not_any _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,x) == not(any(not . p, x))&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (all p x) <span class="fu">====</span> (not (any (not <span class="fu">.</span> p) x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_all_const_true ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_all_const_true ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_const_true _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(const(true),x) == true&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \x <span class="ot">-&gt;</span> (all (const <span class="dt">True</span>) x) <span class="fu">====</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_all_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_all_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_cat _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,cat(x,y)) == all(p,x) &amp;&amp; all(p,y)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x y <span class="ot">-&gt;</span> (all p (cat x y)) <span class="fu">====</span> ((all p x) <span class="fu">&amp;&amp;&amp;</span> (all p y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_all_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_all_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_all_rev _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;all(p,rev(x)) == all(p,x)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x y <span class="ot">-&gt;</span> (all p (rev x)) <span class="fu">====</span> (all p x)</code></pre></div>
 <p>Tests for <span class="math inline">\(\any\)</span>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; _test_any_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_any_alt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_alt _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(p,x) == any'(p,x)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (any p x) <span class="fu">====</span> (any' p x)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_any_mapfold ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_any_mapfold ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_mapfold _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(p,x) == foldr(false,or)(map(p)(x))&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (any p x) <span class="fu">====</span> (foldr <span class="dt">False</span> (<span class="fu">|||</span>) (map p x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_any_not_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_any_not_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_not_all _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(p,x) == not(all(not . p, x))&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x <span class="ot">-&gt;</span> (any p x) <span class="fu">====</span> (not (all (not <span class="fu">.</span> p) x))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_any_const_false ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_any_const_false ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_const_false _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(const(false),x) == false&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \x <span class="ot">-&gt;</span> (any (const <span class="dt">False</span>) x) <span class="fu">====</span> <span class="dt">False</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_any_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_any_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_cat _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(p,cat(x,y)) == any(p,x) || any(p,y)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x y <span class="ot">-&gt;</span> (any p (cat x y)) <span class="fu">====</span> ((any p x) <span class="fu">|||</span> (any p y))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_any_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
+<span class="ot">&gt;</span> _<span class="ot">test_any_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">ListOf</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_any_rev _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;any(p,rev(x)) == any(p,x)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \p x y <span class="ot">-&gt;</span> (any p (rev x)) <span class="fu">====</span> (any p x)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for all and any</span>
-<span class="ot">&gt; _test_all_any ::</span>
+<span class="ot">&gt;</span> _test_all_any <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a
 <span class="ot">&gt;</span>   , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t
 <span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
@@ -649,6 +650,7 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <span class="ot">&gt;</span> main_all_any <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   _test_all_any (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span>
 <span class="ot">&gt;</span>   _test_all_any (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></code></pre></div>
+
 
 
 <!-- END BODY -->

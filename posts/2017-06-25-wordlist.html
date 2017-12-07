@@ -24,7 +24,6 @@
     <a href="../index.html">Home</a>
     <a href="../pages/about.html">About</a>
     <a href="../pages/projects.html">Projects</a>
-    <a href="../pages/contact.html">Contact</a>
     <a href="../archive.html">Blog</a>
   </div>
 </div>
@@ -42,7 +41,9 @@ Posted on 2017-06-25 by nbloomf
 <div class="info tags">Tags: <a href="../tag/literate-haskell.html">literate-haskell</a></div>
 
 
-<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-06-25-wordlist.lhs">the source</a> into GHCi and play along.</p>
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/2017-06-25-wordlist.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE BangPatterns         #-}</span>
 <span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE TypeSynonymInstances #-}</span>
@@ -71,7 +72,7 @@ Posted on 2017-06-25 by nbloomf
 <p>To give away the punchline, the final database is available on <a href="https://github.com/nbloomf/wordlist">GitHub</a>. This post is an explanation of the scripts I used to generate that file.</p>
 <p>Clearly editing by hand is a non-starter. Instead we’ll build some small tools to parse our open dictionary data and merge it together the best we can manage. I will focus my attention on the Moby project and Wiktionary for now, since the other resources seem to be focused on kinds of data I’m less interested in for this project.</p>
 <p>I’ll begin with the Moby Project data, since it explicitly contains everything I want – part of speech, pronunciation, and hyphenation (which a spot check indicates is a decent proxy for syllables). The first problem is that the Moby Project data isn’t encoded as UTF-8 text. This is reasonable, since unicode barely existed when the Moby Project was put in the public domain. Wikipedia indicates that it is encoded as “macintosh roman” text, which we can test with</p>
-<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="fu">cat</span> foo.txt <span class="kw">|</span> <span class="ex">iconv</span> -f macintosh -t utf-8 <span class="op">&gt;</span> foo-utf8.txt</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">cat</span> foo.txt <span class="kw">|</span> <span class="kw">iconv</span> -f macintosh -t utf-8 <span class="kw">&gt;</span> foo-utf8.txt</code></pre></div>
 <p>replacing <code>foo</code> with whatever file needs to be converted. (I know this is a <a href="http://porkmail.org/era/unix/award.html">Useless Use of Cat</a> and I don’t care; having data flow in one direction makes more sense to me.) The line endings are also <code>CRLF</code>-style, which can be fixed with <code>sed</code> or (as I did) a text editor. Fixing up the encoding and line endings of the Moby files, I ended up with the following:</p>
 <ol style="list-style-type: decimal">
 <li><code>mwords.txt</code>: 354984 lines.</li>
@@ -807,6 +808,7 @@ Pronunciation	stem: &quot;ay&quot;	pos: &quot;Just Adverb&quot;	new: &quot;aɪ&q
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   exitSuccess</code></pre></div>
 <p>Running <code>main</code> yields a dictionary of 1052625 words. I think this will do. Stay tuned for a write up of the project this is all prologue for. :)</p>
+
 
 <!-- END BODY -->
 </div>

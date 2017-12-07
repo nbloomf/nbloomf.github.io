@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Gradients</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Gradients</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-17 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/Gradients.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>Boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Gradients</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TensorFunctions</span></code></pre></div>
+<p>We’d like to do some calculus on tensor functions.</p>
+<p>First some review on derivatives. If <span class="math inline">\(f : \mathbb{R} \rightarrow \mathbb{R}\)</span> is a function, then the <em>derivative</em> of <span class="math inline">\(f\)</span> at <span class="math inline">\(x \in \mathbb{R}\)</span>, denoted <span class="math inline">\((Df)(x)\)</span>, is given by <span class="math display">\[(Df)(x) = \lim_{h \rightarrow 0} \frac{f(x+h) - f(x)}{h},\]</span> if the limit exists. In this case we say <span class="math inline">\(f\)</span> is <em>differentiable</em> at <span class="math inline">\(x \in \mathbb{R}\)</span>. We can think of <span class="math inline">\(Df\)</span> as a function <span class="math inline">\(\mathbb{R} \rightarrow \mathbb{R}\)</span>. In a concrete sense, <span class="math inline">\((Df)(x)\)</span> is the slope of the best linear approximation to <span class="math inline">\(f\)</span> at <span class="math inline">\(x\)</span>.</p>
+<p>This notion of “best linear approximation” is a useful one, so a natural question is how to generalize it to other kinds of functions. In particular, to functions that take more than one input and produce more than one output; say with signature <span class="math inline">\(\mathbb{R}^m \rightarrow \mathbb{R}^n\)</span>. This is a little more complicated. First off, note that we don’t really need to consider functions with more than one output, since any such function can be constructed out of one-output functions using the universal property of cartesian products. In concrete terms, a function <span class="math inline">\(f : \mathbb{R}^2 \rightarrow \mathbb{R}^2\)</span> like <span class="math display">\[f(x,y) = (2x+y, x-3y)\]</span> is induced by the “coordinate functions” <span class="math inline">\(f_1(x,y) = 2x+y\)</span> and <span class="math inline">\(f_2(x,y) = x-3y\)</span>. So we’re really interested in finding a “derivative” for functions like <span class="math inline">\(f : \mathbb{R}^m \rightarrow \mathbb{R}\)</span>.</p>
+<p>We already know how to take derivatives of functions with one input, so one idea is to shoehorn <span class="math inline">\(f\)</span> into taking only one input, and differentiating that. Say <span class="math inline">\(v \in \mathbb{R}^m\)</span> is the point where we want the derivative, and choose some index <span class="math inline">\(k \in m\)</span>. We now define a map <span class="math inline">\(w_{k,v} : \mathbb{R} \rightarrow \mathbb{R}^m\)</span> piecewise like so: <span class="math display">\[w_{k,v}(x)_i = \left\{ \begin{array}{ll} v_i &amp; \mathrm{if}\ i \neq k \\ x &amp; \mathrm{if}\ i = k. \end{array} \right.\]</span> That is, <span class="math inline">\(w_{k,v}(x)\)</span> is <span class="math inline">\(x\)</span> in the <span class="math inline">\(k\)</span>th coordinate, and agrees with <span class="math inline">\(v\)</span> everywhere else. Now <span class="math inline">\(f \circ w_{k,v}\)</span> is a map <span class="math inline">\(\mathbb{R} \rightarrow \mathbb{R}\)</span>, so we can take its derivative in the usual way. This is called the <span class="math inline">\(k\)</span>th <em>partial derivative</em> of <span class="math inline">\(f\)</span> at <span class="math inline">\(v\)</span>, and sometimes denoted <span class="math inline">\((\frac{\partial}{\partial x_k}f)(v)\)</span>. That is, we define <span class="math display">\[\left(\frac{\partial}{\partial x_k}f\right)(v) = D(f(w_{k,v}(x)))(v).\]</span></p>
+<p>The full “derivative” of a multivariate function, called the <em>gradient</em>, is the tensor of partial derivatives at each coordinate. This tensor is also called the Jacobian.</p>
+<p>More precisely: the gradient of a tensor function <span class="math inline">\(f : \mathbb{R}^A \rightarrow \mathbb{R}^B\)</span> at a point <span class="math inline">\(v \in \mathbb{R}^A\)</span>, denoted <span class="math inline">\((\nabla f)(v)\)</span>, is a tensor in <span class="math inline">\(\mathbb{R}^{B \otimes A}\)</span>, whose entry at <span class="math inline">\(b \&amp; a \in B \otimes A\)</span> is given by <span class="math display">\[(\nabla f)(v)_{b \&amp; a} = D(f(w_{a,v}(x))_b)(v_a).\]</span> We can think of <span class="math inline">\(\nabla f\)</span> as a mapping with signature <span class="math display">\[\mathbb{R}^A \rightarrow \mathbb{R}^{B \otimes A}.\]</span> Like the univariate derivative, the gradient also represents a “best linear approximation” at a point, although “line” now means “<span class="math inline">\(n\)</span>-dimensional hyperplane” and everything is hard to visualize.</p>
+<p>This definition for gradient is scary at first, but take heart: it means that finding the derivative of a hairy multivariate function requires nothing more than (1) computing plain old univariate derivatives and (2) maybe some intricate case analysis on tensor indices. Those things are tedious, but not super difficult. This is good news. :)</p>
+<h2 id="example-linear-functions">Example: “Linear” Functions</h2>
+<p>As an example, let’s compute a concrete gradient. Let <span class="math inline">\(H\)</span> and <span class="math inline">\(K\)</span> be tensor sizes, and say we have tensors <span class="math inline">\(M \in \mathbb{R}^{K \otimes H}\)</span> and <span class="math inline">\(B \in \mathbb{R}^K\)</span>. We can define a tensor function <span class="math inline">\(f : \mathbb{R}^H \rightarrow \mathbb{R}^K\)</span> by <span class="math display">\[f(V) = MV + B,\]</span> where <span class="math inline">\(MV\)</span> denotes “matrix”-“vector” multiplication and <span class="math inline">\(+\)</span> is pointwise addition. Then <span class="math inline">\(\nabla f\)</span> is a function with signature <span class="math inline">\(\mathbb{R}^H \rightarrow \mathbb{R}^{K \otimes H}\)</span>. Given some <span class="math inline">\(V \in \mathbb{R}^H\)</span> and <span class="math inline">\(k \&amp; h \in K \otimes H\)</span>, the <span class="math inline">\(k \&amp; h\)</span> entry of the gradient of <span class="math inline">\(f\)</span> at <span class="math inline">\(V\)</span> is</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)(V)_{k \&amp; h} \\
+ &amp; = &amp; D(f(w_{h,V}(x))_k)(V_h) \\
+ &amp; = &amp; D((Mw_{h,V}(x) + B)_k)(V_h) \\
+ &amp; = &amp; D((Mw_{h,V}(x))_k + B_k)(V_h) \\
+ &amp; = &amp; D\left(\sum_{i \in H} M_{k \&amp; i} w_{h,V}(x)_i + B_k\right)(V_h) \\
+ &amp; = &amp; D\left(M_{k \&amp; h}w_{h,V}(x)_h + \sum_{i \in H, i \neq h} M_{k \&amp; i} w_{h,V}(x)_i + B_k\right)(V_h) \\
+ &amp; = &amp; D\left(M_{k \&amp; h}x + \sum_{i \in H, i \neq h} M_{k \&amp; i}V_i + B_k\right)(V_h) \\
+ &amp; = &amp; D(M_{k \&amp; h}x)(V_h) \\
+ &amp; = &amp; \overline{M_{k \&amp; h}}(V_h) \\
+ &amp; = &amp; M_{k \&amp; h}
+\end{eqnarray*}\]</span></p>
+<p>In the fourth to last line we use the fact that the derivative is additive, and the derivative of a constant function is zero. In the second to last line, we use <span class="math inline">\(\overline{\alpha}\)</span> to denote the constant function returning <span class="math inline">\(\alpha\)</span>.</p>
+<p>That is:</p>
+<div class="result">
+<div class="thm">
+<p>Fix <span class="math inline">\(M \in \mathbb{R}^{K \otimes H}\)</span> and <span class="math inline">\(B \in \mathbb{R}^K\)</span>, and define <span class="math inline">\(f : \mathbb{R}^H \rightarrow \mathbb{R}^K\)</span> by <span class="math inline">\(f(X) = MX + B\)</span>. Then <span class="math display">\[\nabla f : \mathbb{R}^{H} \rightarrow \mathbb{R}^{K \otimes H}\]</span> is given by <span class="math display">\[(\nabla f)(X) = M.\]</span></p>
+</div>
+</div>
+<p>So <span class="math inline">\(\nabla f\)</span> is a constant function, always returning <span class="math inline">\(M\)</span>.</p>
+<p>We can also think of <span class="math inline">\(MX+B\)</span> as a function of <span class="math inline">\(M\)</span>. That is, fix <span class="math inline">\(V \in \mathbb{R}^H\)</span> and <span class="math inline">\(B \in \mathbb{R}^K\)</span>, and define <span class="math inline">\(f : \mathbb{R}^{K \otimes H} \rightarrow \mathbb{R}^K\)</span> by <span class="math display">\[f(M) = MV + B.\]</span> Now <span class="math display">\[\nabla f : \mathbb{R}^{K \otimes H} \rightarrow \mathbb{R}^{K \otimes (K \otimes H)}.\]</span> If <span class="math inline">\(t\&amp;(k\&amp;h) \in K \otimes (K \otimes H)\)</span>, we have two possibilities, depending on whether <span class="math inline">\(t = k\)</span> or not. If <span class="math inline">\(t \neq k\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)(M)_{t\&amp;(k\&amp;h)} \\
+ &amp; = &amp; D(f(w_{k\&amp;h,M}(x))_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D((w_{k\&amp;h,M}(x)V + B)_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D((w_{k\&amp;h,M}(x)V)_t + B_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D\left(\sum_{i \in H} w_{k\&amp;h,M}(x)_{t\&amp;i}V_i + B_t\right)(M_{k\&amp;h}) \\
+ &amp; = &amp; D\left(\sum_{i \in H} M_{t\&amp;i}V_i + B_t\right)(M_{k\&amp;h}) \\
+ &amp; = &amp; \overline{0}(M_{k\&amp;h}) \\
+ &amp; = &amp; 0,
+\end{eqnarray*}\]</span></p>
+<p>and if <span class="math inline">\(t = k\)</span> we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)(M)_{t\&amp;(k\&amp;h)} \\
+ &amp; = &amp; D(f(w_{k\&amp;h,M}(x))_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D((w_{k\&amp;h,M}(x)V + B)_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D((w_{k\&amp;h,M}(x)V)_t + B_t)(M_{k\&amp;h}) \\
+ &amp; = &amp; D\left(\sum_{i \in H} w_{k\&amp;h,M}(x)_{t\&amp;i}V_i + B_t\right)(M_{k\&amp;h}) \\
+ &amp; = &amp; D\left(w_{k\&amp;h,M}(x)_{t\&amp;h}V_h + \sum_{i \in H, i \neq h} w_{k\&amp;h,M}(x)_{t\&amp;i}V_i + B_t\right)(M_{k\&amp;h}) \\
+ &amp; = &amp; D\left(xV_h + \sum_{i \in H, i \neq h} M_{t\&amp;i}V_i + B_t\right)(M_{k\&amp;h}) \\
+ &amp; = &amp; D(xV_h)(M_{k\&amp;h}) \\
+ &amp; = &amp; \overline{V_h}(M_{k\&amp;h}) \\
+ &amp; = &amp; V_h.
+\end{eqnarray*}\]</span></p>
+<p>That is:</p>
+<div class="result">
+<div class="thm">
+<p>Fix <span class="math inline">\(V \in \mathbb{R}^H\)</span> and <span class="math inline">\(B \in \mathbb{R}^K\)</span>, and define <span class="math inline">\(f : \mathbb{R}^{K \otimes H} \rightarrow \mathbb{R}^K\)</span> by <span class="math inline">\(f(M) = MV + B\)</span>. Then <span class="math display">\[\nabla f : \mathbb{R}^{K \otimes H} \rightarrow \mathbb{R}^{K \otimes (K \otimes H)}\]</span> is given by <span class="math display">\[(\nabla f)(M)_{t\&amp;(k\&amp;h)} = \left\{\begin{array}{ll} V_h &amp; \mathrm{if}\ t = k \\ 0 &amp; \mathrm{otherwise}. \end{array}\right.\]</span></p>
+</div>
+</div>
+<p>We can take this one step further. An expression like <span class="math inline">\(MV + B\)</span> can be thought of as a function of <span class="math inline">\(M\)</span>, <span class="math inline">\(V\)</span>, and <span class="math inline">\(B\)</span> simultaneously; define <span class="math display">\[f : \mathbb{R}^{((K \otimes H) \oplus K) \oplus H} \rightarrow \mathbb{R}^k\]</span> by <span class="math display">\[f((M \oplus B) \oplus V) = MV + B.\]</span> Then <span class="math display">\[\nabla(f) : \mathbb{R}^{((K \otimes H) \oplus K) \oplus H} \rightarrow \mathbb{R}^{K \otimes (((K \otimes H) \oplus K) \oplus H)}.\]</span> We can compute this gradient one component at a time by breaking it into cases. Note that the components of <span class="math inline">\(\nabla(f)(X)\)</span> come in three flavors: <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{L}(i \&amp; j)\)</span> where <span class="math inline">\(k,i \in K\)</span> and <span class="math inline">\(j \in H\)</span>, <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{R}(s)\)</span> where <span class="math inline">\(k,s \in K\)</span>, and <span class="math inline">\(k \&amp; \mathsf{R}(t)\)</span> where <span class="math inline">\(k \in K\)</span> and <span class="math inline">\(t \in H\)</span>. We consider each case in turn.</p>
+<p>First, at <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{L}(i \&amp; j)\)</span> when <span class="math inline">\(i \neq k\)</span>:</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)((M \oplus B) \oplus V)_{k \&amp; \mathsf{L}\mathsf{L}(i \&amp; j)} \\
+ &amp; = &amp; D(f(w_{\mathsf{L}\mathsf{L}(i \&amp; j), (M \oplus B) \oplus V}(x))_k)(((M \oplus B) \oplus V)_{\mathsf{L}\mathsf{L}(i \&amp; j)}) \\
+ &amp; = &amp; D(f((w_{i \&amp; j, M}(x) \oplus B) \oplus V)_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D((w_{i \&amp; j, M}(x)V + B)_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D((w_{i \&amp; j, M}(x)V)_k + B_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D\left(\sum_{h \in H} w_{i \&amp; j, M}(x)_{k \&amp; h} V_h\right)(M_{i,j}) \\
+ &amp; = &amp; D\left(\sum_{h \in H} M_{k \&amp; h} V_h\right)(M_{i,j}) \\
+ &amp; = &amp; 0
+\end{eqnarray*}\]</span></p>
+<p>Next, at <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{L}(i \&amp; j)\)</span> when <span class="math inline">\(i = k\)</span>:</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)((M \oplus B) \oplus V)_{k \&amp; \mathsf{L}\mathsf{L}(i \&amp; j)} \\
+ &amp; = &amp; D(f(w_{\mathsf{L}\mathsf{L}(i \&amp; j), (M \oplus B) \oplus V}(x))_k)(((M \oplus B) \oplus V)_{\mathsf{L}\mathsf{L}(i \&amp; j)}) \\
+ &amp; = &amp; D(f((w_{i \&amp; j, M}(x) \oplus B) \oplus V)_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D((w_{i \&amp; j, M}(x)V + B)_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D((w_{i \&amp; j, M}(x)V)_k + B_k)(M_{i \&amp; j}) \\
+ &amp; = &amp; D\left(\sum_{h \in H} w_{i \&amp; j, M}(x)_{k \&amp; h} V_h\right)(M_{i,j}) \\
+ &amp; = &amp; D\left(xV_j + \sum_{h \in H, h \neq j} w_{i \&amp; j, M}(x)_{k \&amp; h} V_h\right)(M_{i,j}) \\
+ &amp; = &amp; D(xV_j)(M_{i,j}) \\
+ &amp; = &amp; \overline{V_j}(M_{i,j}) \\
+ &amp; = &amp; V_j
+\end{eqnarray*}\]</span></p>
+<p>Now at <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{R}(s)\)</span> if <span class="math inline">\(s \neq k\)</span>:</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)((M \oplus B) \oplus V)_{k \&amp; \mathsf{L}\mathsf{R}(s)} \\
+ &amp; = &amp; D(f(w_{\mathsf{L}\mathsf{R}(s), (M \oplus B) \oplus V}(x))_k)(((M \oplus B) \oplus V)_{\mathsf{L}\mathsf{R}(s)}) \\
+ &amp; = &amp; D(f((M \oplus w_{s, B}(x)) \oplus V)_k)(B_s) \\
+ &amp; = &amp; D((MV + w_{s,B}(x))_k)(B_s) \\
+ &amp; = &amp; D((MV)_k + w_{s,B}(x)_k)(B_s) \\
+ &amp; = &amp; D(w_{s,B}(x)_k)(B_s) \\
+ &amp; = &amp; D(B_k)(B_s) \\
+ &amp; = &amp; 0
+\end{eqnarray*}\]</span></p>
+<p>and at <span class="math inline">\(k \&amp; \mathsf{L}\mathsf{R}(s)\)</span> if <span class="math inline">\(s = k\)</span>:</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)((M \oplus B) \oplus V)_{k \&amp; \mathsf{L}\mathsf{R}(s)} \\
+ &amp; = &amp; D(f(w_{\mathsf{L}\mathsf{R}(s), (M \oplus B) \oplus V}(x))_k)(((M \oplus B) \oplus V)_{\mathsf{L}\mathsf{R}(s)}) \\
+ &amp; = &amp; D(f((M \oplus w_{s, B}(x)) \oplus V)_k)(B_s) \\
+ &amp; = &amp; D((MV + w_{s,B}(x))_k)(B_s) \\
+ &amp; = &amp; D((MV)_k + w_{s,B}(x)_k)(B_s) \\
+ &amp; = &amp; D(w_{s,B}(x)_k)(B_s) \\
+ &amp; = &amp; D(x)(B_s) \\
+ &amp; = &amp; \overline{1}(B_s) \\
+ &amp; = &amp; 1
+\end{eqnarray*}\]</span></p>
+<p>Finally, at <span class="math inline">\(k \&amp; \mathsf{R}(t)\)</span>:</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\nabla f)((M \oplus B) \oplus V)_{k \&amp; \mathsf{R}(t)} \\
+ &amp; = &amp; D(f(w_{\mathsf{R}(t), (M \oplus B) \oplus V}(x))_k)(((M \oplus B) \oplus V)_{\mathsf{R}(t)}) \\
+ &amp; = &amp; D(f((M \oplus B) \oplus w_{t,V}(x))_k)(V_t) \\
+ &amp; = &amp; D((Mw_{t,V}(x) + B)_k)(V_t) \\
+ &amp; = &amp; D((Mw_{t,V}(x))_k + B_k)(V_t) \\
+ &amp; = &amp; D((Mw_{t,v}(x))_k)(V_t) \\
+ &amp; = &amp; D\left( \sum_{h \in H} M_{k \&amp; h} w_{t,V}(x)_h \right)(V_t) \\
+ &amp; = &amp; D\left( M_{k,t}x + \sum_{h \in H, h \neq t} M_{k \&amp; h} V_h \right)(V_t) \\
+ &amp; = &amp; D(M_{k,t}x)(V_t) \\
+ &amp; = &amp; \overline{M_{k,t}}(V_t) \\
+ &amp; = &amp; M_{k,t}.
+\end{eqnarray*}\]</span></p>
+<p>That’s a mouthful. :) Anyway, we’ll use this hideous gradient later.</p>
+<p>Another useful gradient is that for a direct sum function. Let <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> be sizes, and let <span class="math inline">\(B \in \mathbb{R}^v\)</span> be fixed. We can define a map <span class="math inline">\(f : \mathbb{R}^u \rightarrow \mathbb{R}^{u \oplus v}\)</span> by <span class="math display">\[f(A) = A \oplus B.\]</span> Now the gradient of <span class="math inline">\(f\)</span> has signature <span class="math display">\[\nabla f : \mathbb{R}^u \rightarrow \mathbb{R}^{(u \oplus v) \otimes u},\]</span> and we can calculate its value at a given index. Note that the indices of <span class="math inline">\((\nabla f)(V)\)</span> come in two flavors: <span class="math inline">\(\mathsf{L}(i) \&amp; k\)</span> where <span class="math inline">\(i, k \in u\)</span>, and <span class="math inline">\(\mathsf{R}(j) \&amp; k\)</span> where <span class="math inline">\(k \in u\)</span> and <span class="math inline">\(j \in v\)</span>.</p>
+<p>At <span class="math inline">\(\mathsf{L}(i) \&amp; k\)</span> with <span class="math inline">\(i \neq k\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(f)(V)_{\mathsf{L}(i) \&amp; k} \\
+ &amp; = &amp; D(f(w_{k,V}(x))_{\mathsf{L}(i)})(V_k) \\
+ &amp; = &amp; D((w_{k,V}(x) \oplus B)_{\mathsf{L}(i)})(V_k) \\
+ &amp; = &amp; D(w_{k,V}(x)_i)(V_k) \\
+ &amp; = &amp; D(V_i)(V_k) \\
+ &amp; = &amp; \overline{0}(V_k) \\
+ &amp; = &amp; 0
+\end{eqnarray*}\]</span></p>
+<p>while at <span class="math inline">\(\mathsf{L}(i) \&amp; k\)</span> with <span class="math inline">\(i = k\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(f)(V)_{\mathsf{L}(i) \&amp; k} \\
+ &amp; = &amp; D(f(w_{k,V}(x))_{\mathsf{L}(i)})(V_k) \\
+ &amp; = &amp; D((w_{k,V}(x) \oplus B)_{\mathsf{L}(i)})(V_k) \\
+ &amp; = &amp; D(w_{k,V}(x)_i)(V_k) \\
+ &amp; = &amp; D(x)(V_k) \\
+ &amp; = &amp; \overline{1}(V_k) \\
+ &amp; = &amp; 1.
+\end{eqnarray*}\]</span></p>
+<p>And at <span class="math inline">\(\mathsf{R}(j) \&amp; k\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(f)(V)_{\mathsf{R}(j) \&amp; k} \\
+ &amp; = &amp; D(f(w_{k,V}(x))_{\mathsf{R}(j)})(V_k) \\
+ &amp; = &amp; D((w_{k,V}(x) \oplus B)_{\mathsf{R}(j)})(V_k) \\
+ &amp; = &amp; D(B_j)(V_k) \\
+ &amp; = &amp; \overline{0}(V_k) \\
+ &amp; = &amp; 0.
+\end{eqnarray*}\]</span></p>
+<p>Putting this together, we have <span class="math display">\[\nabla(- \oplus B)(V) = \mathsf{vcat}(\mathsf{Id}(u), \mathsf{Z}(v \otimes u)).\]</span> Similarly, <span class="math display">\[\nabla(A \oplus -)(V) = \mathsf{vcat}(\mathsf{Z}(v \otimes u), \mathsf{Id}(u)).\]</span></p>
+<h2 id="linearity-and-the-chain-rule">Linearity and the Chain Rule</h2>
+<p>The gradient defined above is computationally useful, but not theoretically enlightening. It turns out that the usual definition of derivative for univariate functions generalizes nicely to general multivariate functions. The search term here is <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_derivative">Fréchet derivative</a>. There is an alternative characterization of derivatives, due to Carathéodory, that makes the proofs of linearity and the chain rule for derivatives really clear, and this characterization also generalizes really nicely. I’m not super interested in retyping those proofs here, so I’ll just link to the paper <a href="http://www.docentes.unal.edu.co/eacostag/docs/FreCarat_Acosta.pdf">Fréchet vs. Carathéodory</a>, by Acosta and Delgado, where I saw them.</p>
+<p>The point is that as a function, gradient is linear in the sense that <span class="math display">\[\nabla(\alpha f + \beta g) = \alpha (\nabla f) + \beta (\nabla g)\]</span> for tensor functions <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> and real numbers <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span> so long as the signatures make sense.</p>
+<p>Moreover we have a multivariate chain rule. If <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> are tensor functions and <span class="math inline">\(g \circ f\)</span> makes sense, then <span class="math display">\[\nabla(g \circ f)(V) = \nabla(g)(f(V)) \cdot \nabla(f)(V),\]</span> where the <span class="math inline">\(\cdot\)</span> denotes tensor contraction (a.k.a. matrix multiplication). The proof of this is complicated and technical if we use Fréchet’s definition of the derivative and is <em>almost</em> trivial if we use Carathéodory’s definition. I’ll refer to the paper for details, but we can at least check that the types make sense. Say <span class="math inline">\(f : \mathbb{R}^A \rightarrow \mathbb{R}^B\)</span> and <span class="math inline">\(g : \mathbb{R}^B \rightarrow \mathbb{R}^C\)</span>. Then <span class="math inline">\(\nabla g : \mathbb{B} \rightarrow \mathbb{R}^{C \otimes B}\)</span> and <span class="math inline">\(\nabla f : \mathbb{R}^A \rightarrow \mathbb{R}^{B \otimes A}\)</span>. If <span class="math inline">\(V \in \mathbb{R}^A\)</span>, then <span class="math inline">\(f(V) \in \mathbb{R}^B\)</span>, and <span class="math inline">\((\nabla g)(f(V)) \in \mathbb{R}^{C \otimes B}\)</span>. We also have <span class="math inline">\(\nabla(f)(V) \in \mathbb{R}^{B \otimes A}\)</span>, and the final contraction gives <span class="math display">\[\nabla(g)(f(V)) \cdot \nabla(f)(V) \in \mathbb{R}^{C \otimes A}\]</span> as expected.</p>
+<p>The chain rule is especially nice. It means that to evaluate the gradient of <span class="math inline">\(g \circ f\)</span> at a tensor <span class="math inline">\(V\)</span>, all we need to know is (1) the value of <span class="math inline">\(f\)</span> at <span class="math inline">\(V\)</span>, (2) the gradient of <span class="math inline">\(g\)</span> at <span class="math inline">\(f(V)\)</span>, and (3) the gradient of <span class="math inline">\(f\)</span> at <span class="math inline">\(V\)</span>. We will use this later in a big way.</p>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

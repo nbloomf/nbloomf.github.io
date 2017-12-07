@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Machine Learning: Prologue</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Machine Learning: Prologue</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-11 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<hr />
+
+<p><em>Machine learning</em> is an awful name for a really simple idea.</p>
+<p>For me, that name conjures up images of impossibly complex intelligent robots, and it gets worse with terms like “feedforward”, “backpropagation”, “neural network”, and “perceptron”. Combined with the seemingly magical applications of ML, for a long time I assumed it was one of those things I just didn’t have the spare energy to understand.</p>
+<p>I finally took the plunge and started getting into the details of machine learning, and it turns out I was wrong. Really wrong! The basic ideas of machine learning are very accessible to anyone with exposure to calculus. Finding good data, tuning your model, and optimizing for GPUs are different questions, and more complicated. But to my eye the apparent magic of ML happens not because the main ideas are complex, but rather because they are effective.</p>
+<p>Anyway, the simple idea behind (supervised) machine learning is roughly this, in my words:</p>
+<ol style="list-style-type: decimal">
+<li>Suppose we have an interesting but <em>unknown</em> function <span class="math inline">\(F\)</span>, and some sample input-output pairs for this function – say some <span class="math inline">\((x,y)\)</span> with <span class="math inline">\(F(x) = y\)</span>.</li>
+<li>Pretend that <span class="math inline">\(F\)</span> can be approximated by a <em>known</em> function <span class="math inline">\(G_\theta\)</span>, which is parameterized by one or more variables <span class="math inline">\(\theta\)</span>.</li>
+<li>Use calculus to find the values of the <span class="math inline">\(\theta\)</span> that makes <span class="math inline">\(G\)</span> agree with our samples as closely as possible. That is, find <span class="math inline">\(\theta\)</span> so that <span class="math inline">\(G_\theta(x) \approx y\)</span>.</li>
+<li>Now use <span class="math inline">\(G_\theta\)</span> to make <em>predictions</em> about the value of <span class="math inline">\(F\)</span> at new inputs, under the assumption that <span class="math inline">\(G_\theta(x) \approx F(x)\)</span> for all <span class="math inline">\(x\)</span>.</li>
+</ol>
+<p>A slightly more sophisticated view might be that <span class="math inline">\(F\)</span> is a function from inputs <span class="math inline">\(x\)</span> to <em>probability distributions</em>, which we observe to get the output <span class="math inline">\(y\)</span>, but that’s not necessary. The thing is, that function <span class="math inline">\(F\)</span> could do something really useful and (seemingly) complicated, like decide whether a photo includes a human face or whether a credit card transaction is fraudulent. And it turns out this strategy for approximating <span class="math inline">\(F\)</span> works really well.</p>
+<p>Ok – so what <span class="math inline">\(G_\theta\)</span> look like? It needs to be complicated enough to be able to approximate <span class="math inline">\(F\)</span>, but also simple enough that we can evaluate it and its gradient efficiently. (Incidentally, this kind of sweet spot between complexity and tractibility shows up a lot.) Typically <span class="math inline">\(G_\theta\)</span> is modeled using a <em>neural network</em>.</p>
+<p>A google image search for “neural network” brings up a bunch of pictures like this:</p>
+<div class="figure">
+<div class="figure">
+<img src="../../raw/gfx/dot/three-layer-neural-network.png" style="width:50.0%" />
+
+</div>
+</div>
+<p>With “weights” and “nodes” in “layers” with “activation functions”. Where’s <span class="math inline">\(G_\theta\)</span> in this picture? Well, essentially, each column of nodes in that graph represents <span class="math inline">\(\mathbb{R}^n\)</span> for some <span class="math inline">\(n\)</span>, and the value at each node is a function of the values of the nodes that point to it. So each “layer” in the network is a function with signature <span class="math inline">\(\mathbb{R}^m \rightarrow \mathbb{R}^n\)</span>. In principle that function could be anything, but in practice it’s one of a few different kinds: matrix multiplication, pointwise logistic, and some others. When one layer feeds into the next, we have function composition. Then using the multivariate chain rule it’s possible to compute the gradient of the network in terms of the gradients of each layer.</p>
+<p>Maybe some people see diagrams like that and are enlightened. But for me, this way of visualizing neural networks is not helpful at all. For one thing it includes a lot of junk; all those arrows don’t convey very much information. And worse, it obfuscates what the network really is – a <em>function</em>. I’m more comfortable visualizing this as a chain like so. <span class="math display">\[\mathbb{R}^3 \stackrel{\psi}{\rightarrow} \mathbb{R}^4 \stackrel{\phi}{\rightarrow} \mathbb{R}^2\]</span> Lo and behold, this is a diagram, representing ordinary function composition, where each arrow takes an extra parameter. Then <span class="math inline">\(G\)</span> is the composite of these arrows, and <span class="math inline">\(\theta\)</span> is the direct sum of the parameters at each layer.</p>
+<p>To see how far this point of view can go, in this series of posts we’ll develop a crude algebra of neural networks. We’d like to think of a network as a function, and to build complex networks out of simpler ones with (almost) ordinary function composition. I’m mainly interested here in understanding the math, so efficiency will take a backseat. But these posts are literate Haskell and include unit tests; to follow along you can clone this directory from the repo on github and load it into GHCi.</p>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Tensors</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Tensors</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-14 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/Tensors.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>First some boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Tensors</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Foldable</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Text.PrettyPrint</span> <span class="kw">as</span> <span class="dt">PP</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span></code></pre></div>
+<p><a href="../../posts/ml/Indices.html">Earlier</a>, we defined two algebras whose elements represent the possible sizes of multidimensional arrays and possible indices into multidimensional arrays, respectively. We did this in such a way that the possible indices into an array with (vector space) dimension <span class="math inline">\(k\)</span> can be mapped to <span class="math inline">\(\{0,1, \ldots, k-1\}\)</span> in a canonical way. With this in hand, we can define a <em>tensor</em> of size <span class="math inline">\(s \in \mathbb{S}\)</span> as a mapping from the indices of <span class="math inline">\(s\)</span> to <span class="math inline">\(\mathbb{R}\)</span>. And thanks to the canonical mapping to integers, we can implement our tensors in memory using a linear array. In math notation, we will identify each <span class="math inline">\(s \in \mathbb{S}\)</span> with its indices, and think of tensors as elements of <span class="math inline">\(\mathbb{R}^s\)</span> (that is, functions from indices to real numbers).</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Tensor</span> r <span class="fu">=</span> <span class="dt">T</span>
+<span class="ot">&gt;</span>   {<span class="ot"> size ::</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> elts ::</span> (<span class="dt">Array</span> <span class="dt">Integer</span> r)
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>We’ll say that two tensors are <em>strictly equal</em>, denoted <code>$==</code>, if they have the same sizes and the same entries at each index.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; ($==) ::</span> (<span class="dt">Eq</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u x) <span class="fu">$==</span> b<span class="fu">@</span>(<span class="dt">T</span> v y) <span class="fu">=</span> (u <span class="fu">==</span> v) <span class="fu">&amp;&amp;</span> (x <span class="fu">==</span> y)</code></pre></div>
+<p>(Strict equality is too, well, <em>strict</em>. We’ll nail down the real equality on tensors in a moment.)</p>
+<p>A tensor “is” a map from indices to <span class="math inline">\(\mathbb{R}\)</span>s. The <code>tensor</code> function lets us build a tensor by supplying this map.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tensor ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Index</span> <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> tensor s f <span class="fu">=</span> <span class="dt">T</span> s (array (<span class="dv">0</span>,(dimOf s)<span class="fu">-</span><span class="dv">1</span>) entries)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     entries <span class="fu">=</span> [(flatten s t, f t) <span class="fu">|</span> t <span class="ot">&lt;-</span> indicesOf s]</code></pre></div>
+<p>To retrieve the entry of a tensor at a given index, we evaluate the tensor as a function. We’ll call this <code>at</code>. So in math notation, we’d write <span class="math inline">\(\mathsf{at}(A,i) = A(i)\)</span> or <span class="math inline">\(A_i\)</span>.</p>
+<p>We’re actually going to define two slightly different versions of <code>at</code>. The first works only on nonzero sizes, but for all entry types. The second treats the size zero vector as if it has entry 0 at every possible index, but of course only makes sense for numeric entry types. (Looking ahead, there’s a good reason for doing this, having to do with dual numbers and automatic differentiation.)</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; at' ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> at' (<span class="dt">T</span> s a) t <span class="fu">=</span> <span class="kw">if</span> t <span class="ot">`isIndexOf`</span> s
+<span class="ot">&gt;</span>   <span class="kw">then</span> a <span class="fu">!</span> (flatten s t)
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="fu">$</span> <span class="st">&quot;at: incompatible index &quot;</span> <span class="fu">++</span> show t
+<span class="ot">&gt;</span>     <span class="fu">++</span> <span class="st">&quot; for size &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; at ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> at a t <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> (size a) <span class="fu">~=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>     <span class="kw">else</span> a <span class="ot">`at'`</span> t</code></pre></div>
+<p>So <code>tensor</code> and <code>at</code> obey the following identities:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">==</span> tensor u (\i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i)
+
+(tensor u f) <span class="ot">`at`</span> i <span class="fu">==</span> f i</code></pre></div>
+<p>We’ll also define some helper functions to make building tensors more convenient. For instance, a <em>uniform</em> tensor has the same value at each index.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; uniform ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> uniform s x <span class="fu">=</span> tensor s (\_ <span class="ot">-&gt;</span> x)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> ones,<span class="ot"> zeros ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> ones s <span class="fu">=</span> uniform s <span class="dv">1</span>
+<span class="ot">&gt;</span> zeros s <span class="fu">=</span> uniform s <span class="dv">0</span></code></pre></div>
+<p>We’ll use the notation <span class="math inline">\(\mathsf{Zero}_s\)</span> to denote the zero tensor of size <span class="math inline">\(s\)</span>.</p>
+<p>We can use <code>at</code> and the canonical isomorphism on index sets to define equality for tensors.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Eq</span> r) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (<span class="dt">Tensor</span> r) <span class="kw">where</span>
+<span class="ot">&gt;</span>   a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">==</span> b<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="kw">if</span> u <span class="fu">~=</span> v
+<span class="ot">&gt;</span>     <span class="kw">then</span> all (\i <span class="ot">-&gt;</span> (a<span class="ot">`at'`</span>i) <span class="fu">==</span> (b<span class="ot">`at'`</span>(mapIndex u v i))) (indicesOf u)
+<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">False</span></code></pre></div>
+<p>We’ll see the reason for this weak equality in a bit. But for now, note that the following two tensors are <em>equal</em>, but not <em>strictly equal</em>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">x <span class="fu">=</span> ones (<span class="dv">2</span><span class="fu">*</span>(<span class="dv">2</span><span class="fu">*</span><span class="dv">2</span>))<span class="ot"> ::</span> <span class="dt">Tensor</span> <span class="dt">Int</span>
+y <span class="fu">=</span> ones ((<span class="dv">2</span><span class="fu">*</span><span class="dv">2</span>)<span class="fu">*</span><span class="dv">2</span>)<span class="ot"> ::</span> <span class="dt">Tensor</span> <span class="dt">Int</span></code></pre></div>
+<p>More generally, strict equality implies equality, but not vice versa.</p>
+<p>The simplest possible (nontrivial) tensor has size 1; we will call these <em>cells</em>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; cell ::</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> cell r <span class="fu">=</span> tensor <span class="dv">1</span> (\_ <span class="ot">-&gt;</span> r)</code></pre></div>
+<p>We’ll also provide a simple way to construct vectors and matrices with natural number size.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; vec ::</span> [r] <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> vec xs <span class="fu">=</span> tensor k (\(<span class="dt">Index</span> i) <span class="ot">-&gt;</span> xs <span class="fu">!!</span> (fromIntegral i))
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     k <span class="fu">=</span> <span class="dt">Size</span> <span class="fu">$</span> fromIntegral <span class="fu">$</span> length xs
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; mat ::</span> [[r]] <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> mat []   <span class="fu">=</span> tensor <span class="dv">0</span> (const undefined)
+<span class="ot">&gt;</span> mat [[]] <span class="fu">=</span> tensor <span class="dv">0</span> (const undefined)
+<span class="ot">&gt;</span> mat xss  <span class="fu">=</span> tensor (r <span class="fu">:*</span> c) <span class="fu">$</span>
+<span class="ot">&gt;</span>   \((<span class="dt">Index</span> i) <span class="fu">:&amp;</span> (<span class="dt">Index</span> j))
+<span class="ot">&gt;</span>     <span class="ot">-&gt;</span> (xss <span class="fu">!!</span> (fromIntegral i)) <span class="fu">!!</span> (fromIntegral j)
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     r <span class="fu">=</span> <span class="dt">Size</span> <span class="fu">$</span> fromIntegral <span class="fu">$</span> length xss
+<span class="ot">&gt;</span>     c <span class="fu">=</span> <span class="dt">Size</span> <span class="fu">$</span> fromIntegral <span class="fu">$</span> length <span class="fu">$</span> head xss</code></pre></div>
+<p>The downside of defining our tensors recursively is that it’s less clear what the index of a given entry is. To help out with this, we’ll define two helpers: <code>indexOf</code>, that defines a tensor of a given size whose entries are equal to their indices, and <code>orderOf</code>, that shows how the entries of a tensor are linearized internally.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; indexOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> <span class="dt">Index</span>
+<span class="ot">&gt;</span> indexOf s <span class="fu">=</span> tensor s id
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; orderOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> <span class="dt">Integer</span>
+<span class="ot">&gt;</span> orderOf s <span class="fu">=</span> tensor s (flatten s)</code></pre></div>
+<p>This works because we can pass <code>tensor</code> <em>any</em> function on indices. For example, here are three different views of a size <span class="math inline">\(3 \otimes 3\)</span> tensor.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> ones (<span class="dv">3</span><span class="fu">*</span><span class="dv">3</span>)
+<span class="dv">1</span> <span class="dv">1</span> <span class="dv">1</span>
+<span class="dv">1</span> <span class="dv">1</span> <span class="dv">1</span>
+<span class="dv">1</span> <span class="dv">1</span> <span class="dv">1</span>
+<span class="fu">$&gt;</span> indexOf (<span class="dv">3</span><span class="fu">*</span><span class="dv">3</span>)
+(<span class="dv">0</span>,<span class="dv">0</span>) (<span class="dv">0</span>,<span class="dv">1</span>) (<span class="dv">0</span>,<span class="dv">2</span>)
+(<span class="dv">1</span>,<span class="dv">0</span>) (<span class="dv">1</span>,<span class="dv">1</span>) (<span class="dv">1</span>,<span class="dv">2</span>)
+(<span class="dv">2</span>,<span class="dv">0</span>) (<span class="dv">2</span>,<span class="dv">1</span>) (<span class="dv">2</span>,<span class="dv">2</span>)
+<span class="fu">$&gt;</span> orderOf (<span class="dv">3</span><span class="fu">*</span><span class="dv">3</span>)
+<span class="dv">0</span> <span class="dv">3</span> <span class="dv">6</span>
+<span class="dv">1</span> <span class="dv">4</span> <span class="dv">7</span>
+<span class="dv">2</span> <span class="dv">5</span> <span class="dv">8</span></code></pre></div>
+<p>Try using <code>indexOf</code> on more complicated sizes.</p>
+<h2 id="tensor-as-a-functor">Tensor as a Functor</h2>
+<p>One of the first questions we ask about type constructors is whether they are naturally members of any interesting classes. It’s not too surprising that <code>Tensor</code> is a functor, where <code>fmap</code> is “pointwise” function application.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Tensor</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   fmap f a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span> tensor u (\i <span class="ot">-&gt;</span> f (a<span class="ot">`at'`</span>i))</code></pre></div>
+<p>To verify the functor laws, we make sure that <code>fmap id == id</code>. (Remember that <code>$==</code> means strict equality.)</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    fmap id a
+<span class="fu">$==</span> fmap id a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> tensor u (\i <span class="ot">-&gt;</span> id (a<span class="ot">`at`</span>i))
+<span class="fu">$==</span> tensor u (\i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i)
+<span class="fu">$==</span> a</code></pre></div>
+<p>and that <code>fmap (g . f) == fmap g . fmap f</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    fmap g (fmap f a)
+<span class="fu">$==</span> fmap g (fmap f a<span class="fu">@</span>(<span class="dt">T</span> u _))
+<span class="fu">$==</span> fmap g (tensor u (\i <span class="ot">-&gt;</span> f (a<span class="ot">`at`</span>i)))
+<span class="fu">$==</span> tensor u (\i <span class="ot">-&gt;</span> g ((tensor u (\j <span class="ot">-&gt;</span> f (a<span class="ot">`at`</span>j))) <span class="ot">`at`</span> i))
+<span class="fu">$==</span> tensor u (\i <span class="ot">-&gt;</span> g (f (a<span class="ot">`at`</span>i)))
+<span class="fu">$==</span> tensor u (\i <span class="ot">-&gt;</span> (g <span class="fu">.</span> f) (a<span class="ot">`at`</span>i))
+<span class="fu">$==</span> fmap (g <span class="fu">.</span> f) a</code></pre></div>
+<p>We can also define a <code>Foldable</code> instance for tensors, using the canonical order on indices.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Foldable</span> <span class="dt">Tensor</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   foldMap f a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="ot">&gt;</span>     <span class="fu">=</span> foldMap f [ a<span class="ot">`at'`</span>i <span class="fu">|</span> i <span class="ot">&lt;-</span> indicesOf u ]</code></pre></div>
+<p>From here we can immediately take the <code>sum</code> and <code>maximum</code> of a tensor. We’ll also define a kind of <code>zip</code> for tensors of equivalent size; I had trouble finding a good general class for zippable functors in the libraries.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; tzip ::</span> <span class="dt">Tensor</span> a <span class="ot">-&gt;</span> <span class="dt">Tensor</span> b <span class="ot">-&gt;</span> <span class="dt">Tensor</span> (a,b)
+<span class="ot">&gt;</span> tzip a<span class="fu">@</span>(<span class="dt">T</span> u _) b<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="kw">if</span> u <span class="fu">~=</span> v
+<span class="ot">&gt;</span>   <span class="kw">then</span> tensor u (\i <span class="ot">-&gt;</span> (a<span class="ot">`at'`</span>i, b<span class="ot">`at'`</span>(mapIndex u v i)))
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="st">&quot;zip: tensors must have equivalent size&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; tzipWith ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> a <span class="ot">-&gt;</span> <span class="dt">Tensor</span> b <span class="ot">-&gt;</span> <span class="dt">Tensor</span> c
+<span class="ot">&gt;</span> tzipWith f a b <span class="fu">=</span> fmap (uncurry f) <span class="fu">$</span> tzip a b</code></pre></div>
+<p><code>Tensor</code> is also applicative. (Making this work is the main motivation for defining equality the way we did.)</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Tensor</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   pure <span class="fu">=</span> cell
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;*&gt;</span> b<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> tensor (u <span class="fu">:*</span> v) <span class="fu">$</span>
+<span class="ot">&gt;</span>     \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (a <span class="ot">`at'`</span> i) (b <span class="ot">`at'`</span> j)</code></pre></div>
+<p>We need to see that this implementation satisfies the applicative laws. First the identity law:</p>
+<p><code>pure id &lt;*&gt; a == a</code> for all <code>a</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    pure id <span class="fu">&lt;*&gt;</span> a
+<span class="fu">$==</span> cell id <span class="fu">&lt;*&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> (tensor <span class="dv">1</span> (const id)) <span class="fu">&lt;*&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> u) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> id (a<span class="ot">`at`</span>j))
+<span class="fu">$==</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> u) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> a<span class="ot">`at`</span>j)
+ <span class="fu">==</span> tensor u (\j <span class="ot">-&gt;</span> a<span class="ot">`at`</span>j)
+<span class="fu">$==</span> a</code></pre></div>
+<p>Next we establish the composition law:</p>
+<p><code>pure (.) &lt;*&gt; a &lt;*&gt; b &lt;*&gt; c == a &lt;*&gt; (b &lt;*&gt; c)</code>.</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    pure (<span class="fu">.</span>) <span class="fu">&lt;*&gt;</span> a <span class="fu">&lt;*&gt;</span> b <span class="fu">&lt;*&gt;</span> c
+<span class="fu">$==</span> tensor <span class="dv">1</span> (const (<span class="fu">.</span>)) <span class="fu">&lt;*&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;*&gt;</span> b <span class="fu">&lt;*&gt;</span> c
+<span class="fu">$==</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> u) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (<span class="fu">.</span>) (a<span class="ot">`at`</span>j))
+      <span class="fu">&lt;*&gt;</span> b<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">&lt;*&gt;</span> c
+<span class="fu">$==</span> tensor ((<span class="dv">1</span> <span class="fu">:*</span> u) <span class="fu">:*</span> v)
+      (\((i <span class="fu">:&amp;</span> j) <span class="fu">:&amp;</span> k) <span class="ot">-&gt;</span> (a<span class="ot">`at`</span>j) <span class="fu">.</span> (b<span class="ot">`at`</span>k))
+      <span class="fu">&lt;*&gt;</span> c<span class="fu">@</span>(<span class="dt">T</span> w _)
+<span class="fu">$==</span> tensor (((<span class="dv">1</span> <span class="fu">:*</span> u) <span class="fu">:*</span> v) <span class="fu">:*</span> w)
+      (\(((i <span class="fu">:&amp;</span> j) <span class="fu">:&amp;</span> k) <span class="fu">:&amp;</span> l) <span class="ot">-&gt;</span>
+        (a<span class="ot">`at`</span>j) <span class="fu">.</span> (b<span class="ot">`at`</span>k) <span class="fu">$</span> (c<span class="ot">`at`</span>l))
+ <span class="fu">==</span> tensor (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))
+      (\(j <span class="fu">:&amp;</span> (k <span class="fu">:&amp;</span> l)) <span class="ot">-&gt;</span> (a<span class="ot">`at`</span>j) <span class="fu">$</span> (b<span class="ot">`at`</span>k) (c<span class="ot">`at`</span>l))
+<span class="fu">$==</span> a <span class="fu">&lt;*&gt;</span> tensor (v <span class="fu">:*</span> w) (\(k <span class="fu">:&amp;</span> l) <span class="ot">-&gt;</span> (b<span class="ot">`at`</span>k) (c<span class="ot">`at`</span>l))
+<span class="fu">$==</span> a <span class="fu">&lt;*&gt;</span> (b <span class="fu">&lt;*&gt;</span> c)</code></pre></div>
+<p>The homomorphism law:</p>
+<p><code>pure f &lt;*&gt; pure x == pure (f x)</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    pure f <span class="fu">&lt;*&gt;</span> pure x
+<span class="fu">$==</span> tensor <span class="dv">1</span> (const f) <span class="fu">&lt;*&gt;</span> tensor <span class="dv">1</span> (const x)
+<span class="fu">$==</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> <span class="dv">1</span>) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> f x)
+ <span class="fu">==</span> tensor <span class="dv">1</span> (\_ <span class="ot">-&gt;</span> f x)
+<span class="fu">$==</span> pure (f x)</code></pre></div>
+<p>And the interchange law:</p>
+<p><code>a &lt;*&gt; pure x = pure ($ x) &lt;*&gt; a</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    a <span class="fu">&lt;*&gt;</span> pure x
+<span class="fu">$==</span> a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;*&gt;</span> tensor <span class="dv">1</span> (const x)
+<span class="fu">$==</span> tensor (u <span class="fu">:*</span> <span class="dv">1</span>) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (a<span class="ot">`at`</span>i) x)
+ <span class="fu">==</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> u) (\(j <span class="fu">:&amp;</span> i) <span class="ot">-&gt;</span> (<span class="fu">$</span> x) (a<span class="ot">`at`</span>i))
+<span class="fu">$==</span> tensor <span class="dv">1</span> (const (<span class="fu">$</span> x)) <span class="fu">&lt;*&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> pure (<span class="fu">$</span> x) <span class="fu">&lt;*&gt;</span> a</code></pre></div>
+<p>It may seem like overkill to go to the trouble of defining equality the way we did just to make <code>Tensor</code> an applicative functor, and it is – we won’t need the applicativeness much. But there’s a payoff: the outer product of tensors is defined in terms of <code>&lt;*&gt;</code>.</p>
+<p>While we’re at it, <code>Tensor</code> is also <code>Alternative</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Alternative</span> <span class="dt">Tensor</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   empty <span class="fu">=</span> tensor <span class="dv">0</span> (\_ <span class="ot">-&gt;</span> undefined)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;|&gt;</span> b<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> tensor (u <span class="fu">:+</span> v) <span class="fu">$</span>
+<span class="ot">&gt;</span>     \<span class="kw">case</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> i <span class="ot">-&gt;</span> a <span class="ot">`at'`</span> i
+<span class="ot">&gt;</span>       <span class="dt">R</span> j <span class="ot">-&gt;</span> b <span class="ot">`at'`</span> j</code></pre></div>
+<p>We should also verify the <code>Alternative</code> laws. First the monoid laws that everyone agrees <code>Alternatives</code> should satisfy. Left identity:</p>
+<p><code>empty &lt;|&gt; a == a</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    empty <span class="fu">&lt;|&gt;</span> a
+<span class="fu">$==</span> tensor <span class="dv">0</span> (const undefined) <span class="fu">&lt;|&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> tensor (<span class="dv">0</span> <span class="fu">:+</span> u) (\<span class="kw">case</span> <span class="dt">L</span> i <span class="ot">-&gt;</span> undefined; <span class="dt">R</span> j <span class="ot">-&gt;</span> a<span class="ot">`at`</span>j)
+ <span class="fu">==</span> tensor u (\j <span class="ot">-&gt;</span> a<span class="ot">`at`</span>j)
+<span class="fu">$==</span> a</code></pre></div>
+<p>Right identity:</p>
+<p><code>a &lt;|&gt; empty == a</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    a <span class="fu">&lt;|&gt;</span> empty
+<span class="fu">$==</span> a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;|&gt;</span> tensor <span class="dv">0</span> (const undefined)
+<span class="fu">$==</span> tensor (u <span class="fu">:+</span> <span class="dv">0</span>) (\<span class="kw">case</span> <span class="dt">L</span> i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i; <span class="dt">R</span> j <span class="ot">-&gt;</span> undefined)
+ <span class="fu">==</span> tensor u (\i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i)
+<span class="fu">$==</span> a</code></pre></div>
+<p>Associativity:</p>
+<p><code>(a &lt;|&gt; b) &lt;|&gt; c == a &lt;|&gt; (b &lt;|&gt; c)</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    (a <span class="fu">&lt;|&gt;</span> b) <span class="fu">&lt;|&gt;</span> c
+<span class="fu">$==</span> (a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;|&gt;</span> b<span class="fu">@</span>(<span class="dt">T</span> v _)) <span class="fu">&lt;|&gt;</span> c
+<span class="fu">$==</span> (tensor (u <span class="fu">:+</span> v)
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i
+        <span class="dt">R</span> j <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+      )) <span class="fu">&lt;|&gt;</span> c<span class="fu">@</span>(<span class="dt">T</span> w _)
+<span class="fu">$==</span> tensor ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w)
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> l <span class="ot">-&gt;</span> <span class="kw">case</span> l <span class="kw">of</span>
+          <span class="dt">L</span> i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i
+          <span class="dt">R</span> j <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+        <span class="dt">R</span> k <span class="ot">-&gt;</span> c<span class="ot">`at`</span>k)
+<span class="fu">$==</span> tensor ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w)
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> (<span class="dt">L</span> i) <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i
+        <span class="dt">L</span> (<span class="dt">R</span> j) <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+        <span class="dt">R</span> k <span class="ot">-&gt;</span> c<span class="ot">`at`</span>k)
+ <span class="fu">==</span> tensor (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i
+        <span class="dt">R</span> (<span class="dt">L</span> j) <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+        <span class="dt">R</span> (<span class="dt">R</span> k) <span class="ot">-&gt;</span> c<span class="ot">`at`</span>k)
+<span class="fu">$==</span> tensor (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> i <span class="ot">-&gt;</span> a<span class="ot">`at`</span>i
+        <span class="dt">R</span> l <span class="ot">-&gt;</span> <span class="kw">case</span> l <span class="kw">of</span>
+          <span class="dt">L</span> j <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+          <span class="dt">R</span> k <span class="ot">-&gt;</span> c<span class="ot">`at`</span>k))
+<span class="fu">$==</span> a <span class="fu">&lt;|&gt;</span> tensor (v <span class="fu">:+</span> w)
+      (\<span class="kw">case</span>
+        <span class="dt">L</span> j <span class="ot">-&gt;</span> b<span class="ot">`at`</span>j
+        <span class="dt">R</span> m <span class="ot">-&gt;</span> c<span class="ot">`at`</span>m)
+<span class="fu">$==</span> a <span class="fu">&lt;|&gt;</span> (b <span class="fu">&lt;|&gt;</span> c)</code></pre></div>
+<p>And some of the laws that only hold for some <code>Applicative</code> instances (including this one). Left zero:</p>
+<p><code>empty &lt;*&gt; a == empty</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    empty <span class="fu">&lt;*&gt;</span> a
+<span class="fu">$==</span> tensor <span class="dv">0</span> (const undefined) <span class="fu">&lt;*&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _)
+<span class="fu">$==</span> tensor (<span class="dv">0</span> <span class="fu">:*</span> u) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> undefined (a <span class="ot">`at`</span> j))
+ <span class="fu">==</span> tensor <span class="dv">0</span> (\_ <span class="ot">-&gt;</span> undefined)
+<span class="fu">$==</span> empty</code></pre></div>
+<p>Right zero:</p>
+<p><code>a &lt;*&gt; empty == empty</code></p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">    a <span class="fu">&lt;*&gt;</span> empty
+<span class="fu">$==</span> a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;*&gt;</span> tensor <span class="dv">0</span> (const undefined)
+<span class="fu">$==</span> tensor (u <span class="fu">:*</span> <span class="dv">0</span>) (\(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (a<span class="ot">`at`</span>i) undefined)
+ <span class="fu">==</span> tensor <span class="dv">0</span> (\_ <span class="ot">-&gt;</span> undefined)
+<span class="fu">$==</span> empty</code></pre></div>
+<h2 id="vector-arithmetic">Vector Arithmetic</h2>
+<p>Tensors are vectors, so they should have the usual vector operations of plus, negate, and scale. Other vector spaces will show up later, so we’ll define these operations with a class.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">Vector</span> t <span class="kw">where</span>
+<span class="ot">&gt;   (.@) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> t r <span class="ot">-&gt;</span> t r
+<span class="ot">&gt;   (.+) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> t r <span class="ot">-&gt;</span> t r <span class="ot">-&gt;</span> t r
+<span class="ot">&gt;   neg ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> t r <span class="ot">-&gt;</span> t r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   (.-) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> t r <span class="ot">-&gt;</span> t r <span class="ot">-&gt;</span> t r
+<span class="ot">&gt;</span>   a <span class="fu">.-</span> b <span class="fu">=</span> a <span class="fu">.+</span> (neg b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   vsum ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> [t r] <span class="ot">-&gt;</span> t r
+<span class="ot">&gt;</span>   vsum <span class="fu">=</span> foldr1 (<span class="fu">.+</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Tensor</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   r <span class="fu">.@</span> a <span class="fu">=</span> fmap (r<span class="fu">*</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   a <span class="fu">.+</span> b
+<span class="ot">&gt;</span>     <span class="fu">|</span> size a <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> b
+<span class="ot">&gt;</span>     <span class="fu">|</span> size b <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> a
+<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise   <span class="fu">=</span> tzipWith (<span class="fu">+</span>) a b
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   neg <span class="fu">=</span> fmap negate</code></pre></div>
+<p>The Hadamard or entrywise product is also handy. While we’re at it, entrywise quotients.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; (.*) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> (<span class="fu">.*</span>) <span class="fu">=</span> tzipWith (<span class="fu">*</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; (./) ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> (<span class="fu">./</span>) <span class="fu">=</span> tzipWith (<span class="fu">/</span>)</code></pre></div>
+<p>Thinking of tensors as vectors, we can dot them together in the usual way.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dot ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> dot a b <span class="fu">=</span> sum <span class="fu">$</span> a <span class="fu">.*</span> b</code></pre></div>
+<p>In math notation, if <span class="math inline">\(A,B \in \mathbb{R}^s\)</span>, <span class="math display">\[\mathsf{dot}(A,B) = \sum_{i \in s} A_i B_i.\]</span> The ‘dot square’ of a tensor will also be handy later.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; normSquared ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> normSquared a <span class="fu">=</span> dot a a</code></pre></div>
+<p>We also have some tensor-centric operations. First is <code>oplus</code>, which constructs a tensor with sum shape.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> oplus, (⊕)<span class="ot"> ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> oplus <span class="fu">=</span> (<span class="fu">&lt;|&gt;</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> (⊕) <span class="fu">=</span> oplus</code></pre></div>
+<p>In a rough and handwavy way, if <span class="math inline">\(a \in \mathbb{R}^u\)</span> and <span class="math inline">\(b \in \mathbb{R}^v\)</span>, then <span class="math display">\[a \oplus b \in \mathbb{R}^u \oplus \mathbb{R}^v \cong \mathbb{R}^{u \oplus v},\]</span> and <span class="math inline">\(\oplus\)</span> is the operator that achieves this isomorphism.</p>
+<p>This function <code>otimes</code> is called the <em>dyadic</em> or <em>outer product</em>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> otimes, (⊗)<span class="ot"> ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> otimes <span class="fu">=</span> liftA2 (<span class="fu">*</span>) <span class="co">-- omg</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> (⊗) <span class="fu">=</span> otimes</code></pre></div>
+<h2 id="structural-arithmetic">Structural Arithmetic</h2>
+<p>Now we’ll define some structural operators on tensors; these are functions that manipulate the size of a tensor, or combine tensors into more complicated ones, or extract subparts. These are mostly based on <code>extract</code>, which defines a new tensor in terms of an existing one.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; extract ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Index</span>) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> extract u f a <span class="fu">=</span> tensor u (\i <span class="ot">-&gt;</span> a <span class="ot">`at'`</span> (f i))</code></pre></div>
+<p>For example, we can extract “terms” from a summand tensor using <code>extract</code> like so.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> termL,<span class="ot"> termR ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> termL a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:+</span> _) _) <span class="fu">=</span> extract u <span class="dt">L</span> a
+<span class="ot">&gt;</span> termL _ <span class="fu">=</span> error <span class="st">&quot;termL: argument must have sum shape&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> termR a<span class="fu">@</span>(<span class="dt">T</span> (_ <span class="fu">:+</span> v) _) <span class="fu">=</span> extract v <span class="dt">R</span> a
+<span class="ot">&gt;</span> termR _ <span class="fu">=</span> error <span class="st">&quot;termR: argument must have sum shape&quot;</span></code></pre></div>
+<p>In math notation we have <span class="math inline">\(\mathsf{termL} : \mathbb{R}^{s \oplus t} \rightarrow \mathbb{R}^s\)</span> given by <span class="math inline">\(\mathsf{termL}(A)_i = A_{\mathsf{l}(i)}\)</span>, and <span class="math inline">\(\mathsf{termR}\)</span> is similar.</p>
+<p>Next we have projection operators, which take a tensor in <span class="math inline">\(\mathbb{R}^{s \otimes t}\)</span> and fix one of the index components. In the usual matrix language, projection would extract one row or one column of a matrix. There are two of these, with the following signature.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> projR,<span class="ot"> projL ::</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> projR i a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span> <span class="kw">if</span> (i <span class="ot">`isIndexOf`</span> u)
+<span class="ot">&gt;</span>   <span class="kw">then</span> extract v (i <span class="fu">:&amp;</span>) a
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="st">&quot;projR: index and size not compatible.&quot;</span>
+<span class="ot">&gt;</span> projR _ _ <span class="fu">=</span> error <span class="st">&quot;projR: tensor argument must have product shape&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> projL j a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span> <span class="kw">if</span> (j <span class="ot">`isIndexOf`</span> v)
+<span class="ot">&gt;</span>   <span class="kw">then</span> extract u (<span class="fu">:&amp;</span> j) a
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="st">&quot;projL: index and size not compatible.&quot;</span>
+<span class="ot">&gt;</span> projL _ _ <span class="fu">=</span> error <span class="st">&quot;projL: tensor argument must have product shape&quot;</span></code></pre></div>
+<p>In math notation we have <span class="math inline">\(\mathsf{projR} : s \rightarrow \mathbb{R}^{t \otimes s} \rightarrow \mathbb{R}^t\)</span> given by <span class="math inline">\(\mathsf{projL}(i,A)_j = A_{i \&amp; j}\)</span>, and <span class="math inline">\(\mathsf{projL}\)</span> is similar.</p>
+<p>Now <span class="math inline">\(\mathbb{R}^{u \otimes v}\)</span> and <span class="math inline">\(\mathbb{R}^{v \otimes u}\)</span> are not equal, but they are canonically isomorphic; likewise <span class="math inline">\(\mathbb{R}^{u \oplus v}\)</span> and <span class="math inline">\(\mathbb{R}^{v \oplus u}\)</span>. <code>comm</code> achieves this.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; comm ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> comm a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract (v <span class="fu">:*</span> u) f a
+<span class="ot">&gt;</span>   <span class="kw">where</span>
+<span class="ot">&gt;</span>     f (j <span class="fu">:&amp;</span> i) <span class="fu">=</span> (i <span class="fu">:&amp;</span> j)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> comm a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:+</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract (v <span class="fu">:+</span> u) (opIndex <span class="dt">PlusComm</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> comm _ <span class="fu">=</span> error <span class="st">&quot;comm: wrong shape&quot;</span></code></pre></div>
+<p>Similarly, <span class="math inline">\(\mathbb{R}^{u \otimes (v \otimes w)}\)</span> and <span class="math inline">\(\mathbb{R}^{(u \otimes v) \otimes w}\)</span> are canonically isomorphic, and likewise for <span class="math inline">\(\oplus\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> assocL,<span class="ot"> assocR ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocL a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> (v <span class="fu">:*</span> w)) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) (opIndex <span class="dt">TimesAssocR</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocL a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:+</span> (v <span class="fu">:+</span> w)) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) (opIndex <span class="dt">PlusAssocR</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocL _ <span class="fu">=</span> error <span class="st">&quot;assocL: argument has wrong shape&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocR a<span class="fu">@</span>(<span class="dt">T</span> ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract (u <span class="fu">:*</span> (v <span class="fu">:*</span> w)) (opIndex <span class="dt">TimesAssocL</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocR a<span class="fu">@</span>(<span class="dt">T</span> ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   extract (u <span class="fu">:+</span> (v <span class="fu">:+</span> w)) (opIndex <span class="dt">PlusAssocL</span>) a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> assocR _ <span class="fu">=</span> error <span class="st">&quot;assocR: argument has wrong shape&quot;</span></code></pre></div>
+<p>We also have <span class="math display">\[\mathbb{R}^{(a \otimes b) \oplus (a \otimes c)} \cong \mathbb{R}^{a \otimes b} \times \mathbb{R}^{a \otimes c}.\]</span> We’ll define a couple of operators to canonically “undistribute” <span class="math inline">\(\otimes\)</span> over <span class="math inline">\(\oplus\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> vcat,<span class="ot"> (~-~) ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> vcat a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> h) _) b<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> k) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> h <span class="fu">==</span> k
+<span class="ot">&gt;</span>     <span class="kw">then</span> extract ((u <span class="fu">:+</span> v) <span class="fu">:*</span> k) (opIndex <span class="dt">DistR</span>) (oplus a b)
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;vcat: size mismatch&quot;</span>
+<span class="ot">&gt;</span> vcat a b <span class="fu">=</span> error <span class="fu">$</span> <span class="st">&quot;vcat: sizes with wrong shape: &quot;</span> <span class="fu">++</span> show (size a)
+<span class="ot">&gt;</span>   <span class="fu">++</span> <span class="st">&quot; and &quot;</span> <span class="fu">++</span> show (size b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> (<span class="fu">~-~</span>) <span class="fu">=</span> vcat
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> hcat,<span class="ot"> (~|~) ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> hcat a<span class="fu">@</span>(<span class="dt">T</span> (h <span class="fu">:*</span> u) _) b<span class="fu">@</span>(<span class="dt">T</span> (k <span class="fu">:*</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> h <span class="fu">==</span> k
+<span class="ot">&gt;</span>     <span class="kw">then</span> extract (k <span class="fu">:*</span> (u <span class="fu">:+</span> v)) (opIndex <span class="dt">DistL</span>) (oplus a b)
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;hcat: size mismatch&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> (<span class="fu">~|~</span>) <span class="fu">=</span> hcat</code></pre></div>
+<p>We give <code>vcat</code> and <code>hcat</code> symbolic synonyms, meant to evoke what they do on matrices. <code>vcat</code> concatenates matrices vertically, and <code>hcat</code> concatenates them horizontally.</p>
+<h2 id="matrix-operations">Matrix Operations</h2>
+<p>Now for a couple of matrix-specific operations. First the identity matrix.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; idMat ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> idMat n <span class="fu">=</span> tensor (n <span class="fu">:*</span> n) (\ (i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> kronecker i j)</code></pre></div>
+<p>where <code>kronecker</code> representes the Kronecker delta function <span class="math display">\[\delta_{i,j} = \left\{ \begin{array}{ll} 1 &amp; \mathrm{if}\ i = j \\ 0 &amp; \mathrm{otherwise}. \end{array} \right.\]</span></p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; kronecker ::</span> (<span class="dt">Eq</span> a, <span class="dt">Num</span> r) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> kronecker x y <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">==</span> y <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span></code></pre></div>
+<p>And we can “diagonalize” any tensor.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; diag ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> diag a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span> tensor (u <span class="fu">:*</span> u) <span class="fu">$</span>
+<span class="ot">&gt;</span>   \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (kronecker i j) <span class="fu">*</span> (a<span class="ot">`at`</span>i)</code></pre></div>
+<p>The tensor generalization of matrix multiplication is sometimes called <em>contraction</em>. We’ll mostly be interested in plain matrix multiplication. We’ll define it as a matrix-matrix operation, a matrix-vector operation, and a vector-matrix operation using slightly different symbols. Surely this won’t come back to haunt us.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; (***) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> (m <span class="fu">:*</span> n) _) <span class="fu">***</span> b<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> u <span class="fu">==</span> n
+<span class="ot">&gt;</span>     <span class="kw">then</span> tensor (m<span class="fu">*</span>v)
+<span class="ot">&gt;</span>       (\ (i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> sum
+<span class="ot">&gt;</span>         [ (a<span class="ot">`at`</span>(i <span class="fu">:&amp;</span> k))<span class="fu">*</span>(b<span class="ot">`at`</span>(k <span class="fu">:&amp;</span> j)) <span class="fu">|</span> k <span class="ot">&lt;-</span> indicesOf n ])
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;(***): inner sizes must match.&quot;</span>
+<span class="ot">&gt;</span> _ <span class="fu">***</span> _ <span class="fu">=</span> error <span class="st">&quot;(***): expected mat/mat.&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; (**&gt;) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> (m <span class="fu">:*</span> n) _) <span class="fu">**&gt;</span> b<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> u <span class="fu">==</span> n
+<span class="ot">&gt;</span>     <span class="kw">then</span> tensor m
+<span class="ot">&gt;</span>       (\i <span class="ot">-&gt;</span> sum
+<span class="ot">&gt;</span>         [ (a<span class="ot">`at`</span>(i <span class="fu">:&amp;</span> k))<span class="fu">*</span>(b<span class="ot">`at`</span>k) <span class="fu">|</span> k <span class="ot">&lt;-</span> indicesOf n ])
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;(**&gt;): inner sizes must match.&quot;</span>
+<span class="ot">&gt;</span> _ <span class="fu">**&gt;</span> _ <span class="fu">=</span> error <span class="st">&quot;(**&gt;): expected mat/vec.&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; (&lt;**) ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">&lt;**</span> b<span class="fu">@</span>(<span class="dt">T</span> (n <span class="fu">:*</span> m) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> u <span class="fu">==</span> n
+<span class="ot">&gt;</span>     <span class="kw">then</span> tensor m
+<span class="ot">&gt;</span>       (\i <span class="ot">-&gt;</span> sum
+<span class="ot">&gt;</span>         [ (a<span class="ot">`at`</span>k)<span class="fu">*</span>(b<span class="ot">`at`</span>(k <span class="fu">:&amp;</span> i)) <span class="fu">|</span> k <span class="ot">&lt;-</span> indicesOf n ])
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;(&lt;**): inner sizes must match.&quot;</span>
+<span class="ot">&gt;</span> _ <span class="fu">&lt;**</span> _ <span class="fu">=</span> error <span class="st">&quot;(&lt;**): expected vec/mat.&quot;</span></code></pre></div>
+<h2 id="pretty-printing">Pretty Printing</h2>
+<p>We’ll end this post with the <code>Show</code> instance for tensors; we’ll build it on top of the pretty printing <a href="https://hackage.haskell.org/package/pretty-1.1.3.5">combinator library</a> by John Hughes and Simon Peyton Jones. (The original <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.38.8777">paper</a> on that library is a nice case study in DSL design.)</p>
+<p>First we convert a tensor of strings to a <code>Doc</code> (in the pretty printer parlance), doing more or less the obvious thing.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toDoc ::</span> <span class="dt">Tensor</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span>
+<span class="ot">&gt;</span> toDoc a<span class="fu">@</span>(<span class="dt">T</span> s _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">case</span> s <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Size</span> k <span class="ot">-&gt;</span> PP.hsep <span class="fu">$</span> map PP.text [ a<span class="ot">`at'`</span>i <span class="fu">|</span> i <span class="ot">&lt;-</span> indicesOf s ]
+<span class="ot">&gt;</span>     u <span class="fu">:+</span> v <span class="ot">-&gt;</span> (toDoc <span class="fu">$</span> termL a) <span class="fu">PP.$$</span> (toDoc <span class="fu">$</span> termR a)
+<span class="ot">&gt;</span>     u <span class="fu">:*</span> v <span class="ot">-&gt;</span> PP.vcat [
+<span class="ot">&gt;</span>                 PP.hsep [
+<span class="ot">&gt;</span>                   PP.text <span class="fu">$</span> a <span class="ot">`at'`</span> (i <span class="fu">:&amp;</span> j)
+<span class="ot">&gt;</span>                 <span class="fu">|</span> j <span class="ot">&lt;-</span> indicesOf v ]
+<span class="ot">&gt;</span>               <span class="fu">|</span> i <span class="ot">&lt;-</span> indicesOf u ]</code></pre></div>
+<p>To actually show the tensor, we show the entries (pointwise) and pad to the maximum entry width (so the cells line up), then show the corresponding <code>Doc</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> r) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">Tensor</span> r) <span class="kw">where</span>
+<span class="ot">&gt;</span>   show a <span class="fu">=</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       cellWidth <span class="fu">=</span> maximum <span class="fu">$</span> fmap (length <span class="fu">.</span> show) a
+<span class="ot">&gt;</span>       m <span class="fu">=</span> fmap (padLeft cellWidth <span class="fu">.</span> show) a
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       PP.render <span class="fu">$</span> toDoc m
+<span class="ot">&gt;</span>     <span class="kw">where</span>
+<span class="ot">&gt;</span>       <span class="co">-- left-pad a string with spaces to a given length</span>
+<span class="ot">&gt;       padLeft ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
+<span class="ot">&gt;</span>       padLeft k <span class="fu">=</span> reverse <span class="fu">.</span> take k <span class="fu">.</span> (<span class="fu">++</span> (repeat <span class="ch">' '</span>)) <span class="fu">.</span> reverse</code></pre></div>
+<p>This method for displaying tensors is not perfect, but it has the advantage of being simple and doing mostly the right thing in the most common cases of <span class="math inline">\(k\)</span> and <span class="math inline">\(m \otimes n\)</span> tensors (i.e. vectors and matrices). Apropos of nothing: further support for this method is that tensors with shape <span class="math inline">\(k_1 \oplus k_2 \oplus \cdots \oplus k_n\)</span> look like <a href="https://en.wikipedia.org/wiki/Young_tableau">Young tableaux</a>.</p>
+<h2 id="tests">Tests</h2>
+<p>In future posts we’ll be writing tests involving tensors, so I’ll put an <code>Arbitrary</code> instance here.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> r) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">Tensor</span> r) <span class="kw">where</span>
+<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> arbitrary <span class="fu">&gt;&gt;=</span> (arbTensorOf undefined)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   shrink a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span> <span class="kw">case</span> u <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">Size</span> k <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>       <span class="kw">if</span> k <span class="fu">&lt;=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>         <span class="kw">then</span> []
+<span class="ot">&gt;</span>         <span class="kw">else</span>
+<span class="ot">&gt;</span>           [ tensor (<span class="dt">Size</span> <span class="fu">$</span> k<span class="fu">-</span><span class="dv">1</span>) (\i <span class="ot">-&gt;</span> a<span class="ot">`at'`</span>i)
+<span class="ot">&gt;</span>           , uniform (<span class="dt">Size</span> <span class="fu">$</span> k<span class="fu">-</span><span class="dv">1</span>) (a<span class="ot">`at'`</span><span class="dv">0</span>)
+<span class="ot">&gt;</span>           ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     _ <span class="fu">:+</span> _ <span class="ot">-&gt;</span> concat
+<span class="ot">&gt;</span>       [ [ h <span class="fu">&lt;|&gt;</span> k <span class="fu">|</span> h <span class="ot">&lt;-</span> shrink <span class="fu">$</span> termL a, k <span class="ot">&lt;-</span> shrink <span class="fu">$</span> termR a ]
+<span class="ot">&gt;</span>       , [ termL a, termR a ]
+<span class="ot">&gt;</span>       ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     _ <span class="ot">-&gt;</span> []
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; arbTensorOf ::</span> (<span class="dt">Arbitrary</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> (<span class="dt">Tensor</span> r)
+<span class="ot">&gt;</span> arbTensorOf _ s <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   as <span class="ot">&lt;-</span> vectorOf (fromIntegral <span class="fu">$</span> dimOf s) arbitrary
+<span class="ot">&gt;</span>   return <span class="fu">$</span> tensor s (\i <span class="ot">-&gt;</span> as <span class="fu">!!</span> (fromIntegral <span class="fu">$</span> flatten s i))</code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

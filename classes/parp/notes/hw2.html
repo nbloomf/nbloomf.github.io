@@ -24,7 +24,6 @@
     <a href="../../../index.html">Home</a>
     <a href="../../../pages/about.html">About</a>
     <a href="../../../pages/projects.html">Projects</a>
-    <a href="../../../pages/contact.html">Contact</a>
     <a href="../../../archive.html">Blog</a>
   </div>
 </div>
@@ -52,20 +51,20 @@ fclose( fout );``</code></pre></div></li>
 <p>What this script does is (1) download all those <code>fout-</code> text files with <code>scp</code>, (2) convert each file to a png with <code>gnuplot</code>, and (3) stitch the png files into an mp4 with <code>ffmpeg</code>. (Did I mention you need to have <code>gnuplot</code> and <code>ffmpeg</code>? You do.) Note that <code>ffmpeg</code> will automatically put the frames in the right order, since we padded our filenames to the same length. Woo!</p>
 <div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#!/bin/bash</span>
 
-<span class="fu">scp</span> -r USERNAME@stampede.tacc.utexas.edu:/PATH/out .
+<span class="kw">scp</span> -r USERNAME@stampede.tacc.utexas.edu:/PATH/out .
 
 <span class="kw">(</span>
-<span class="bu">cd</span> out
+<span class="kw">cd</span> out
 
-<span class="kw">for</span> <span class="ex">FILE</span> in *.txt<span class="kw">;</span> <span class="kw">do</span>
-  <span class="ex">gnuplot</span> &lt;&lt;- EOF
-    se<span class="op">t</span> <span class="ex">terminal</span> png
-    set output &quot;<span class="va">${FILE}</span>.png&quot;
-    p<span class="op">l</span><span class="ex">ot</span> <span class="st">&quot;</span><span class="va">${FILE}</span><span class="st">&quot;</span> notitle pointtype 6
+<span class="kw">for</span> <span class="kw">FILE</span> in *.txt<span class="kw">;</span> <span class="kw">do</span>
+  <span class="kw">gnuplot</span> &lt;&lt;- EOF
+    se<span class="kw">t</span> <span class="kw">terminal</span> png
+    set output &quot;<span class="ot">${FILE}</span>.png&quot;
+    p<span class="kw">lot</span> <span class="st">&quot;</span><span class="ot">${FILE}</span><span class="st">&quot;</span> notitle pointtype 6
 EOF
 done
 
-ffmpeg -r 60 -f image2 -s 1080x960 -i 'fou<span class="op">t</span><span class="ex">-%05d.txt.png</span><span class="st">' -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4</span>
+ffmpeg -r 60 -f image2 -s 1080x960 -i 'fou<span class="kw">t-%05d.txt.png</span><span class="st">' -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4</span>
 
 <span class="st">rm *.png</span>
 <span class="st">)</span></code></pre></div></li>

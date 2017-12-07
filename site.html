@@ -24,7 +24,6 @@
     <a href="./index.html">Home</a>
     <a href="./pages/about.html">About</a>
     <a href="./pages/projects.html">Projects</a>
-    <a href="./pages/contact.html">Contact</a>
     <a href="./archive.html">Blog</a>
   </div>
 </div>
@@ -56,13 +55,13 @@
 <h2 id="the-main-function">The Main Function</h2>
 <p>Hakyll is a declarative DSL for building static websites. A typical Hakyll program is of the following form:</p>
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> hakyll rules
+main <span class="fu">=</span> hakyllWith rules
 
 <span class="ot">rules ::</span> <span class="dt">Rules</span> ()
 rules <span class="fu">=</span> undefined</code></pre></div>
 <p>where <code>Rules</code> is a special monad for turning source files into web pages. Come to think of it, Hakyll feels a lot like <code>make</code>. The examples in the Hakyll docs typically define an element of <code>Rules</code> using one giant <code>do</code> block, maybe with smaller <code>do</code> blocks nested in it. I’m not a big fan of this style. Personally I prefer smaller functions with good names and explicit type signatures, so instead I will break up the rules into separate functions. Here’s my <code>main</code>:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> hakyll <span class="fu">$</span> <span class="kw">do</span>
+<span class="ot">&gt;</span> main <span class="fu">=</span> hakyllWith config <span class="fu">$</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   matchRawFiles
 <span class="ot">&gt;</span>   matchCssFiles
 <span class="ot">&gt;</span>   matchLoneFiles
@@ -75,7 +74,13 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>   tags <span class="ot">&lt;-</span> buildTags <span class="st">&quot;posts/**&quot;</span> (fromCapture <span class="st">&quot;tag/*.html&quot;</span>)
 <span class="ot">&gt;</span>   matchPosts tags
-<span class="ot">&gt;</span>   createTagPages tags</code></pre></div>
+<span class="ot">&gt;</span>   createTagPages tags
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; config ::</span> <span class="dt">Configuration</span>
+<span class="ot">&gt;</span> config <span class="fu">=</span> defaultConfiguration
+<span class="ot">&gt;</span>   { previewPort <span class="fu">=</span> <span class="dv">31337</span>
+<span class="ot">&gt;</span>   }</code></pre></div>
 <h2 id="the-rules">The Rules</h2>
 <p>The <code>matchRawFiles</code> rule handles files that should be copied verbatim, with no extra processing.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; matchRawFiles ::</span> <span class="dt">Rules</span> ()
@@ -125,6 +130,8 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span>     compile <span class="fu">$</span> pandocMathCompiler
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyShortcodes allServices
+<span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
+<span class="ot">&gt;</span>             <span class="st">&quot;templates/hr.html&quot;</span> ctx
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> applyTagTemplates ctx
 <span class="ot">&gt;</span>             [ (<span class="st">&quot;literate-haskell&quot;</span>,
 <span class="ot">&gt;</span>                 <span class="st">&quot;templates/literate-haskell.html&quot;</span>)
@@ -134,6 +141,8 @@ rules <span class="fu">=</span> undefined</code></pre></div>
 <span class="ot">&gt;</span>                 <span class="st">&quot;templates/amd.html&quot;</span>)
 <span class="ot">&gt;</span>             , (<span class="st">&quot;project-euler&quot;</span>,
 <span class="ot">&gt;</span>                 <span class="st">&quot;templates/project-euler-solutions.html&quot;</span>)
+<span class="ot">&gt;</span>             , (<span class="st">&quot;ml&quot;</span>,
+<span class="ot">&gt;</span>                 <span class="st">&quot;templates/ml.html&quot;</span>)
 <span class="ot">&gt;</span>             ]
 <span class="ot">&gt;</span>       <span class="fu">&gt;&gt;=</span> loadAndApplyTemplate
 <span class="ot">&gt;</span>             <span class="st">&quot;templates/post.html&quot;</span> ctx

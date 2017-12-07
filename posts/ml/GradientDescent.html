@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Optimization by Gradient Descent</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Optimization by Gradient Descent</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-19 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/GradientDescent.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>Boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">GradientDescent</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TensorFunctions</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Gradients</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GradientChecking</span></code></pre></div>
+<p>Now that we know how to find the gradient of a function, we can use it to optimize the function using <em>gradient descent</em>. The intuition here is that the gradient of a function at a point gives the direction of steepest ascent there, so the negative of the gradient gives the direction of steepest descent – the direction an <span class="math inline">\(n\)</span>-dimensional marble would roll if released from rest.</p>
+<p>The basic method goes something like this: we start with an initial guess <span class="math inline">\(v_0\)</span>, then update the guess using the recurrence <span class="math display">\[v_{n+1} = v_n - \alpha \nabla(f)(v_n),\]</span> where <span class="math inline">\(f\)</span> is the function to be minimized and <span class="math inline">\(\alpha\)</span> is some number (not necessarily constant) called the <em>learning rate</em>. At some point we decide to stop, and the last update <span class="math inline">\(v_n\)</span> should be at least a local minimum of <span class="math inline">\(f\)</span>.</p>
+<p>This paragraph is simple enough, but a lot of questions remain. How is <span class="math inline">\(\alpha\)</span> determined, and should it change between iterations? How do we decide when to stop? These are questions without unique answers. But we can fill in the structure of the gradient descent algorithm without knowing them.</p>
+<p>Say we have some type <code>st</code> representing the “state” of a gradient descent process at a given time. Say further that we have some function <code>st -&gt; r</code> that gives the learning rate, and a function <code>Tensor r -&gt; st -&gt; Maybe st</code> that decides to stop the iteration (by returning <code>Nothing</code>) or to keep going (by returning a new state). Then gradient descent looks something like this.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> gradDesc
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Function</span> r                   <span class="co">-- gradient</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> st                           <span class="co">-- initial state</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r                     <span class="co">-- initial guess</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> st <span class="ot">-&gt;</span> <span class="dt">Maybe</span> st) <span class="co">-- update state or stop</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (st <span class="ot">-&gt;</span> r)                    <span class="co">-- learning rate</span>
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> gradDesc g st0 x0 update rate <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     next st v <span class="fu">=</span> v <span class="fu">.-</span> ((rate st) <span class="fu">.@</span> (g <span class="fu">$@</span> v))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     step st x <span class="fu">=</span>
+<span class="ot">&gt;</span>       <span class="kw">let</span> y <span class="fu">=</span> next st x <span class="kw">in</span>
+<span class="ot">&gt;</span>       <span class="kw">case</span> update y st <span class="kw">of</span>
+<span class="ot">&gt;</span>         <span class="dt">Nothing</span> <span class="ot">-&gt;</span> y
+<span class="ot">&gt;</span>         <span class="dt">Just</span> w  <span class="ot">-&gt;</span> step w y
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     step st0 x0</code></pre></div>
+<p>To turn this into an actual gradient descent algorithm, we need some specific functions we can plug in for the update and learning rate. For instance, it’s reasonable to use a fixed learning rate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; fixedLearningRate ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> fixedLearningRate alpha _ <span class="fu">=</span> alpha</code></pre></div>
+<p>And one particularly simple (if not super useful) state might be to keep track of the number of steps taken so far, and stop when that number reaches a limit.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> fixedNumSteps
+<span class="ot">&gt;   ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
+<span class="ot">&gt;</span> fixedNumSteps m _ k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">&gt;=</span> m
+<span class="ot">&gt;</span>   <span class="kw">then</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>   <span class="kw">else</span> <span class="dt">Just</span> (k<span class="fu">+</span><span class="dv">1</span>)</code></pre></div>
+<p>Now if <code>f</code> is a tensor function and <code>v</code> a tensor,</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">gradDesc f <span class="dv">0</span> v (fixedNumSteps <span class="dv">100</span>) (fixedLearningRate <span class="fl">0.5</span>)</code></pre></div>
+<p>Carries out gradient descent for 100 steps with learning rate 0.5. A more practical update function keeps track of the last iteration and stops when the difference between it and the current value is less than some threshold.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> maxAbsDiffLessThan
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Tensor</span> r)
+<span class="ot">&gt;</span> maxAbsDiffLessThan eps x y <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     del <span class="fu">=</span> distanceBy <span class="dt">MaxAbsDiff</span> x y
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> del <span class="fu">&lt;</span> eps
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">Nothing</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="dt">Just</span> x</code></pre></div>
+<p>As a really simple example, fix a vector <span class="math inline">\(v \in \mathbb{R}^s\)</span> and consider the function <span class="math inline">\(f : \mathbb{R}^s \rightarrow \mathbb{R}^s\)</span> given by <span class="math display">\[f(x)_i = (x_i - v_i)^2.\]</span> This is quadratic in each coordinate with minimum at <span class="math inline">\(x_i = v_i\)</span>. Moreover this function is convex, so that minimum is unique, and gradient descent should find it regardless of the initial guess.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_grad_desc_line
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_grad_desc_line r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;grad desc line&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>       forAll2 (arbTensorOf r u) (arbTensorOf r u) <span class="fu">$</span>
+<span class="ot">&gt;</span>         \v x0 <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             g <span class="fu">=</span> (idF u) <span class="fu">.-</span> (constF u v)
+<span class="ot">&gt;</span>             w <span class="fu">=</span> gradDesc g x0 x0 
+<span class="ot">&gt;</span>                   (maxAbsDiffLessThan (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">8</span>)))
+<span class="ot">&gt;</span>                   (fixedLearningRate <span class="fl">0.7</span>)
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             (distanceBy <span class="dt">MaxAbsDiff</span> v w) <span class="fu">&lt;</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))</code></pre></div>
+<h2 id="tests">Tests</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_gradient_descent
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_gradient_descent r num size <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Gradient Descent&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
+<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_grad_desc_line r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main_gradient_descent ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_gradient_descent <span class="fu">=</span> _test_gradient_descent (<span class="dv">0</span><span class="ot">::</span><span class="dt">Double</span>) <span class="dv">100</span> <span class="dv">5</span></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Index Isomorphisms</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Index Isomorphisms</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-13 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/IndexIsos.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>First some boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">IndexIsos</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span></code></pre></div>
+<p>Our <code>Size</code> type has a derived notion of structural equality; two sizes are equal if they are represented by the same constructor tree. It will also be handy to have a more forgiving kind of equivalence which takes into account the usual identities on semirings. Concretely, the sizes <span class="math inline">\((a+b)+c\)</span> and <span class="math inline">\(a+(b+c)\)</span> are not equal, but we’d like to say they are equivalent. We can do this by putting <code>Size</code>s into a canonical form using the semiring identities so that two sizes are equivalent if and only if they have the same canonical form.</p>
+<p>To give away the punchline, this module exports two important functions: <code>~=</code>, which detects when two sizes are canonically equivalent, and <code>mapIndex</code>, which provides a canonical isomorphism between the index sets of equivalent sizes. The code looks a little hideous, but what’s really going on is a solution to the word problem for free semirings, with some extra bookkeeping.</p>
+<p>Looking ahead, we’ll use the code here to help define equality on tensors.</p>
+<h2 id="equivalence">Equivalence</h2>
+<p>We can think of elements in <span class="math inline">\(\mathbb{S}\)</span> like polynomials in the “variables” 0, 1, 2, and so on. Polynomials have a nice canonical form; we can completely expand them out as a sum of products using the distributive property over and over, and then sort the terms lexicographically using the commutative property of addition. We can approximate this for <code>Size</code>s, using nested lists to represent sums of products. Note that multiplication is not commutative for our purposes.</p>
+<p>This is more or less the algorithm for putting a polynomial in canonical form from college algebra, but for a more general and rigorous proof check out <a href="http://www.ams.org/journals/tran/1971-158-02/S0002-9947-1971-0280375-3/S0002-9947-1971-0280375-3.pdf">Word Problem for Ringoids of Numerical Functions</a> by Iskander.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; canon ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> [[<span class="dt">Integer</span>]]
+<span class="ot">&gt;</span> canon (<span class="dt">Size</span> k) <span class="fu">=</span> <span class="kw">case</span> k <span class="kw">of</span>
+<span class="ot">&gt;</span>   <span class="dv">0</span> <span class="ot">-&gt;</span> [   ] <span class="co">-- empty sum</span>
+<span class="ot">&gt;</span>   <span class="dv">1</span> <span class="ot">-&gt;</span> [[ ]] <span class="co">-- empty product</span>
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> [[k]]
+<span class="ot">&gt;</span> canon (u <span class="fu">:+</span> v) <span class="fu">=</span>
+<span class="ot">&gt;</span>   sort <span class="fu">$</span> (canon u) <span class="fu">++</span> (canon v)
+<span class="ot">&gt;</span> canon (u <span class="fu">:*</span> v) <span class="fu">=</span>
+<span class="ot">&gt;</span>   sort [ x <span class="fu">++</span> y <span class="fu">|</span> x <span class="ot">&lt;-</span> canon u, y <span class="ot">&lt;-</span> canon v ]</code></pre></div>
+<p>Now two sizes are equivalent if they have the same canonical form.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">Equiv</span> t <span class="kw">where</span>
+<span class="ot">&gt;   (~=) ::</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;   (~/=) ::</span> t <span class="ot">-&gt;</span> t <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span>   a <span class="fu">~/=</span> b <span class="fu">=</span> not (a <span class="fu">~=</span> b)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Equiv</span> <span class="dt">Size</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   u <span class="fu">~=</span> v <span class="fu">=</span> (canon u) <span class="fu">==</span> (canon v)</code></pre></div>
+<p>Testing <code>~=</code> amounts to testing that <code>Size</code> satisfies the usual axioms of arithmetic up to equivalence, sans commutativity for multiplication. (More precisely, the semiring axioms.)</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_size_plus_zero
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_plus_zero <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;u :+ 0 ~= u and 0 :+ u ~= u&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ (u <span class="fu">:+</span> <span class="dv">0</span>) <span class="fu">~=</span> u
+<span class="ot">&gt;</span>     , (<span class="dv">0</span> <span class="fu">:+</span> u) <span class="fu">~=</span> u
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_times_zero
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_times_zero <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;u :* 0 ~= 0 and 0 :* u ~= 0&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ (u <span class="fu">:*</span> <span class="dv">0</span>) <span class="fu">~=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>     , (<span class="dv">0</span> <span class="fu">:*</span> u) <span class="fu">~=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_times_one
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_times_one <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;u :* 1 ~= u and 1 :* u ~= u&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ (u <span class="fu">:*</span> <span class="dv">1</span>) <span class="fu">~=</span> u
+<span class="ot">&gt;</span>     , (<span class="dv">1</span> <span class="fu">:*</span> u) <span class="fu">~=</span> u
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_equiv_plus_comm
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_equiv_plus_comm <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;(u :+ v)  ~=  (v :+ u)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     (u <span class="fu">:+</span> v) <span class="fu">~=</span> (v <span class="fu">:+</span> u)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_equiv_plus_assoc
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_equiv_plus_assoc <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;(u :+ v) :+ w  ~=  u :+ (v :+ w)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) <span class="fu">~=</span> (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_equiv_times_assoc
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_equiv_times_assoc <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;(u :* v) :* w  ~=  u :* (v :* w)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) <span class="fu">~=</span> (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_size_equiv_dist
+<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_size_equiv_dist <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;u :* (v :+ w) ~= (u :* v) :+ (u :* w)&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ (u <span class="fu">:*</span> (v <span class="fu">:+</span> w)) <span class="fu">~=</span> ((u <span class="fu">:*</span> v) <span class="fu">:+</span> (u <span class="fu">:*</span> w))
+<span class="ot">&gt;</span>     , ((u <span class="fu">:+</span> v) <span class="fu">:*</span> w) <span class="fu">~=</span> ((u <span class="fu">:*</span> w) <span class="fu">:+</span> (v <span class="fu">:*</span> w))
+<span class="ot">&gt;</span>     ]</code></pre></div>
+<h2 id="what-about-indices">What About Indices?</h2>
+<p>This is nice and all – we can tell when two tensor sizes are canonically equivalent. This alone is not enough, though. If two sizes are equivalent, there is a canonical isomorphism between their index sets, and to make equivalence useful we need to be able to construct this isomorphism. For that we need to know <em>what steps</em> are required to put a size in canonical form. This is sort of analogous to the problem of putting a matrix in Gauss-Jordan form, where keeping track of the steps taken in the Gauss-Jordan elimination algorithm lets us construct a witness to the row-equivalence of two matrices.</p>
+<p>Each semiring identity represents one or two “moves” we can apply to a <code>Size</code>; one if the identity is symmetric, and two if not.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Op</span>
+<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">PlusComm</span>          <span class="co">-- a+b         =&gt; b+a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">PlusAssocL</span>        <span class="co">-- a+(b+c)     =&gt; (a+b)+c</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">PlusAssocR</span>        <span class="co">-- (a+b)+c     =&gt; a+(b+c)</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">PlusZeroL</span>         <span class="co">-- a           =&gt; 0+a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnPlusZeroL</span>       <span class="co">-- 0+a         =&gt; a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">PlusZeroR</span>         <span class="co">-- a           =&gt; a+0</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnPlusZeroR</span>       <span class="co">-- a+0         =&gt; a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesAssocL</span>       <span class="co">-- a*(b*c)     =&gt; (a*b)*c</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesAssocR</span>       <span class="co">-- (a*b)*c     =&gt; a*(b*c)</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesOneL</span>         <span class="co">-- a           =&gt; 1*a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnTimesOneL</span>       <span class="co">-- 1*a         =&gt; a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesOneR</span>         <span class="co">-- a           =&gt; a*1</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnTimesOneR</span>       <span class="co">-- a*1         =&gt; a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesZeroL</span> <span class="dt">Size</span>   <span class="co">-- 0           =&gt; 0*a</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnTimesZeroL</span> <span class="dt">Size</span> <span class="co">-- 0*a         =&gt; 0</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TimesZeroR</span> <span class="dt">Size</span>   <span class="co">-- 0           =&gt; a*0</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnTimesZeroR</span> <span class="dt">Size</span> <span class="co">-- a*0         =&gt; 0</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">DistL</span>             <span class="co">-- a*(b+c)     =&gt; (a*b)+(a*c)</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnDistL</span>           <span class="co">-- (a*b)+(a*c) =&gt; a*(b+c)</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">DistR</span>             <span class="co">-- (a+b)*c     =&gt; (a*c)+(b*c)</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">UnDistR</span>           <span class="co">-- (a*c)+(b*c) =&gt; (a+b)*c</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">LSummand</span> <span class="dt">Op</span>       <span class="co">-- a =&gt; b --&gt; a+c =&gt; b+c</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">RSummand</span> <span class="dt">Op</span>       <span class="co">-- a =&gt; b --&gt; c+a =&gt; c+b</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">LFactor</span> <span class="dt">Op</span>        <span class="co">-- a =&gt; b --&gt; a*c =&gt; b*c</span>
+<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">RFactor</span> <span class="dt">Op</span>        <span class="co">-- a =&gt; b --&gt; c*a =&gt; c*b</span>
+<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</code></pre></div>
+<p>(Most of the functions in this post will be partial, but the error cases should be unreachable if used correctly.)</p>
+<p>And we can actually apply <code>Op</code>s to <code>Size</code>s like so.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; applyOp ::</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span> applyOp op size <span class="fu">=</span> <span class="kw">case</span> (op, size) <span class="kw">of</span>
+<span class="ot">&gt;</span>   (<span class="dt">PlusComm</span>,       u <span class="fu">:+</span> v         ) <span class="ot">-&gt;</span> v <span class="fu">:+</span> u
+<span class="ot">&gt;</span>   (<span class="dt">PlusAssocL</span>,     u <span class="fu">:+</span> (v <span class="fu">:+</span> w)  ) <span class="ot">-&gt;</span> (u <span class="fu">:+</span> v) <span class="fu">:+</span> w
+<span class="ot">&gt;</span>   (<span class="dt">PlusAssocR</span>,     (u <span class="fu">:+</span> v) <span class="fu">:+</span> w  ) <span class="ot">-&gt;</span> u <span class="fu">:+</span> (v <span class="fu">:+</span> w)
+<span class="ot">&gt;</span>   (<span class="dt">PlusZeroL</span>,      u              ) <span class="ot">-&gt;</span> <span class="dv">0</span> <span class="fu">:+</span> u
+<span class="ot">&gt;</span>   (<span class="dt">UnPlusZeroL</span>,    (<span class="dt">Size</span> <span class="dv">0</span>) <span class="fu">:+</span> u  ) <span class="ot">-&gt;</span> u
+<span class="ot">&gt;</span>   (<span class="dt">PlusZeroR</span>,      u              ) <span class="ot">-&gt;</span> u <span class="fu">:+</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>   (<span class="dt">UnPlusZeroR</span>,    u <span class="fu">:+</span> (<span class="dt">Size</span> <span class="dv">0</span>)  ) <span class="ot">-&gt;</span> u
+<span class="ot">&gt;</span>   (<span class="dt">TimesAssocL</span>,    u <span class="fu">:*</span> (v <span class="fu">:*</span> w)  ) <span class="ot">-&gt;</span> (u <span class="fu">:*</span> v) <span class="fu">:*</span> w
+<span class="ot">&gt;</span>   (<span class="dt">TimesAssocR</span>,    (u <span class="fu">:*</span> v) <span class="fu">:*</span> w  ) <span class="ot">-&gt;</span> u <span class="fu">:*</span> (v <span class="fu">:*</span> w)
+<span class="ot">&gt;</span>   (<span class="dt">TimesOneL</span>,      a              ) <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">:*</span> a
+<span class="ot">&gt;</span>   (<span class="dt">UnTimesOneL</span>,    (<span class="dt">Size</span> <span class="dv">1</span>) <span class="fu">:*</span> a  ) <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span>   (<span class="dt">TimesOneR</span>,      a              ) <span class="ot">-&gt;</span> a <span class="fu">:*</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>   (<span class="dt">UnTimesOneR</span>,    a <span class="fu">:*</span> (<span class="dt">Size</span> <span class="dv">1</span>)  ) <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span>   (<span class="dt">TimesZeroL</span> s,   <span class="dt">Size</span> <span class="dv">0</span>         ) <span class="ot">-&gt;</span> <span class="dv">0</span> <span class="fu">:*</span> s
+<span class="ot">&gt;</span>   (<span class="dt">UnTimesZeroL</span> s, (<span class="dt">Size</span> <span class="dv">0</span>) <span class="fu">:*</span> a  ) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> a <span class="fu">==</span> s
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;applyOp (unTimesZeroL): size mismatch&quot;</span>
+<span class="ot">&gt;</span>   (<span class="dt">TimesZeroR</span> s,   <span class="dt">Size</span> <span class="dv">0</span>         ) <span class="ot">-&gt;</span> s <span class="fu">:*</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>   (<span class="dt">UnTimesZeroR</span> s, a <span class="fu">:*</span> (<span class="dt">Size</span> <span class="dv">0</span>)  ) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> a <span class="fu">==</span> s
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;applyOp (unTimesZeroR): size mismatch&quot;</span>
+<span class="ot">&gt;</span>   (<span class="dt">DistL</span>,          a <span class="fu">:*</span> (b <span class="fu">:+</span> c)  ) <span class="ot">-&gt;</span> (a <span class="fu">:*</span> b) <span class="fu">:+</span> (a <span class="fu">:*</span> c)
+<span class="ot">&gt;</span>   (<span class="dt">UnDistL</span>,        (a<span class="fu">:*</span>b)<span class="fu">:+</span>(d<span class="fu">:*</span>c) ) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> a <span class="fu">==</span> d
+<span class="ot">&gt;</span>       <span class="kw">then</span> a<span class="fu">:*</span>(b<span class="fu">:+</span>c)
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;applyOp (UnDistL): size mismatch&quot;</span>
+<span class="ot">&gt;</span>   (<span class="dt">DistR</span>,          (a <span class="fu">:+</span> b) <span class="fu">:*</span> c  ) <span class="ot">-&gt;</span> (a <span class="fu">:*</span> c) <span class="fu">:+</span> (b <span class="fu">:*</span> c)
+<span class="ot">&gt;</span>   (<span class="dt">UnDistR</span>,        (a<span class="fu">:*</span>c)<span class="fu">:+</span>(b<span class="fu">:*</span>d) ) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> c <span class="fu">==</span> d
+<span class="ot">&gt;</span>       <span class="kw">then</span> (a<span class="fu">:+</span>b)<span class="fu">:*</span>c
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;applyOp (UnDistR): size mismatch&quot;</span>
+<span class="ot">&gt;</span>   (<span class="dt">LSummand</span> x,     a <span class="fu">:+</span> b         ) <span class="ot">-&gt;</span> (applyOp x a) <span class="fu">:+</span> b
+<span class="ot">&gt;</span>   (<span class="dt">RSummand</span> x,     a <span class="fu">:+</span> b         ) <span class="ot">-&gt;</span> a <span class="fu">:+</span> (applyOp x b)
+<span class="ot">&gt;</span>   (<span class="dt">LFactor</span> x,      a <span class="fu">:*</span> b         ) <span class="ot">-&gt;</span> (applyOp x a) <span class="fu">:*</span> b
+<span class="ot">&gt;</span>   (<span class="dt">RFactor</span> x,      a <span class="fu">:*</span> b         ) <span class="ot">-&gt;</span> a <span class="fu">:*</span> (applyOp x b)
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="fu">$</span> <span class="st">&quot;applyOp: &quot;</span> <span class="fu">++</span> show op <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show size</code></pre></div>
+<p>In practice we’ll be applying lists of <code>Op</code>s, which can be done with <code>foldr</code>. Note that <code>reverse</code>; we’ll assume lists of <code>Op</code>s come in order from head to tail, and we need to reverse the ops list due to how foldr works.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; applyOps ::</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span> applyOps ops size <span class="fu">=</span> foldr applyOp size (reverse ops)</code></pre></div>
+<p>Each <code>Op</code> has an inverse which undoes it.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; invertOp ::</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Op</span>
+<span class="ot">&gt;</span> invertOp <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">PlusComm</span>       <span class="ot">-&gt;</span> <span class="dt">PlusComm</span>
+<span class="ot">&gt;</span>   <span class="dt">PlusAssocL</span>     <span class="ot">-&gt;</span> <span class="dt">PlusAssocR</span>
+<span class="ot">&gt;</span>   <span class="dt">PlusAssocR</span>     <span class="ot">-&gt;</span> <span class="dt">PlusAssocL</span>
+<span class="ot">&gt;</span>   <span class="dt">PlusZeroL</span>      <span class="ot">-&gt;</span> <span class="dt">UnPlusZeroL</span>
+<span class="ot">&gt;</span>   <span class="dt">UnPlusZeroL</span>    <span class="ot">-&gt;</span> <span class="dt">PlusZeroL</span>
+<span class="ot">&gt;</span>   <span class="dt">PlusZeroR</span>      <span class="ot">-&gt;</span> <span class="dt">UnPlusZeroR</span>
+<span class="ot">&gt;</span>   <span class="dt">UnPlusZeroR</span>    <span class="ot">-&gt;</span> <span class="dt">PlusZeroR</span>
+<span class="ot">&gt;</span>   <span class="dt">TimesAssocL</span>    <span class="ot">-&gt;</span> <span class="dt">TimesAssocR</span>
+<span class="ot">&gt;</span>   <span class="dt">TimesAssocR</span>    <span class="ot">-&gt;</span> <span class="dt">TimesAssocL</span>
+<span class="ot">&gt;</span>   <span class="dt">TimesOneL</span>      <span class="ot">-&gt;</span> <span class="dt">UnTimesOneL</span>
+<span class="ot">&gt;</span>   <span class="dt">UnTimesOneL</span>    <span class="ot">-&gt;</span> <span class="dt">TimesOneL</span>
+<span class="ot">&gt;</span>   <span class="dt">TimesOneR</span>      <span class="ot">-&gt;</span> <span class="dt">UnTimesOneR</span>
+<span class="ot">&gt;</span>   <span class="dt">UnTimesOneR</span>    <span class="ot">-&gt;</span> <span class="dt">TimesOneR</span>
+<span class="ot">&gt;</span>   <span class="dt">TimesZeroL</span> s   <span class="ot">-&gt;</span> <span class="dt">UnTimesZeroL</span> s
+<span class="ot">&gt;</span>   <span class="dt">UnTimesZeroL</span> s <span class="ot">-&gt;</span> <span class="dt">TimesZeroL</span> s
+<span class="ot">&gt;</span>   <span class="dt">TimesZeroR</span> s   <span class="ot">-&gt;</span> <span class="dt">UnTimesZeroR</span> s
+<span class="ot">&gt;</span>   <span class="dt">UnTimesZeroR</span> s <span class="ot">-&gt;</span> <span class="dt">TimesZeroR</span> s
+<span class="ot">&gt;</span>   <span class="dt">DistL</span>          <span class="ot">-&gt;</span> <span class="dt">UnDistL</span>
+<span class="ot">&gt;</span>   <span class="dt">UnDistL</span>        <span class="ot">-&gt;</span> <span class="dt">DistL</span>
+<span class="ot">&gt;</span>   <span class="dt">DistR</span>          <span class="ot">-&gt;</span> <span class="dt">UnDistR</span>
+<span class="ot">&gt;</span>   <span class="dt">UnDistR</span>        <span class="ot">-&gt;</span> <span class="dt">DistR</span>
+<span class="ot">&gt;</span>   <span class="dt">LSummand</span> op    <span class="ot">-&gt;</span> <span class="dt">LSummand</span> <span class="fu">$</span> invertOp op
+<span class="ot">&gt;</span>   <span class="dt">RSummand</span> op    <span class="ot">-&gt;</span> <span class="dt">RSummand</span> <span class="fu">$</span> invertOp op
+<span class="ot">&gt;</span>   <span class="dt">LFactor</span> op     <span class="ot">-&gt;</span> <span class="dt">LFactor</span> <span class="fu">$</span> invertOp op
+<span class="ot">&gt;</span>   <span class="dt">RFactor</span> op     <span class="ot">-&gt;</span> <span class="dt">RFactor</span> <span class="fu">$</span> invertOp op</code></pre></div>
+<p>And we can invert sequences of <code>Op</code>s.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; invertOps ::</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> [<span class="dt">Op</span>]
+<span class="ot">&gt;</span> invertOps ops <span class="fu">=</span> map invertOp (reverse ops)</code></pre></div>
+<p>Later we’ll want to test assertions like “applying these operations to <span class="math inline">\(u\)</span> results in <span class="math inline">\(v\)</span>”. We’ll write a helper test here to check this.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_ops_equivalent ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_ops_equivalent s t ops <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ t <span class="fu">==</span> applyOps ops s
+<span class="ot">&gt;</span>   , s <span class="fu">==</span> applyOps (invertOps ops) t
+<span class="ot">&gt;</span>   ]</code></pre></div>
+<p>Ok! To find the sequence of <code>Op</code>s needed to put a <code>Size</code> in canonical form, we’ll break the usual college algebra procedure into phases.</p>
+<ol style="list-style-type: decimal">
+<li><em>Expand</em> the size using the distributive identities over and over, so that all the plus nodes appear toward the root and all the times notes appear toward the leaves. (If any times node appears above a plus node, we can use distributivity to switch them.)</li>
+<li><em>Prune</em> the size by eliminating any instances of “plus zero”, “times one”, or “times zero”. Pruning an expanded tree gives another expanded tree.</li>
+<li><em>Unbalance</em> the size by pushing all nested sizes to the right using the associative identities. Unbalancing a pruned and expanded tree gives another pruned and expanded tree.</li>
+<li><em>Arrange</em> the summands in lex order using associativity and commutativity.</li>
+</ol>
+<p>Doing all four steps in order, and keeping track of which identities we use, gives a canonical form as well as a recipe for how to get there.</p>
+<h2 id="expand">Expand</h2>
+<p>A <code>Size</code> is <em>expanded</em> if no sum node appears below a product node. We can detect this with the predicate <code>isExpanded</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; isExpanded ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isExpanded s <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> isProduct s
+<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="kw">case</span> s <span class="kw">of</span>
+<span class="ot">&gt;</span>       a <span class="fu">:+</span> b <span class="ot">-&gt;</span> (isExpanded a) <span class="fu">&amp;&amp;</span> (isExpanded b)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error <span class="fu">$</span> <span class="st">&quot;isExpanded (unreachable): &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; isProduct ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isProduct <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">Size</span> _ <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>   a <span class="fu">:*</span> b <span class="ot">-&gt;</span> (isProduct a) <span class="fu">&amp;&amp;</span> (isProduct b)</code></pre></div>
+<p>Now <code>expand u</code> finds an expanded <code>Size</code> that is equivalent to <code>u</code>, and a sequence of identities that witnesses their equivalence.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; expand ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Size</span>, [<span class="dt">Op</span>])
+<span class="ot">&gt;</span> expand (<span class="dt">Size</span> k) <span class="fu">=</span>
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k, [])
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> expand (a <span class="fu">:+</span> b) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u,uOps') <span class="fu">=</span> expand a
+<span class="ot">&gt;</span>     (v,vOps') <span class="fu">=</span> expand b
+<span class="ot">&gt;</span>     uOps <span class="fu">=</span> map <span class="dt">LSummand</span> uOps'
+<span class="ot">&gt;</span>     vOps <span class="fu">=</span> map <span class="dt">RSummand</span> vOps'
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     (u <span class="fu">:+</span> v, uOps <span class="fu">++</span> vOps)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> expand (a <span class="fu">:*</span> b) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u,uOps') <span class="fu">=</span> expand a
+<span class="ot">&gt;</span>     (v,vOps') <span class="fu">=</span> expand b
+<span class="ot">&gt;</span>     uOps <span class="fu">=</span> map <span class="dt">LFactor</span> uOps'
+<span class="ot">&gt;</span>     vOps <span class="fu">=</span> map <span class="dt">RFactor</span> vOps'
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> (u,v) <span class="kw">of</span>
+<span class="ot">&gt;</span>       (h' <span class="fu">:+</span> k', _) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           (h, hOps') <span class="fu">=</span> expand (h' <span class="fu">:*</span> v)
+<span class="ot">&gt;</span>           (k, kOps') <span class="fu">=</span> expand (k' <span class="fu">:*</span> v)
+<span class="ot">&gt;</span>           hOps <span class="fu">=</span> map <span class="dt">LSummand</span> hOps'
+<span class="ot">&gt;</span>           kOps <span class="fu">=</span> map <span class="dt">RSummand</span> kOps'
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           (h <span class="fu">:+</span> k, uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">DistR</span>] <span class="fu">++</span> hOps <span class="fu">++</span> kOps)
+<span class="ot">&gt;</span>       (_, h' <span class="fu">:+</span> k') <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           (h, hOps') <span class="fu">=</span> expand (u <span class="fu">:*</span> h')
+<span class="ot">&gt;</span>           (k, kOps') <span class="fu">=</span> expand (u <span class="fu">:*</span> k')
+<span class="ot">&gt;</span>           hOps <span class="fu">=</span> map <span class="dt">LSummand</span> hOps'
+<span class="ot">&gt;</span>           kOps <span class="fu">=</span> map <span class="dt">RSummand</span> kOps'
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           (h <span class="fu">:+</span> k, uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">DistL</span>] <span class="fu">++</span> hOps <span class="fu">++</span> kOps)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> (u <span class="fu">:*</span> v, uOps <span class="fu">++</span> vOps)</code></pre></div>
+<p>And we can test that (1) <code>expand u</code> gives a size <code>v</code> in expanded form and (2) <code>u</code> and <code>v</code> are equivalent using the witness.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_expand ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_expand <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;expand&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps) <span class="fu">=</span> expand u
+<span class="ot">&gt;</span>       ops <span class="fu">=</span> vOps
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       and
+<span class="ot">&gt;</span>         [ isExpanded v
+<span class="ot">&gt;</span>         , _test_ops_equivalent u v ops
+<span class="ot">&gt;</span>         ]</code></pre></div>
+<h2 id="prune">Prune</h2>
+<p>A <code>Size</code> is <em>pruned</em> if it does not feature a “plus zero”, “times one”, or “times zero”. We can detect this with <code>isPruned</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; isPruned ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isPruned <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> a <span class="fu">==</span> <span class="dv">0</span> <span class="fu">||</span> b <span class="fu">==</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> (isPruned a) <span class="fu">&amp;&amp;</span> (isPruned b)
+<span class="ot">&gt;</span>   a <span class="fu">:*</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> a <span class="fu">==</span> <span class="dv">0</span> <span class="fu">||</span> b <span class="fu">==</span> <span class="dv">0</span> <span class="fu">||</span> a <span class="fu">==</span> <span class="dv">1</span> <span class="fu">||</span> b <span class="fu">==</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>       <span class="kw">else</span> (isPruned a) <span class="fu">&amp;&amp;</span> (isPruned b)</code></pre></div>
+<p>Now <code>prune u</code> finds a pruned <code>Size</code> that is equvalent to <code>u</code>, and a sequence of identities that witnesses their equivalence.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; prune ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Size</span>, [<span class="dt">Op</span>])
+<span class="ot">&gt;</span> prune (<span class="dt">Size</span> k) <span class="fu">=</span>
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k, [])
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> prune (a <span class="fu">:+</span> b) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u,uOps') <span class="fu">=</span> prune a
+<span class="ot">&gt;</span>     (v,vOps') <span class="fu">=</span> prune b
+<span class="ot">&gt;</span>     uOps <span class="fu">=</span> map <span class="dt">LSummand</span> uOps'
+<span class="ot">&gt;</span>     vOps <span class="fu">=</span> map <span class="dt">RSummand</span> vOps'
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> (u,v) <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="dt">Size</span> <span class="dv">0</span>, _     ) <span class="ot">-&gt;</span> (v,      uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnPlusZeroL</span>])
+<span class="ot">&gt;</span>       (_,      <span class="dt">Size</span> <span class="dv">0</span>) <span class="ot">-&gt;</span> (u,      uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnPlusZeroR</span>])
+<span class="ot">&gt;</span>       _                <span class="ot">-&gt;</span> (u <span class="fu">:+</span> v, uOps <span class="fu">++</span> vOps)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> prune (a <span class="fu">:*</span> b) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u, uOps') <span class="fu">=</span> prune a
+<span class="ot">&gt;</span>     (v, vOps') <span class="fu">=</span> prune b
+<span class="ot">&gt;</span>     uOps <span class="fu">=</span> map <span class="dt">LFactor</span> uOps'
+<span class="ot">&gt;</span>     vOps <span class="fu">=</span> map <span class="dt">RFactor</span> vOps'
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">case</span> (u,v) <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="dt">Size</span> <span class="dv">0</span>, _     ) <span class="ot">-&gt;</span> (<span class="dt">Size</span> <span class="dv">0</span>, uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnTimesZeroL</span> v])
+<span class="ot">&gt;</span>       (_,      <span class="dt">Size</span> <span class="dv">0</span>) <span class="ot">-&gt;</span> (<span class="dt">Size</span> <span class="dv">0</span>, uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnTimesZeroR</span> u])
+<span class="ot">&gt;</span>       (<span class="dt">Size</span> <span class="dv">1</span>, _     ) <span class="ot">-&gt;</span> (v,      uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnTimesOneL</span>])
+<span class="ot">&gt;</span>       (_,      <span class="dt">Size</span> <span class="dv">1</span>) <span class="ot">-&gt;</span> (u,      uOps <span class="fu">++</span> vOps <span class="fu">++</span> [<span class="dt">UnTimesOneR</span>])
+<span class="ot">&gt;</span>       _                <span class="ot">-&gt;</span> (u <span class="fu">:*</span> v, uOps <span class="fu">++</span> vOps)</code></pre></div>
+<p>And we can test that, after expanding and pruning, we get an equivalent expanded and pruned size.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_prune ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_prune <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;prune&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps) <span class="fu">=</span> expand u
+<span class="ot">&gt;</span>       (w, wOps) <span class="fu">=</span> prune v
+<span class="ot">&gt;</span>       ops <span class="fu">=</span> vOps <span class="fu">++</span> wOps
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       and
+<span class="ot">&gt;</span>         [ isPruned w <span class="fu">&amp;&amp;</span> isExpanded w
+<span class="ot">&gt;</span>         , _test_ops_equivalent u w ops
+<span class="ot">&gt;</span>         ]</code></pre></div>
+<h2 id="unbalance">Unbalance</h2>
+<p>A <code>Size</code> is <em>unbalanced</em> if no sum node appears in the left subtree of another sum node, and no product node appears in the left subtree of another product node. We can detect this with the predicate <code>isUnbalanced</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; isUnbalanced ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isUnbalanced <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   u <span class="fu">:+</span> v <span class="ot">-&gt;</span> (isUnbalancedProduct u) <span class="fu">&amp;&amp;</span> (isUnbalanced v)
+<span class="ot">&gt;</span>   u <span class="ot">-&gt;</span> isUnbalancedProduct u
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; isUnbalancedProduct ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isUnbalancedProduct <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k) <span class="fu">:*</span> v <span class="ot">-&gt;</span> isUnbalancedProduct v
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="dt">False</span></code></pre></div>
+<p>Now <code>unbalance u</code> takes an expanded and pruned <code>Size</code> and finds an equivalent expanded, pruned, and unbalanced <code>Size</code>, with a witness to their equivalence.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- assumes isExpanded u == True</span>
+<span class="ot">&gt; unbalance ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Size</span>, [<span class="dt">Op</span>])
+<span class="ot">&gt;</span> unbalance <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> (<span class="dt">Size</span> k, [])
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k) <span class="fu">:*</span> (<span class="dt">Size</span> l) <span class="ot">-&gt;</span> ((<span class="dt">Size</span> k) <span class="fu">:*</span> (<span class="dt">Size</span> l), [])
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k) <span class="fu">:*</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps') <span class="fu">=</span> unbalance b
+<span class="ot">&gt;</span>       vOps <span class="fu">=</span> map <span class="dt">RFactor</span> vOps'
+<span class="ot">&gt;</span>     <span class="kw">in</span> ((<span class="dt">Size</span> k) <span class="fu">:*</span> v, vOps)
+<span class="ot">&gt;</span>   (a <span class="fu">:*</span> b) <span class="fu">:*</span> c <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       ((<span class="dt">Size</span> k) <span class="fu">:*</span> u, uOps') <span class="fu">=</span> unbalance (a <span class="fu">:*</span> b)
+<span class="ot">&gt;</span>       uOps <span class="fu">=</span> map <span class="dt">LFactor</span> uOps'
+<span class="ot">&gt;</span>       (d, dOps') <span class="fu">=</span> unbalance (u <span class="fu">:*</span> c)
+<span class="ot">&gt;</span>       dOps <span class="fu">=</span> map <span class="dt">RFactor</span> dOps'
+<span class="ot">&gt;</span>     <span class="kw">in</span> ((<span class="dt">Size</span> k) <span class="fu">:*</span> d, uOps <span class="fu">++</span> [<span class="dt">TimesAssocR</span>] <span class="fu">++</span> dOps)
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k) <span class="fu">:+</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps') <span class="fu">=</span> unbalance b
+<span class="ot">&gt;</span>       vOps <span class="fu">=</span> map <span class="dt">RSummand</span> vOps'
+<span class="ot">&gt;</span>     <span class="kw">in</span> ((<span class="dt">Size</span> k) <span class="fu">:+</span> v, vOps)
+<span class="ot">&gt;</span>   a<span class="fu">@</span>(_ <span class="fu">:*</span> _) <span class="fu">:+</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (u, uOps') <span class="fu">=</span> unbalance a
+<span class="ot">&gt;</span>       uOps <span class="fu">=</span> map <span class="dt">LSummand</span> uOps'
+<span class="ot">&gt;</span>       (v, vOps') <span class="fu">=</span> unbalance b
+<span class="ot">&gt;</span>       vOps <span class="fu">=</span> map <span class="dt">RSummand</span> vOps'
+<span class="ot">&gt;</span>     <span class="kw">in</span> (u <span class="fu">:+</span> v, uOps <span class="fu">++</span> vOps)
+<span class="ot">&gt;</span>   (a <span class="fu">:+</span> b) <span class="fu">:+</span> c <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (u <span class="fu">:+</span> w, uOps') <span class="fu">=</span> unbalance (a <span class="fu">:+</span> b)
+<span class="ot">&gt;</span>       uOps <span class="fu">=</span> map <span class="dt">LSummand</span> uOps'
+<span class="ot">&gt;</span>       (d, dOps') <span class="fu">=</span> unbalance (w <span class="fu">:+</span> c)
+<span class="ot">&gt;</span>       dOps <span class="fu">=</span> map <span class="dt">RSummand</span> dOps'
+<span class="ot">&gt;</span>     <span class="kw">in</span> (u <span class="fu">:+</span> d, uOps <span class="fu">++</span> [<span class="dt">PlusAssocR</span>] <span class="fu">++</span> dOps)</code></pre></div>
+<p>We can test that, after expanding, pruning, and unbalancing, we get an equivalent expanded, pruned, and unbalanced size.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_unbalance ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_unbalance <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;unbalance&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps) <span class="fu">=</span> expand u
+<span class="ot">&gt;</span>       (w, wOps) <span class="fu">=</span> prune v
+<span class="ot">&gt;</span>       (x, xOps) <span class="fu">=</span> unbalance w
+<span class="ot">&gt;</span>       ops <span class="fu">=</span> vOps <span class="fu">++</span> wOps <span class="fu">++</span> xOps
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       and
+<span class="ot">&gt;</span>         [ isUnbalanced x <span class="fu">&amp;&amp;</span> isPruned x <span class="fu">&amp;&amp;</span> isExpanded x
+<span class="ot">&gt;</span>         , _test_ops_equivalent u x ops
+<span class="ot">&gt;</span>         ]</code></pre></div>
+<h2 id="arrange">Arrange</h2>
+<p>An unbalanced <code>size</code> is <em>arranged</em> if its terms are sorted by the lexicographic order. We can detect this with <code>isArranged</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- assumes isUnbalanced s == True</span>
+<span class="ot">&gt; isArranged ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> isArranged <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     (glexleq a (minterm b)) <span class="fu">&amp;&amp;</span> (isArranged b)
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; glexleq ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> glexleq u v <span class="fu">=</span> <span class="kw">case</span> (u,v) <span class="kw">of</span>
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> k, <span class="dt">Size</span> l) <span class="ot">-&gt;</span> k <span class="fu">&lt;=</span> l
+<span class="ot">&gt;</span>   (<span class="dt">Size</span> _, _     ) <span class="ot">-&gt;</span> <span class="dt">True</span>
+<span class="ot">&gt;</span>   (_     , <span class="dt">Size</span> _) <span class="ot">-&gt;</span> <span class="dt">False</span>
+<span class="ot">&gt;</span>   ((<span class="dt">Size</span> k) <span class="fu">:*</span> u, (<span class="dt">Size</span> l) <span class="fu">:*</span> v) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     (k <span class="fu">&lt;</span> l) <span class="fu">||</span> ((k <span class="fu">==</span> l) <span class="fu">&amp;&amp;</span> (glexleq u v))
+<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;glexleq: only works on unbalanced products&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; minterm ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span> minterm <span class="fu">=</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>   a <span class="fu">:+</span> (b <span class="fu">:+</span> c) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span> m <span class="fu">=</span> minterm (b <span class="fu">:+</span> c) <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> glexleq a m <span class="kw">then</span> a <span class="kw">else</span> m
+<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span> <span class="kw">if</span> glexleq a b <span class="kw">then</span> a <span class="kw">else</span> b
+<span class="ot">&gt;</span>   s <span class="ot">-&gt;</span> s</code></pre></div>
+<p>Now <code>arrange u</code> takes an expanded, pruned, and unbalanced <code>Size</code> and finds an equivalent expanded, pruned, unbalanced, and arranged <code>Size</code>, with a witness to their equivalence.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- assumes isUnbalanced s == True</span>
+<span class="ot">&gt; arrange ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Size</span>, [<span class="dt">Op</span>])
+<span class="ot">&gt;</span> arrange (a <span class="fu">:+</span> (b <span class="fu">:+</span> c)) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u <span class="fu">:+</span> v, uvOps') <span class="fu">=</span> arrange (b <span class="fu">:+</span> c)
+<span class="ot">&gt;</span>     uvOps <span class="fu">=</span> map <span class="dt">RSummand</span> uvOps'
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> glexleq a u
+<span class="ot">&gt;</span>       <span class="kw">then</span> (a <span class="fu">:+</span> (u <span class="fu">:+</span> v), uvOps)
+<span class="ot">&gt;</span>       <span class="kw">else</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           (w, wOps') <span class="fu">=</span> arrange (a <span class="fu">:+</span> v)
+<span class="ot">&gt;</span>           wOps <span class="fu">=</span> map <span class="dt">RSummand</span> wOps'
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           ( u <span class="fu">:+</span> w
+<span class="ot">&gt;</span>           , uvOps <span class="fu">++</span> [<span class="dt">PlusAssocL</span>, <span class="dt">LSummand</span> <span class="dt">PlusComm</span>, <span class="dt">PlusAssocR</span>] <span class="fu">++</span> wOps
+<span class="ot">&gt;</span>           )
+<span class="ot">&gt;</span> arrange (a <span class="fu">:+</span> b) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> glexleq a b
+<span class="ot">&gt;</span>     <span class="kw">then</span> (a <span class="fu">:+</span> b, [])
+<span class="ot">&gt;</span>     <span class="kw">else</span> (b <span class="fu">:+</span> a, [<span class="dt">PlusComm</span>])
+<span class="ot">&gt;</span> arrange s <span class="fu">=</span> (s, [])</code></pre></div>
+<p>We can test that, after expanding, pruning, unbalancing, and arranging, we get an equivalent expanded, pruned, unbalanced, and arranged size.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_arrange ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_arrange <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;arrange&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, vOps) <span class="fu">=</span> expand u
+<span class="ot">&gt;</span>       (w, wOps) <span class="fu">=</span> prune v
+<span class="ot">&gt;</span>       (x, xOps) <span class="fu">=</span> unbalance w
+<span class="ot">&gt;</span>       (y, yOps) <span class="fu">=</span> arrange x
+<span class="ot">&gt;</span>       ops <span class="fu">=</span> vOps <span class="fu">++</span> wOps <span class="fu">++</span> xOps <span class="fu">++</span> yOps
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       and
+<span class="ot">&gt;</span>         [ isArranged y <span class="fu">&amp;&amp;</span> isUnbalanced y <span class="fu">&amp;&amp;</span> isPruned y <span class="fu">&amp;&amp;</span> isExpanded y
+<span class="ot">&gt;</span>         , _test_ops_equivalent u y ops
+<span class="ot">&gt;</span>         ]</code></pre></div>
+<h2 id="canonical-form-redux">Canonical Form, Redux</h2>
+<p>Putting it all together, we can put sizes into canoncial form with a witness.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toCanon ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Size</span>, [<span class="dt">Op</span>])
+<span class="ot">&gt;</span> toCanon s <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     (u, uOps) <span class="fu">=</span> expand s
+<span class="ot">&gt;</span>     (v, vOps) <span class="fu">=</span> prune u
+<span class="ot">&gt;</span>     (w, wOps) <span class="fu">=</span> unbalance v
+<span class="ot">&gt;</span>     (x, xOps) <span class="fu">=</span> arrange w
+<span class="ot">&gt;</span>   <span class="kw">in</span> (x, uOps <span class="fu">++</span> vOps <span class="fu">++</span> wOps <span class="fu">++</span> xOps)</code></pre></div>
+<p>And a test:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_toCanon ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_toCanon <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;toCanon&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, ops) <span class="fu">=</span> toCanon u
+<span class="ot">&gt;</span>       (w, _) <span class="fu">=</span> toCanon v
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       and
+<span class="ot">&gt;</span>         [ u <span class="fu">~=</span> v
+<span class="ot">&gt;</span>         , w <span class="fu">==</span> v
+<span class="ot">&gt;</span>         , _test_ops_equivalent u v ops
+<span class="ot">&gt;</span>         ]</code></pre></div>
+<p>And now we can find a seqence of operations between any two equivalent sizes, by combining the sequences of operations to canonical form. We do a little cancellation to remove some redundant operations.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; opsTo ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> [<span class="dt">Op</span>]
+<span class="ot">&gt;</span> opsTo s t <span class="fu">=</span> <span class="kw">if</span> s <span class="fu">~=</span> t
+<span class="ot">&gt;</span>   <span class="kw">then</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (u, uOps) <span class="fu">=</span> toCanon s
+<span class="ot">&gt;</span>       (v, vOps) <span class="fu">=</span> toCanon t
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;       simp ::</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> [<span class="dt">Op</span>]
+<span class="ot">&gt;</span>       simp [] bs <span class="fu">=</span> bs
+<span class="ot">&gt;</span>       simp as [] <span class="fu">=</span> reverse as
+<span class="ot">&gt;</span>       simp (a<span class="fu">:</span>as) (b<span class="fu">:</span>bs) <span class="fu">=</span> <span class="kw">if</span> b <span class="fu">==</span> invertOp a
+<span class="ot">&gt;</span>         <span class="kw">then</span> simp as bs
+<span class="ot">&gt;</span>         <span class="kw">else</span> (reverse (a<span class="fu">:</span>as)) <span class="fu">++</span> (b<span class="fu">:</span>bs)
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       simp (reverse uOps) (invertOps vOps)
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="st">&quot;sizes not canonically isomorphic&quot;</span></code></pre></div>
+<h2 id="index-isomorphisms">Index Isomorphisms</h2>
+<p>We are finally prepared to construct the canonical isomorphism between two equivalent sizes. First, we nail down how a single <code>Op</code> acts on a single <code>Index</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; opIndex ::</span> <span class="dt">Op</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Index</span>
+<span class="ot">&gt;</span> opIndex op index <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span> msg <span class="fu">=</span> <span class="st">&quot;opIndex (&quot;</span> <span class="fu">++</span> show op <span class="fu">++</span> <span class="st">&quot;): &quot;</span> <span class="fu">++</span> show index <span class="kw">in</span>
+<span class="ot">&gt;</span>   <span class="kw">case</span> op <span class="kw">of</span>
+<span class="ot">&gt;</span>     <span class="dt">PlusComm</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> i <span class="ot">-&gt;</span> <span class="dt">R</span> i
+<span class="ot">&gt;</span>       <span class="dt">R</span> i <span class="ot">-&gt;</span> <span class="dt">L</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">PlusAssocL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> i     <span class="ot">-&gt;</span> <span class="dt">L</span> (<span class="dt">L</span> i)
+<span class="ot">&gt;</span>       <span class="dt">R</span> (<span class="dt">L</span> i) <span class="ot">-&gt;</span> <span class="dt">L</span> (<span class="dt">R</span> i)
+<span class="ot">&gt;</span>       <span class="dt">R</span> (<span class="dt">R</span> i) <span class="ot">-&gt;</span> <span class="dt">R</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">PlusAssocR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">R</span> i     <span class="ot">-&gt;</span> <span class="dt">R</span> (<span class="dt">R</span> i)
+<span class="ot">&gt;</span>       <span class="dt">L</span> (<span class="dt">R</span> i) <span class="ot">-&gt;</span> <span class="dt">R</span> (<span class="dt">L</span> i)
+<span class="ot">&gt;</span>       <span class="dt">L</span> (<span class="dt">L</span> i) <span class="ot">-&gt;</span> <span class="dt">L</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">PlusZeroL</span> <span class="ot">-&gt;</span> <span class="dt">R</span> index
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnPlusZeroL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">R</span> i <span class="ot">-&gt;</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">PlusZeroR</span> <span class="ot">-&gt;</span> <span class="dt">L</span> index
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnPlusZeroR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> i <span class="ot">-&gt;</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesAssocL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> (j <span class="fu">:&amp;</span> k) <span class="ot">-&gt;</span> (i <span class="fu">:&amp;</span> j) <span class="fu">:&amp;</span> k
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesAssocR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       (i <span class="fu">:&amp;</span> j) <span class="fu">:&amp;</span> k <span class="ot">-&gt;</span> i <span class="fu">:&amp;</span> (j <span class="fu">:&amp;</span> k)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesOneL</span> <span class="ot">-&gt;</span> (<span class="dt">Index</span> <span class="dv">0</span>) <span class="fu">:&amp;</span> index
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnTimesOneL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       _ <span class="fu">:&amp;</span> i <span class="ot">-&gt;</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesOneR</span> <span class="ot">-&gt;</span> index <span class="fu">:&amp;</span> (<span class="dt">Index</span> <span class="dv">0</span>)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnTimesOneR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> _ <span class="ot">-&gt;</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesZeroL</span> s <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>       error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnTimesZeroL</span> s <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>       error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">TimesZeroR</span> s <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>       error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnTimesZeroR</span> s <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>       error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show s
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">DistL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> (<span class="dt">L</span> j) <span class="ot">-&gt;</span> <span class="dt">L</span> (i <span class="fu">:&amp;</span> j)
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> (<span class="dt">R</span> k) <span class="ot">-&gt;</span> <span class="dt">R</span> (i <span class="fu">:&amp;</span> k)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnDistL</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> (i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> i <span class="fu">:&amp;</span> (<span class="dt">L</span> j)
+<span class="ot">&gt;</span>       <span class="dt">R</span> (i <span class="fu">:&amp;</span> k) <span class="ot">-&gt;</span> i <span class="fu">:&amp;</span> (<span class="dt">R</span> k)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">DistR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       (<span class="dt">L</span> i) <span class="fu">:&amp;</span> k <span class="ot">-&gt;</span> <span class="dt">L</span> (i <span class="fu">:&amp;</span> k)
+<span class="ot">&gt;</span>       (<span class="dt">R</span> j) <span class="fu">:&amp;</span> k <span class="ot">-&gt;</span> <span class="dt">R</span> (j <span class="fu">:&amp;</span> k)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">UnDistR</span> <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> (i <span class="fu">:&amp;</span> k) <span class="ot">-&gt;</span> (<span class="dt">L</span> i) <span class="fu">:&amp;</span> k
+<span class="ot">&gt;</span>       <span class="dt">R</span> (j <span class="fu">:&amp;</span> k) <span class="ot">-&gt;</span> (<span class="dt">R</span> j) <span class="fu">:&amp;</span> k
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error msg
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">LSummand</span> o <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">L</span> i <span class="ot">-&gt;</span> <span class="dt">L</span> (opIndex o i)
+<span class="ot">&gt;</span>       <span class="dt">R</span> i <span class="ot">-&gt;</span> <span class="dt">R</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show o
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">RSummand</span> o <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       <span class="dt">R</span> i <span class="ot">-&gt;</span> <span class="dt">R</span> (opIndex o i)
+<span class="ot">&gt;</span>       <span class="dt">L</span> i <span class="ot">-&gt;</span> <span class="dt">L</span> i
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show o
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">LFactor</span> o <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> j <span class="ot">-&gt;</span> (opIndex o i) <span class="fu">:&amp;</span> j
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show o
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     <span class="dt">RFactor</span> o <span class="ot">-&gt;</span> <span class="kw">case</span> index <span class="kw">of</span>
+<span class="ot">&gt;</span>       i <span class="fu">:&amp;</span> j <span class="ot">-&gt;</span> i <span class="fu">:&amp;</span> (opIndex o j)
+<span class="ot">&gt;</span>       _ <span class="ot">-&gt;</span> error <span class="fu">$</span> msg <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> show o</code></pre></div>
+<p>Now a list of <code>Op</code>s acts like a <code>foldr</code>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; opsIndex ::</span> [<span class="dt">Op</span>] <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Index</span>
+<span class="ot">&gt;</span> opsIndex ops index <span class="fu">=</span> foldr opIndex index (reverse ops)</code></pre></div>
+<p>And <code>mapIndex</code> is the canonical isomorphism.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mapIndex ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Index</span>
+<span class="ot">&gt;</span> mapIndex s t <span class="fu">=</span> <span class="kw">if</span> s <span class="fu">~=</span> t
+<span class="ot">&gt;</span>   <span class="kw">then</span> opsIndex (opsTo s t)
+<span class="ot">&gt;</span>   <span class="kw">else</span> error <span class="st">&quot;mapIndex: sizes must be canonically equivalent&quot;</span></code></pre></div>
+<p>The most important property to test for <code>mapIndex</code> is that it is actually an isomorphism; the following helper function does this.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_mapIndex_iso ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<span class="ot">&gt;</span> _test_mapIndex_iso s t <span class="fu">=</span> and
+<span class="ot">&gt;</span>   [ and [ i <span class="fu">==</span> mapIndex t s (mapIndex s t i) <span class="fu">|</span> i <span class="ot">&lt;-</span> indicesOf s ]
+<span class="ot">&gt;</span>   , and [ i <span class="fu">==</span> mapIndex s t (mapIndex t s i) <span class="fu">|</span> i <span class="ot">&lt;-</span> indicesOf t ]
+<span class="ot">&gt;</span>   ]</code></pre></div>
+<p>For example, <code>mapIndex</code> should give an isomorphism for the indices of any size <span class="math inline">\(u\)</span> and its canonical form.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_mapIndex_toCanon ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_toCanon <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex toCanon&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     <span class="kw">let</span>
+<span class="ot">&gt;</span>       (v, _) <span class="fu">=</span> toCanon u
+<span class="ot">&gt;</span>     <span class="kw">in</span>
+<span class="ot">&gt;</span>       _test_mapIndex_iso u v</code></pre></div>
+<p>And the canonical isomorphism from <code>u</code> to <code>u</code> should be the identity.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_mapIndex_self ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_self <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex u u == id&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>     all (\i <span class="ot">-&gt;</span> i <span class="fu">==</span> mapIndex u u i) (indicesOf u)</code></pre></div>
+<p>For good measure we can also test <code>mapIndex</code> against the semiring identities.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_mapIndex_plus_zero ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_plus_zero <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus zero&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ _test_mapIndex_iso u (<span class="dv">0</span> <span class="fu">:+</span> u)
+<span class="ot">&gt;</span>     , _test_mapIndex_iso u (u <span class="fu">:+</span> <span class="dv">0</span>)
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_times_zero ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_times_zero <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times zero&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ _test_mapIndex_iso <span class="dv">0</span> (<span class="dv">0</span> <span class="fu">:*</span> u)
+<span class="ot">&gt;</span>     , _test_mapIndex_iso <span class="dv">0</span> (u <span class="fu">:*</span> <span class="dv">0</span>)
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_times_one ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_times_one <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times one&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ _test_mapIndex_iso u (<span class="dv">1</span> <span class="fu">:*</span> u)
+<span class="ot">&gt;</span>     , _test_mapIndex_iso u (u <span class="fu">:*</span> <span class="dv">1</span>)
+<span class="ot">&gt;</span>     ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_plus_comm ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_plus_comm <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus comm&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> _test_mapIndex_iso (u <span class="fu">:+</span> v) (v <span class="fu">:+</span> u)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_plus_assoc ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_plus_assoc <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus assoc&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span> _test_mapIndex_iso ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_times_assoc ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_times_assoc <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times assoc&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span> _test_mapIndex_iso ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _<span class="ot">test_mapIndex_dist ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
+<span class="ot">&gt;</span> _test_mapIndex_dist <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex dist&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span> and
+<span class="ot">&gt;</span>     [ _test_mapIndex_iso (u <span class="fu">:*</span> (v <span class="fu">:+</span> w)) ((u <span class="fu">:*</span> v) <span class="fu">:+</span> (u <span class="fu">:*</span> w))
+<span class="ot">&gt;</span>     , _test_mapIndex_iso ((u <span class="fu">:+</span> v) <span class="fu">:*</span> w) ((u <span class="fu">:*</span> w) <span class="fu">:+</span> (v <span class="fu">:*</span> w))
+<span class="ot">&gt;</span>     ]</code></pre></div>
+<h2 id="tests">Tests</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_index_isos ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_index_isos num size <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Size and Index&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
+<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args _test_size_plus_zero
+<span class="ot">&gt;</span>   runTest args _test_size_times_zero
+<span class="ot">&gt;</span>   runTest args _test_size_times_one
+<span class="ot">&gt;</span>   runTest args _test_size_equiv_plus_comm
+<span class="ot">&gt;</span>   runTest args _test_size_equiv_plus_assoc
+<span class="ot">&gt;</span>   runTest args _test_size_equiv_times_assoc
+<span class="ot">&gt;</span>   runTest args _test_size_equiv_dist
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args _test_expand
+<span class="ot">&gt;</span>   runTest args _test_prune
+<span class="ot">&gt;</span>   runTest args _test_unbalance
+<span class="ot">&gt;</span>   runTest args _test_arrange
+<span class="ot">&gt;</span>   runTest args _test_toCanon
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_toCanon
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_self
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_plus_zero
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_times_zero
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_times_one
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_plus_comm
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_plus_assoc
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_times_assoc
+<span class="ot">&gt;</span>   runTest args _test_mapIndex_dist
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main_index_isos ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_index_isos <span class="fu">=</span> _test_index_isos <span class="dv">100</span> <span class="dv">10</span></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Supervised Learning Models</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Supervised Learning Models</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-20 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/SupervisedModels.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>Thousands of nerds have written thousands of blog posts about supervised machine learning. Here’s mine. :) Caveat- this is a terrible and handwavy understanding of the motivation for supervised learning, but it works for me.</p>
+<p>Lots of real-world data is random – drawn from some probability distribution which is generally unknown and unknowable. But if we have some additional information we may be able to narrow down the range of <em>possible</em> distributions. A classic example is the sale price of a given house; for all practical purposes we can treat the sale price of a house as a random variable with a hideously complicated distribution. But if we have some additional information about the house – size, age, number of bedrooms, location, frontage, and so on – we can narrow down the distribution <em>a lot</em>. In fact experienced realtors can reliably predict the final sale price of a house to within a small margin.</p>
+<p>That is, for at least some random data (e.g. sale price) we can think of the probability distribution itself as being a <em>function</em> of some additional input (e.g. size, location). If we knew this function, we could use it to <em>predict</em> new observations based on new input.</p>
+<p>This doesn’t sound very useful at first; we have an unknown function that returns unknowable probability distributions. But! If we have some <em>example data</em> drawn from this parameterized distribution, we can use them to narrow the range of possible functions. In other words, if we find a function that considers our example data to be reasonable, then the function itself is possibly a reasonable candidate for the underlying distribution, and so possibly useful for making predictions on <em>new</em> input.</p>
+<p>One way to find a candidate function is to (1) guess that it has a particular form, parameterized by one or more variables, and (2) use some calculus to find the “best” values for the variables (called <em>training</em> the model).</p>
+<p>And here’s the magic. First of all, this more or less works, which is neat. But even more neat is that our guess doesn’t have to be ridiculously complicated in order to make interesting and useful predictions.</p>
+<p>In this post we’ll give a more specific definition for supervised learning models. We’ll also define a few specific examples, as well as a handful of “model combinators” we can use to combine simpler models into more complex ones, like an algebra of learning models.</p>
+<p>First some boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">SupervisedModels</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TensorFunctions</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Gradients</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GradientChecking</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GradientDescent</span></code></pre></div>
+<p>Formally, a <em>supervised learning model</em> is a function on tensors which takes a tensor parameter – that is, a function with a signature like <span class="math display">\[M : \mathbb{R}^\Theta \rightarrow \mathbb{R}^u \rightarrow \mathbb{R}^v.\]</span> We’ll think of this function as having signature <span class="math display">\[M : \mathbb{R}^{\Theta \oplus u} \rightarrow \mathbb{R}^v.\]</span> To represent a model like this, we will keep track of the sizes of the parameter (<span class="math inline">\(\Theta\)</span>), input (<span class="math inline">\(u\)</span>), and output (<span class="math inline">\(v\)</span>) tensors as well as the mapping (<span class="math inline">\(M\)</span>). We’ll also keep track of a list of indices for the so-called <em>regularized</em> parameters (more on these later). Finally, we’ll also keep track of the gradient of the mapping.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">SupervisedModel</span> r <span class="fu">=</span> <span class="dt">SM</span>
+<span class="ot">&gt;</span>   {<span class="ot"> smParamSize  ::</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> smInputSize  ::</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> smOutputSize ::</span> <span class="dt">Size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> smRegularize ::</span> [<span class="dt">Index</span>]
+<span class="ot">&gt;</span>   ,<span class="ot"> smFunction   ::</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span>   ,<span class="ot"> smGradient   ::</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>Importantly, with a parameter and input tensor in hand, our model can make a prediction.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; predictSM ::</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> predictSM model theta x <span class="fu">=</span> (smFunction model) <span class="fu">$@</span> (theta <span class="ot">`oplus`</span> x)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; gradientSM ::</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> gradientSM model theta x <span class="fu">=</span> (smGradient model) <span class="fu">$@</span> (theta <span class="ot">`oplus`</span> x)</code></pre></div>
+<p>For example, one of the simplest possible models is a linear transformation or, more generally, an affine transformation. Recall that a linear transformation is a map <span class="math inline">\(\mathbb{R}^u \rightarrow \mathbb{R}^v\)</span>, where <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> are natural numbers, which we can implement using matrix multiplication (mumble after choosing a basis mumble), and an affine transformation is a linear transformation plus a constant. So in this case our model <span class="math inline">\(M\)</span> looks like <span class="math display">\[M((A \oplus b) \oplus x) = Ax + b,\]</span> where <span class="math inline">\(A\)</span> is a <span class="math inline">\(v \times u\)</span> matrix and <span class="math inline">\(b\)</span> is a <span class="math inline">\(v\)</span> vector. Or, using our tensor language, using the gradient of <span class="math inline">\(MV + B\)</span> we computed earlier:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; affineSM ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> affineSM from to <span class="fu">=</span> <span class="dt">SM</span>
+<span class="ot">&gt;</span>   { smParamSize   <span class="fu">=</span> (to <span class="fu">:*</span> from) <span class="fu">:+</span> to
+<span class="ot">&gt;</span>   , smInputSize   <span class="fu">=</span> from
+<span class="ot">&gt;</span>   , smOutputSize  <span class="fu">=</span> to
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , smRegularize  <span class="fu">=</span> map <span class="dt">L</span> <span class="fu">$</span> indicesOf (to <span class="fu">:*</span> from)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , smFunction <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> ((to <span class="fu">:*</span> from) <span class="fu">:+</span> to) <span class="fu">:+</span> from
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> to
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> termL (termL x)
+<span class="ot">&gt;</span>             b <span class="fu">=</span> termR (termL x)
+<span class="ot">&gt;</span>             v <span class="fu">=</span> termR x
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             (m <span class="fu">**&gt;</span> v) <span class="fu">.+</span> b
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , smGradient <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> ((to <span class="fu">:*</span> from) <span class="fu">:+</span> to) <span class="fu">:+</span> from
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> to <span class="fu">:*</span> (((to <span class="fu">:*</span> from) <span class="fu">:+</span> to) <span class="fu">:+</span> from)
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> termL (termL x)
+<span class="ot">&gt;</span>             b <span class="fu">=</span> termR (termL x)
+<span class="ot">&gt;</span>             v <span class="fu">=</span> termR x
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             tensor (to <span class="fu">:*</span> (((to <span class="fu">:*</span> from) <span class="fu">:+</span> to) <span class="fu">:+</span> from)) <span class="fu">$</span>
+<span class="ot">&gt;</span>               \<span class="kw">case</span>
+<span class="ot">&gt;</span>                 k <span class="fu">:&amp;</span> (<span class="dt">L</span> (<span class="dt">L</span> (i <span class="fu">:&amp;</span> j))) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                   <span class="kw">if</span> i <span class="fu">==</span> k <span class="kw">then</span> v <span class="ot">`at`</span> j <span class="kw">else</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>                 k <span class="fu">:&amp;</span> (<span class="dt">L</span> (<span class="dt">R</span> s)) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                   <span class="kw">if</span> s <span class="fu">==</span> k <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>                 k <span class="fu">:&amp;</span> (<span class="dt">R</span> t) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                   m <span class="ot">`at`</span> (k <span class="fu">:&amp;</span> t)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- type-fixed version for testing</span>
+<span class="ot">&gt; affineSMOf ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> affineSMOf _ u v <span class="fu">=</span> affineSM u v</code></pre></div>
+<p>(Again, ignore the <code>smRegularize</code> parameter for now.)</p>
+<p>The most important constraint that a <code>SupervisedModel</code> should satisfy is that <code>smGradient</code> be the gradient of <code>smFunction</code>. We can check this using both the numerical and dual number strategies because why not.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_numerical_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_numerical_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model numerical gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>       (approxGrad (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">5</span>)) <span class="fu">$</span> smFunction <span class="fu">$</span> affineSMOf r u v)
+<span class="ot">&gt;</span>       (smGradient <span class="fu">$</span> affineSMOf r u v)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_affine_model_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> smFunction <span class="fu">$</span> affineSMOf (toDual r) u v)
+<span class="ot">&gt;</span>       (smGradient <span class="fu">$</span> affineSMOf r u v)</code></pre></div>
+<h2 id="training">Training</h2>
+<p>So our model takes a parameter and returns a function that makes predictions. To <em>train</em> the model, we first choose some method, called a <em>cost function</em>, for measuring how bad its predictions are for a given parameter; generally a function from <span class="math inline">\(\mathbb{R}^\Theta\)</span> to <span class="math inline">\(\mathbb{R}\)</span>. There are many possible choices for the cost function, so we’ll represent them with a type. Generally the cost function will depend on the model being used, and should take (1) a set of training examples <span class="math inline">\(\{x_i,y_i\}_{i \in T} \subseteq \mathbb{R}^u \times \mathbb{R}^v\)</span> and (2) a parameter <span class="math inline">\(\theta \in \mathbb{R}^\Theta\)</span>, and return a measure of how badly <span class="math inline">\(M\)</span> performs on the <span class="math inline">\((x_i,y_i)\)</span> under <span class="math inline">\(\theta\)</span>. We’ll also keep track of the gradient of the cost function.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">CostFunction</span> r <span class="fu">=</span> <span class="dt">CF</span>
+<span class="ot">&gt;</span>   { cfFunction 
+<span class="ot">&gt;       ::</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)] <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span>   , cfGradient
+<span class="ot">&gt;       ::</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)] <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>One simple but useful cost function is the sum-squared-error function. If our training set is <span class="math inline">\(\{(x_i,y_i\}_{i=1}^m\)</span>, the sum-squared-error cost function is given by <span class="math display">\[\mathsf{cost}(\theta) = \frac{1}{2m} \sum_{i=1}^m ||f(\theta \oplus x_i) - y_i||^2,\]</span> where <span class="math inline">\(||\ast||^2\)</span> is the dot square of a tensor. In code:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> sumSquaredError
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">CostFunction</span> r
+<span class="ot">&gt;</span> sumSquaredError model <span class="fu">=</span> <span class="dt">CF</span>
+<span class="ot">&gt;</span>   { cfFunction <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length examples
+<span class="ot">&gt;</span>             f <span class="fu">=</span> smFunction model
+<span class="ot">&gt;</span>             ns (x,y) <span class="fu">=</span> normSquared (((f <span class="fu">$@</span> (theta <span class="ot">`oplus`</span> x)) <span class="fu">.-</span> y))
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             cell <span class="fu">$</span> (sum <span class="fu">$</span> map ns examples) <span class="fu">/</span> (<span class="dv">2</span><span class="fu">*</span>m)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , cfGradient <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length examples
+<span class="ot">&gt;</span>             f <span class="fu">=</span> smFunction model
+<span class="ot">&gt;</span>             g <span class="fu">=</span> smGradient model
+<span class="ot">&gt;</span>             gr (x,y) <span class="fu">=</span>
+<span class="ot">&gt;</span>               ((f <span class="fu">$@</span> (theta <span class="ot">`oplus`</span> x)) <span class="fu">.-</span> y)
+<span class="ot">&gt;</span>                 <span class="fu">&lt;**</span> (g <span class="fu">$@</span> (theta <span class="ot">`oplus`</span> x))  <span class="co">-- vector-matrix product</span>
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             termL <span class="fu">$</span> (<span class="dv">1</span><span class="fu">/</span>m) <span class="fu">.@</span> (vsum <span class="fu">$</span> map gr examples)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>Why is this useful? There are good theoretical reasons which I do not totally understand. But on a practical level sum squared error is simple and nicely differentiable and intuitively a good measure of “closeness”. All terms in the sum are positive, and each term contributes less to the sum when <span class="math inline">\(f(\theta \oplus x_i)\)</span> (the prediction) and <span class="math inline">\(y_i\)</span> (the actual observation) are close.</p>
+<p>We should test that the sum squared error cost function gradient is reasonable.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_sse_numerical_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_sse_numerical_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model sum squared error numerical gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v k <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (k <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     forAll (vectorOf k <span class="fu">$</span> pairOf (arbTensorOf r u) (arbTensorOf r v)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \xs <span class="ot">-&gt;</span> (xs <span class="fu">/=</span> []) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxRelDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">2</span>))
+<span class="ot">&gt;</span>           (approxGrad (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">4</span>)) <span class="fu">$</span>
+<span class="ot">&gt;</span>             cfFunction (sumSquaredError <span class="fu">$</span> affineSMOf r u v) xs)
+<span class="ot">&gt;</span>           (cfGradient (sumSquaredError <span class="fu">$</span> affineSMOf r u v) xs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_affine_model_sse_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_sse_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model sum squared error dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v k <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (k <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     forAll (vectorOf k <span class="fu">$</span> pairOf (arbTensorOf r u) (arbTensorOf r v)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \xs <span class="ot">-&gt;</span> (xs <span class="fu">/=</span> []) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> cfFunction
+<span class="ot">&gt;</span>             (sumSquaredError <span class="fu">$</span> affineSMOf (toDual r) u v)
+<span class="ot">&gt;</span>             (map (\(h,k) <span class="ot">-&gt;</span> (fmap toDual h, fmap toDual k)) xs))
+<span class="ot">&gt;</span>           (cfGradient (sumSquaredError <span class="fu">$</span> affineSMOf r u v) xs)</code></pre></div>
+<p>With a cost function in hand, we can use gradient descent to minimize it. <code>smSimpleTrain</code> takes a cost function, a list of example data, an initial guess, and a learning rate, and attempts to minimize the cost function.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smSimpleTrain
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">CostFunction</span> r
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)]
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> smSimpleTrain cost examples x0 lr <span class="fu">=</span>
+<span class="ot">&gt;</span>   gradDesc (cfGradient cost <span class="fu">$</span> examples) x0 x0
+<span class="ot">&gt;</span>     (maxAbsDiffLessThan (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">15</span>)))
+<span class="ot">&gt;</span>     (fixedLearningRate lr)</code></pre></div>
+<p>As a smell test we can try to learn a known function. We’ll do this by hand with a couple of examples and then generalize to a test.</p>
+<p>First, consider a training set with two examples, each of which is a pair of size 1 tensors – in other words, two ordered pairs of real numbers <span class="math inline">\((x_1,y_1)\)</span> and <span class="math inline">\((x_2,y_2)\)</span>. For simplicity let’s say they are <span class="math inline">\((1,1)\)</span> and <span class="math inline">\((2,2)\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; smell_test_data_1 ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)]
+<span class="ot">&gt;</span> smell_test_data_1 <span class="fu">=</span>
+<span class="ot">&gt;</span>   [ (cell <span class="dv">1</span>, cell <span class="dv">1</span>)
+<span class="ot">&gt;</span>   , (cell <span class="dv">2</span>, cell <span class="dv">2</span>)
+<span class="ot">&gt;</span>   ]</code></pre></div>
+<p>An affine model compatible with these data must have signature <span class="math display">\[f : \mathbb{R}^{((1 \otimes 1) \oplus 1) \oplus 1} \rightarrow \mathbb{R}^1\]</span> and looks something like <span class="math display">\[f((m \oplus b) \oplus x) = mx + b,\]</span> where <span class="math inline">\(m\)</span> and <span class="math inline">\(b\)</span> are the trainable parameters. In this case the test data can be fit exactly (which is not normally desirable, but we’re just testing here) with the parameters <span class="math inline">\(m = 1\)</span> and <span class="math inline">\(b = 0\)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; smell_test_model_1 ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> smell_test_model_1 <span class="fu">=</span> affineSM <span class="dv">1</span> <span class="dv">1</span></code></pre></div>
+<p>And we can train this model to find a locally optimal value for the parameter tensor:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smell_test_theta_1
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> smell_test_theta_1 <span class="fu">=</span> smSimpleTrain
+<span class="ot">&gt;</span>   (sumSquaredError smell_test_model_1)
+<span class="ot">&gt;</span>   smell_test_data_1
+<span class="ot">&gt;</span>   (zeros <span class="fu">$</span> smParamSize <span class="fu">$</span> smell_test_model_1)
+<span class="ot">&gt;</span>   <span class="fl">0.15</span></code></pre></div>
+<p>Sure enough, we have</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> smell_test_theta_1
+   <span class="fl">0.9999999999999443</span>
+<span class="fl">9.036826666597734e-14</span></code></pre></div>
+<p>which is pretty close to <span class="math inline">\(m = 1\)</span> and <span class="math inline">\(b = 0\)</span>. Moreover, we can use this <code>theta</code> to make predictions.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smell_test_predict_1
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> smell_test_predict_1 x <span class="fu">=</span>
+<span class="ot">&gt;</span>   predictSM smell_test_model_1 smell_test_theta_1 x</code></pre></div>
+<p>with:</p>
+<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> smell_test_predict_1 (cell <span class="dv">1</span>)
+<span class="fl">1.0000000000000346</span>
+<span class="fu">$&gt;</span> smell_test_predict_1 (cell <span class="dv">2</span>)
+<span class="fl">1.999999999999979</span>
+<span class="fu">$&gt;</span> smell_test_predict_1 (cell <span class="dv">150</span>)
+<span class="fl">149.99999999999173</span></code></pre></div>
+<p>Woo! It doesn’t not work. :)</p>
+<p>While we’re at it, here’s a slightly more complicated example.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; smell_test_data_2 ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)]
+<span class="ot">&gt;</span> smell_test_data_2 <span class="fu">=</span>
+<span class="ot">&gt;</span>   [ (vec [<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>], cell <span class="dv">1</span>)
+<span class="ot">&gt;</span>   , (vec [<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">1</span>], cell <span class="dv">2</span>)
+<span class="ot">&gt;</span>   , (vec [<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">2</span>], cell <span class="dv">0</span>)
+<span class="ot">&gt;</span>   , (vec [<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>], cell <span class="dv">2</span>)
+<span class="ot">&gt;</span>   ]
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; smell_test_model_2 ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> smell_test_model_2 <span class="fu">=</span> affineSM <span class="dv">3</span> <span class="dv">1</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> smell_test_theta_2
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> smell_test_theta_2 <span class="fu">=</span> smSimpleTrain
+<span class="ot">&gt;</span>   (sumSquaredError smell_test_model_2)
+<span class="ot">&gt;</span>   smell_test_data_2
+<span class="ot">&gt;</span>   (zeros <span class="fu">$</span> smParamSize <span class="fu">$</span> smell_test_model_2)
+<span class="ot">&gt;</span>   <span class="fl">0.15</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> smell_test_predict_2
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> smell_test_predict_2 x <span class="fu">=</span>
+<span class="ot">&gt;</span>   predictSM smell_test_model_2 smell_test_theta_2 x</code></pre></div>
+<h2 id="regularization">Regularization</h2>
+<p>So training a model boils down to finding a parameter <span class="math inline">\(\theta\)</span> that minimizes the cost function. It turns out that we sometimes have occasion to want additional constraints on the parameters; say, by preferring that they not be too large. For example, at the moment we only know how to deal with linear and affine models, but even these can model nonlinear functions if we introduce new inputs to represent nonlinear combinations of the old inputs. If we have a data set that naturally has one input, <span class="math inline">\(x\)</span>, we could try to learn a function of <span class="math inline">\(x\)</span> like <span class="math display">\[f(m,b,x) = mx + b\]</span> or we could learn a function of <span class="math inline">\(x\)</span> and <span class="math inline">\(x^2\)</span> like <span class="math display">\[f(a,m,b,x) = ax^2 + mx + b,\]</span> or a function of <span class="math inline">\(\sqrt{x}\)</span>, or <span class="math inline">\(\log(x)\)</span>, or any number of other possibilities. This opens a wide range of more interesting nonlinear functions, but also increases the risk of overfitting. To prevent this, we can penalize parameters which are large in absolute value – doing so helps because when data is fit “unnaturally” by a complex nonlinear function the coefficients tend to be large. We can do this by adding the square of each parameter to the cost function. Of course we don’t necessarily want to penalize <em>all</em> parameters; for instance, in the affine model the offset parameters <span class="math inline">\(B\)</span> have no effect on any polynomial inputs we introduce.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> regularize
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">CostFunction</span> r <span class="ot">-&gt;</span> <span class="dt">CostFunction</span> r
+<span class="ot">&gt;</span> regularize lambda model cost <span class="fu">=</span> <span class="dt">CF</span>
+<span class="ot">&gt;</span>   { cfFunction <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             reg <span class="fu">=</span> sum [ (theta <span class="ot">`at`</span> i)<span class="fu">^</span><span class="dv">2</span> <span class="fu">|</span> i <span class="ot">&lt;-</span> smRegularize model ]
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length <span class="fu">$</span> smRegularize model
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             (cfFunction cost examples <span class="fu">$@</span> theta)
+<span class="ot">&gt;</span>               <span class="fu">.+</span> (cell <span class="fu">$</span> lambda <span class="fu">*</span> reg <span class="fu">/</span> m)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , cfGradient <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length <span class="fu">$</span> smRegularize model
+<span class="ot">&gt;</span>             rg <span class="fu">=</span> tensor (smParamSize model) <span class="fu">$</span>
+<span class="ot">&gt;</span>               \i <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="ot">`elem`</span> smRegularize model
+<span class="ot">&gt;</span>                 <span class="kw">then</span> <span class="dv">2</span> <span class="fu">*</span> lambda <span class="fu">*</span> (theta<span class="ot">`at`</span>i) <span class="fu">/</span> m
+<span class="ot">&gt;</span>                 <span class="kw">else</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             (cfGradient cost examples <span class="fu">$@</span> theta) <span class="fu">.+</span> rg
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>We should test that the regularized sum squared error cost function gradient is reasonable for affine models.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_regularized_sse_numerical_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_regularized_sse_numerical_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model regularized sse numerical gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v k <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (k <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     forAll (vectorOf k <span class="fu">$</span> pairOf (arbTensorOf r u) (arbTensorOf r v)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \xs lam <span class="ot">-&gt;</span> (xs <span class="fu">/=</span> []) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           m <span class="fu">=</span> affineSMOf r u v
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           _test_functions_equal <span class="dt">MaxRelDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">1</span>))
+<span class="ot">&gt;</span>             (approxGrad (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">4</span>)) <span class="fu">$</span>
+<span class="ot">&gt;</span>               cfFunction (regularize (abs lam) m <span class="fu">$</span> sumSquaredError m) xs)
+<span class="ot">&gt;</span>             (cfGradient (regularize (abs lam) m <span class="fu">$</span> sumSquaredError m) xs)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_affine_model_regularized_sse_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_affine_model_regularized_sse_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;affine model regularized sse dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v k <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (k <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     forAll (vectorOf k <span class="fu">$</span> pairOf (arbTensorOf r u) (arbTensorOf r v)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \xs lam <span class="ot">-&gt;</span> (xs <span class="fu">/=</span> []) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>         <span class="kw">let</span>
+<span class="ot">&gt;</span>           m1 <span class="fu">=</span> affineSMOf (toDual r) u v
+<span class="ot">&gt;</span>           m2 <span class="fu">=</span> affineSMOf r u v
+<span class="ot">&gt;</span>         <span class="kw">in</span>
+<span class="ot">&gt;</span>           _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>             (dualGrad <span class="fu">$</span> cfFunction
+<span class="ot">&gt;</span>               (regularize (toDual <span class="fu">$</span> abs lam) m1 <span class="fu">$</span> sumSquaredError m1)
+<span class="ot">&gt;</span>               (map (\(h,k) <span class="ot">-&gt;</span> (fmap toDual h, fmap toDual k)) xs))
+<span class="ot">&gt;</span>             (cfGradient
+<span class="ot">&gt;</span>               (regularize (abs lam) m2 <span class="fu">$</span> sumSquaredError m2) xs)</code></pre></div>
+<h2 id="test-suite">Test Suite</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_supervised_models
+<span class="ot">&gt;   ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_supervised_models r num size <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Supervised Models&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
+<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_dual_gradient r)
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_numerical_gradient r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_sse_dual_gradient r)
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_sse_numerical_gradient r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_regularized_sse_dual_gradient r)
+<span class="ot">&gt;</span>   runTest args (_test_affine_model_regularized_sse_numerical_gradient r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main_supervised_models ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_supervised_models <span class="fu">=</span> _test_supervised_models (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Double</span>) <span class="dv">30</span> <span class="dv">3</span></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

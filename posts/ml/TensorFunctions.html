@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Tensor Functions</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Tensor Functions</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-16 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/TensorFunctions.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>First some boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">TensorFunctions</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Debug.Trace</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span></code></pre></div>
+<p>Ostensibly a “tensor function” is just a function with signature <code>Tensor r -&gt; Tensor r</code>. But it turns out this is not quite right. Tensor functions should be well defined on size – a function should expect as input functions of some uniform size <span class="math inline">\(u\)</span> and should produce tensors of some other uniform size <span class="math inline">\(v\)</span>. As we’ve implemented tensors here, plain haskell functions can’t enforce this, so we’ll abstract functions behind a type that can.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Function</span> r <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   {<span class="ot"> dom ::</span> <span class="dt">Size</span> <span class="co">-- domain (input) size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> cod ::</span> <span class="dt">Size</span> <span class="co">-- codomain (output) size</span>
+<span class="ot">&gt;</span>   ,<span class="ot"> fun ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- apply</span>
+<span class="ot">&gt; ($@) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> f <span class="fu">$@</span> v <span class="fu">=</span> <span class="kw">if</span> (size v) <span class="fu">/=</span> dom f
+<span class="ot">&gt;</span>   <span class="kw">then</span> error <span class="fu">$</span> <span class="st">&quot;($@): domain mismatch: got &quot;</span> <span class="fu">++</span> show (size v)
+<span class="ot">&gt;</span>     <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (dom f)
+<span class="ot">&gt;</span>   <span class="kw">else</span> <span class="kw">let</span> w <span class="fu">=</span> (fun f) v <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> (size w) <span class="fu">==</span> cod f
+<span class="ot">&gt;</span>       <span class="kw">then</span> w
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="fu">$</span> <span class="st">&quot;($@): codomain mismatch: got &quot;</span> <span class="fu">++</span> show (size w)
+<span class="ot">&gt;</span>         <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (cod f)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- compose</span>
+<span class="ot">&gt; ($.) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> g <span class="fu">$.</span> f <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> (dom g) <span class="fu">==</span> (cod f)
+<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> dom f
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> cod g
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> g <span class="fu">$@</span> (f <span class="fu">$@</span> v)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>     <span class="kw">else</span>
+<span class="ot">&gt;</span>       error <span class="st">&quot;($.): domain/codomain mismatch&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">infixr</span> <span class="dv">0</span> <span class="fu">$@</span>
+<span class="ot">&gt;</span> <span class="kw">infixr</span> <span class="dv">9</span> <span class="fu">$.</span></code></pre></div>
+<p>We can also build a small library of functions in this style.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- constant function</span>
+<span class="ot">&gt; constF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> constF u a <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> size a
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \_ <span class="ot">-&gt;</span> a
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- identity function</span>
+<span class="ot">&gt; idF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> idF u <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> id
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- scalar multiplication</span>
+<span class="ot">&gt; scalarF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> scalarF u k <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> k <span class="fu">.@</span> v
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- matrix-vector multiplication</span>
+<span class="ot">&gt; linearF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> linearF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> v
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \w <span class="ot">-&gt;</span> m <span class="fu">**&gt;</span> w
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> linearF _ <span class="fu">=</span> error <span class="st">&quot;linearF: parameter should have product shape.&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- matrix-vector multiplication plus a constant</span>
+<span class="ot">&gt; affineF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> affineF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) b<span class="fu">@</span>(<span class="dt">T</span> w _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">if</span> v <span class="fu">==</span> w
+<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> v
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \z <span class="ot">-&gt;</span> (m <span class="fu">**&gt;</span> z) <span class="fu">.+</span> b
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;affineF: dimension mismatch&quot;</span>
+<span class="ot">&gt;</span> affineF _ _ <span class="fu">=</span> error <span class="st">&quot;affineF: first parameter should have product shape.&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- pointwise eval</span>
+<span class="ot">&gt; pointwiseF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> pointwiseF u f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> fmap f v
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- diagonalize</span>
+<span class="ot">&gt; diagF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> diagF u <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:*</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> diag
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; cellF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> cellF u f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> cell <span class="fu">$</span> f v
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>And direct summing:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dSumR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> dSumR u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:+</span> v
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> x <span class="ot">`oplus`</span> a
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; dSumL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> dSumL u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> v <span class="fu">:+</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> a <span class="ot">`oplus`</span> x
+<span class="ot">&gt;</span>   }</code></pre></div>
+<h2 id="algebra-of-functions">Algebra of Functions</h2>
+<p>For fun we can describe an algebra of tensor functions. There’s sums:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Function</span> <span class="kw">where</span>
+<span class="ot">&gt;</span>   r <span class="fu">.@</span> f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>     { dom <span class="fu">=</span> dom f
+<span class="ot">&gt;</span>     , cod <span class="fu">=</span> cod f
+<span class="ot">&gt;</span>     , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> r <span class="fu">.@</span> (f <span class="fu">$@</span> v)
+<span class="ot">&gt;</span>     }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   f <span class="fu">.+</span> g
+<span class="ot">&gt;</span>     <span class="fu">|</span> (dom f) <span class="fu">/=</span> (dom g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): domains must match&quot;</span>
+<span class="ot">&gt;</span>     <span class="fu">|</span> (cod f) <span class="fu">/=</span> (cod g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): codomains must match&quot;</span>
+<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>         { dom <span class="fu">=</span> dom f
+<span class="ot">&gt;</span>         , cod <span class="fu">=</span> cod f
+<span class="ot">&gt;</span>         , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> v) <span class="fu">.+</span> (g <span class="fu">$@</span> v)
+<span class="ot">&gt;</span>         }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   neg f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>     { dom <span class="fu">=</span> dom f
+<span class="ot">&gt;</span>     , cod <span class="fu">=</span> cod f
+<span class="ot">&gt;</span>     , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> neg (f <span class="fu">$@</span> v)
+<span class="ot">&gt;</span>     }</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; (+++) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> f <span class="fu">+++</span> g <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> (dom f) <span class="fu">:+</span> (dom g)
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:+</span> (cod g)
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> termL v) <span class="ot">`oplus`</span> (g <span class="fu">$@</span> termR v)
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>And mapping into products.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mapR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> mapR u f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u <span class="fu">:*</span> (dom f)
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:*</span> (cod f)
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor (u <span class="fu">:*</span> (cod f)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projR i a) <span class="ot">`at'`</span> j
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; mapL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
+<span class="ot">&gt;</span> mapL u f <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>   { dom <span class="fu">=</span> (dom f) <span class="fu">:*</span> u
+<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> u
+<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor ((cod f) <span class="fu">:*</span> u) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projL j a) <span class="ot">`at'`</span> i
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>As an example, given a matrix we can use the <code>map*</code> operators to sum or maximum of the rows or columns of a product-shaped tensor.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; rowsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> rowsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   mapR u (cellF v f) <span class="fu">$@</span> a
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; colsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
+<span class="ot">&gt;</span> colsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
+<span class="ot">&gt;</span>   mapL v (cellF u f) <span class="fu">$@</span> a</code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

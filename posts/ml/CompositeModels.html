@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>nbloomf.blog - Composite Models</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Composite Models</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-10-22 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/ml.html">ml</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<p class="post-info">This post is part of a series of notes on <a href="../../pages/ml.html">machine learning</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/ml/CompositeModels.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<p>Boilerplate.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
+<span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">CompositeModels</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TensorFunctions</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Gradients</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GradientChecking</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">GradientDescent</span>
+<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">SupervisedModels</span></code></pre></div>
+<p>In the last post we defined <em>supervised model</em> and gave the basic example of an affine model. In order to learn more interesting functions, we need more complex kinds of models. Rather than defining more and more complicated models by hand, we’d like to describe them <em>compositionally</em>, by taking a small number of “atomic” models (like the affine example) and plugging them together in a small number of different ways. In this post we’ll compose two models by taking the output of one as the input of another – this will be function composition with a twist.</p>
+<p>First, suppose we have two mappings <span class="math display">\[f : \mathbb{R}^{\Theta \oplus A} \rightarrow \mathbb{R}^B\]</span> and <span class="math display">\[g : \mathbb{R}^{\Phi \oplus B} \rightarrow \mathbb{R}^C.\]</span> We’d like to compose these together, making a single function with parameter <span class="math inline">\(\Phi \oplus \Theta\)</span>. We’ll do this by introducing an operator on functions. Define <span class="math display">\[g \bullet f : \mathbb{R}^{(\Phi \oplus \Theta) \oplus A} \rightarrow \mathbb{R}^C\]</span> by <span class="math display">\[(g \bullet f)((M \oplus N) \oplus V) = g(M \oplus f(N \oplus V)).\]</span> This is function composition with a parameter, and the gradient has signature <span class="math display">\[\nabla(g \bullet f) : \mathbb{R}^{(\Phi \oplus \Theta) \oplus A} \rightarrow \mathbb{R}^{C \otimes ((\Phi \oplus \Theta) \oplus A)}.\]</span> We can compute <span class="math inline">\(\nabla(g \bullet f)\)</span> by case analysis on the index; each one has one of the following forms:</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(c \&amp; \mathsf{L}\mathsf{L}\phi\)</span> with <span class="math inline">\(c \in C\)</span> and <span class="math inline">\(\phi \in \Phi\)</span>,</li>
+<li><span class="math inline">\(c \&amp; \mathsf{L}\mathsf{R}\theta\)</span> with <span class="math inline">\(c \in C\)</span> and <span class="math inline">\(\theta \in \Theta\)</span>,</li>
+<li><span class="math inline">\(c \&amp; \mathsf{R}a\)</span> with <span class="math inline">\(c \in C\)</span> and <span class="math inline">\(a \in A\)</span>.</li>
+</ol>
+<p>At <span class="math inline">\(c \&amp; \mathsf{L}\mathsf{L}\phi\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(g \bullet f)((M \oplus N) \oplus V)_{c \&amp; \mathsf{L}\mathsf{L}\phi} \\
+ &amp; = &amp; D((g \bullet f)(w_{\mathsf{L}\mathsf{L}\phi,(M \oplus N) \oplus V}(x))_c)(((M \oplus N) \oplus V)_{\mathsf{L}\mathsf{L}\phi}) \\
+ &amp; = &amp; D((g \bullet f)((w_{\phi,M}(x) \oplus N) \oplus V)_c)(M_\phi) \\
+ &amp; = &amp; D(g(w_{\phi,M}(x) \oplus f(N \oplus V))_c)(M_\phi) \\
+ &amp; = &amp; D((g \circ (- \oplus f(N \oplus V)))(w_{\phi,M}(x))_c)(M_\phi) \\
+ &amp; = &amp; \nabla(g \circ (- \oplus f(N \oplus V)))(M)_{c \&amp; \phi} \\
+ &amp; = &amp; \left( \nabla(g)((- \oplus f(N \oplus V))(M)) \cdot \nabla(- \oplus f(N \oplus V))(M) \right)_{c \&amp; \phi} \\
+ &amp; = &amp; \left( \nabla(g)(M \oplus f(N \oplus V)) \cdot \nabla(- \oplus f(N \oplus V))(M) \right)_{c \&amp; \phi} \\
+ &amp; = &amp; \left( \nabla(g)(M \oplus f(N \oplus V)) \cdot \mathsf{vcat}(\mathsf{Id}_{\Phi}, \mathsf{Z}_{B \otimes \Phi}) \right)_{c \&amp; \phi}
+\end{eqnarray*}\]</span></p>
+<p>At <span class="math inline">\(c \&amp; \mathsf{L}\mathsf{R}\theta\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(g \bullet f)((M \oplus N) \oplus V)_{c \&amp; \mathsf{L}\mathsf{R}\theta} \\
+ &amp; = &amp; D((g \bullet f)(w_{\mathsf{L}\mathsf{R}\theta,(M \oplus N) \oplus V}(x))_c)(((M \oplus N) \oplus V)_{\mathsf{L}\mathsf{R}\theta}) \\
+ &amp; = &amp; D((g \bullet f)((M \oplus w_{\theta,N}(x)) \oplus V)_c)(N_\theta) \\
+ &amp; = &amp; D(g(M \oplus f(w_{\theta,N}(x) \oplus V))_c)(N_\theta) \\
+ &amp; = &amp; D((g(M \oplus -) \circ f(- \oplus V))(w_{\theta,N}(x))_c)(N_\theta) \\
+ &amp; = &amp; \nabla(g(M \oplus -) \circ f(- \oplus V))(N)_{c \&amp; \theta} \\
+ &amp; = &amp; \left( \nabla(g(M \oplus -))(f(- \oplus V)(N)) \cdot \nabla(f(- \oplus V))(N) \right)_{c \&amp; \theta} \\
+ &amp; = &amp; \left( \nabla(g \circ (M \oplus -))(f(N \oplus V)) \cdot \nabla(f \circ (- \oplus V))(N) \right)_{c \&amp; \theta} \\
+ &amp; = &amp; \left( (\nabla g)((M \oplus -)(f(N \oplus V))) \cdot \nabla(M \oplus -)(f(N \oplus V)) \cdot (\nabla f)((- \oplus V)(N)) \cdot \nabla(- \oplus V)(N) \right)_{c \&amp; \theta} \\
+ &amp; = &amp; \left( \underbrace{(\nabla g)(M \oplus f(N \oplus V))}_{C \otimes (\Phi \oplus B)} \cdot \underbrace{\mathsf{vcat}(\mathsf{Z}_{\Phi \otimes B}, \mathsf{Id}_{B})}_{(\Phi \oplus B) \otimes B} \cdot \underbrace{(\nabla f)(N \oplus V)}_{B \otimes (\Theta \oplus A)} \cdot \underbrace{\mathsf{vcat}(\mathsf{Id}_{\Theta}, \mathsf{Z}_{A \otimes \Theta})}_{(\Theta \oplus A) \otimes \Theta} \right)_{c \&amp; \theta} \\
+\end{eqnarray*}\]</span></p>
+<p>(I’ve included the size of each factor as a smell test.)</p>
+<p>At <span class="math inline">\(c \&amp; \mathsf{R}a\)</span>, we have</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(g \bullet f)((M \oplus N) \oplus V)_{c \&amp; \mathsf{R}a} \\
+ &amp; = &amp; D((g \bullet f)(w_{\mathsf{R}a, (M \oplus N) \oplus V}(x))_c)(((M \oplus N) \oplus V)_{\mathsf{R}a}) \\
+ &amp; = &amp; D((g \bullet f)((M \oplus N) \oplus w_{a,v}(x))_c)(V_a) \\
+ &amp; = &amp; D(g(M \oplus f(N \oplus w_{a,V}(x)))_c)(V_a) \\
+ &amp; = &amp; D((g(M \oplus -) \circ f(N \oplus -))(w_{a,V}(x))_c)(V_a) \\
+ &amp; = &amp; \nabla(g(M \oplus -) \circ f(N \oplus -))(V)_{c \&amp; a} \\
+ &amp; = &amp; \left( \nabla(g(M \oplus -))(f(N \oplus -)(V)) \cdot \nabla(f(N \oplus -))(V) \right)_{c \&amp; a} \\
+ &amp; = &amp; \left( \nabla(g \circ (M \oplus -))(f(N \oplus V)) \cdot \nabla(f \circ (N \oplus -))(V) \right)_{c \&amp; a} \\
+ &amp; = &amp; \left( (\nabla g)(M \oplus f(N \oplus V)) \cdot \nabla(M \oplus -)(f(N \oplus V)) \cdot (\nabla f)(N \oplus V) \cdot \nabla(N \oplus -)(V) \right)_{c \&amp; a} \\
+ &amp; = &amp; \left( \underbrace{(\nabla g)(M \oplus f(N \oplus V))}_{C \otimes (\Phi \oplus B)} \cdot \underbrace{\mathsf{vcat}(\mathsf{Z}_{\Phi \otimes B}, \mathsf{Id}_B)}_{(\Phi \oplus B) \otimes B} \cdot \underbrace{(\nabla f)(N \oplus V)}_{B \otimes (\Theta \oplus A)} \cdot \underbrace{\mathsf{vcat}(\mathsf{Z}_{\Theta \otimes A},\mathsf{Id}_{A})}_{(\Theta \oplus A) \otimes A} \right)_{c \&amp; a} \\
+\end{eqnarray*}\]</span></p>
+<p>With this gradient in hand, we can compose two models together like so.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> (<span class="fu">&gt;&gt;&gt;</span>)
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> f <span class="fu">&gt;&gt;&gt;</span> g <span class="fu">=</span>
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     theta <span class="fu">=</span> smParamSize f
+<span class="ot">&gt;</span>     a <span class="fu">=</span> smInputSize f
+<span class="ot">&gt;</span>     b <span class="fu">=</span> smOutputSize f
+<span class="ot">&gt;</span>     phi <span class="fu">=</span> smParamSize g
+<span class="ot">&gt;</span>     b' <span class="fu">=</span> smInputSize g
+<span class="ot">&gt;</span>     c <span class="fu">=</span> smOutputSize g
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>     fFun <span class="fu">=</span> smFunction f
+<span class="ot">&gt;</span>     fGrad <span class="fu">=</span> smGradient f
+<span class="ot">&gt;</span>     gFun <span class="fu">=</span> smFunction g
+<span class="ot">&gt;</span>     gGrad <span class="fu">=</span> smGradient g
+<span class="ot">&gt;</span>   <span class="kw">in</span>
+<span class="ot">&gt;</span>     <span class="kw">if</span> b' <span class="fu">==</span> b
+<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">SM</span>
+<span class="ot">&gt;</span>         { smParamSize <span class="fu">=</span> phi <span class="fu">:+</span> theta
+<span class="ot">&gt;</span>         , smInputSize <span class="fu">=</span> a
+<span class="ot">&gt;</span>         , smOutputSize <span class="fu">=</span> c
+<span class="ot">&gt;</span>         , smRegularize <span class="fu">=</span>
+<span class="ot">&gt;</span>             (map <span class="dt">L</span> <span class="fu">$</span> smRegularize f) <span class="fu">++</span> (map <span class="dt">R</span> <span class="fu">$</span> smRegularize g)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         , smFunction <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>             { dom <span class="fu">=</span> (phi <span class="fu">:+</span> theta) <span class="fu">:+</span> a
+<span class="ot">&gt;</span>             , cod <span class="fu">=</span> c
+<span class="ot">&gt;</span>             , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                 <span class="kw">let</span>
+<span class="ot">&gt;</span>                   m <span class="fu">=</span> termL <span class="fu">$</span> termL x
+<span class="ot">&gt;</span>                   n <span class="fu">=</span> termR <span class="fu">$</span> termL x
+<span class="ot">&gt;</span>                   v <span class="fu">=</span> termR x
+<span class="ot">&gt;</span>                 <span class="kw">in</span>
+<span class="ot">&gt;</span>                   gFun <span class="fu">$@</span> (m ⊕ (fFun <span class="fu">$@</span> (n ⊕ v)))
+<span class="ot">&gt;</span>             }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>         , smGradient <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>             { dom <span class="fu">=</span> (phi <span class="fu">:+</span> theta) <span class="fu">:+</span> a
+<span class="ot">&gt;</span>             , cod <span class="fu">=</span> c <span class="fu">:*</span> ((phi <span class="fu">:+</span> theta) <span class="fu">:+</span> a)
+<span class="ot">&gt;</span>             , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                 <span class="kw">let</span>
+<span class="ot">&gt;</span>                   m <span class="fu">=</span> termL <span class="fu">$</span> termL x
+<span class="ot">&gt;</span>                   n <span class="fu">=</span> termR <span class="fu">$</span> termL x
+<span class="ot">&gt;</span>                   v <span class="fu">=</span> termR x
+<span class="ot">&gt;</span>                 <span class="kw">in</span>
+<span class="ot">&gt;</span>                   tensor (c <span class="fu">:*</span> ((phi <span class="fu">:+</span> theta) <span class="fu">:+</span> a)) <span class="fu">$</span> \<span class="kw">case</span>
+<span class="ot">&gt;</span>                     k <span class="fu">:&amp;</span> (<span class="dt">L</span> (<span class="dt">L</span> p)) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                       <span class="kw">let</span>
+<span class="ot">&gt;</span>                         mH <span class="fu">=</span> gGrad <span class="fu">$@</span> (m ⊕ (fFun <span class="fu">$@</span> (n ⊕ v)))
+<span class="ot">&gt;</span>                         mK <span class="fu">=</span> (idMat phi) <span class="ot">`vcat`</span> (zeros <span class="fu">$</span> b <span class="fu">:*</span> phi)
+<span class="ot">&gt;</span>                       <span class="kw">in</span>
+<span class="ot">&gt;</span>                         (mH <span class="fu">***</span> mK) <span class="ot">`at`</span> (k <span class="fu">:&amp;</span> p)
+<span class="ot">&gt;</span>                     k <span class="fu">:&amp;</span> (<span class="dt">L</span> (<span class="dt">R</span> t)) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                       <span class="kw">let</span>
+<span class="ot">&gt;</span>                         mH <span class="fu">=</span> gGrad <span class="fu">$@</span> (m ⊕ (fFun <span class="fu">$@</span> (n ⊕ v)))
+<span class="ot">&gt;</span>                         mK <span class="fu">=</span> (zeros <span class="fu">$</span> phi <span class="fu">:*</span> b) <span class="ot">`vcat`</span> (idMat b)
+<span class="ot">&gt;</span>                         mL <span class="fu">=</span> fGrad <span class="fu">$@</span> (n ⊕ v)
+<span class="ot">&gt;</span>                         mM <span class="fu">=</span> (idMat theta) <span class="ot">`vcat`</span> (zeros <span class="fu">$</span> a <span class="fu">:*</span> theta)
+<span class="ot">&gt;</span>                       <span class="kw">in</span>
+<span class="ot">&gt;</span>                         (mH <span class="fu">***</span> mK <span class="fu">***</span> mL <span class="fu">***</span> mM) <span class="ot">`at`</span> (k <span class="fu">:&amp;</span> t)
+<span class="ot">&gt;</span>                     k <span class="fu">:&amp;</span> (<span class="dt">R</span> i) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                       <span class="kw">let</span>
+<span class="ot">&gt;</span>                         mH <span class="fu">=</span> gGrad <span class="fu">$@</span> (m ⊕ (fFun <span class="fu">$@</span> (n ⊕ v)))
+<span class="ot">&gt;</span>                         mK <span class="fu">=</span> (zeros <span class="fu">$</span> phi <span class="fu">:*</span> b) <span class="ot">`vcat`</span> (idMat b)
+<span class="ot">&gt;</span>                         mL <span class="fu">=</span> fGrad <span class="fu">$@</span> (n ⊕ v)
+<span class="ot">&gt;</span>                         mM <span class="fu">=</span> (zeros <span class="fu">$</span> theta <span class="fu">:*</span> a) <span class="ot">`vcat`</span> (idMat a)
+<span class="ot">&gt;</span>                       <span class="kw">in</span>
+<span class="ot">&gt;</span>                         (mH <span class="fu">***</span> mK <span class="fu">***</span> mL <span class="fu">***</span> mM) <span class="ot">`at`</span> (k <span class="fu">:&amp;</span> i)
+<span class="ot">&gt;</span>             }
+<span class="ot">&gt;</span>         }
+<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;(&gt;&gt;&gt;): inner dimensions must match&quot;</span></code></pre></div>
+<p>And we can test the gradient of the composite of two affine models.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_compose_affine_model_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>       <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_compose_affine_model_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;compose affine model dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v w <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (w <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> smFunction <span class="fu">$</span>
+<span class="ot">&gt;</span>         ((affineSMOf (toDual r) u v)) <span class="fu">&gt;&gt;&gt;</span> (affineSMOf (toDual r) v w))
+<span class="ot">&gt;</span>       (smGradient <span class="fu">$</span> (affineSMOf r u v) <span class="fu">&gt;&gt;&gt;</span> (affineSMOf r v w))</code></pre></div>
+<p>At this point we can describe affine models of arbitrary size, and compose models together. But the composite of two affine models is again affine. To introduce some nonlinearity (nonaffinity?) we can use the logistic function.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; logistic ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> r
+<span class="ot">&gt;</span> logistic x <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">+</span> (exp (negate x)))</code></pre></div>
+<p>And applying this function pointwise:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> logisticSM
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> logisticSM u <span class="fu">=</span> <span class="dt">SM</span>
+<span class="ot">&gt;</span>   { smParamSize <span class="fu">=</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>   , smInputSize <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , smOutputSize <span class="fu">=</span> u
+<span class="ot">&gt;</span>   , smRegularize <span class="fu">=</span> []
+<span class="ot">&gt;</span>   , smFunction <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> <span class="dv">0</span> <span class="fu">:+</span> u
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> u
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> tensor u <span class="fu">$</span>
+<span class="ot">&gt;</span>           \i <span class="ot">-&gt;</span> logistic ((termR v)<span class="ot">`at`</span>i)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   , smGradient <span class="fu">=</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> <span class="dv">0</span> <span class="fu">:+</span> u
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> u <span class="fu">:*</span> (<span class="dv">0</span> <span class="fu">:+</span> u)
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> tensor (u <span class="fu">:*</span> (<span class="dv">0</span> <span class="fu">:+</span> u)) <span class="fu">$</span>
+<span class="ot">&gt;</span>           \(i <span class="fu">:&amp;</span> (<span class="dt">R</span> j)) <span class="ot">-&gt;</span> (kronecker i j) <span class="fu">*</span>
+<span class="ot">&gt;</span>             (logistic <span class="fu">$</span> (termR v)<span class="ot">`at`</span>i) <span class="fu">*</span>
+<span class="ot">&gt;</span>             (<span class="dv">1</span> <span class="fu">-</span> (logistic <span class="fu">$</span> (termR v)<span class="ot">`at`</span>i))
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> <span class="co">-- type fixed for testing</span>
+<span class="ot">&gt;</span> logisticSMOf
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r) <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">SupervisedModel</span> r
+<span class="ot">&gt;</span> logisticSMOf _ <span class="fu">=</span> logisticSM</code></pre></div>
+<p>We can now test the composite of two logistic models, and of an affine followed by a logistic.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_compose_logistic_model_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_compose_logistic_model_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;compose logistic model dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> smFunction <span class="fu">$</span>
+<span class="ot">&gt;</span>         ((logisticSMOf (toDual r) u)) <span class="fu">&gt;&gt;&gt;</span> (logisticSMOf (toDual r) u))
+<span class="ot">&gt;</span>       (smGradient <span class="fu">$</span>
+<span class="ot">&gt;</span>         (logisticSMOf r u) <span class="fu">&gt;&gt;&gt;</span> (logisticSMOf r u))
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> _test_compose_affine_logistic_model_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_compose_affine_logistic_model_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;compose affine logistic model dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> smFunction <span class="fu">$</span>
+<span class="ot">&gt;</span>         ((affineSMOf (toDual r) u v)) <span class="fu">&gt;&gt;&gt;</span> (logisticSMOf (toDual r) v))
+<span class="ot">&gt;</span>       (smGradient <span class="fu">$</span> (affineSMOf r u v) <span class="fu">&gt;&gt;&gt;</span> (logisticSMOf r v))</code></pre></div>
+<p>The logistic function maps <span class="math inline">\(\mathbb{R}\)</span> to the interval <span class="math inline">\((0,1)\)</span>, which is handy for training classification functions. But our sum squared error cost function is less good at training models which end with a logistic layer, precisely because the predictions and example outputs are constrained to <span class="math inline">\((0,1)\)</span>. Instead, we can use the logistic error function. If <span class="math inline">\(f : \mathbb{R}^{\Theta \oplus A} \rightarrow \mathbb{R}^1\)</span>, then the logistic cost function <span class="math inline">\(\mathsf{cost} : \mathbb{R}^\Theta \rightarrow \mathbb{R}\)</span> is given by <span class="math display">\[\mathsf{cost}(\theta) = \frac{1}{m} \sum_{i = 1}^m \left( -y_i \ln(f(\theta \oplus x_i)) - (1 - y_i) \ln(1 - f(\theta \oplus x_i)) \right),\]</span> where <span class="math inline">\(m\)</span> is the number of training examples, <span class="math inline">\((x_i,y_i)\)</span> is the <span class="math inline">\(i\)</span>th training example, and <span class="math inline">\(f\)</span> is the function being trained. In this case the <span class="math inline">\(y\)</span> must have size 1 and have the value 0 or 1. The gradient of logistic cost has signature <span class="math display">\[\mathbb{R}^\Theta \rightarrow \mathbb{R}^{1 \otimes \Theta},\]</span> and the value of this gradient at <span class="math inline">\(i \in \Theta\)</span> is</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nabla(\mathsf{cost})(\theta)_{0 \&amp; i} \\
+ &amp; = &amp; D(\mathsf{cost}(w_{i,\theta}(x))_0)(\theta_i) \\
+ &amp; = &amp; D\left(\frac{1}{m} \sum_{k = 1}^m \left( -y_k \ln(f(w_{i,\theta}(x) \oplus x_k)) - (1 - y_k) \ln(1 - f(w_{i,\theta}(x) \oplus x_k)) \right)\right)(\theta_i) \\
+ &amp; = &amp; \frac{1}{m} \sum_{k = 1}^m \left( -y_k D(\ln(f(w_{i,\theta}(x) \oplus x_k)))(\theta_i) - (1 - y_k) D(\ln(1 - f(w_{i,\theta}(x) \oplus x_k)))(\theta_i) \right) \\
+ &amp; = &amp; \frac{1}{m} \sum_{k = 1}^m \left( -y_k \frac{D(f(w_{i,\theta}(x) \oplus x_k))(\theta_i)}{(f(w_{i,\theta}(x) \oplus x_k))(\theta_i)} - (1 - y_k) \frac{D(1 - f(w_{i,\theta}(x) \oplus x_k))(\theta_i)}{(1 - f(w_{i,\theta}(x) \oplus x_k))(\theta_i)} \right) \\
+ &amp; = &amp; \frac{1}{m} \sum_{k = 1}^m \left( -y_k \frac{D(f(w_{i,\theta}(x) \oplus x_k))(\theta_i)}{f(\theta \oplus x_k)} - (1 - y_k) \frac{1 - D(f(w_{i,\theta}(x) \oplus x_k))(\theta_i)}{1 - f(\theta \oplus x_k)} \right) \\
+ &amp; = &amp; \frac{1}{m} \sum_{k = 1}^m \left( -y_k \frac{\nabla(f(- \oplus x_k))(\theta)_{0 \&amp; i}}{f(\theta \oplus x_k)} - (1 - y_k) \frac{1 - \nabla(f(- \oplus x_k))(\theta)_{0 \&amp; i}}{1 - f(\theta \oplus x_k)} \right) \\
+ &amp; = &amp; \frac{1}{m} \sum_{k = 1}^m \left( -y_k \frac{\left(\nabla(f)(\theta \oplus x_k) \cdot \mathsf{vcat}(\mathsf{Id}_{\Theta},\mathsf{Z}_{A \otimes \Theta})\right)_{0 \&amp; i}}{f(\theta \oplus x_k)} \right. \\
+ &amp;   &amp; \left. \qquad\qquad\qquad\qquad\qquad - (1 - y_k) \frac{1 - \left(\nabla(f)(\theta \oplus x_k) \cdot \mathsf{vcat}(\mathsf{Id}_{\Theta}, Z_{A \otimes \Theta})\right)_{0 \&amp; i}}{1 - f(\theta \oplus x_k)} \right) \\
+\end{eqnarray*}\]</span></p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> logisticError
+<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">SupervisedModel</span> r <span class="ot">-&gt;</span> <span class="dt">CostFunction</span> r
+<span class="ot">&gt;</span> logisticError model <span class="fu">=</span> <span class="dt">CF</span>
+<span class="ot">&gt;</span>   { cfFunction <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> <span class="dv">1</span>
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length examples
+<span class="ot">&gt;</span>             f <span class="fu">=</span> smFunction model
+<span class="ot">&gt;</span>             lg (x,y) <span class="fu">=</span> (((neg y) <span class="fu">.*</span> (fmap log (f <span class="fu">$@</span> (theta ⊕ x))))
+<span class="ot">&gt;</span>               <span class="fu">.-</span> (((cell <span class="dv">1</span>) <span class="fu">.-</span> y) <span class="fu">.*</span> ((cell <span class="dv">1</span>)
+<span class="ot">&gt;</span>                 <span class="fu">.-</span> (fmap log (f <span class="fu">$@</span> (theta ⊕ x)))))) <span class="ot">`at`</span> <span class="dv">0</span>
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             cell <span class="fu">$</span> (sum <span class="fu">$</span> map lg examples) <span class="fu">/</span> m
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   , cfGradient <span class="fu">=</span> \examples <span class="ot">-&gt;</span> <span class="dt">F</span>
+<span class="ot">&gt;</span>       { dom <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>       , cod <span class="fu">=</span> <span class="dv">1</span> <span class="fu">:*</span> (smParamSize model)
+<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \theta <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>           <span class="kw">let</span>
+<span class="ot">&gt;</span>             m <span class="fu">=</span> fromIntegral <span class="fu">$</span> length examples
+<span class="ot">&gt;</span>             f <span class="fu">=</span> smFunction model
+<span class="ot">&gt;</span>             gf <span class="fu">=</span> smGradient model
+<span class="ot">&gt;</span>             a <span class="fu">=</span> smInputSize model
+<span class="ot">&gt;</span>             t <span class="fu">=</span> smParamSize model
+<span class="ot">&gt;</span>             q <span class="fu">=</span> (idMat t) <span class="ot">`vcat`</span> (zeros <span class="fu">$</span> a <span class="fu">:*</span> t)
+<span class="ot">&gt;</span>             gr (x,y) <span class="fu">=</span> tensor (<span class="dv">1</span> <span class="fu">:*</span> t) <span class="fu">$</span> \(_ <span class="fu">:&amp;</span> i) <span class="ot">-&gt;</span>
+<span class="ot">&gt;</span>                  (((negate (y<span class="ot">`at`</span><span class="dv">0</span>))
+<span class="ot">&gt;</span>                  <span class="fu">*</span> (((gf <span class="fu">$@</span> (theta ⊕ x)) <span class="fu">***</span> q)<span class="ot">`at`</span>(<span class="dv">0</span> <span class="fu">:&amp;</span> i))
+<span class="ot">&gt;</span>                  <span class="fu">/</span> ((f <span class="fu">$@</span> (theta ⊕ x))<span class="ot">`at`</span><span class="dv">0</span>)))
+<span class="ot">&gt;</span>                  <span class="fu">-</span> ((<span class="dv">1</span> <span class="fu">-</span> (y<span class="ot">`at`</span><span class="dv">0</span>))
+<span class="ot">&gt;</span>                  <span class="fu">*</span> (<span class="dv">1</span> <span class="fu">-</span> (((gf <span class="fu">$@</span> (theta ⊕ x)) <span class="fu">***</span> q)<span class="ot">`at`</span>(<span class="dv">0</span> <span class="fu">:&amp;</span> i)))
+<span class="ot">&gt;</span>                  <span class="fu">/</span> (<span class="dv">1</span> <span class="fu">-</span> ((f <span class="fu">$@</span> (theta ⊕ x))<span class="ot">`at`</span><span class="dv">0</span>)))
+<span class="ot">&gt;</span>           <span class="kw">in</span>
+<span class="ot">&gt;</span>             (<span class="dv">1</span><span class="fu">/</span>m) <span class="fu">.@</span> (vsum <span class="fu">$</span> map gr examples)
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span>   }</code></pre></div>
+<p>And a quick test for the logistic error gradient:</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_logistic_model_lge_dual_gradient
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
+<span class="ot">&gt;</span> _test_logistic_model_lge_dual_gradient r <span class="fu">=</span>
+<span class="ot">&gt;</span>   testName <span class="st">&quot;logistic model logistic error dual gradient check&quot;</span> <span class="fu">$</span>
+<span class="ot">&gt;</span>   \u k <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (k <span class="fu">/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>     forAll (vectorOf k <span class="fu">$</span> pairOf (arbTensorOf r u) (arbTensorOf r <span class="dv">1</span>)) <span class="fu">$</span>
+<span class="ot">&gt;</span>       \xs <span class="ot">-&gt;</span> (xs <span class="fu">/=</span> []) <span class="fu">==&gt;</span>
+<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
+<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> cfFunction
+<span class="ot">&gt;</span>             (logisticError <span class="fu">$</span> affineSMOf (toDual r) u <span class="dv">1</span> <span class="fu">&gt;&gt;&gt;</span> logisticSM <span class="dv">1</span>)
+<span class="ot">&gt;</span>             (map (\(h,k) <span class="ot">-&gt;</span> (fmap toDual h, fmap toDual k)) xs))
+<span class="ot">&gt;</span>           (cfGradient
+<span class="ot">&gt;</span>             (logisticError <span class="fu">$</span> affineSMOf r u <span class="dv">1</span> <span class="fu">&gt;&gt;&gt;</span> logisticSM <span class="dv">1</span>) xs)</code></pre></div>
+<h2 id="tests">Tests</h2>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_composite_models
+<span class="ot">&gt;   ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r,
+<span class="ot">&gt;</span>       <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> _test_composite_models r num size <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Composite Models&quot;</span>
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   <span class="kw">let</span>
+<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
+<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
+<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
+<span class="ot">&gt;</span>       }
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_compose_logistic_model_dual_gradient r)
+<span class="ot">&gt;</span>   runTest args (_test_compose_affine_model_dual_gradient r)
+<span class="ot">&gt;</span>   runTest args (_test_compose_affine_logistic_model_dual_gradient r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span>   runTest args (_test_logistic_model_lge_dual_gradient r)
+<span class="ot">&gt;</span> 
+<span class="ot">&gt;</span> 
+<span class="ot">&gt; main_composite_models ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main_composite_models <span class="fu">=</span> _test_composite_models (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Double</span>) <span class="dv">20</span> <span class="dv">3</span></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

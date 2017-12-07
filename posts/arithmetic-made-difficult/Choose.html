@@ -24,7 +24,6 @@
     <a href="../../index.html">Home</a>
     <a href="../../pages/about.html">About</a>
     <a href="../../pages/projects.html">Projects</a>
-    <a href="../../pages/contact.html">Contact</a>
     <a href="../../archive.html">Blog</a>
   </div>
 </div>
@@ -148,9 +147,11 @@ Posted on 2017-04-15 by nbloomf
 </div>
 <!-- End LaTeX Macros for Arithmetic Made Difficult -->
 
-<p>This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
 
-<p>This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Choose.lhs">the source</a> into GHCi and play along.</p>
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/Choose.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
 <span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Choose</span>
@@ -340,14 +341,14 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 </div>
 <h2 id="implementation-and-testing">Implementation and Testing</h2>
 <p>Property tests:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; _test_choose_alt ::</span> (<span class="dt">Natural</span> n)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_choose_alt ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_alt _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(n,k) == choose'(n,k)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \n k <span class="ot">-&gt;</span> (choose n k) <span class="fu">====</span> (choose' n k)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_zero_left ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_zero_left ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_zero_left _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(0,k) == if k==0 then 0 else 1&quot;</span> <span class="fu">$</span>
@@ -356,21 +357,21 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <span class="ot">&gt;</span>     <span class="kw">else</span> (choose zero k) <span class="fu">====</span> (zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_zero_right ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_zero_right ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_zero_right _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(n,0) == 1&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \n <span class="ot">-&gt;</span> (choose n zero) <span class="fu">====</span> (next zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_equal_args ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_equal_args ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_equal_args _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(n,n) == 1&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \n <span class="ot">-&gt;</span> (choose n n) <span class="fu">====</span> (next zero)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_plus_plus ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_plus_plus ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_plus_plus _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(next(n),next(k)) == plus(choose(n,next(k)),choose(n,k))&quot;</span> <span class="fu">$</span>
@@ -379,7 +380,7 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <span class="ot">&gt;</span>     (plus (choose n (next k)) (choose n k))
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_big_k ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_big_k ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_big_k _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;leq(next(n),k) ==&gt; choose(n,k) == 0&quot;</span> <span class="fu">$</span>
@@ -388,14 +389,14 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <span class="ot">&gt;</span>     <span class="kw">else</span> <span class="dt">True</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> 
-<span class="ot">&gt; _test_choose_plus ::</span> (<span class="dt">Natural</span> n)
+<span class="ot">&gt;</span> _<span class="ot">test_choose_plus ::</span> (<span class="dt">Natural</span> n)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Nat</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
 <span class="ot">&gt;</span> _test_choose_plus _ <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;choose(plus(a,b),a) == choose(plus(a,b),b)&quot;</span> <span class="fu">$</span>
 <span class="ot">&gt;</span>   \a b <span class="ot">-&gt;</span> (choose (plus a b) a) <span class="fu">====</span> (choose (plus a b) b)</code></pre></div>
 <p>And the suite:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for choose</span>
-<span class="ot">&gt; _test_choose ::</span>
+<span class="ot">&gt;</span> _test_choose <span class="ot">::</span>
 <span class="ot">&gt;</span>   ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n
 <span class="ot">&gt;</span>   ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> _test_choose n maxSize numCases <span class="fu">=</span> <span class="kw">do</span>
@@ -418,6 +419,7 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main_choose ::</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> main_choose <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   _test_choose (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">10</span> <span class="dv">50</span></code></pre></div>
+
 
 
 <!-- END BODY -->
