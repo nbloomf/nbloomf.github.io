@@ -49,7 +49,7 @@ Posted on 2017-02-28 by nbloomf
 <span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FunctionalDependencies #-}</span>
 <span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE FlexibleInstances #-}</span>
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Sheet</span> <span class="kw">where</span>
+<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">LoebSheets</span> <span class="kw">where</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Monoid</span>
 <span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span></code></pre></div>
@@ -86,12 +86,7 @@ So here’s a way to write code: pick a theorem, find the corresponding type, an
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Addressable</span> <span class="dt">ZipList</span> <span class="dt">Int</span> <span class="kw">where</span>
 <span class="ot">&gt;</span>   (<span class="dt">ZipList</span> as) <span class="ot">`at`</span> n <span class="fu">=</span> as <span class="fu">!!</span> (n<span class="fu">-</span><span class="dv">1</span>)
 <span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   addresses as <span class="fu">=</span> const <span class="fu">&lt;$&gt;</span> (<span class="dt">ZipList</span> [<span class="dv">1</span><span class="fu">..</span>]) <span class="fu">&lt;*&gt;</span> as
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- my copy of base doesn't have this (?)</span>
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Show</span> a) <span class="ot">=&gt;</span> <span class="dt">Show</span> (<span class="dt">ZipList</span> a) <span class="kw">where</span>
-<span class="ot">&gt;</span>   show <span class="fu">=</span> show <span class="fu">.</span> getZipList</code></pre></div>
+<span class="ot">&gt;</span>   addresses as <span class="fu">=</span> const <span class="fu">&lt;$&gt;</span> (<span class="dt">ZipList</span> [<span class="dv">1</span><span class="fu">..</span>]) <span class="fu">&lt;*&gt;</span> as</code></pre></div>
 <p>And finally, the <code>loeb</code> function with appropriate changes. I’ve renamed it to <code>eval</code>, because (1) that name is suggestive of what the function does and (2) the type isn’t Löb’s Theorem anymore! The <code>eval'</code> version is tweaked from Piponi’s <code>loeb</code>, and <code>eval</code> is cribbed from Foner’s fixpoint-based version of <code>loeb</code>.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- slow</span>
 <span class="ot">&gt; eval' ::</span> (<span class="dt">Addressable</span> t n) <span class="ot">=&gt;</span> t (n <span class="ot">-&gt;</span> t x <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> t x
@@ -105,8 +100,8 @@ So here’s a way to write code: pick a theorem, find the corresponding type, an
 <span class="ot">&gt;</span> fix f <span class="fu">=</span> <span class="kw">let</span> x <span class="fu">=</span> f x <span class="kw">in</span> x</code></pre></div>
 <p>The type of <code>eval</code> looks like the statement <span class="math display">\[\square(Q \rightarrow (\square P \rightarrow P)) \rightarrow \square P,\]</span> and I have no idea if that means anything in the context of modal logic (I doubt it!).</p>
 <p>Now to use <code>eval</code>, our “spreadsheet” will consist of functions that take both an address and a spreadsheet. This <code>Num</code> instance for functions will be handy:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> (x <span class="ot">-&gt;</span> a)
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Eq</span> (x <span class="ot">-&gt;</span> a)
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span> show <span class="fu">=</span> undefined
+<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Eq</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span> (<span class="fu">==</span>) <span class="fu">=</span> undefined
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Num</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Num</span> (x <span class="ot">-&gt;</span> a) <span class="kw">where</span>
 <span class="ot">&gt;</span>   fromInteger <span class="fu">=</span> const <span class="fu">.</span> fromInteger
@@ -247,6 +242,9 @@ So here’s a way to write code: pick a theorem, find the corresponding type, an
 <span class="ot">&gt;</span>   ]</code></pre></div>
 <p>I don’t quite have the motivation to turn this into an actual GUI-driven spreadsheet, so I’ll leave that part as an exercise. :)</p>
 <p>But I am curious – are there any other interesting applicative functors with addresses? Can oddly “shaped” spreadsheets do interesting things that array shaped ones can’t?</p>
+<p>I’ll end with a trivial <code>main</code> so this module can be typechecked as a test.</p>
+<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
+<span class="ot">&gt;</span> main <span class="fu">=</span> putStrLn <span class="st">&quot;ok&quot;</span></code></pre></div>
 
 
 <!-- END BODY -->

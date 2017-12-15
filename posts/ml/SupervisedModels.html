@@ -131,7 +131,7 @@ Posted on 2017-10-20 by nbloomf
 <p>(Again, ignore the <code>smRegularize</code> parameter for now.)</p>
 <p>The most important constraint that a <code>SupervisedModel</code> should satisfy is that <code>smGradient</code> be the gradient of <code>smFunction</code>. We can check this using both the numerical and dual number strategies because why not.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_numerical_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_numerical_gradient r <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;affine model numerical gradient check&quot;</span> <span class="fu">$</span>
@@ -141,7 +141,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>       (smGradient <span class="fu">$</span> affineSMOf r u v)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> _test_affine_model_dual_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_dual_gradient r <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;affine model dual gradient check&quot;</span> <span class="fu">$</span>
@@ -192,7 +192,7 @@ Posted on 2017-10-20 by nbloomf
 <p>Why is this useful? There are good theoretical reasons which I do not totally understand. But on a practical level sum squared error is simple and nicely differentiable and intuitively a good measure of “closeness”. All terms in the sum are positive, and each term contributes less to the sum when <span class="math inline">\(f(\theta \oplus x_i)\)</span> (the prediction) and <span class="math inline">\(y_i\)</span> (the actual observation) are close.</p>
 <p>We should test that the sum squared error cost function gradient is reasonable.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_sse_numerical_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r,
 <span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_sse_numerical_gradient r <span class="fu">=</span>
@@ -206,7 +206,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>           (cfGradient (sumSquaredError <span class="fu">$</span> affineSMOf r u v) xs)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> _test_affine_model_sse_dual_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r,
 <span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_sse_dual_gradient r <span class="fu">=</span>
@@ -221,7 +221,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>           (cfGradient (sumSquaredError <span class="fu">$</span> affineSMOf r u v) xs)</code></pre></div>
 <p>With a cost function in hand, we can use gradient descent to minimize it. <code>smSimpleTrain</code> takes a cost function, a list of example data, an initial guess, and a learning rate, and attempts to minimize the cost function.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smSimpleTrain
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Floating</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">CostFunction</span> r
 <span class="ot">&gt;</span>   <span class="ot">-&gt;</span> [(<span class="dt">Tensor</span> r, <span class="dt">Tensor</span> r)]
 <span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
@@ -243,7 +243,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span> smell_test_model_1 <span class="fu">=</span> affineSM <span class="dv">1</span> <span class="dv">1</span></code></pre></div>
 <p>And we can train this model to find a locally optimal value for the parameter tensor:</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smell_test_theta_1
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Real</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r
 <span class="ot">&gt;</span> smell_test_theta_1 <span class="fu">=</span> smSimpleTrain
 <span class="ot">&gt;</span>   (sumSquaredError smell_test_model_1)
@@ -256,7 +256,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="fl">9.036826666597734e-14</span></code></pre></div>
 <p>which is pretty close to <span class="math inline">\(m = 1\)</span> and <span class="math inline">\(b = 0\)</span>. Moreover, we can use this <code>theta</code> to make predictions.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> smell_test_predict_1
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Real</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
 <span class="ot">&gt;</span> smell_test_predict_1 x <span class="fu">=</span>
 <span class="ot">&gt;</span>   predictSM smell_test_model_1 smell_test_theta_1 x</code></pre></div>
@@ -281,7 +281,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span> smell_test_model_2 <span class="fu">=</span> affineSM <span class="dv">3</span> <span class="dv">1</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> smell_test_theta_2
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Real</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r
 <span class="ot">&gt;</span> smell_test_theta_2 <span class="fu">=</span> smSimpleTrain
 <span class="ot">&gt;</span>   (sumSquaredError smell_test_model_2)
@@ -290,7 +290,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>   <span class="fl">0.15</span>
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> smell_test_predict_2
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Real</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Real</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
 <span class="ot">&gt;</span> smell_test_predict_2 x <span class="fu">=</span>
 <span class="ot">&gt;</span>   predictSM smell_test_model_2 smell_test_theta_2 x</code></pre></div>
@@ -328,7 +328,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>   }</code></pre></div>
 <p>We should test that the regularized sum squared error cost function gradient is reasonable for affine models.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_affine_model_regularized_sse_numerical_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r,
 <span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_regularized_sse_numerical_gradient r <span class="fu">=</span>
@@ -345,7 +345,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>             (cfGradient (regularize (abs lam) m <span class="fu">$</span> sumSquaredError m) xs)
 <span class="ot">&gt;</span> 
 <span class="ot">&gt;</span> _test_affine_model_regularized_sse_dual_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r,
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r,
 <span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_affine_model_regularized_sse_dual_gradient r <span class="fu">=</span>
@@ -365,7 +365,7 @@ Posted on 2017-10-20 by nbloomf
 <span class="ot">&gt;</span>               (regularize (abs lam) m2 <span class="fu">$</span> sumSquaredError m2) xs)</code></pre></div>
 <h2 id="test-suite">Test Suite</h2>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_supervised_models
-<span class="ot">&gt;   ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r,
+<span class="ot">&gt;   ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">RealFloat</span> r,
 <span class="ot">&gt;</span>        <span class="dt">Floating</span> r, <span class="dt">Real</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> _test_supervised_models r num size <span class="fu">=</span> <span class="kw">do</span>

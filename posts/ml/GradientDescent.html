@@ -98,7 +98,7 @@ Posted on 2017-10-19 by nbloomf
 <div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell">gradDesc f <span class="dv">0</span> v (fixedNumSteps <span class="dv">100</span>) (fixedLearningRate <span class="fl">0.5</span>)</code></pre></div>
 <p>Carries out gradient descent for 100 steps with learning rate 0.5. A more practical update function keeps track of the last iteration and stops when the difference between it and the current value is less than some threshold.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> maxAbsDiffLessThan
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Tensor</span> r)
 <span class="ot">&gt;</span> maxAbsDiffLessThan eps x y <span class="fu">=</span>
 <span class="ot">&gt;</span>   <span class="kw">let</span>
@@ -109,7 +109,7 @@ Posted on 2017-10-19 by nbloomf
 <span class="ot">&gt;</span>       <span class="kw">else</span> <span class="dt">Just</span> x</code></pre></div>
 <p>As a really simple example, fix a vector <span class="math inline">\(v \in \mathbb{R}^s\)</span> and consider the function <span class="math inline">\(f : \mathbb{R}^s \rightarrow \mathbb{R}^s\)</span> given by <span class="math display">\[f(x)_i = (x_i - v_i)^2.\]</span> This is quadratic in each coordinate with minimum at <span class="math inline">\(x_i = v_i\)</span>. Moreover this function is convex, so that minimum is unique, and gradient descent should find it regardless of the initial guess.</p>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_grad_desc_line
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
 <span class="ot">&gt;</span> _test_grad_desc_line r <span class="fu">=</span>
 <span class="ot">&gt;</span>   testName <span class="st">&quot;grad desc line&quot;</span> <span class="fu">$</span>
@@ -125,7 +125,7 @@ Posted on 2017-10-19 by nbloomf
 <span class="ot">&gt;</span>             (distanceBy <span class="dt">MaxAbsDiff</span> v w) <span class="fu">&lt;</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))</code></pre></div>
 <h2 id="tests">Tests</h2>
 <div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_gradient_descent
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
+<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
 <span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
 <span class="ot">&gt;</span> _test_gradient_descent r num size <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">&gt;</span>   testLabel <span class="st">&quot;Gradient Descent&quot;</span>
