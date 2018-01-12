@@ -49,13 +49,13 @@ Posted on 2017-10-12 by nbloomf
 <hr />
 
 <p>First some boilerplate.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Indices</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE LambdaCase #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Indices</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Test.QuickCheck</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Test</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">System.Exit</span></a></code></pre></div>
 <p>This post is just some preliminary ideas about tensors - nothing learning-specific yet.</p>
 <p>Fundamentally, supervised learning models are (nonlinear) functions involving vector spaces over <span class="math inline">\(\mathbb{R}\)</span>. A lot of literature refers to the elements of these spaces as “tensors”, because, well, that’s what they are. But I think this word “tensor” can be unhelpful in this context for several reasons. For one thing, the correct answer to the question “what is a tensor?” quickly veers into multilinear functions and massive quotient spaces and universal properties and omg I just wanted to write a program to tell the difference between cats and dogs. So I’ll just say that a tensor “is” just a <strong>multidimensional array</strong>, in the sense that a linear transformation “is” a matrix, since for the most part we really want to think of tensors as data, and don’t care so much about the more abstract bits.</p>
 <p>With that said, what exactly is a multidimensional array? One definition is that it’s an element of a set like <span class="math display">\[\mathbb{R}^{k_1 \times k_2 \times \cdots \times k_t}\]</span> where each <span class="math inline">\(k_t\)</span> is a natural number. And this is totally appropriate. But I am going to do something a little different. I’m not really comfortable defining things in terms of ellipses; that “dot dot dot” hides enough details to make rigorous calculations awkward to my taste. And since from a machine learning perspective we don’t really need the full power of tensor algebra, I suspect we can afford to take a different tack.</p>
@@ -72,38 +72,38 @@ We denote by <span class="math inline">\(\mathbb{S}\)</span> the free algebra ov
 </div>
 <p>For example, <span class="math inline">\(2 \oplus 4\)</span> and <span class="math inline">\(5 \otimes (3 \oplus 6)\)</span> are elements of <span class="math inline">\(\mathbb{S}\)</span>. Eventually we’ll use, for instance, the element <span class="math inline">\(2 \otimes 3\)</span> to describe the “size” of a <span class="math inline">\(2 \times 3\)</span> matrix. The size algebra has no axioms, so for example <span class="math inline">\(a \otimes (b \otimes c)\)</span> and <span class="math inline">\((a \otimes b) \otimes c\)</span> are not equal. And just ignore the <span class="math inline">\(\oplus\)</span> for now. :)</p>
 <p>So the elements of <span class="math inline">\(\mathbb{S}\)</span> look like unevaluated arithmetic expressions with plus and times. By the way, one benefit of using free algebras is we can implement them in Haskell with algebraic data types.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Size</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Size</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Size</span> <span class="fu">:+</span> <span class="dt">Size</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Size</span> <span class="fu">:*</span> <span class="dt">Size</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> <span class="dt">Eq</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Size</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   show <span class="fu">=</span>
-<span class="ot">&gt;</span>     <span class="kw">let</span>
-<span class="ot">&gt;</span>       p x <span class="fu">=</span> <span class="kw">if</span> <span class="ch">' '</span> <span class="ot">`elem`</span> x
-<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> x <span class="fu">++</span> <span class="st">&quot;)&quot;</span> <span class="kw">else</span> x
-<span class="ot">&gt;</span>     <span class="kw">in</span>
-<span class="ot">&gt;</span>       \<span class="kw">case</span>
-<span class="ot">&gt;</span>         <span class="dt">Size</span> k <span class="ot">-&gt;</span> show k
-<span class="ot">&gt;</span>         a <span class="fu">:+</span> b <span class="ot">-&gt;</span> concat [p <span class="fu">$</span> show a, <span class="st">&quot; + &quot;</span>, p <span class="fu">$</span> show b]
-<span class="ot">&gt;</span>         a <span class="fu">:*</span> b <span class="ot">-&gt;</span> concat [p <span class="fu">$</span> show a, <span class="st">&quot; x &quot;</span>, p <span class="fu">$</span> show b]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- so we can define them with numeric literals</span>
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Size</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   fromInteger k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">&gt;=</span> <span class="dv">0</span>
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">Size</span> k
-<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;sizes cannot be negative.&quot;</span>
-<span class="ot">&gt;</span>   (<span class="fu">+</span>) <span class="fu">=</span> (<span class="fu">:+</span>)
-<span class="ot">&gt;</span>   (<span class="fu">*</span>) <span class="fu">=</span> (<span class="fu">:*</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   abs    <span class="fu">=</span> error <span class="st">&quot;Size Num instance: abs makes no sense.&quot;</span>
-<span class="ot">&gt;</span>   signum <span class="fu">=</span> error <span class="st">&quot;Size Num instance: signum makes no sense.&quot;</span>
-<span class="ot">&gt;</span>   negate <span class="fu">=</span> error <span class="st">&quot;Size Num instance: negate makes no sense.&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">Size</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">Size</span> <span class="fu">:+</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="fu">|</span> <span class="dt">Size</span> <span class="fu">:*</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="kw">deriving</span> <span class="dt">Eq</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Size</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">  show <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">      p x <span class="fu">=</span> <span class="kw">if</span> <span class="ch">' '</span> <span class="ot">`elem`</span> x</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">        <span class="kw">then</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> x <span class="fu">++</span> <span class="st">&quot;)&quot;</span> <span class="kw">else</span> x</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">    <span class="kw">in</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">      \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">        <span class="dt">Size</span> k <span class="ot">-&gt;</span> show k</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">        a <span class="fu">:+</span> b <span class="ot">-&gt;</span> concat [p <span class="fu">$</span> show a, <span class="st">&quot; + &quot;</span>, p <span class="fu">$</span> show b]</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">        a <span class="fu">:*</span> b <span class="ot">-&gt;</span> concat [p <span class="fu">$</span> show a, <span class="st">&quot; x &quot;</span>, p <span class="fu">$</span> show b]</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"><span class="co">-- so we can define them with numeric literals</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"><span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Size</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">  fromInteger k <span class="fu">=</span> <span class="kw">if</span> k <span class="fu">&gt;=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">    <span class="kw">then</span> <span class="dt">Size</span> k</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">    <span class="kw">else</span> error <span class="st">&quot;sizes cannot be negative.&quot;</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">  (<span class="fu">+</span>) <span class="fu">=</span> (<span class="fu">:+</span>)</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">  (<span class="fu">*</span>) <span class="fu">=</span> (<span class="fu">:*</span>)</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">  abs    <span class="fu">=</span> error <span class="st">&quot;Size Num instance: abs makes no sense.&quot;</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">  signum <span class="fu">=</span> error <span class="st">&quot;Size Num instance: signum makes no sense.&quot;</span></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28">  negate <span class="fu">=</span> error <span class="st">&quot;Size Num instance: negate makes no sense.&quot;</span></a></code></pre></div>
 <p>If you’re following along with GHCi, try defining some <code>Size</code>s. (The <code>Num</code> instance is just there to make the notation less awkward.)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> <span class="dv">4</span><span class="ot"> ::</span> <span class="dt">Size</span>
-<span class="fu">$&gt;</span> <span class="dv">2</span><span class="fu">*</span><span class="dv">3</span><span class="ot"> ::</span> <span class="dt">Size</span>
-<span class="fu">$&gt;</span> <span class="dv">2</span><span class="fu">+</span>(<span class="dv">3</span><span class="fu">*</span><span class="dv">4</span>)<span class="ot"> ::</span> <span class="dt">Size</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="fu">$&gt;</span> <span class="dv">4</span><span class="ot"> ::</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="fu">$&gt;</span> <span class="dv">2</span><span class="fu">*</span><span class="dv">3</span><span class="ot"> ::</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="fu">$&gt;</span> <span class="dv">2</span><span class="fu">+</span>(<span class="dv">3</span><span class="fu">*</span><span class="dv">4</span>)<span class="ot"> ::</span> <span class="dt">Size</span></a></code></pre></div>
 <p>Another nice thing about free algebras is that we get universal mappings for free! For example:</p>
 <div class="result">
 <div class="defn">
@@ -116,29 +116,29 @@ Note that <span class="math inline">\((\mathbb{N},+,\times)\)</span> is an algeb
 </div>
 </div>
 <p>Again, we can implement these in code in the usual way.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Shape</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">HAtom</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">HPlus</span> <span class="dt">Shape</span> <span class="dt">Shape</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">HTimes</span> <span class="dt">Shape</span> <span class="dt">Shape</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> <span class="dt">Eq</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Shape</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   show <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>     <span class="dt">HAtom</span>      <span class="ot">-&gt;</span> <span class="st">&quot;*&quot;</span>
-<span class="ot">&gt;</span>     <span class="dt">HPlus</span>  a b <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot; + &quot;</span>, show b, <span class="st">&quot;)&quot;</span>]
-<span class="ot">&gt;</span>     <span class="dt">HTimes</span> a b <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot; x &quot;</span>, show b, <span class="st">&quot;)&quot;</span>]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; shapeOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Shape</span>
-<span class="ot">&gt;</span> shapeOf <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>   <span class="dt">Size</span> _ <span class="ot">-&gt;</span> <span class="dt">HAtom</span>
-<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span> <span class="dt">HPlus</span>  (shapeOf a) (shapeOf b)
-<span class="ot">&gt;</span>   a <span class="fu">:*</span> b <span class="ot">-&gt;</span> <span class="dt">HTimes</span> (shapeOf a) (shapeOf b)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; dimOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> dimOf <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> k
-<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span> (dimOf a) <span class="fu">+</span> (dimOf b)
-<span class="ot">&gt;</span>   a <span class="fu">:*</span> b <span class="ot">-&gt;</span> (dimOf a) <span class="fu">*</span> (dimOf b)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">HAtom</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">HPlus</span> <span class="dt">Shape</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="fu">|</span> <span class="dt">HTimes</span> <span class="dt">Shape</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  <span class="kw">deriving</span> <span class="dt">Eq</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Shape</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">  show <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">    <span class="dt">HAtom</span>      <span class="ot">-&gt;</span> <span class="st">&quot;*&quot;</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">    <span class="dt">HPlus</span>  a b <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot; + &quot;</span>, show b, <span class="st">&quot;)&quot;</span>]</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">    <span class="dt">HTimes</span> a b <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot; x &quot;</span>, show b, <span class="st">&quot;)&quot;</span>]</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="ot">shapeOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Shape</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">shapeOf <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">  <span class="dt">Size</span> _ <span class="ot">-&gt;</span> <span class="dt">HAtom</span></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">  a <span class="fu">:+</span> b <span class="ot">-&gt;</span> <span class="dt">HPlus</span>  (shapeOf a) (shapeOf b)</a>
+<a class="sourceLine" id="cb4-17" data-line-number="17">  a <span class="fu">:*</span> b <span class="ot">-&gt;</span> <span class="dt">HTimes</span> (shapeOf a) (shapeOf b)</a>
+<a class="sourceLine" id="cb4-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb4-19" data-line-number="19"><span class="ot">dimOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb4-20" data-line-number="20">dimOf <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb4-21" data-line-number="21">  <span class="dt">Size</span> k <span class="ot">-&gt;</span> k</a>
+<a class="sourceLine" id="cb4-22" data-line-number="22">  a <span class="fu">:+</span> b <span class="ot">-&gt;</span> (dimOf a) <span class="fu">+</span> (dimOf b)</a>
+<a class="sourceLine" id="cb4-23" data-line-number="23">  a <span class="fu">:*</span> b <span class="ot">-&gt;</span> (dimOf a) <span class="fu">*</span> (dimOf b)</a></code></pre></div>
 <p>Eventually, <span class="math inline">\(s \in \mathbb{S}\)</span> will represent the “size” of a tensor and <span class="math inline">\(D(s) \in \mathbb{N}\)</span> will be the vector space dimension of the space it comes from.</p>
 <h2 id="indices">Indices</h2>
 <p>This is well and good; we have a type, <code>Size</code>, that will eventually represent the size of a multidimensional array, and we can extract the “shape” and “dimension” of a size. But we also need a reasonable understanding of how to refer to the entries of an array of a given size.</p>
@@ -152,209 +152,209 @@ We denote by <span class="math inline">\(\mathbb{I}\)</span> the free algebra ov
 </div>
 </div>
 <p>Again, since <span class="math inline">\(\mathbb{I}\)</span> is a free algebra we can represent it as an algebraic type.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Index</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">L</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">R</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Index</span> <span class="fu">:&amp;</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> <span class="dt">Eq</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Index</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   show <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>     <span class="dt">Index</span> k <span class="ot">-&gt;</span> show k
-<span class="ot">&gt;</span>     <span class="dt">L</span> a     <span class="ot">-&gt;</span> <span class="st">&quot;L(&quot;</span> <span class="fu">++</span> show a <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
-<span class="ot">&gt;</span>     <span class="dt">R</span> b     <span class="ot">-&gt;</span> <span class="st">&quot;R(&quot;</span> <span class="fu">++</span> show b <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
-<span class="ot">&gt;</span>     a <span class="fu">:&amp;</span> b  <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot;,&quot;</span>, show b, <span class="st">&quot;)&quot;</span>]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Index</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   fromInteger <span class="fu">=</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   (<span class="fu">+</span>)    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: (+) does not make sense&quot;</span>
-<span class="ot">&gt;</span>   (<span class="fu">*</span>)    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: (*) does not make sense&quot;</span>
-<span class="ot">&gt;</span>   negate <span class="fu">=</span> error <span class="st">&quot;Index Num instance: negate does not make sense&quot;</span>
-<span class="ot">&gt;</span>   abs    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: abs does not make sense&quot;</span>
-<span class="ot">&gt;</span>   signum <span class="fu">=</span> error <span class="st">&quot;Index Num instance: signum does not make sense&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">Index</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">L</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="fu">|</span> <span class="dt">R</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  <span class="fu">|</span> <span class="dt">Index</span> <span class="fu">:&amp;</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  <span class="kw">deriving</span> <span class="dt">Eq</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Index</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">  show <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">    <span class="dt">Index</span> k <span class="ot">-&gt;</span> show k</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">    <span class="dt">L</span> a     <span class="ot">-&gt;</span> <span class="st">&quot;L(&quot;</span> <span class="fu">++</span> show a <span class="fu">++</span> <span class="st">&quot;)&quot;</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="dt">R</span> b     <span class="ot">-&gt;</span> <span class="st">&quot;R(&quot;</span> <span class="fu">++</span> show b <span class="fu">++</span> <span class="st">&quot;)&quot;</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    a <span class="fu">:&amp;</span> b  <span class="ot">-&gt;</span> concat [<span class="st">&quot;(&quot;</span>, show a, <span class="st">&quot;,&quot;</span>, show b, <span class="st">&quot;)&quot;</span>]</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"><span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Index</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18">  fromInteger <span class="fu">=</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">  (<span class="fu">+</span>)    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: (+) does not make sense&quot;</span></a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">  (<span class="fu">*</span>)    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: (*) does not make sense&quot;</span></a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">  negate <span class="fu">=</span> error <span class="st">&quot;Index Num instance: negate does not make sense&quot;</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">  abs    <span class="fu">=</span> error <span class="st">&quot;Index Num instance: abs does not make sense&quot;</span></a>
+<a class="sourceLine" id="cb5-24" data-line-number="24">  signum <span class="fu">=</span> error <span class="st">&quot;Index Num instance: signum does not make sense&quot;</span></a></code></pre></div>
 <p>Now given an index and a size, it may or may not make sense to talk about an entry at the index in a structure of the given size – like asking for the item at index 10 in an array of length 5. To capture this, we define a <em>compatibility relation</em> to detect when an index can be used on a given size.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; isIndexOf ::</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> (<span class="dt">Index</span> t) <span class="ot">`isIndexOf`</span> (<span class="dt">Size</span> k)
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k
-<span class="ot">&gt;</span> (<span class="dt">L</span> u) <span class="ot">`isIndexOf`</span> (a <span class="fu">:+</span> _)
-<span class="ot">&gt;</span>   <span class="fu">=</span> isIndexOf u a
-<span class="ot">&gt;</span> (<span class="dt">R</span> v) <span class="ot">`isIndexOf`</span> (_ <span class="fu">:+</span> b)
-<span class="ot">&gt;</span>   <span class="fu">=</span> isIndexOf v b
-<span class="ot">&gt;</span> (u <span class="fu">:&amp;</span> v) <span class="ot">`isIndexOf`</span> (a <span class="fu">:*</span> b)
-<span class="ot">&gt;</span>   <span class="fu">=</span> (u <span class="ot">`isIndexOf`</span> a) <span class="fu">&amp;&amp;</span> (v <span class="ot">`isIndexOf`</span> b)
-<span class="ot">&gt;</span> _ <span class="ot">`isIndexOf`</span> _
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">False</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">isIndexOf ::</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">(<span class="dt">Index</span> t) <span class="ot">`isIndexOf`</span> (<span class="dt">Size</span> k)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="fu">=</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">(<span class="dt">L</span> u) <span class="ot">`isIndexOf`</span> (a <span class="fu">:+</span> _)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  <span class="fu">=</span> isIndexOf u a</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">(<span class="dt">R</span> v) <span class="ot">`isIndexOf`</span> (_ <span class="fu">:+</span> b)</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">  <span class="fu">=</span> isIndexOf v b</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">(u <span class="fu">:&amp;</span> v) <span class="ot">`isIndexOf`</span> (a <span class="fu">:*</span> b)</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="fu">=</span> (u <span class="ot">`isIndexOf`</span> a) <span class="fu">&amp;&amp;</span> (v <span class="ot">`isIndexOf`</span> b)</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">_ <span class="ot">`isIndexOf`</span> _</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
 <p>From now on, if <span class="math inline">\(s\)</span> is a size, I’ll also use <span class="math inline">\(s\)</span> to denote the set of indices compatible with <span class="math inline">\(s\)</span>. So for example, if <span class="math inline">\(s = 5\)</span>, we might say somthing like <span class="math display">\[\sum_{i \in s} f(i)\]</span> without ambiguity.</p>
 <p>We’d like to be able to construct <span class="math inline">\(s\)</span> as a list; this is what <code>indicesOf</code> does. I’m going to play a little fast and loose with the proof because laziness.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; indicesOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> [<span class="dt">Index</span>]
-<span class="ot">&gt;</span> indicesOf <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>   <span class="dt">Size</span> k <span class="ot">-&gt;</span> map <span class="dt">Index</span> [<span class="dv">0</span><span class="fu">..</span>(k<span class="fu">-</span><span class="dv">1</span>)]
-<span class="ot">&gt;</span>   a <span class="fu">:+</span> b <span class="ot">-&gt;</span> map <span class="dt">L</span> (indicesOf a) <span class="fu">++</span> map <span class="dt">R</span> (indicesOf b)
-<span class="ot">&gt;</span>   a <span class="fu">:*</span> b <span class="ot">-&gt;</span> [ u <span class="fu">:&amp;</span> v <span class="fu">|</span> v <span class="ot">&lt;-</span> indicesOf b, u <span class="ot">&lt;-</span> indicesOf a ]</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">indicesOf ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> [<span class="dt">Index</span>]</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">indicesOf <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="dt">Size</span> k <span class="ot">-&gt;</span> map <span class="dt">Index</span> [<span class="dv">0</span><span class="fu">..</span>(k<span class="fu">-</span><span class="dv">1</span>)]</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  a <span class="fu">:+</span> b <span class="ot">-&gt;</span> map <span class="dt">L</span> (indicesOf a) <span class="fu">++</span> map <span class="dt">R</span> (indicesOf b)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  a <span class="fu">:*</span> b <span class="ot">-&gt;</span> [ u <span class="fu">:&amp;</span> v <span class="fu">|</span> v <span class="ot">&lt;-</span> indicesOf b, u <span class="ot">&lt;-</span> indicesOf a ]</a></code></pre></div>
 <p>The number of different indices for a given size should be equal to the size’s dimension. This suggests a simple test: the length of the index list is the dimension, and all entries of the index list are distinct.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_index_count ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_index_count <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;dimOf s == length $ indicesOf s&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \s <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     (dimOf s) <span class="fu">==</span> (fromIntegral <span class="fu">$</span> length <span class="fu">$</span> indicesOf s)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _<span class="ot">test_indices_distinct ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_indices_distinct <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;indicesOf s all distinct&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \s <span class="ot">-&gt;</span> (indicesOf s) <span class="fu">==</span> (nub <span class="fu">$</span> indicesOf s)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_index_count ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">_test_index_count <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  testName <span class="st">&quot;dimOf s == length $ indicesOf s&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  \s <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">    (dimOf s) <span class="fu">==</span> (fromIntegral <span class="fu">$</span> length <span class="fu">$</span> indicesOf s)</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="ot">_test_indices_distinct ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">_test_indices_distinct <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">  testName <span class="st">&quot;indicesOf s all distinct&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  \s <span class="ot">-&gt;</span> (indicesOf s) <span class="fu">==</span> (nub <span class="fu">$</span> indicesOf s)</a></code></pre></div>
 <p>In later posts, <span class="math inline">\(s \in \mathbb{S}\)</span> will represent the size (and shape) of the elements in a vector space consisting of tensors, which itself has vector space dimension <span class="math inline">\(D(s)\)</span>. But it will sometimes be convenient to think of these tensors canonically as <span class="math inline">\(D(s)\)</span>-dimensional vectors. To do this, we’ll set up a bijection between the indices of a given size <span class="math inline">\(s\)</span> and the natural numbers less than <span class="math inline">\(D(s)\)</span>. I’ll call the function from indices to numbers “flatten”, since it turns a complicated thing into a one-dimensional thing, and call the inverse “buildup”.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; flatten ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> flatten (<span class="dt">Size</span> k) (<span class="dt">Index</span> t)
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="kw">if</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k <span class="kw">then</span> t <span class="kw">else</span> error <span class="st">&quot;index out of bounds&quot;</span>
-<span class="ot">&gt;</span> flatten (a <span class="fu">:+</span> _) (<span class="dt">L</span> u)
-<span class="ot">&gt;</span>   <span class="fu">=</span> flatten a u
-<span class="ot">&gt;</span> flatten (a <span class="fu">:+</span> b) (<span class="dt">R</span> v)
-<span class="ot">&gt;</span>   <span class="fu">=</span> (dimOf a) <span class="fu">+</span> (flatten b v)
-<span class="ot">&gt;</span> flatten (a <span class="fu">:*</span> b) (u <span class="fu">:&amp;</span> v)
-<span class="ot">&gt;</span>   <span class="fu">=</span> (flatten a u) <span class="fu">+</span> (flatten b v)<span class="fu">*</span>(dimOf a)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; buildup ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Index</span>
-<span class="ot">&gt;</span> buildup (<span class="dt">Size</span> k) t
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="kw">if</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k
-<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">Index</span> t
-<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="st">&quot;integer index out of bounds&quot;</span>
-<span class="ot">&gt;</span> buildup (a <span class="fu">:+</span> b) t
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="kw">if</span> t <span class="fu">&lt;</span> dimOf a
-<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="dt">L</span> <span class="fu">$</span> buildup a t
-<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="dt">R</span> <span class="fu">$</span> buildup b (t <span class="fu">-</span> dimOf a)
-<span class="ot">&gt;</span> buildup (a <span class="fu">:*</span> b) t
-<span class="ot">&gt;</span>   <span class="fu">=</span> (buildup a (t <span class="ot">`rem`</span> (dimOf a))) <span class="fu">:&amp;</span> (buildup b (t <span class="ot">`quot`</span> (dimOf a)))</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">flatten ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">flatten (<span class="dt">Size</span> k) (<span class="dt">Index</span> t)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="fu">=</span> <span class="kw">if</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k <span class="kw">then</span> t <span class="kw">else</span> error <span class="st">&quot;index out of bounds&quot;</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">flatten (a <span class="fu">:+</span> _) (<span class="dt">L</span> u)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  <span class="fu">=</span> flatten a u</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">flatten (a <span class="fu">:+</span> b) (<span class="dt">R</span> v)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">  <span class="fu">=</span> (dimOf a) <span class="fu">+</span> (flatten b v)</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">flatten (a <span class="fu">:*</span> b) (u <span class="fu">:&amp;</span> v)</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="fu">=</span> (flatten a u) <span class="fu">+</span> (flatten b v)<span class="fu">*</span>(dimOf a)</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"><span class="ot">buildup ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Index</span></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">buildup (<span class="dt">Size</span> k) t</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">  <span class="fu">=</span> <span class="kw">if</span> <span class="dv">0</span> <span class="fu">&lt;=</span> t <span class="fu">&amp;&amp;</span> t <span class="fu">&lt;</span> k</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">      <span class="kw">then</span> <span class="dt">Index</span> t</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">      <span class="kw">else</span> error <span class="st">&quot;integer index out of bounds&quot;</span></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">buildup (a <span class="fu">:+</span> b) t</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">  <span class="fu">=</span> <span class="kw">if</span> t <span class="fu">&lt;</span> dimOf a</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">      <span class="kw">then</span> <span class="dt">L</span> <span class="fu">$</span> buildup a t</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">      <span class="kw">else</span> <span class="dt">R</span> <span class="fu">$</span> buildup b (t <span class="fu">-</span> dimOf a)</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">buildup (a <span class="fu">:*</span> b) t</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">  <span class="fu">=</span> (buildup a (t <span class="ot">`rem`</span> (dimOf a))) <span class="fu">:&amp;</span> (buildup b (t <span class="ot">`quot`</span> (dimOf a)))</a></code></pre></div>
 <p>Now <code>flatten</code> and <code>buildup</code> should be inverses of each other, which we can test.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _<span class="ot">test_flatten_buildup ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_flatten_buildup <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;flatten s . buildup s == id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \s <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="kw">let</span> ks <span class="fu">=</span> [<span class="dv">0</span><span class="fu">..</span>((dimOf s) <span class="fu">-</span> <span class="dv">1</span>)]
-<span class="ot">&gt;</span>     <span class="kw">in</span> ks <span class="fu">==</span> map (flatten s <span class="fu">.</span> buildup s) ks
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _<span class="ot">test_buildup_flatten ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_buildup_flatten <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;buildup s . flatten s == id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \s <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="kw">let</span> ks <span class="fu">=</span> indicesOf s
-<span class="ot">&gt;</span>     <span class="kw">in</span> ks <span class="fu">==</span> map (buildup s <span class="fu">.</span> flatten s) ks</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_flatten_buildup ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">_test_flatten_buildup <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  testName <span class="st">&quot;flatten s . buildup s == id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  \s <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">    <span class="kw">let</span> ks <span class="fu">=</span> [<span class="dv">0</span><span class="fu">..</span>((dimOf s) <span class="fu">-</span> <span class="dv">1</span>)]</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="kw">in</span> ks <span class="fu">==</span> map (flatten s <span class="fu">.</span> buildup s) ks</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"><span class="ot">_test_buildup_flatten ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">_test_buildup_flatten <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">  testName <span class="st">&quot;buildup s . flatten s == id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">  \s <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">    <span class="kw">let</span> ks <span class="fu">=</span> indicesOf s</a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">    <span class="kw">in</span> ks <span class="fu">==</span> map (buildup s <span class="fu">.</span> flatten s) ks</a></code></pre></div>
 <p>To wrap up, in this post we defined two algebraic types, <code>Size</code> and <code>Index</code>, to represent the sizes and indices of multidimensional arrays, and two functions, <code>flatten</code> and <code>buildup</code>, that canonically map the indices of a given size to a 0-indexed list of natural numbers.</p>
 <p>In the next post, we’ll use <code>Size</code> and <code>Index</code> to define and manipulate multidimensional arrays.</p>
 <h2 id="tests">Tests</h2>
 <p>Math heavy code is well suited to automated tests, so we’ll write some along the way using the <code>QuickCheck</code> library.</p>
 <p>First off, we won’t be needing the full complexity of QuickCheck, so here are some helper functions to make the tests a little simpler to write.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Test</span> prop <span class="fu">=</span> (<span class="dt">String</span>, prop)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; testName ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> prop <span class="ot">-&gt;</span> <span class="dt">Test</span> prop
-<span class="ot">&gt;</span> testName name prop <span class="fu">=</span> (name, prop)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> runTest, chattyTest,<span class="ot"> skipTest ::</span> <span class="dt">Testable</span> prop <span class="ot">=&gt;</span> <span class="dt">Args</span> <span class="ot">-&gt;</span> <span class="dt">Test</span> prop <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> runTest args (name, prop) <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   putStrLn (<span class="st">&quot;\x1b[1;34m&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)
-<span class="ot">&gt;</span>   result <span class="ot">&lt;-</span> quickCheckWithResult args prop
-<span class="ot">&gt;</span>   <span class="kw">if</span> isSuccess result
-<span class="ot">&gt;</span>     <span class="kw">then</span> return ()
-<span class="ot">&gt;</span>     <span class="kw">else</span> (putStrLn (show result)) <span class="fu">&gt;&gt;</span> exitFailure
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> chattyTest args (name, prop) <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   putStrLn (<span class="st">&quot;\x1b[1;35m&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)
-<span class="ot">&gt;</span>   result <span class="ot">&lt;-</span> verboseCheckWithResult args prop
-<span class="ot">&gt;</span>   <span class="kw">if</span> isSuccess result
-<span class="ot">&gt;</span>     <span class="kw">then</span> return ()
-<span class="ot">&gt;</span>     <span class="kw">else</span> (putStrLn (show result))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- when testing tests</span>
-<span class="ot">&gt;</span> skipTest _ (name, _) <span class="fu">=</span>
-<span class="ot">&gt;</span>   putStrLn (<span class="st">&quot;\x1b[1;33mskipped: &quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; testLabel ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> testLabel msg <span class="fu">=</span> putStrLn (<span class="st">&quot;\n\x1b[1;32m&quot;</span> <span class="fu">++</span> msg <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">TypeName</span> t <span class="kw">where</span>
-<span class="ot">&gt;   typeName ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Int</span>     <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Int&quot;</span>
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Integer</span> <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Integer&quot;</span>
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Double</span>  <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Double&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; pairOf ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m (a,b)
-<span class="ot">&gt;</span> pairOf ma mb <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   x <span class="ot">&lt;-</span> ma
-<span class="ot">&gt;</span>   y <span class="ot">&lt;-</span> mb
-<span class="ot">&gt;</span>   return (x,y)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; forAll2 ::</span> (<span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Testable</span> prop)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> prop) <span class="ot">-&gt;</span> <span class="dt">Property</span>
-<span class="ot">&gt;</span> forAll2 ga gb f <span class="fu">=</span> forAll genPair (uncurry f)
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     genPair <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       x <span class="ot">&lt;-</span> ga
-<span class="ot">&gt;</span>       y <span class="ot">&lt;-</span> gb
-<span class="ot">&gt;</span>       return (x,y)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; forAll3 ::</span> (<span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Show</span> c, <span class="dt">Testable</span> prop)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> <span class="dt">Gen</span> c <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> prop) <span class="ot">-&gt;</span> <span class="dt">Property</span>
-<span class="ot">&gt;</span> forAll3 ga gb gc f <span class="fu">=</span> forAll genTriple g
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     genTriple <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       x <span class="ot">&lt;-</span> ga
-<span class="ot">&gt;</span>       y <span class="ot">&lt;-</span> gb
-<span class="ot">&gt;</span>       z <span class="ot">&lt;-</span> gc
-<span class="ot">&gt;</span>       return (x,y,z)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     g (x,y,z) <span class="fu">=</span> f x y z</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Test</span> prop <span class="fu">=</span> (<span class="dt">String</span>, prop)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3"><span class="ot">testName ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> prop <span class="ot">-&gt;</span> <span class="dt">Test</span> prop</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">testName name prop <span class="fu">=</span> (name, prop)</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">runTest, chattyTest,<span class="ot"> skipTest ::</span> <span class="dt">Testable</span> prop <span class="ot">=&gt;</span> <span class="dt">Args</span> <span class="ot">-&gt;</span> <span class="dt">Test</span> prop <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">runTest args (name, prop) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">  putStrLn (<span class="st">&quot;\x1b[1;34m&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">  result <span class="ot">&lt;-</span> quickCheckWithResult args prop</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  <span class="kw">if</span> isSuccess result</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">    <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">    <span class="kw">else</span> (putStrLn (show result)) <span class="fu">&gt;&gt;</span> exitFailure</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">chattyTest args (name, prop) <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  putStrLn (<span class="st">&quot;\x1b[1;35m&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  result <span class="ot">&lt;-</span> verboseCheckWithResult args prop</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  <span class="kw">if</span> isSuccess result</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">    <span class="kw">then</span> return ()</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">    <span class="kw">else</span> (putStrLn (show result))</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb11-21" data-line-number="21"><span class="co">-- when testing tests</span></a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">skipTest _ (name, _) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  putStrLn (<span class="st">&quot;\x1b[1;33mskipped: &quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb11-25" data-line-number="25"><span class="ot">testLabel ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">testLabel msg <span class="fu">=</span> putStrLn (<span class="st">&quot;\n\x1b[1;32m&quot;</span> <span class="fu">++</span> msg <span class="fu">++</span> <span class="st">&quot;\x1b[0;39;49m&quot;</span>)</a>
+<a class="sourceLine" id="cb11-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb11-28" data-line-number="28"><span class="kw">class</span> <span class="dt">TypeName</span> t <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-29" data-line-number="29"><span class="ot">  typeName ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb11-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb11-31" data-line-number="31"><span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Int</span>     <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Int&quot;</span></a>
+<a class="sourceLine" id="cb11-32" data-line-number="32"><span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Integer</span> <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Integer&quot;</span></a>
+<a class="sourceLine" id="cb11-33" data-line-number="33"><span class="kw">instance</span> <span class="dt">TypeName</span> <span class="dt">Double</span>  <span class="kw">where</span> typeName _ <span class="fu">=</span> <span class="st">&quot;Double&quot;</span></a>
+<a class="sourceLine" id="cb11-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb11-35" data-line-number="35"><span class="ot">pairOf ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> m a <span class="ot">-&gt;</span> m b <span class="ot">-&gt;</span> m (a,b)</a>
+<a class="sourceLine" id="cb11-36" data-line-number="36">pairOf ma mb <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-37" data-line-number="37">  x <span class="ot">&lt;-</span> ma</a>
+<a class="sourceLine" id="cb11-38" data-line-number="38">  y <span class="ot">&lt;-</span> mb</a>
+<a class="sourceLine" id="cb11-39" data-line-number="39">  return (x,y)</a>
+<a class="sourceLine" id="cb11-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb11-41" data-line-number="41"><span class="ot">forAll2 ::</span> (<span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Testable</span> prop)</a>
+<a class="sourceLine" id="cb11-42" data-line-number="42">  <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> prop) <span class="ot">-&gt;</span> <span class="dt">Property</span></a>
+<a class="sourceLine" id="cb11-43" data-line-number="43">forAll2 ga gb f <span class="fu">=</span> forAll genPair (uncurry f)</a>
+<a class="sourceLine" id="cb11-44" data-line-number="44">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-45" data-line-number="45">    genPair <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-46" data-line-number="46">      x <span class="ot">&lt;-</span> ga</a>
+<a class="sourceLine" id="cb11-47" data-line-number="47">      y <span class="ot">&lt;-</span> gb</a>
+<a class="sourceLine" id="cb11-48" data-line-number="48">      return (x,y)</a>
+<a class="sourceLine" id="cb11-49" data-line-number="49"></a>
+<a class="sourceLine" id="cb11-50" data-line-number="50"><span class="ot">forAll3 ::</span> (<span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Show</span> c, <span class="dt">Testable</span> prop)</a>
+<a class="sourceLine" id="cb11-51" data-line-number="51">  <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> <span class="dt">Gen</span> c <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> prop) <span class="ot">-&gt;</span> <span class="dt">Property</span></a>
+<a class="sourceLine" id="cb11-52" data-line-number="52">forAll3 ga gb gc f <span class="fu">=</span> forAll genTriple g</a>
+<a class="sourceLine" id="cb11-53" data-line-number="53">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb11-54" data-line-number="54">    genTriple <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-55" data-line-number="55">      x <span class="ot">&lt;-</span> ga</a>
+<a class="sourceLine" id="cb11-56" data-line-number="56">      y <span class="ot">&lt;-</span> gb</a>
+<a class="sourceLine" id="cb11-57" data-line-number="57">      z <span class="ot">&lt;-</span> gc</a>
+<a class="sourceLine" id="cb11-58" data-line-number="58">      return (x,y,z)</a>
+<a class="sourceLine" id="cb11-59" data-line-number="59"></a>
+<a class="sourceLine" id="cb11-60" data-line-number="60">    g (x,y,z) <span class="fu">=</span> f x y z</a></code></pre></div>
 <p>To write QuickCheck tests for a given type it needs to be an instance of <code>Arbitrary</code>, which provides two basic functions: <code>arbitrary</code>, which generates a “random” element of the type, and <code>shrink</code>, which takes an element and makes it “smaller” in some way. Defining these functions for a given type may be ugly, but only has to be done once.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Size</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> sized arbSize
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   shrink <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>     <span class="dt">Size</span> k <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="kw">then</span> [] <span class="kw">else</span> [<span class="dt">Size</span> (k<span class="fu">-</span><span class="dv">1</span>)]
-<span class="ot">&gt;</span>     u <span class="fu">:+</span> v <span class="ot">-&gt;</span> [u, v]
-<span class="ot">&gt;</span>     u <span class="fu">:*</span> v <span class="ot">-&gt;</span> [u, v]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; arbSize ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> <span class="dt">Size</span>
-<span class="ot">&gt;</span> arbSize <span class="dv">0</span> <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   k <span class="ot">&lt;-</span> elements [<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">2</span>]
-<span class="ot">&gt;</span>   return (<span class="dt">Size</span> k)
-<span class="ot">&gt;</span> arbSize n <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   switch <span class="ot">&lt;- arbitrary ::</span> <span class="dt">Gen</span> <span class="dt">Int</span>
-<span class="ot">&gt;</span>   m <span class="ot">&lt;-</span> choose (<span class="dv">1</span>,n)
-<span class="ot">&gt;</span>   <span class="kw">case</span> switch <span class="ot">`mod`</span> <span class="dv">5</span> <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       u <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span>
-<span class="ot">&gt;</span>       v <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span>
-<span class="ot">&gt;</span>       return (u <span class="fu">:*</span> v)
-<span class="ot">&gt;</span>     <span class="dv">1</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       u <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span>
-<span class="ot">&gt;</span>       v <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span>
-<span class="ot">&gt;</span>       return (u <span class="fu">:+</span> v)
-<span class="ot">&gt;</span>     _ <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       k <span class="ot">&lt;-</span> elements [<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>]
-<span class="ot">&gt;</span>       return (<span class="dt">Size</span> k)</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Size</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  arbitrary <span class="fu">=</span> sized arbSize</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  shrink <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">    <span class="dt">Size</span> k <span class="ot">-&gt;</span> <span class="kw">if</span> k <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="kw">then</span> [] <span class="kw">else</span> [<span class="dt">Size</span> (k<span class="fu">-</span><span class="dv">1</span>)]</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">    u <span class="fu">:+</span> v <span class="ot">-&gt;</span> [u, v]</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">    u <span class="fu">:*</span> v <span class="ot">-&gt;</span> [u, v]</a>
+<a class="sourceLine" id="cb12-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="ot">arbSize ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> <span class="dt">Size</span></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">arbSize <span class="dv">0</span> <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">  k <span class="ot">&lt;-</span> elements [<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">2</span>,<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">  return (<span class="dt">Size</span> k)</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13">arbSize n <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-14" data-line-number="14">  switch <span class="ot">&lt;- arbitrary ::</span> <span class="dt">Gen</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb12-15" data-line-number="15">  m <span class="ot">&lt;-</span> choose (<span class="dv">1</span>,n)</a>
+<a class="sourceLine" id="cb12-16" data-line-number="16">  <span class="kw">case</span> switch <span class="ot">`mod`</span> <span class="dv">5</span> <span class="kw">of</span></a>
+<a class="sourceLine" id="cb12-17" data-line-number="17">    <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">      u <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb12-19" data-line-number="19">      v <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">      return (u <span class="fu">:*</span> v)</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21">    <span class="dv">1</span> <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-22" data-line-number="22">      u <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb12-23" data-line-number="23">      v <span class="ot">&lt;-</span> arbSize <span class="fu">$</span> n<span class="fu">-</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb12-24" data-line-number="24">      return (u <span class="fu">:+</span> v)</a>
+<a class="sourceLine" id="cb12-25" data-line-number="25">    _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-26" data-line-number="26">      k <span class="ot">&lt;-</span> elements [<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb12-27" data-line-number="27">      return (<span class="dt">Size</span> k)</a></code></pre></div>
 <p>Now we can wrap up our tests in a little suite, <code>_test_index</code>. The arguments for this function are (1) the number of test cases to generate and (2) how big they should be.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- run all tests for Size and Index</span>
-<span class="ot">&gt;</span> _<span class="ot">test_index ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_index num size <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Size and Index&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
-<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
-<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
-<span class="ot">&gt;</span>       }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   runTest args _test_index_count
-<span class="ot">&gt;</span>   runTest args _test_indices_distinct
-<span class="ot">&gt;</span>   runTest args _test_flatten_buildup
-<span class="ot">&gt;</span>   runTest args _test_buildup_flatten
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; main_index ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_index <span class="fu">=</span> _test_index <span class="dv">200</span> <span class="dv">20</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">-- run all tests for Size and Index</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="ot">_test_index ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">_test_index num size <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  testLabel <span class="st">&quot;Size and Index&quot;</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">      }</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb13-12" data-line-number="12">  runTest args _test_index_count</a>
+<a class="sourceLine" id="cb13-13" data-line-number="13">  runTest args _test_indices_distinct</a>
+<a class="sourceLine" id="cb13-14" data-line-number="14">  runTest args _test_flatten_buildup</a>
+<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args _test_buildup_flatten</a>
+<a class="sourceLine" id="cb13-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb13-17" data-line-number="17"><span class="ot">main_index ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-18" data-line-number="18">main_index <span class="fu">=</span> _test_index <span class="dv">200</span> <span class="dv">20</span></a></code></pre></div>
 
 
 

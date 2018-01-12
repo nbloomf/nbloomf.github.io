@@ -46,12 +46,12 @@ Posted on 2016-08-05 by nbloomf
 
 <p>This post is a note to myself about cross references in LaTeX. So if that’s your thing, read on. :)</p>
 <p>LaTeX makes cross references in large documents super easy. For instance, say we have a theorem we’d like to refer to later by number. This is done with <code>\label{}</code> and <code>\ref{}</code>.</p>
-<div class="sourceCode"><pre class="sourceCode latex"><code class="sourceCode latex">\begin{theorem}\label{thm}
-Lorem ipsum dolor sit amet, consectetur
-adipiscing elit.
-\end{theorem}
-    
-Proof of Theorem \ref{thm} left to the reader.</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode latex"><code class="sourceCode latex"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">\begin</span>{<span class="ex">theorem</span>}<span class="kw">\label</span>{<span class="ex">thm</span>}</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">Lorem ipsum dolor sit amet, consectetur</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">adipiscing elit.</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">\end</span>{<span class="ex">theorem</span>}</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">    </a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">Proof of Theorem <span class="kw">\ref</span>{<span class="ex">thm</span>} left to the reader.</a></code></pre></div>
 <p>There’s a particular style of cross references for multi-part theorems that I particularly like. I’m sure it’s very old, but I first saw it used in J. D. Monk’s <em>Introduction to Set Theory</em>. In this style, theorems are numbered with Arabic numerals (1, 2, etc.) while their parts are numbered with small Roman numerals (i, ii, etc.). So in the text we might see something like this.</p>
 <pre><code>Theorem 5. Lorem ipsum dolor sit amet,
 consectetur adipiscing elit.
@@ -61,43 +61,43 @@ consectetur adipiscing elit.
 <p>Then the text may later refer to this entire unit as “Theorem 5”, or to a single part as “5(ii)”. But if the proof of Theorem 5 is given in the text we don’t need to qualify the parts of this theorem – within the proof a reference like “(ii)” is unambiguous.</p>
 <p>The problem is how to implement cross references like this with LaTeX simply and without polluting the label namespace too much. I’m sure anyone with more than a passing interest in LaTeX could figure it out, but here’s my solution. It does require some label discipline and the <code>enumitem</code> package.</p>
 <p>We can label the theorem with <code>thm:lorem</code> and then the parts with <code>thm:lorem:foo</code>, <code>thm:lorem:bar</code>, and <code>thm:lorem:baz</code>. Now <code>\ref{thm:lorem}</code> refers to the theorem counter, while <code>\ref{thm:lorem:bar}</code> refers to the enumerate counter. We can refer to a specific part with <code>\ref{thm:lorem}\ref{thm:lorem:bar}</code>. This is redundant, but if we’re disciplined with qualifying labels we can use an additional command like</p>
-<div class="sourceCode"><pre class="sourceCode latex"><code class="sourceCode latex">\newcommand{\sref}[2]{\ref{#1}\ref{#1:#2}}</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode latex"><code class="sourceCode latex"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="fu">\newcommand</span>{<span class="ex">\sref</span>}[2]{<span class="kw">\ref</span>{<span class="ex">#1</span>}<span class="kw">\ref</span>{<span class="ex">#1:#2</span>}}</a></code></pre></div>
 <p>and say <code>\sref{thm:lorem}{bar}</code> instead.</p>
 <p>Here’s a minimal working example.</p>
 <hr />
-<div class="sourceCode"><pre class="sourceCode latex"><code class="sourceCode latex">\documentclass{article}
-
-\usepackage{amsthm}
-\usepackage{enumitem}
-
-<span class="co">% Define theorem environment</span>
-\theoremstyle{definition}
-\newtheorem{theorem}{Theorem}
-
-<span class="co">% Style enumerate counter</span>
-\setlist[enumerate]{label=(\roman*)}
-
-<span class="co">% Subreferences</span>
-\newcommand{\sref}[2]{\ref{#1}\ref{#1:#2}}
-
-
-
-\begin{document}
-
-\begin{theorem}\label{thm:lorem}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-\begin{enumerate}
-  \item\label{thm:lorem:foo} Foo.
-  \item\label{thm:lorem:bar} Bar.
-  \item\label{thm:lorem:baz} Baz.
-\end{enumerate}
-\end{theorem}
-
-We can refer to the entire Theorem \ref{thm:lorem},
-to a single qualified part like \sref{thm:lorem}{bar},
-or a single unqualified part like \ref{thm:lorem:baz}.
-
-\end{document}</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode latex"><code class="sourceCode latex"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="bu">\documentclass</span>{<span class="ex">article</span>}</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="bu">\usepackage</span>{<span class="ex">amsthm</span>}</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="bu">\usepackage</span>{<span class="ex">enumitem</span>}</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="co">% Define theorem environment</span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="fu">\theoremstyle</span>{definition}</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="fu">\newtheorem</span>{theorem}{Theorem}</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="co">% Style enumerate counter</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11"><span class="fu">\setlist</span>[enumerate]{label=(<span class="fu">\roman</span>*)}</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13"><span class="co">% Subreferences</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="fu">\newcommand</span>{<span class="ex">\sref</span>}[2]{<span class="kw">\ref</span>{<span class="ex">#1</span>}<span class="kw">\ref</span>{<span class="ex">#1:#2</span>}}</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb4-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb4-18" data-line-number="18"><span class="kw">\begin</span>{<span class="ex">document</span>}</a>
+<a class="sourceLine" id="cb4-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb4-20" data-line-number="20"><span class="kw">\begin</span>{<span class="ex">theorem</span>}<span class="kw">\label</span>{<span class="ex">thm:lorem</span>}</a>
+<a class="sourceLine" id="cb4-21" data-line-number="21">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</a>
+<a class="sourceLine" id="cb4-22" data-line-number="22"><span class="kw">\begin</span>{<span class="ex">enumerate</span>}</a>
+<a class="sourceLine" id="cb4-23" data-line-number="23">  <span class="fu">\item</span><span class="kw">\label</span>{<span class="ex">thm:lorem:foo</span>} Foo.</a>
+<a class="sourceLine" id="cb4-24" data-line-number="24">  <span class="fu">\item</span><span class="kw">\label</span>{<span class="ex">thm:lorem:bar</span>} Bar.</a>
+<a class="sourceLine" id="cb4-25" data-line-number="25">  <span class="fu">\item</span><span class="kw">\label</span>{<span class="ex">thm:lorem:baz</span>} Baz.</a>
+<a class="sourceLine" id="cb4-26" data-line-number="26"><span class="kw">\end</span>{<span class="ex">enumerate</span>}</a>
+<a class="sourceLine" id="cb4-27" data-line-number="27"><span class="kw">\end</span>{<span class="ex">theorem</span>}</a>
+<a class="sourceLine" id="cb4-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb4-29" data-line-number="29">We can refer to the entire Theorem <span class="kw">\ref</span>{<span class="ex">thm:lorem</span>},</a>
+<a class="sourceLine" id="cb4-30" data-line-number="30">to a single qualified part like <span class="fu">\sref</span>{thm:lorem}{bar},</a>
+<a class="sourceLine" id="cb4-31" data-line-number="31">or a single unqualified part like <span class="kw">\ref</span>{<span class="ex">thm:lorem:baz</span>}.</a>
+<a class="sourceLine" id="cb4-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb4-33" data-line-number="33"><span class="kw">\end</span>{<span class="ex">document</span>}</a></code></pre></div>
 
 
 <!-- END BODY -->

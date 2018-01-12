@@ -49,412 +49,412 @@ Posted on 2017-10-18 by nbloomf
 <hr />
 
 <p>Boilerplate.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">GradientChecking</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">TensorFunctions</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Gradients</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">GradientChecking</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Applicative</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Test.QuickCheck</span> <span class="kw">hiding</span> (<span class="dt">Function</span>)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Test</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Indices</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">IndexIsos</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Tensors</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">TensorFunctions</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Gradients</span></a></code></pre></div>
 <p>Computing gradients of multivariate <span class="math inline">\(f\)</span> is intricate, so it’d be nice to have a simple (if slow) way to check them for reasonableness. In this post we’ll see two methods for doing exactly that.</p>
 <h2 id="numerical-approximation">Numerical Approximation</h2>
 <p>In the single variable case the gradient at a point <span class="math inline">\(v\)</span> is the slope of the line tangent to <span class="math inline">\(f\)</span> at <span class="math inline">\(v\)</span>, which can be approximated using the slope of the secant line passing through the points on <span class="math inline">\(f\)</span> at <span class="math inline">\(v \pm \varepsilon\)</span> for small epsilon, sometimes called the <em>difference quotient</em>. In math notation, the difference quotient is <span class="math display">\[\frac{f(v + \varepsilon) - f(v - \varepsilon)}{2 \varepsilon},\]</span> and in code we say:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; diffquo ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r) <span class="ot">=&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r
-<span class="ot">&gt;</span> diffquo f x eps <span class="fu">=</span> ((f <span class="fu">$</span> x <span class="fu">+</span> eps) <span class="fu">-</span> (f <span class="fu">$</span> x <span class="fu">-</span> eps)) <span class="fu">/</span> (<span class="dv">2</span><span class="fu">*</span>eps)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">diffquo ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r) <span class="ot">=&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">diffquo f x eps <span class="fu">=</span> ((f <span class="fu">$</span> x <span class="fu">+</span> eps) <span class="fu">-</span> (f <span class="fu">$</span> x <span class="fu">-</span> eps)) <span class="fu">/</span> (<span class="dv">2</span><span class="fu">*</span>eps)</a></code></pre></div>
 <p>Of course the gradient is a bunch of pointwise univariate derivatives, so we can approximate the gradient pointwise.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> approxGrad
-<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r          <span class="co">-- pointwise epsilon</span>
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="co">-- function to approximate</span>
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="co">-- gradient</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> approxGrad eps f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> (dom f)
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span>
-<span class="ot">&gt;</span>         g i j x  <span class="fu">=</span> (f <span class="fu">$@</span> (inj i v x))<span class="ot">`at`</span>j
-<span class="ot">&gt;</span>       <span class="kw">in</span>
-<span class="ot">&gt;</span>         tensor ((cod f) <span class="fu">:*</span> (dom f)) <span class="fu">$</span>
-<span class="ot">&gt;</span>           \(j <span class="fu">:&amp;</span> i) <span class="ot">-&gt;</span> diffquo (g i j) (v<span class="ot">`at`</span>i) eps
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     inj ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
-<span class="ot">&gt;</span>     inj k a<span class="fu">@</span>(<span class="dt">T</span> u _) x <span class="fu">=</span> tensor u <span class="fu">$</span>
-<span class="ot">&gt;</span>       \i <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> k <span class="kw">then</span> x <span class="kw">else</span> a<span class="ot">`at`</span>i</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">approxGrad</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Num</span> r, <span class="dt">Fractional</span> r)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="ot">=&gt;</span> r          <span class="co">-- pointwise epsilon</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="co">-- function to approximate</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="co">-- gradient</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">approxGrad eps f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">  { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">  , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> (dom f)</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">      <span class="kw">let</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">        g i j x  <span class="fu">=</span> (f <span class="fu">$@</span> (inj i v x))<span class="ot">`at`</span>j</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">      <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">        tensor ((cod f) <span class="fu">:*</span> (dom f)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">          \(j <span class="fu">:&amp;</span> i) <span class="ot">-&gt;</span> diffquo (g i j) (v<span class="ot">`at`</span>i) eps</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">  }</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="ot">    inj ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">    inj k a<span class="fu">@</span>(<span class="dt">T</span> u _) x <span class="fu">=</span> tensor u <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">      \i <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> k <span class="kw">then</span> x <span class="kw">else</span> a<span class="ot">`at`</span>i</a></code></pre></div>
 <p>So <code>approxGrad</code> computes the numerical gradient of a function using some tolerance <code>eps</code>. Testing it out by hand:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">3</span> sin
-<span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> approxGrad <span class="fl">0.00001</span> f
-<span class="fu">$&gt;</span> g <span class="fu">$@</span> (vec [<span class="dv">0</span>,pi<span class="fu">/</span><span class="dv">2</span>,pi])
- <span class="fl">0.9999999999833332</span>                 <span class="fl">0.0</span>                 <span class="fl">0.0</span>
-                <span class="fl">0.0</span>                 <span class="fl">0.0</span>                 <span class="fl">0.0</span>
-                <span class="fl">0.0</span>                 <span class="fl">0.0</span> <span class="fu">-</span><span class="fl">0.9999999999898844</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">3</span> sin</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> approxGrad <span class="fl">0.00001</span> f</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="fu">$&gt;</span> g <span class="fu">$@</span> (vec [<span class="dv">0</span>,pi<span class="fu">/</span><span class="dv">2</span>,pi])</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"> <span class="fl">0.9999999999833332</span>                 <span class="fl">0.0</span>                 <span class="fl">0.0</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">                <span class="fl">0.0</span>                 <span class="fl">0.0</span>                 <span class="fl">0.0</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">                <span class="fl">0.0</span>                 <span class="fl">0.0</span> <span class="fu">-</span><span class="fl">0.9999999999898844</span></a></code></pre></div>
 <p>Which is not terrible.</p>
 <p>If we have some other function that claims to compute the gradient, a decent reasonableness check is to see whether the numerical gradient at <span class="math inline">\(v\)</span> and the “exact” gradient at <span class="math inline">\(v\)</span> are equal, or, more likely, very close to each other. “Very close” for tensors can be measured in a few ways, each appropriate in different cases. We’ll use a type to toggle among them.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Metric</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">MaxAbsDiff</span> <span class="co">-- max entrywise absolute difference</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">MaxRelDiff</span> <span class="co">-- max entrywise relative difference</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> distanceBy
-<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> distanceBy m a b <span class="fu">=</span> <span class="kw">if</span> a<span class="fu">==</span>b <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="kw">case</span> m <span class="kw">of</span>
-<span class="ot">&gt;</span>   <span class="dt">MaxAbsDiff</span> <span class="ot">-&gt;</span> maximum <span class="fu">$</span> tzipWith f a b
-<span class="ot">&gt;</span>     <span class="kw">where</span>
-<span class="ot">&gt;</span>       f x y <span class="fu">=</span> <span class="kw">if</span> isNaN x <span class="fu">||</span> isNaN y
-<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dv">0</span>
-<span class="ot">&gt;</span>         <span class="kw">else</span> abs (x <span class="fu">-</span> y)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="dt">MaxRelDiff</span> <span class="ot">-&gt;</span> maximum <span class="fu">$</span> tzipWith f a b
-<span class="ot">&gt;</span>     <span class="kw">where</span>
-<span class="ot">&gt;</span>       f x y <span class="fu">=</span> <span class="kw">if</span> isNaN x <span class="fu">||</span> isNaN y
-<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dv">0</span>
-<span class="ot">&gt;</span>         <span class="kw">else</span> abs <span class="fu">$</span> (x <span class="fu">-</span> y) <span class="fu">/</span> (max x y)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Metric</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">MaxAbsDiff</span> <span class="co">-- max entrywise absolute difference</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">MaxRelDiff</span> <span class="co">-- max entrywise relative difference</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">distanceBy</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"><span class="ot">  ::</span> (<span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r)</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">  <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">distanceBy m a b <span class="fu">=</span> <span class="kw">if</span> a<span class="fu">==</span>b <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="kw">case</span> m <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">  <span class="dt">MaxAbsDiff</span> <span class="ot">-&gt;</span> maximum <span class="fu">$</span> tzipWith f a b</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">      f x y <span class="fu">=</span> <span class="kw">if</span> isNaN x <span class="fu">||</span> isNaN y</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">        <span class="kw">then</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16">        <span class="kw">else</span> abs (x <span class="fu">-</span> y)</a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">  <span class="dt">MaxRelDiff</span> <span class="ot">-&gt;</span> maximum <span class="fu">$</span> tzipWith f a b</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">      f x y <span class="fu">=</span> <span class="kw">if</span> isNaN x <span class="fu">||</span> isNaN y</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">        <span class="kw">then</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">        <span class="kw">else</span> abs <span class="fu">$</span> (x <span class="fu">-</span> y) <span class="fu">/</span> (max x y)</a></code></pre></div>
 <p>And a helper test for function equality:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_functions_equal
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span>
-<span class="ot">&gt;</span> _test_functions_equal metric eps f g <span class="fu">=</span>
-<span class="ot">&gt;</span>   forAll (arbTensorOf eps (dom f)) <span class="fu">$</span>
-<span class="ot">&gt;</span>     \v <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span>
-<span class="ot">&gt;</span>         a <span class="fu">=</span> f <span class="fu">$@</span> v
-<span class="ot">&gt;</span>         b <span class="fu">=</span> g <span class="fu">$@</span> v
-<span class="ot">&gt;</span>       <span class="kw">in</span>
-<span class="ot">&gt;</span>         <span class="kw">if</span> distanceBy metric a b <span class="fu">&lt;</span> eps
-<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>           <span class="kw">else</span> error <span class="fu">$</span> concat
-<span class="ot">&gt;</span>             <span class="co">-- helps with debugging</span>
-<span class="ot">&gt;</span>             [ <span class="st">&quot;Functions not equal at\n&quot;</span> <span class="fu">++</span> show v <span class="fu">++</span> <span class="st">&quot;\n&quot;</span>
-<span class="ot">&gt;</span>             , <span class="st">&quot;values are\n&quot;</span> <span class="fu">++</span> show a <span class="fu">++</span> <span class="st">&quot;\nand\n&quot;</span> <span class="fu">++</span> show b
-<span class="ot">&gt;</span>             , <span class="st">&quot;\nthere.&quot;</span>
-<span class="ot">&gt;</span>             ]</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">_test_functions_equal</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">_test_functions_equal metric eps f g <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  forAll (arbTensorOf eps (dom f)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    \v <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">      <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">        a <span class="fu">=</span> f <span class="fu">$@</span> v</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">        b <span class="fu">=</span> g <span class="fu">$@</span> v</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">      <span class="kw">in</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">        <span class="kw">if</span> distanceBy metric a b <span class="fu">&lt;</span> eps</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">          <span class="kw">then</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">          <span class="kw">else</span> error <span class="fu">$</span> concat</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">            <span class="co">-- helps with debugging</span></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">            [ <span class="st">&quot;Functions not equal at\n&quot;</span> <span class="fu">++</span> show v <span class="fu">++</span> <span class="st">&quot;\n&quot;</span></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16">            , <span class="st">&quot;values are\n&quot;</span> <span class="fu">++</span> show a <span class="fu">++</span> <span class="st">&quot;\nand\n&quot;</span> <span class="fu">++</span> show b</a>
+<a class="sourceLine" id="cb6-17" data-line-number="17">            , <span class="st">&quot;\nthere.&quot;</span></a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">            ]</a></code></pre></div>
 <p>For example, the gradient of scalar multiplication should be a scalar multiple of the “identity” tensor; the following test verifies this.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_numerical_scalar_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_numerical_scalar_gradient _ <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;numerical scalar gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u k <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> 
-<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))
-<span class="ot">&gt;</span>       (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> scalarF u k)
-<span class="ot">&gt;</span>       (constF u (k <span class="fu">.@</span> (idMat u)))</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">_test_numerical_scalar_gradient</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">Floating</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">_test_numerical_scalar_gradient _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  testName <span class="st">&quot;numerical scalar gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">  \u k <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> </a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">    _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">**</span>(<span class="fu">-</span><span class="dv">6</span>))</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">      (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> scalarF u k)</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">      (constF u (k <span class="fu">.@</span> (idMat u)))</a></code></pre></div>
 <p>More generally, the gradient of a “linear” tensor function is a constant.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_numerical_linear_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_numerical_linear_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;numerical linear gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf r (v <span class="fu">:*</span> u)) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>)) <span class="fu">$</span> linearF m)
-<span class="ot">&gt;</span>           (constF u m)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">_test_numerical_linear_gradient</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">_test_numerical_linear_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  testName <span class="st">&quot;numerical linear gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    forAll (arbTensorOf r (v <span class="fu">:*</span> u)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">          (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>)) <span class="fu">$</span> linearF m)</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">          (constF u m)</a></code></pre></div>
 <p>Yet more generally still, the gradient of an “affine” tensor function is a constant.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_numerical_affine_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_numerical_affine_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;numerical affine gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll2 (arbTensorOf r (v <span class="fu">:*</span> u)) (arbTensorOf r v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m b <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>)) <span class="fu">$</span> affineF m b)
-<span class="ot">&gt;</span>           (constF u m)</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">_test_numerical_affine_gradient</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">_test_numerical_affine_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">  testName <span class="st">&quot;numerical affine gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">    forAll2 (arbTensorOf r (v <span class="fu">:*</span> u)) (arbTensorOf r v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">      \m b <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">          (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>)) <span class="fu">$</span> affineF m b)</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">          (constF u m)</a></code></pre></div>
 <p>Pointwise functions (parameterized on the metric):</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_numerical_pointwise_gradient_by
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r)
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_numerical_pointwise_gradient_by metric str r p q <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName (<span class="st">&quot;numerical pointwise gradient (&quot;</span> <span class="fu">++</span> str <span class="fu">++</span> <span class="st">&quot;)&quot;</span>) <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> 
-<span class="ot">&gt;</span>     _test_functions_equal metric (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">4</span>))
-<span class="ot">&gt;</span>       (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">4</span>)) <span class="fu">$</span> pointwiseF u p)
-<span class="ot">&gt;</span>       (diagF u <span class="fu">$.</span> (pointwiseF u q))</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">_test_numerical_pointwise_gradient_by</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">_test_numerical_pointwise_gradient_by metric str r p q <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  testName (<span class="st">&quot;numerical pointwise gradient (&quot;</span> <span class="fu">++</span> str <span class="fu">++</span> <span class="st">&quot;)&quot;</span>) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">  \u <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> </a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">    _test_functions_equal metric (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">4</span>))</a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">      (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">4</span>)) <span class="fu">$</span> pointwiseF u p)</a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">      (diagF u <span class="fu">$.</span> (pointwiseF u q))</a></code></pre></div>
 <p>The gradient of direct summing is constant.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_numerical_direct_sum_left_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_numerical_direct_sum_left_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;direct sum on left numerical gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf r v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">2</span>))
-<span class="ot">&gt;</span>           (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> dSumL u m)
-<span class="ot">&gt;</span>           (constF u <span class="fu">$</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u) <span class="fu">~-~</span> (idMat u))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_numerical_direct_sum_right_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_numerical_direct_sum_right_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;direct sum on right numerical gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf r v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">2</span>))
-<span class="ot">&gt;</span>           (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> dSumR u m)
-<span class="ot">&gt;</span>           (constF u <span class="fu">$</span> (idMat u) <span class="fu">~-~</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u))</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1">_test_numerical_direct_sum_left_gradient</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">_test_numerical_direct_sum_left_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  testName <span class="st">&quot;direct sum on left numerical gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    forAll (arbTensorOf r v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">          (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> dSumL u m)</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">          (constF u <span class="fu">$</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u) <span class="fu">~-~</span> (idMat u))</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">_test_numerical_direct_sum_right_gradient</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">_test_numerical_direct_sum_right_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  testName <span class="st">&quot;direct sum on right numerical gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">    forAll (arbTensorOf r v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb11-21" data-line-number="21">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">          (approxGrad (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>)) <span class="fu">$</span> dSumR u m)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">          (constF u <span class="fu">$</span> (idMat u) <span class="fu">~-~</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u))</a></code></pre></div>
 <h2 id="dual-numbers">Dual Numbers</h2>
 <p>Another neat trick for computing the gradient of a function is automatic differentiation using <em>dual numbers</em>. For the single variable case, this method works by embedding <span class="math inline">\(\mathbb{R}\)</span> in the ring <span class="math inline">\(\mathbb{R}[x]/(x^2)\)</span>. Given <span class="math inline">\(a + bx\)</span> in this ring, <span class="math inline">\(a\)</span> is called the <em>real part</em> and <span class="math inline">\(b\)</span> the <em>infinitesimal part</em>. Carrying out arithmetic as usual makes <span class="math inline">\(b\)</span> act like the derivative of <span class="math inline">\(a\)</span>. I won’t go into the details, mostly because they’re a little bit magic to me still, but this can be extended to the multivariate case, as we’ll do.</p>
 <p>Remember that the gradient of a tensor function is again a tensor. So rather than keeping track of a number and its derivative, we’ll keep track of a number and its gradient tensor.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Dual</span> r
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">D</span> r (<span class="dt">Tensor</span> r)
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- we'll think of the empty gradient as</span>
-<span class="ot">&gt;</span> <span class="co">-- representing a constant of any size.</span>
-<span class="ot">&gt; toDual ::</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r
-<span class="ot">&gt;</span> toDual x <span class="fu">=</span> <span class="dt">D</span> x empty
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; unDual ::</span> <span class="dt">Dual</span> r <span class="ot">-&gt;</span> r
-<span class="ot">&gt;</span> unDual (<span class="dt">D</span> x _) <span class="fu">=</span> x</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Dual</span> r</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">D</span> r (<span class="dt">Tensor</span> r)</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  <span class="kw">deriving</span> (<span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">-- we'll think of the empty gradient as</span></a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"><span class="co">-- representing a constant of any size.</span></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="ot">toDual ::</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r</a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">toDual x <span class="fu">=</span> <span class="dt">D</span> x empty</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10"><span class="ot">unDual ::</span> <span class="dt">Dual</span> r <span class="ot">-&gt;</span> r</a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">unDual (<span class="dt">D</span> x _) <span class="fu">=</span> x</a></code></pre></div>
 <p>Thinking of a tensor as a “variable”, we dualize by embedding each coordinate with its partial derivative.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dualize ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> (<span class="dt">Dual</span> r)
-<span class="ot">&gt;</span> dualize a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span> tensor u (\i <span class="ot">-&gt;</span> var u i (a<span class="ot">`at`</span>i))
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     var ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r
-<span class="ot">&gt;</span>     var u k r <span class="fu">=</span> <span class="dt">D</span> r (tensor u (\i <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> k <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>))</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">dualize ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> (<span class="dt">Dual</span> r)</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">dualize a<span class="fu">@</span>(<span class="dt">T</span> u _) <span class="fu">=</span> tensor u (\i <span class="ot">-&gt;</span> var u i (a<span class="ot">`at`</span>i))</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="ot">    var ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Index</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">    var u k r <span class="fu">=</span> <span class="dt">D</span> r (tensor u (\i <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> k <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>))</a></code></pre></div>
 <p>Now we define arithmetic on dual numbers in a way that essentially encodes the chain rule at each step. With the magic of type classes, now anytime we define a function with signature <code>(Num r) =&gt; Function r</code>, it can be evaluated over the dual numbers with no changes.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Eq</span> r) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   (<span class="dt">D</span> x _) <span class="fu">==</span> (<span class="dt">D</span> y _) <span class="fu">=</span> x <span class="fu">==</span> y
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   fromInteger x <span class="fu">=</span> toDual (fromInteger x)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   (<span class="dt">D</span> x dx) <span class="fu">+</span> (<span class="dt">D</span> y dy)
-<span class="ot">&gt;</span>     <span class="fu">|</span> (size dx) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) dy
-<span class="ot">&gt;</span>     <span class="fu">|</span> (size dy) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) dx
-<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) (dx <span class="fu">.+</span> dy)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   (<span class="dt">D</span> x dx) <span class="fu">*</span> (<span class="dt">D</span> y dy)
-<span class="ot">&gt;</span>     <span class="fu">|</span> (size dx) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> x <span class="fu">.@</span> (<span class="dt">D</span> y dy)
-<span class="ot">&gt;</span>     <span class="fu">|</span> (size dy) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> y <span class="fu">.@</span> (<span class="dt">D</span> x dx)
-<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">*</span> y) ((y <span class="fu">.@</span> dx) <span class="fu">.+</span> (x <span class="fu">.@</span> dy))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   negate (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (negate x) (fmap negate dx)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   abs (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (abs x) ((signum x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   signum (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (signum x) (<span class="dv">0</span> <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Dual</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   r <span class="fu">.@</span> (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (r<span class="fu">*</span>x) (fmap (r<span class="fu">*</span>) dx)
-<span class="ot">&gt;</span>   (<span class="fu">.+</span>) <span class="fu">=</span> (<span class="fu">+</span>)
-<span class="ot">&gt;</span>   neg <span class="fu">=</span> negate
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r) <span class="ot">=&gt;</span> <span class="dt">Ord</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   (<span class="dt">D</span> x _) <span class="fu">&lt;=</span> (<span class="dt">D</span> y _) <span class="fu">=</span> x <span class="fu">&lt;=</span> y
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   max (<span class="dt">D</span> x dx) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">&gt;=</span> y
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">D</span> x dx <span class="kw">else</span> <span class="dt">D</span> y dy
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   min (<span class="dt">D</span> x dx) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">&lt;=</span> y
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">D</span> x dx <span class="kw">else</span> <span class="dt">D</span> y dy
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r) <span class="ot">=&gt;</span> <span class="dt">Fractional</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   fromRational x <span class="fu">=</span> toDual (fromRational x)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   recip (<span class="dt">D</span> x dx<span class="fu">@</span>(<span class="dt">T</span> u _)) <span class="fu">=</span> <span class="dt">D</span> (<span class="dv">1</span><span class="fu">/</span>x) ((<span class="fu">-</span><span class="dv">1</span><span class="fu">/</span>x<span class="fu">^</span><span class="dv">2</span>) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Floating</span> r) <span class="ot">=&gt;</span> <span class="dt">Floating</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   pi             <span class="fu">=</span> <span class="dt">D</span> pi        empty
-<span class="ot">&gt;</span>   sqrt  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sqrt x)  ((<span class="dv">1</span> <span class="fu">/</span> (<span class="dv">2</span><span class="fu">*</span>(sqrt x))) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   exp   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (exp x)   ((exp x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   log   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (log x)   ((<span class="dv">1</span> <span class="fu">/</span> x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   sin   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sin x)   ((cos x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   cos   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (cos x)   ((<span class="fu">-</span>(sin x)) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   tan   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (tan x)   ((<span class="dv">1</span><span class="fu">/</span>(cos x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   asin  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (asin x)  ((<span class="dv">1</span><span class="fu">/</span>(sqrt(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>))) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   acos  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (acos x)  ((<span class="fu">-</span><span class="dv">1</span><span class="fu">/</span>(sqrt(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>))) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   atan  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (atan x)  ((<span class="dv">1</span><span class="fu">/</span>(<span class="dv">1</span><span class="fu">+</span>x<span class="fu">**</span><span class="dv">2</span>)) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   sinh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sinh x)  ((cosh x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   cosh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (cosh x)  ((sinh x) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   tanh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (tanh x)  ((<span class="dv">1</span><span class="fu">-</span>(tanh x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   asinh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (asinh x) ((<span class="dv">1</span><span class="fu">/</span>(sqrt(x<span class="fu">**</span><span class="dv">2</span><span class="fu">+</span><span class="dv">1</span>))) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   acosh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (acosh x) ((<span class="dv">1</span><span class="fu">/</span>(sqrt(x<span class="fu">**</span><span class="dv">2</span><span class="fu">-</span><span class="dv">1</span>))) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span>   atanh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (atanh x) ((<span class="dv">1</span><span class="fu">/</span>(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>)) <span class="fu">.@</span> dx)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   (<span class="dt">D</span> x dx) <span class="fu">**</span> (<span class="dt">D</span> y dy)
-<span class="ot">&gt;</span>     <span class="fu">|</span> dx <span class="fu">==</span> empty <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y) ((x<span class="fu">**</span>y) <span class="fu">.@</span> ((log x) <span class="fu">.@</span> dy))
-<span class="ot">&gt;</span>     <span class="fu">|</span> dy <span class="fu">==</span> empty <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y) ((x<span class="fu">**</span>y) <span class="fu">.@</span> ((y<span class="fu">/</span>x) <span class="fu">.@</span> dx))
-<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise   <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y)
-<span class="ot">&gt;</span>         ((x<span class="fu">**</span>y) <span class="fu">.@</span> (((log x) <span class="fu">.@</span> dy) <span class="fu">.+</span> ((y<span class="fu">/</span>x) <span class="fu">.@</span> dx)))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   logBase (<span class="dt">D</span> x _) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="dt">D</span> (logBase x y)
-<span class="ot">&gt;</span>     ((<span class="dv">1</span><span class="fu">/</span>(log x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> ((((log y)<span class="fu">/</span>x) <span class="fu">.@</span> dy) <span class="fu">.-</span> (((log x)<span class="fu">/</span>y) <span class="fu">.@</span> dy)))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Real</span> r) <span class="ot">=&gt;</span> <span class="dt">Real</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   toRational (<span class="dt">D</span> x _) <span class="fu">=</span> toRational x</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">Eq</span> r) <span class="ot">=&gt;</span> <span class="dt">Eq</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  (<span class="dt">D</span> x _) <span class="fu">==</span> (<span class="dt">D</span> y _) <span class="fu">=</span> x <span class="fu">==</span> y</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="kw">instance</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Num</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">  fromInteger x <span class="fu">=</span> toDual (fromInteger x)</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">  (<span class="dt">D</span> x dx) <span class="fu">+</span> (<span class="dt">D</span> y dy)</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">    <span class="fu">|</span> (size dx) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) dy</a>
+<a class="sourceLine" id="cb14-10" data-line-number="10">    <span class="fu">|</span> (size dy) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) dx</a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">    <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">+</span> y) (dx <span class="fu">.+</span> dy)</a>
+<a class="sourceLine" id="cb14-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb14-13" data-line-number="13">  (<span class="dt">D</span> x dx) <span class="fu">*</span> (<span class="dt">D</span> y dy)</a>
+<a class="sourceLine" id="cb14-14" data-line-number="14">    <span class="fu">|</span> (size dx) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> x <span class="fu">.@</span> (<span class="dt">D</span> y dy)</a>
+<a class="sourceLine" id="cb14-15" data-line-number="15">    <span class="fu">|</span> (size dy) <span class="fu">~=</span> <span class="dv">0</span> <span class="fu">=</span> y <span class="fu">.@</span> (<span class="dt">D</span> x dx)</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16">    <span class="fu">|</span> otherwise      <span class="fu">=</span> <span class="dt">D</span> (x <span class="fu">*</span> y) ((y <span class="fu">.@</span> dx) <span class="fu">.+</span> (x <span class="fu">.@</span> dy))</a>
+<a class="sourceLine" id="cb14-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">  negate (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (negate x) (fmap negate dx)</a>
+<a class="sourceLine" id="cb14-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb14-20" data-line-number="20">  abs (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (abs x) ((signum x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb14-22" data-line-number="22">  signum (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (signum x) (<span class="dv">0</span> <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb14-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb14-25" data-line-number="25"><span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Dual</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-26" data-line-number="26">  r <span class="fu">.@</span> (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (r<span class="fu">*</span>x) (fmap (r<span class="fu">*</span>) dx)</a>
+<a class="sourceLine" id="cb14-27" data-line-number="27">  (<span class="fu">.+</span>) <span class="fu">=</span> (<span class="fu">+</span>)</a>
+<a class="sourceLine" id="cb14-28" data-line-number="28">  neg <span class="fu">=</span> negate</a>
+<a class="sourceLine" id="cb14-29" data-line-number="29"></a>
+<a class="sourceLine" id="cb14-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb14-31" data-line-number="31"><span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r) <span class="ot">=&gt;</span> <span class="dt">Ord</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-32" data-line-number="32">  (<span class="dt">D</span> x _) <span class="fu">&lt;=</span> (<span class="dt">D</span> y _) <span class="fu">=</span> x <span class="fu">&lt;=</span> y</a>
+<a class="sourceLine" id="cb14-33" data-line-number="33"></a>
+<a class="sourceLine" id="cb14-34" data-line-number="34">  max (<span class="dt">D</span> x dx) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">&gt;=</span> y</a>
+<a class="sourceLine" id="cb14-35" data-line-number="35">    <span class="kw">then</span> <span class="dt">D</span> x dx <span class="kw">else</span> <span class="dt">D</span> y dy</a>
+<a class="sourceLine" id="cb14-36" data-line-number="36"></a>
+<a class="sourceLine" id="cb14-37" data-line-number="37">  min (<span class="dt">D</span> x dx) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">&lt;=</span> y</a>
+<a class="sourceLine" id="cb14-38" data-line-number="38">    <span class="kw">then</span> <span class="dt">D</span> x dx <span class="kw">else</span> <span class="dt">D</span> y dy</a>
+<a class="sourceLine" id="cb14-39" data-line-number="39"></a>
+<a class="sourceLine" id="cb14-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb14-41" data-line-number="41"><span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r) <span class="ot">=&gt;</span> <span class="dt">Fractional</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-42" data-line-number="42">  fromRational x <span class="fu">=</span> toDual (fromRational x)</a>
+<a class="sourceLine" id="cb14-43" data-line-number="43"></a>
+<a class="sourceLine" id="cb14-44" data-line-number="44">  recip (<span class="dt">D</span> x dx<span class="fu">@</span>(<span class="dt">T</span> u _)) <span class="fu">=</span> <span class="dt">D</span> (<span class="dv">1</span><span class="fu">/</span>x) ((<span class="fu">-</span><span class="dv">1</span><span class="fu">/</span>x<span class="fu">^</span><span class="dv">2</span>) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb14-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb14-47" data-line-number="47"><span class="kw">instance</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Floating</span> r) <span class="ot">=&gt;</span> <span class="dt">Floating</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-48" data-line-number="48">  pi             <span class="fu">=</span> <span class="dt">D</span> pi        empty</a>
+<a class="sourceLine" id="cb14-49" data-line-number="49">  sqrt  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sqrt x)  ((<span class="dv">1</span> <span class="fu">/</span> (<span class="dv">2</span><span class="fu">*</span>(sqrt x))) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-50" data-line-number="50">  exp   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (exp x)   ((exp x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-51" data-line-number="51">  log   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (log x)   ((<span class="dv">1</span> <span class="fu">/</span> x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-52" data-line-number="52">  sin   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sin x)   ((cos x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-53" data-line-number="53">  cos   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (cos x)   ((<span class="fu">-</span>(sin x)) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-54" data-line-number="54">  tan   (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (tan x)   ((<span class="dv">1</span><span class="fu">/</span>(cos x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-55" data-line-number="55">  asin  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (asin x)  ((<span class="dv">1</span><span class="fu">/</span>(sqrt(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>))) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-56" data-line-number="56">  acos  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (acos x)  ((<span class="fu">-</span><span class="dv">1</span><span class="fu">/</span>(sqrt(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>))) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-57" data-line-number="57">  atan  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (atan x)  ((<span class="dv">1</span><span class="fu">/</span>(<span class="dv">1</span><span class="fu">+</span>x<span class="fu">**</span><span class="dv">2</span>)) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-58" data-line-number="58">  sinh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (sinh x)  ((cosh x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-59" data-line-number="59">  cosh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (cosh x)  ((sinh x) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-60" data-line-number="60">  tanh  (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (tanh x)  ((<span class="dv">1</span><span class="fu">-</span>(tanh x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-61" data-line-number="61">  asinh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (asinh x) ((<span class="dv">1</span><span class="fu">/</span>(sqrt(x<span class="fu">**</span><span class="dv">2</span><span class="fu">+</span><span class="dv">1</span>))) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-62" data-line-number="62">  acosh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (acosh x) ((<span class="dv">1</span><span class="fu">/</span>(sqrt(x<span class="fu">**</span><span class="dv">2</span><span class="fu">-</span><span class="dv">1</span>))) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-63" data-line-number="63">  atanh (<span class="dt">D</span> x dx) <span class="fu">=</span> <span class="dt">D</span> (atanh x) ((<span class="dv">1</span><span class="fu">/</span>(<span class="dv">1</span><span class="fu">-</span>x<span class="fu">**</span><span class="dv">2</span>)) <span class="fu">.@</span> dx)</a>
+<a class="sourceLine" id="cb14-64" data-line-number="64"></a>
+<a class="sourceLine" id="cb14-65" data-line-number="65">  (<span class="dt">D</span> x dx) <span class="fu">**</span> (<span class="dt">D</span> y dy)</a>
+<a class="sourceLine" id="cb14-66" data-line-number="66">    <span class="fu">|</span> dx <span class="fu">==</span> empty <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y) ((x<span class="fu">**</span>y) <span class="fu">.@</span> ((log x) <span class="fu">.@</span> dy))</a>
+<a class="sourceLine" id="cb14-67" data-line-number="67">    <span class="fu">|</span> dy <span class="fu">==</span> empty <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y) ((x<span class="fu">**</span>y) <span class="fu">.@</span> ((y<span class="fu">/</span>x) <span class="fu">.@</span> dx))</a>
+<a class="sourceLine" id="cb14-68" data-line-number="68">    <span class="fu">|</span> otherwise   <span class="fu">=</span> <span class="dt">D</span> (x<span class="fu">**</span>y)</a>
+<a class="sourceLine" id="cb14-69" data-line-number="69">        ((x<span class="fu">**</span>y) <span class="fu">.@</span> (((log x) <span class="fu">.@</span> dy) <span class="fu">.+</span> ((y<span class="fu">/</span>x) <span class="fu">.@</span> dx)))</a>
+<a class="sourceLine" id="cb14-70" data-line-number="70"></a>
+<a class="sourceLine" id="cb14-71" data-line-number="71">  logBase (<span class="dt">D</span> x _) (<span class="dt">D</span> y dy) <span class="fu">=</span> <span class="dt">D</span> (logBase x y)</a>
+<a class="sourceLine" id="cb14-72" data-line-number="72">    ((<span class="dv">1</span><span class="fu">/</span>(log x)<span class="fu">**</span><span class="dv">2</span>) <span class="fu">.@</span> ((((log y)<span class="fu">/</span>x) <span class="fu">.@</span> dy) <span class="fu">.-</span> (((log x)<span class="fu">/</span>y) <span class="fu">.@</span> dy)))</a>
+<a class="sourceLine" id="cb14-73" data-line-number="73"></a>
+<a class="sourceLine" id="cb14-74" data-line-number="74"><span class="kw">instance</span> (<span class="dt">Real</span> r) <span class="ot">=&gt;</span> <span class="dt">Real</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb14-75" data-line-number="75">  toRational (<span class="dt">D</span> x _) <span class="fu">=</span> toRational x</a></code></pre></div>
 <p>Now we can automatically take a tensor function on (tensors of) dual numbers, and find its gradient as a function on (tensors of) ordinary numbers.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dualGrad ::</span> (<span class="dt">Num</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Function</span> (<span class="dt">Dual</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> dualGrad f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> (dom f)
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> tensor ((cod f) <span class="fu">:*</span> (dom f)) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         <span class="kw">let</span> (<span class="dt">D</span> _ dx) <span class="fu">=</span> (f <span class="fu">$@</span> (dualize v)) <span class="ot">`at`</span> i
-<span class="ot">&gt;</span>         <span class="kw">in</span> dx <span class="ot">`at`</span> j
-<span class="ot">&gt;</span>   }</code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">dualGrad ::</span> (<span class="dt">Num</span> r)</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> <span class="dt">Function</span> (<span class="dt">Dual</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">dualGrad f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> (dom f)</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> tensor ((cod f) <span class="fu">:*</span> (dom f)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">      \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">        <span class="kw">let</span> (<span class="dt">D</span> _ dx) <span class="fu">=</span> (f <span class="fu">$@</span> (dualize v)) <span class="ot">`at`</span> i</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">        <span class="kw">in</span> dx <span class="ot">`at`</span> j</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10">  }</a></code></pre></div>
 <p>To be clear: we can now evaluate the gradient of an arbitrary tensor function. As a quick hand test:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">1</span> sin <span class="co">-- f(x) = sin(x)</span>
-<span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> dualGrad f <span class="co">-- magic</span>
-<span class="fu">$&gt;</span> g <span class="fu">$@</span> (cell pi)
-<span class="fu">-</span><span class="fl">1.0</span>
-<span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">3</span> (<span class="fu">^</span><span class="dv">2</span>) <span class="co">-- f(x,y,z) = (x^2,y^2,z^2)</span>
-<span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> dualGrad f <span class="co">-- magic</span>
-<span class="fu">$&gt;</span> g <span class="fu">$@</span> (vec [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>])
-<span class="dv">2</span> <span class="dv">0</span> <span class="dv">0</span>
-<span class="dv">0</span> <span class="dv">4</span> <span class="dv">0</span>
-<span class="dv">0</span> <span class="dv">0</span> <span class="dv">6</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">1</span> sin <span class="co">-- f(x) = sin(x)</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> dualGrad f <span class="co">-- magic</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="fu">$&gt;</span> g <span class="fu">$@</span> (cell pi)</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4"><span class="fu">-</span><span class="fl">1.0</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"><span class="fu">$&gt;</span> <span class="kw">let</span> f <span class="fu">=</span> pointwiseF <span class="dv">3</span> (<span class="fu">^</span><span class="dv">2</span>) <span class="co">-- f(x,y,z) = (x^2,y^2,z^2)</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="fu">$&gt;</span> <span class="kw">let</span> g <span class="fu">=</span> dualGrad f <span class="co">-- magic</span></a>
+<a class="sourceLine" id="cb16-7" data-line-number="7"><span class="fu">$&gt;</span> g <span class="fu">$@</span> (vec [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>])</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"><span class="dv">2</span> <span class="dv">0</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="dv">0</span> <span class="dv">4</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10"><span class="dv">0</span> <span class="dv">0</span> <span class="dv">6</span></a></code></pre></div>
 <p>I will probably never get used to that. Anyway, like we did with numeric differentiation, we can use automatic differentiation to test a claimed “exact” gradient. By the way – AD gives us the exact gradient, so why don’t we just use it? Unfortunately AD ends up doing a lot of work to keep track of those intermediate derivatives, so a dedicated gradient function (if we can find it) can be more efficient. But we can still test our handwritten gradients against the AD gradient or numeric gradient on small functions to gain confidence that we’re doing it right.</p>
 <p>We need an <code>Arbitrary</code> instance for dual numbers:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Arbitrary</span> r) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">Dual</span> r) <span class="kw">where</span>
-<span class="ot">&gt;</span>   arbitrary <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     x <span class="ot">&lt;-</span> arbitrary
-<span class="ot">&gt;</span>     return <span class="fu">$</span> <span class="dt">D</span> x empty</code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> r) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">Dual</span> r) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">  arbitrary <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">    x <span class="ot">&lt;-</span> arbitrary</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    return <span class="fu">$</span> <span class="dt">D</span> x empty</a></code></pre></div>
 <p>And we can compare an alleged gradient function against the automatically computed gradient.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_dual_scalar_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Dual</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_scalar_gradient _ <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;dual scalar gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u k <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> 
-<span class="ot">&gt;</span>     _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>))
-<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> scalarF u k)
-<span class="ot">&gt;</span>       (constF u ((unDual k) <span class="fu">.@</span> (idMat u)))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_dual_linear_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_linear_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;dual linear gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf (toDual r) (v <span class="fu">:*</span> u)) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> linearF m)
-<span class="ot">&gt;</span>           (constF u (fmap unDual m))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_dual_affine_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_affine_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;dual affine gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll2
-<span class="ot">&gt;</span>       (arbTensorOf (toDual r) (v <span class="fu">:*</span> u))
-<span class="ot">&gt;</span>       (arbTensorOf (toDual r) v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m b <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> affineF m b)
-<span class="ot">&gt;</span>           (constF u (fmap unDual m))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_dual_pointwise_gradient_by
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (<span class="dt">Dual</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r)
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_pointwise_gradient_by metric name r p q <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName (<span class="st">&quot;dual pointwise gradient (&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;)&quot;</span>) <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> 
-<span class="ot">&gt;</span>     _test_functions_equal metric (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>))
-<span class="ot">&gt;</span>       (dualGrad <span class="fu">$</span> pointwiseF u p)
-<span class="ot">&gt;</span>       (diagF u <span class="fu">$.</span> (pointwiseF u q))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_dual_direct_sum_left_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_direct_sum_left_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;direct sum on left dual gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf r v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> dSumL u (fmap toDual m))
-<span class="ot">&gt;</span>           (constF u <span class="fu">$</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u) <span class="fu">~-~</span> (idMat u))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_dual_direct_sum_right_gradient
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_dual_direct_sum_right_gradient r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;direct sum on right dual gradient&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span>
-<span class="ot">&gt;</span>     forAll (arbTensorOf r v) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \m <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>         _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))
-<span class="ot">&gt;</span>           (dualGrad <span class="fu">$</span> dSumR u (fmap toDual m))
-<span class="ot">&gt;</span>           (constF u <span class="fu">$</span> (idMat u) <span class="fu">~-~</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u))</code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1">_test_dual_scalar_gradient</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Dual</span> r <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">_test_dual_scalar_gradient _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  testName <span class="st">&quot;dual scalar gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">  \u k <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> </a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">    _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>))</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">      (dualGrad <span class="fu">$</span> scalarF u k)</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">      (constF u ((unDual k) <span class="fu">.@</span> (idMat u)))</a>
+<a class="sourceLine" id="cb18-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb18-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb18-12" data-line-number="12">_test_dual_linear_gradient</a>
+<a class="sourceLine" id="cb18-13" data-line-number="13"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-14" data-line-number="14">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-15" data-line-number="15">_test_dual_linear_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-16" data-line-number="16">  testName <span class="st">&quot;dual linear gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-17" data-line-number="17">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb18-18" data-line-number="18">    forAll (arbTensorOf (toDual r) (v <span class="fu">:*</span> u)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-19" data-line-number="19">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb18-20" data-line-number="20">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb18-21" data-line-number="21">          (dualGrad <span class="fu">$</span> linearF m)</a>
+<a class="sourceLine" id="cb18-22" data-line-number="22">          (constF u (fmap unDual m))</a>
+<a class="sourceLine" id="cb18-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb18-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb18-25" data-line-number="25">_test_dual_affine_gradient</a>
+<a class="sourceLine" id="cb18-26" data-line-number="26"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-27" data-line-number="27">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-28" data-line-number="28">_test_dual_affine_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-29" data-line-number="29">  testName <span class="st">&quot;dual affine gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-30" data-line-number="30">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb18-31" data-line-number="31">    forAll2</a>
+<a class="sourceLine" id="cb18-32" data-line-number="32">      (arbTensorOf (toDual r) (v <span class="fu">:*</span> u))</a>
+<a class="sourceLine" id="cb18-33" data-line-number="33">      (arbTensorOf (toDual r) v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-34" data-line-number="34">      \m b <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb18-35" data-line-number="35">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb18-36" data-line-number="36">          (dualGrad <span class="fu">$</span> affineF m b)</a>
+<a class="sourceLine" id="cb18-37" data-line-number="37">          (constF u (fmap unDual m))</a>
+<a class="sourceLine" id="cb18-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb18-39" data-line-number="39"></a>
+<a class="sourceLine" id="cb18-40" data-line-number="40">_test_dual_pointwise_gradient_by</a>
+<a class="sourceLine" id="cb18-41" data-line-number="41"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-42" data-line-number="42">  <span class="ot">=&gt;</span> <span class="dt">Metric</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (<span class="dt">Dual</span> r <span class="ot">-&gt;</span> <span class="dt">Dual</span> r) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r)</a>
+<a class="sourceLine" id="cb18-43" data-line-number="43">  <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-44" data-line-number="44">_test_dual_pointwise_gradient_by metric name r p q <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-45" data-line-number="45">  testName (<span class="st">&quot;dual pointwise gradient (&quot;</span> <span class="fu">++</span> name <span class="fu">++</span> <span class="st">&quot;)&quot;</span>) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-46" data-line-number="46">  \u <span class="ot">-&gt;</span> u <span class="fu">~/=</span> <span class="dv">0</span> <span class="fu">==&gt;</span> </a>
+<a class="sourceLine" id="cb18-47" data-line-number="47">    _test_functions_equal metric (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">6</span>))</a>
+<a class="sourceLine" id="cb18-48" data-line-number="48">      (dualGrad <span class="fu">$</span> pointwiseF u p)</a>
+<a class="sourceLine" id="cb18-49" data-line-number="49">      (diagF u <span class="fu">$.</span> (pointwiseF u q))</a>
+<a class="sourceLine" id="cb18-50" data-line-number="50"></a>
+<a class="sourceLine" id="cb18-51" data-line-number="51"></a>
+<a class="sourceLine" id="cb18-52" data-line-number="52">_test_dual_direct_sum_left_gradient</a>
+<a class="sourceLine" id="cb18-53" data-line-number="53"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-54" data-line-number="54">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-55" data-line-number="55">_test_dual_direct_sum_left_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-56" data-line-number="56">  testName <span class="st">&quot;direct sum on left dual gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-57" data-line-number="57">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb18-58" data-line-number="58">    forAll (arbTensorOf r v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-59" data-line-number="59">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb18-60" data-line-number="60">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb18-61" data-line-number="61">          (dualGrad <span class="fu">$</span> dSumL u (fmap toDual m))</a>
+<a class="sourceLine" id="cb18-62" data-line-number="62">          (constF u <span class="fu">$</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u) <span class="fu">~-~</span> (idMat u))</a>
+<a class="sourceLine" id="cb18-63" data-line-number="63"></a>
+<a class="sourceLine" id="cb18-64" data-line-number="64"></a>
+<a class="sourceLine" id="cb18-65" data-line-number="65">_test_dual_direct_sum_right_gradient</a>
+<a class="sourceLine" id="cb18-66" data-line-number="66"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Ord</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb18-67" data-line-number="67">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb18-68" data-line-number="68">_test_dual_direct_sum_right_gradient r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-69" data-line-number="69">  testName <span class="st">&quot;direct sum on right dual gradient&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-70" data-line-number="70">  \u v <span class="ot">-&gt;</span> (u <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">&amp;&amp;</span> (v <span class="fu">~/=</span> <span class="dv">0</span>) <span class="fu">==&gt;</span></a>
+<a class="sourceLine" id="cb18-71" data-line-number="71">    forAll (arbTensorOf r v) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-72" data-line-number="72">      \m <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb18-73" data-line-number="73">        _test_functions_equal <span class="dt">MaxAbsDiff</span> (<span class="dv">10</span><span class="fu">^^</span>(<span class="fu">-</span><span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb18-74" data-line-number="74">          (dualGrad <span class="fu">$</span> dSumR u (fmap toDual m))</a>
+<a class="sourceLine" id="cb18-75" data-line-number="75">          (constF u <span class="fu">$</span> (idMat u) <span class="fu">~-~</span> (zeros <span class="fu">$</span> v <span class="fu">:*</span> u))</a></code></pre></div>
 <h2 id="test-suite">Test Suite</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_gradient_checking
-<span class="ot">&gt;   ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Floating</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_gradient_checking r num size <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Gradient&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
-<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
-<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
-<span class="ot">&gt;</span>       }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Dual&quot;</span>
-<span class="ot">&gt;</span>   runTest args (_test_dual_scalar_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_dual_linear_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_dual_affine_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;^2&quot;</span>  r (<span class="fu">^</span><span class="dv">2</span>) (<span class="fu">*</span><span class="dv">2</span>))
-<span class="ot">&gt;</span>   runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;sin&quot;</span> r sin cos)
-<span class="ot">&gt;</span>   runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;cos&quot;</span> r cos (negate <span class="fu">.</span> sin))
-<span class="ot">&gt;</span>   runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;exp&quot;</span> r exp exp)
-<span class="ot">&gt;</span>   runTest args (_test_dual_direct_sum_left_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_dual_direct_sum_right_gradient r)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   testLabel <span class="st">&quot;Numerical&quot;</span>
-<span class="ot">&gt;</span>   runTest args (_test_numerical_scalar_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_linear_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_affine_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;^2&quot;</span>  r (<span class="fu">^</span><span class="dv">2</span>) (<span class="fu">*</span><span class="dv">2</span>))
-<span class="ot">&gt;</span>   runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;sin&quot;</span> r sin cos)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;cos&quot;</span> r cos (negate <span class="fu">.</span> sin))
-<span class="ot">&gt;</span>   runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxRelDiff</span>
-<span class="ot">&gt;</span>                  <span class="st">&quot;exp&quot;</span> r exp exp)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_direct_sum_left_gradient r)
-<span class="ot">&gt;</span>   runTest args (_test_numerical_direct_sum_right_gradient r)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; main_gradient_checking ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_gradient_checking <span class="fu">=</span> _test_gradient_checking (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Double</span>) <span class="dv">100</span> <span class="dv">3</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1">_test_gradient_checking</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Show</span> r, <span class="dt">Fractional</span> r, <span class="dt">RealFloat</span> r, <span class="dt">Ord</span> r, <span class="dt">Num</span> r, <span class="dt">Floating</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">_test_gradient_checking r num size <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  testLabel <span class="st">&quot;Gradient&quot;</span></a>
+<a class="sourceLine" id="cb19-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb19-9" data-line-number="9">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb19-10" data-line-number="10">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb19-11" data-line-number="11">      }</a>
+<a class="sourceLine" id="cb19-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb19-13" data-line-number="13">  testLabel <span class="st">&quot;Dual&quot;</span></a>
+<a class="sourceLine" id="cb19-14" data-line-number="14">  runTest args (_test_dual_scalar_gradient r)</a>
+<a class="sourceLine" id="cb19-15" data-line-number="15">  runTest args (_test_dual_linear_gradient r)</a>
+<a class="sourceLine" id="cb19-16" data-line-number="16">  runTest args (_test_dual_affine_gradient r)</a>
+<a class="sourceLine" id="cb19-17" data-line-number="17">  runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-18" data-line-number="18">                 <span class="st">&quot;^2&quot;</span>  r (<span class="fu">^</span><span class="dv">2</span>) (<span class="fu">*</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb19-19" data-line-number="19">  runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-20" data-line-number="20">                 <span class="st">&quot;sin&quot;</span> r sin cos)</a>
+<a class="sourceLine" id="cb19-21" data-line-number="21">  runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-22" data-line-number="22">                 <span class="st">&quot;cos&quot;</span> r cos (negate <span class="fu">.</span> sin))</a>
+<a class="sourceLine" id="cb19-23" data-line-number="23">  runTest args (_test_dual_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-24" data-line-number="24">                 <span class="st">&quot;exp&quot;</span> r exp exp)</a>
+<a class="sourceLine" id="cb19-25" data-line-number="25">  runTest args (_test_dual_direct_sum_left_gradient r)</a>
+<a class="sourceLine" id="cb19-26" data-line-number="26">  runTest args (_test_dual_direct_sum_right_gradient r)</a>
+<a class="sourceLine" id="cb19-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb19-28" data-line-number="28">  testLabel <span class="st">&quot;Numerical&quot;</span></a>
+<a class="sourceLine" id="cb19-29" data-line-number="29">  runTest args (_test_numerical_scalar_gradient r)</a>
+<a class="sourceLine" id="cb19-30" data-line-number="30">  runTest args (_test_numerical_linear_gradient r)</a>
+<a class="sourceLine" id="cb19-31" data-line-number="31">  runTest args (_test_numerical_affine_gradient r)</a>
+<a class="sourceLine" id="cb19-32" data-line-number="32">  runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-33" data-line-number="33">                 <span class="st">&quot;^2&quot;</span>  r (<span class="fu">^</span><span class="dv">2</span>) (<span class="fu">*</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb19-34" data-line-number="34">  runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-35" data-line-number="35">                 <span class="st">&quot;sin&quot;</span> r sin cos)</a>
+<a class="sourceLine" id="cb19-36" data-line-number="36">  runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxAbsDiff</span></a>
+<a class="sourceLine" id="cb19-37" data-line-number="37">                 <span class="st">&quot;cos&quot;</span> r cos (negate <span class="fu">.</span> sin))</a>
+<a class="sourceLine" id="cb19-38" data-line-number="38">  runTest args (_test_numerical_pointwise_gradient_by <span class="dt">MaxRelDiff</span></a>
+<a class="sourceLine" id="cb19-39" data-line-number="39">                 <span class="st">&quot;exp&quot;</span> r exp exp)</a>
+<a class="sourceLine" id="cb19-40" data-line-number="40">  runTest args (_test_numerical_direct_sum_left_gradient r)</a>
+<a class="sourceLine" id="cb19-41" data-line-number="41">  runTest args (_test_numerical_direct_sum_right_gradient r)</a>
+<a class="sourceLine" id="cb19-42" data-line-number="42"></a>
+<a class="sourceLine" id="cb19-43" data-line-number="43"><span class="ot">main_gradient_checking ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb19-44" data-line-number="44">main_gradient_checking <span class="fu">=</span> _test_gradient_checking (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Double</span>) <span class="dv">100</span> <span class="dv">3</span></a></code></pre></div>
 
 
 

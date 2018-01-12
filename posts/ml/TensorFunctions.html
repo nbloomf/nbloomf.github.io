@@ -49,183 +49,183 @@ Posted on 2017-10-16 by nbloomf
 <hr />
 
 <p>First some boilerplate.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">TensorFunctions</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Applicative</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck.Test</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Debug.Trace</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">TensorFunctions</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Control.Applicative</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Test.QuickCheck</span> <span class="kw">hiding</span> (<span class="dt">Function</span>)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Test</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Debug.Trace</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Indices</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">IndexIsos</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Tensors</span></a></code></pre></div>
 <p>Ostensibly a “tensor function” is just a function with signature <code>Tensor r -&gt; Tensor r</code>. But it turns out this is not quite right. Tensor functions should be well defined on size – a function should expect as input functions of some uniform size <span class="math inline">\(u\)</span> and should produce tensors of some other uniform size <span class="math inline">\(v\)</span>. As we’ve implemented tensors here, plain haskell functions can’t enforce this, so we’ll abstract functions behind a type that can.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Function</span> r <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   {<span class="ot"> dom ::</span> <span class="dt">Size</span> <span class="co">-- domain (input) size</span>
-<span class="ot">&gt;</span>   ,<span class="ot"> cod ::</span> <span class="dt">Size</span> <span class="co">-- codomain (output) size</span>
-<span class="ot">&gt;</span>   ,<span class="ot"> fun ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- apply</span>
-<span class="ot">&gt; ($@) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
-<span class="ot">&gt;</span> f <span class="fu">$@</span> v <span class="fu">=</span> <span class="kw">if</span> (size v) <span class="fu">/=</span> dom f
-<span class="ot">&gt;</span>   <span class="kw">then</span> error <span class="fu">$</span> <span class="st">&quot;($@): domain mismatch: got &quot;</span> <span class="fu">++</span> show (size v)
-<span class="ot">&gt;</span>     <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (dom f)
-<span class="ot">&gt;</span>   <span class="kw">else</span> <span class="kw">let</span> w <span class="fu">=</span> (fun f) v <span class="kw">in</span>
-<span class="ot">&gt;</span>     <span class="kw">if</span> (size w) <span class="fu">==</span> cod f
-<span class="ot">&gt;</span>       <span class="kw">then</span> w
-<span class="ot">&gt;</span>       <span class="kw">else</span> error <span class="fu">$</span> <span class="st">&quot;($@): codomain mismatch: got &quot;</span> <span class="fu">++</span> show (size w)
-<span class="ot">&gt;</span>         <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (cod f)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- compose</span>
-<span class="ot">&gt; ($.) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> g <span class="fu">$.</span> f <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> (dom g) <span class="fu">==</span> (cod f)
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>       { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>       , cod <span class="fu">=</span> cod g
-<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> g <span class="fu">$@</span> (f <span class="fu">$@</span> v)
-<span class="ot">&gt;</span>       }
-<span class="ot">&gt;</span>     <span class="kw">else</span>
-<span class="ot">&gt;</span>       error <span class="st">&quot;($.): domain/codomain mismatch&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">infixr</span> <span class="dv">0</span> <span class="fu">$@</span>
-<span class="ot">&gt;</span> <span class="kw">infixr</span> <span class="dv">9</span> <span class="fu">$.</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Function</span> r <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  {<span class="ot"> dom ::</span> <span class="dt">Size</span> <span class="co">-- domain (input) size</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  ,<span class="ot"> cod ::</span> <span class="dt">Size</span> <span class="co">-- codomain (output) size</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  ,<span class="ot"> fun ::</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  }</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="co">-- apply</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">($@) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">f <span class="fu">$@</span> v <span class="fu">=</span> <span class="kw">if</span> (size v) <span class="fu">/=</span> dom f</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">  <span class="kw">then</span> error <span class="fu">$</span> <span class="st">&quot;($@): domain mismatch: got &quot;</span> <span class="fu">++</span> show (size v)</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">    <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (dom f)</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">  <span class="kw">else</span> <span class="kw">let</span> w <span class="fu">=</span> (fun f) v <span class="kw">in</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">    <span class="kw">if</span> (size w) <span class="fu">==</span> cod f</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">      <span class="kw">then</span> w</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">      <span class="kw">else</span> error <span class="fu">$</span> <span class="st">&quot;($@): codomain mismatch: got &quot;</span> <span class="fu">++</span> show (size w)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">        <span class="fu">++</span> <span class="st">&quot; but expected &quot;</span> <span class="fu">++</span> show (cod f)</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"><span class="co">-- compose</span></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"><span class="ot">($.) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">g <span class="fu">$.</span> f <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">  <span class="kw">if</span> (dom g) <span class="fu">==</span> (cod f)</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">    <span class="kw">then</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">      { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">      , cod <span class="fu">=</span> cod g</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">      , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> g <span class="fu">$@</span> (f <span class="fu">$@</span> v)</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">      }</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">    <span class="kw">else</span></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28">      error <span class="st">&quot;($.): domain/codomain mismatch&quot;</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29"></a>
+<a class="sourceLine" id="cb2-30" data-line-number="30"><span class="kw">infixr</span> <span class="dv">0</span> <span class="fu">$@</span></a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"><span class="kw">infixr</span> <span class="dv">9</span> <span class="fu">$.</span></a></code></pre></div>
 <p>We can also build a small library of functions in this style.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- constant function</span>
-<span class="ot">&gt; constF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> constF u a <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> size a
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \_ <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- identity function</span>
-<span class="ot">&gt; idF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> idF u <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> id
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- scalar multiplication</span>
-<span class="ot">&gt; scalarF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> scalarF u k <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> k <span class="fu">.@</span> v
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- matrix-vector multiplication</span>
-<span class="ot">&gt; linearF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> linearF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> v
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \w <span class="ot">-&gt;</span> m <span class="fu">**&gt;</span> w
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> linearF _ <span class="fu">=</span> error <span class="st">&quot;linearF: parameter should have product shape.&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- matrix-vector multiplication plus a constant</span>
-<span class="ot">&gt; affineF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> affineF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) b<span class="fu">@</span>(<span class="dt">T</span> w _) <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">if</span> v <span class="fu">==</span> w
-<span class="ot">&gt;</span>     <span class="kw">then</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>       { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>       , cod <span class="fu">=</span> v
-<span class="ot">&gt;</span>       , fun <span class="fu">=</span> \z <span class="ot">-&gt;</span> (m <span class="fu">**&gt;</span> z) <span class="fu">.+</span> b
-<span class="ot">&gt;</span>       }
-<span class="ot">&gt;</span>     <span class="kw">else</span> error <span class="st">&quot;affineF: dimension mismatch&quot;</span>
-<span class="ot">&gt;</span> affineF _ _ <span class="fu">=</span> error <span class="st">&quot;affineF: first parameter should have product shape.&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- pointwise eval</span>
-<span class="ot">&gt; pointwiseF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> pointwiseF u f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> fmap f v
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- diagonalize</span>
-<span class="ot">&gt; diagF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> diagF u <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:*</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> diag
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; cellF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> cellF u f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> <span class="dv">1</span>
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> cell <span class="fu">$</span> f v
-<span class="ot">&gt;</span>   }</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- constant function</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">constF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">constF u a <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  , cod <span class="fu">=</span> size a</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  , fun <span class="fu">=</span> \_ <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">  }</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"><span class="co">-- identity function</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="ot">idF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">idF u <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  , cod <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">  , fun <span class="fu">=</span> id</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">  }</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17"><span class="co">-- scalar multiplication</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"><span class="ot">scalarF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">scalarF u k <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  , cod <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> k <span class="fu">.@</span> v</a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">  }</a>
+<a class="sourceLine" id="cb3-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb3-25" data-line-number="25"><span class="co">-- matrix-vector multiplication</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26"><span class="ot">linearF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">linearF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-28" data-line-number="28">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-29" data-line-number="29">  , cod <span class="fu">=</span> v</a>
+<a class="sourceLine" id="cb3-30" data-line-number="30">  , fun <span class="fu">=</span> \w <span class="ot">-&gt;</span> m <span class="fu">**&gt;</span> w</a>
+<a class="sourceLine" id="cb3-31" data-line-number="31">  }</a>
+<a class="sourceLine" id="cb3-32" data-line-number="32">linearF _ <span class="fu">=</span> error <span class="st">&quot;linearF: parameter should have product shape.&quot;</span></a>
+<a class="sourceLine" id="cb3-33" data-line-number="33"></a>
+<a class="sourceLine" id="cb3-34" data-line-number="34"><span class="co">-- matrix-vector multiplication plus a constant</span></a>
+<a class="sourceLine" id="cb3-35" data-line-number="35"><span class="ot">affineF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-36" data-line-number="36">affineF m<span class="fu">@</span>(<span class="dt">T</span> (v <span class="fu">:*</span> u) _) b<span class="fu">@</span>(<span class="dt">T</span> w _) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-37" data-line-number="37">  <span class="kw">if</span> v <span class="fu">==</span> w</a>
+<a class="sourceLine" id="cb3-38" data-line-number="38">    <span class="kw">then</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-39" data-line-number="39">      { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-40" data-line-number="40">      , cod <span class="fu">=</span> v</a>
+<a class="sourceLine" id="cb3-41" data-line-number="41">      , fun <span class="fu">=</span> \z <span class="ot">-&gt;</span> (m <span class="fu">**&gt;</span> z) <span class="fu">.+</span> b</a>
+<a class="sourceLine" id="cb3-42" data-line-number="42">      }</a>
+<a class="sourceLine" id="cb3-43" data-line-number="43">    <span class="kw">else</span> error <span class="st">&quot;affineF: dimension mismatch&quot;</span></a>
+<a class="sourceLine" id="cb3-44" data-line-number="44">affineF _ _ <span class="fu">=</span> error <span class="st">&quot;affineF: first parameter should have product shape.&quot;</span></a>
+<a class="sourceLine" id="cb3-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb3-46" data-line-number="46"><span class="co">-- pointwise eval</span></a>
+<a class="sourceLine" id="cb3-47" data-line-number="47"><span class="ot">pointwiseF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-48" data-line-number="48">pointwiseF u f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-49" data-line-number="49">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-50" data-line-number="50">  , cod <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-51" data-line-number="51">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> fmap f v</a>
+<a class="sourceLine" id="cb3-52" data-line-number="52">  }</a>
+<a class="sourceLine" id="cb3-53" data-line-number="53"></a>
+<a class="sourceLine" id="cb3-54" data-line-number="54"><span class="co">-- diagonalize</span></a>
+<a class="sourceLine" id="cb3-55" data-line-number="55"><span class="ot">diagF ::</span> (<span class="dt">Num</span> r) <span class="ot">=&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-56" data-line-number="56">diagF u <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-57" data-line-number="57">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-58" data-line-number="58">  , cod <span class="fu">=</span> u <span class="fu">:*</span> u</a>
+<a class="sourceLine" id="cb3-59" data-line-number="59">  , fun <span class="fu">=</span> diag</a>
+<a class="sourceLine" id="cb3-60" data-line-number="60">  }</a>
+<a class="sourceLine" id="cb3-61" data-line-number="61"></a>
+<a class="sourceLine" id="cb3-62" data-line-number="62"><span class="ot">cellF ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb3-63" data-line-number="63">cellF u f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb3-64" data-line-number="64">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb3-65" data-line-number="65">  , cod <span class="fu">=</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-66" data-line-number="66">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> cell <span class="fu">$</span> f v</a>
+<a class="sourceLine" id="cb3-67" data-line-number="67">  }</a></code></pre></div>
 <p>And direct summing:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dSumR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> dSumR u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:+</span> v
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> x <span class="ot">`oplus`</span> a
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; dSumL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> dSumL u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> v <span class="fu">:+</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> a <span class="ot">`oplus`</span> x
-<span class="ot">&gt;</span>   }</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">dSumR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">dSumR u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  , cod <span class="fu">=</span> u <span class="fu">:+</span> v</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> x <span class="ot">`oplus`</span> a</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">  }</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="ot">dSumL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">dSumL u a<span class="fu">@</span>(<span class="dt">T</span> v _) <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">  { dom <span class="fu">=</span> u</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">  , cod <span class="fu">=</span> v <span class="fu">:+</span> u</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">  , fun <span class="fu">=</span> \x <span class="ot">-&gt;</span> a <span class="ot">`oplus`</span> x</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">  }</a></code></pre></div>
 <h2 id="algebra-of-functions">Algebra of Functions</h2>
 <p>For fun we can describe an algebra of tensor functions. There’s sums:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Function</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   r <span class="fu">.@</span> f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>     { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>     , cod <span class="fu">=</span> cod f
-<span class="ot">&gt;</span>     , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> r <span class="fu">.@</span> (f <span class="fu">$@</span> v)
-<span class="ot">&gt;</span>     }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   f <span class="fu">.+</span> g
-<span class="ot">&gt;</span>     <span class="fu">|</span> (dom f) <span class="fu">/=</span> (dom g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): domains must match&quot;</span>
-<span class="ot">&gt;</span>     <span class="fu">|</span> (cod f) <span class="fu">/=</span> (cod g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): codomains must match&quot;</span>
-<span class="ot">&gt;</span>     <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>         { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>         , cod <span class="fu">=</span> cod f
-<span class="ot">&gt;</span>         , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> v) <span class="fu">.+</span> (g <span class="fu">$@</span> v)
-<span class="ot">&gt;</span>         }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   neg f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>     { dom <span class="fu">=</span> dom f
-<span class="ot">&gt;</span>     , cod <span class="fu">=</span> cod f
-<span class="ot">&gt;</span>     , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> neg (f <span class="fu">$@</span> v)
-<span class="ot">&gt;</span>     }</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; (+++) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> f <span class="fu">+++</span> g <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> (dom f) <span class="fu">:+</span> (dom g)
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:+</span> (cod g)
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> termL v) <span class="ot">`oplus`</span> (g <span class="fu">$@</span> termR v)
-<span class="ot">&gt;</span>   }</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Vector</span> <span class="dt">Function</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  r <span class="fu">.@</span> f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">    , cod <span class="fu">=</span> cod f</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">    , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> r <span class="fu">.@</span> (f <span class="fu">$@</span> v)</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    }</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">  f <span class="fu">.+</span> g</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">    <span class="fu">|</span> (dom f) <span class="fu">/=</span> (dom g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): domains must match&quot;</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">    <span class="fu">|</span> (cod f) <span class="fu">/=</span> (cod g) <span class="fu">=</span> error <span class="st">&quot;Function (.+): codomains must match&quot;</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">    <span class="fu">|</span> otherwise <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">        { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">        , cod <span class="fu">=</span> cod f</a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">        , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> v) <span class="fu">.+</span> (g <span class="fu">$@</span> v)</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">        }</a>
+<a class="sourceLine" id="cb5-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17">  neg f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18">    { dom <span class="fu">=</span> dom f</a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">    , cod <span class="fu">=</span> cod f</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">    , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> neg (f <span class="fu">$@</span> v)</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">    }</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">(+++) ::</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">f <span class="fu">+++</span> g <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  { dom <span class="fu">=</span> (dom f) <span class="fu">:+</span> (dom g)</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  , cod <span class="fu">=</span> (cod f) <span class="fu">:+</span> (cod g)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  , fun <span class="fu">=</span> \v <span class="ot">-&gt;</span> (f <span class="fu">$@</span> termL v) <span class="ot">`oplus`</span> (g <span class="fu">$@</span> termR v)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  }</a></code></pre></div>
 <p>And mapping into products.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mapR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> mapR u f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> u <span class="fu">:*</span> (dom f)
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> u <span class="fu">:*</span> (cod f)
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor (u <span class="fu">:*</span> (cod f)) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projR i a) <span class="ot">`at'`</span> j
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; mapL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r
-<span class="ot">&gt;</span> mapL u f <span class="fu">=</span> <span class="dt">F</span>
-<span class="ot">&gt;</span>   { dom <span class="fu">=</span> (dom f) <span class="fu">:*</span> u
-<span class="ot">&gt;</span>   , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> u
-<span class="ot">&gt;</span>   , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor ((cod f) <span class="fu">:*</span> u) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projL j a) <span class="ot">`at'`</span> i
-<span class="ot">&gt;</span>   }</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">mapR ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">mapR u f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  { dom <span class="fu">=</span> u <span class="fu">:*</span> (dom f)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  , cod <span class="fu">=</span> u <span class="fu">:*</span> (cod f)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor (u <span class="fu">:*</span> (cod f)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">      \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projR i a) <span class="ot">`at'`</span> j</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">  }</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="ot">mapL ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Function</span> r <span class="ot">-&gt;</span> <span class="dt">Function</span> r</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">mapL u f <span class="fu">=</span> <span class="dt">F</span></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">  { dom <span class="fu">=</span> (dom f) <span class="fu">:*</span> u</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">  , cod <span class="fu">=</span> (cod f) <span class="fu">:*</span> u</a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">  , fun <span class="fu">=</span> \a <span class="ot">-&gt;</span> tensor ((cod f) <span class="fu">:*</span> u) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">      \(i <span class="fu">:&amp;</span> j) <span class="ot">-&gt;</span> (f <span class="fu">$@</span> projL j a) <span class="ot">`at'`</span> i</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">  }</a></code></pre></div>
 <p>As an example, given a matrix we can use the <code>map*</code> operators to sum or maximum of the rows or columns of a product-shaped tensor.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; rowsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
-<span class="ot">&gt;</span> rowsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
-<span class="ot">&gt;</span>   mapR u (cellF v f) <span class="fu">$@</span> a
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; colsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r
-<span class="ot">&gt;</span> colsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span>
-<span class="ot">&gt;</span>   mapL v (cellF u f) <span class="fu">$@</span> a</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">rowsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">rowsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  mapR u (cellF v f) <span class="fu">$@</span> a</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="ot">colsBy ::</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">colsBy f a<span class="fu">@</span>(<span class="dt">T</span> (u <span class="fu">:*</span> v) _) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">  mapL v (cellF u f) <span class="fu">$@</span> a</a></code></pre></div>
 
 
 

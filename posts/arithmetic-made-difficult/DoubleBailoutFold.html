@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nbloomf.blog - Double Bailout Fold</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Double Bailout Fold</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2018-01-10 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
+\(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- predicates -->
+\(\newcommand{\ptrue}{\mathsf{ptrue}}\)
+\(\newcommand{\pfalse}{\mathsf{pfalse}}\)
+\(\newcommand{\pnot}{\mathsf{pnot}}\)
+\(\newcommand{\pand}{\mathbin{\mathsf{pand}}}\)
+\(\newcommand{\por}{\mathbin{\mathsf{por}}}\)
+\(\newcommand{\pimpl}{\mathbin{\mathsf{pimpl}}}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
+\(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
+\(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
+\(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
+\(\newcommand{\tupL}{\mathsf{tupL}}\)
+\(\newcommand{\tupR}{\mathsf{tupR}}\)
+
+<!-- disjoint unions -->
+\(\newcommand{\lft}{\mathsf{left}}\)
+\(\newcommand{\rgt}{\mathsf{right}}\)
+\(\newcommand{\either}{\mathsf{either}}\)
+\(\newcommand{\uSwap}{\mathsf{swap}_{+}}\)
+\(\newcommand{\uPair}{\mathsf{pair}_{+}}\)
+\(\newcommand{\uAssocL}{\mathsf{assocL}_{+}}\)
+\(\newcommand{\uAssocR}{\mathsf{assocR}_{+}}\)
+\(\newcommand{\isLft}{\mathsf{isLeft}}\)
+\(\newcommand{\isRgt}{\mathsf{isRight}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\unnext}{\mathsf{unnext}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+
+<!-- natural number recursion -->
+\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
+\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
+\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
+\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
+\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+
+<!-- natural number arithmetic -->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- lists -->
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
+\(\newcommand{\isnil}{\mathsf{isNil}}\)
+\(\newcommand{\tail}{\mathsf{tail}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+
+<!-- list recursion -->
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
+\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
+\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
+\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
+\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
+\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
+\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+
+<!-- list arithmetic -->
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\revcat}{\mathsf{revcat}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+\(\newcommand{\addlength}{\mathsf{addlength}}\)
+\(\newcommand{\length}{\mathsf{length}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+\(\newcommand{\at}{\mathsf{at}}\)
+\(\newcommand{\map}{\mathsf{map}}\)
+\(\newcommand{\range}{\mathsf{range}}\)
+\(\newcommand{\zip}{\mathsf{zip}}\)
+\(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
+\(\newcommand{\lcp}{\mathsf{lcp}}\)
+\(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\addcount}{\mathsf{addcount}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
+\(\newcommand{\takeBut}{\mathsf{takeBut}}\)
+\(\newcommand{\dropBut}{\mathsf{dropBut}}\)
+\(\newcommand{\takeWhile}{\mathsf{takeWhile}}\)
+\(\newcommand{\dropWhile}{\mathsf{dropWhile}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/DoubleBailoutFold.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">DoubleBailoutFold</span> (</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  dbfoldr, _test_dbfoldr, main_dbfoldr</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a></code></pre></div>
+<p>In this post we’ll construct a hybrid of double fold and bailout fold.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have maps <span class="math display">\[\delta : B \rightarrow C,\]</span> <span class="math display">\[\beta : A \times \lists{A} \times B \rightarrow \bool,\]</span> <span class="math display">\[\mu : B \rightarrow B,\]</span> <span class="math display">\[\psi : A \times \lists{A} \times B \rightarrow C,\]</span> and <span class="math display">\[\chi : A \times B \times C \times C \rightarrow C.\]</span> Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \times B \rightarrow C\)</span> such that <span class="math display">\[\Theta(\nil,b) = \delta(b)\]</span> and <span class="math display">\[\Theta(\cons(a,x),b) = \left\{\begin{array}{ll}
+ \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
+ \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}.
+\end{array}\right.\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\dbfoldr{\delta}{\beta}{\mu}{\psi}{\chi}\)</span>.
+</p>
+</div>
+<div class="proof">
+<p>
+Define <span class="math inline">\(\varepsilon : B \times \lists{A} \rightarrow C\)</span> by <span class="math display">\[\varepsilon(b,x) = \delta(b)\]</span> and <span class="math inline">\(\varphi : A \times C^{B \times \lists{A}} \rightarrow C^{B \times \lists{A}}\)</span> casewise by <span class="math display">\[\varphi(a,g)(b,x) = \left\{\begin{array}{ll}
+ \psi(a,\tail(x),b) &amp; \mathrm{if}\ \beta(a,\tail(x),b) \\
+ \chi(a,\tail(x),b,g(b,\tail(x))),g(\mu(b),\tail(x))) &amp; \mathrm{otherwise},
+\end{array}\right.\]</span> and let <span class="math inline">\(\Theta(x,b) = \foldr{\varepsilon}{\varphi}(x)(b,x)\)</span>. To see that <span class="math inline">\(\Theta\)</span> solves the given equations, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\nil,b) \\
+ &amp; = &amp; \foldr{\varepsilon}{\varphi}(\nil)(b,\nil) \\
+ &amp; = &amp; \varepsilon(b,\nil) \\
+ &amp; = &amp; \delta(b),
+\end{eqnarray*}\]</span> that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\cons(a,x),b) \\
+ &amp; = &amp; \foldr{\delta}{\varphi}(\cons(a,x))(b,\cons(a,x)) \\
+ &amp; = &amp; \varphi(a,\foldr{\delta}{\varphi}(x))(b,\cons(a,x)) \\
+ &amp; = &amp; \left\{\begin{array}{ll}
+        \psi(a,\tail(\cons(a,x)),b) &amp; \mathrm{if}\ \beta(a,\tail(\cons(a,x)),b) \\
+        \chi(a,\tail(\cons(a,x)),b,\foldr{\varepsilon}{\varphi}(x)(b,\tail(\cons(a,x))),\foldr{\varepsilon}{\varphi}(x)(\mu(b),\tail(\cons(a,x)))) &amp; \mathrm{otherwise}
+       \end{array}\right. \\
+ &amp; = &amp; \left\{\begin{array}{ll}
+        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
+        \chi(a,x,b,\foldr{\varepsilon}{\varphi}(x)(b,x),\foldr{\varepsilon}{\varphi}(x)(\mu(b),x)) &amp; \mathrm{otherwise}
+       \end{array}\right. \\
+ &amp; = &amp; \left\{\begin{array}{ll}
+        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
+        \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}
+       \end{array}\right. \\
+\end{eqnarray*}\]</span> as needed. Now suppose <span class="math inline">\(\Psi : \lists{A} \times B \rightarrow C\)</span> also satisfies the equations; we show that <span class="math inline">\(\Psi = \Theta\)</span> by list induction. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\nil,b) \\
+ &amp; = &amp; \delta(b) \\
+ &amp; = &amp; \Theta(\nil,b)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equations hold for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\cons(a,x),b) \\
+ &amp; = &amp; \left\{\begin{array}{ll}
+        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
+        \chi(a,x,b,\Psi(x,b),\Psi(x,\mu(b))) &amp; \mathrm{otherwise}
+       \end{array}\right. \\
+ &amp; = &amp; \left\{\begin{array}{ll}
+        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
+        \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}
+       \end{array}\right. \\
+ &amp; = &amp; \Theta(\cons(a,x),b)
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+</div>
+<h2 id="implementation">Implementation</h2>
+<p>We can implement <span class="math inline">\(\dbfoldr{\ast}{\ast}{\ast}{\ast}{\ast}\)</span> using the definition or the universal property.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">dbfoldr, dbfoldr'</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">List</span> t)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">=&gt;</span> (b <span class="ot">-&gt;</span> c)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c)</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">  <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">dbfoldr' delta beta mu psi chi x b <span class="fu">=</span> foldr epsilon phi x (b,x)</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">    epsilon (b,x) <span class="fu">=</span> delta b</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">    phi a g (b,x) <span class="fu">=</span> <span class="kw">if</span> beta a (tail x) b</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">      <span class="kw">then</span> psi a (tail x) b</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">      <span class="kw">else</span> chi a (tail x) b (g (b, tail x)) (g (mu b, tail x))</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb2-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"><span class="co">-- terrible notation, or the worst notation?</span></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">dbfoldr δ β μ ψ χ <span class="fu">=</span> ξ</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">    ξ z b <span class="fu">=</span> <span class="kw">case</span> uncons z <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">      <span class="dt">Left</span> () <span class="ot">-&gt;</span> δ b</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">      <span class="dt">Right</span> (a,x) <span class="ot">-&gt;</span> <span class="kw">if</span> β a x b</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">        <span class="kw">then</span> ψ a x b</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">        <span class="kw">else</span> χ a x b (ξ x b) (ξ x (μ b))</a></code></pre></div>
+<p>We should check that these two agree.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_dbfoldr_equiv ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">_test_dbfoldr_equiv _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  testName <span class="st">&quot;dbfoldr(delta,beta,mu,psi,chi)(x,b) == dbfoldr'(delta,beta,mu,psi,chi)(x,b)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  \delta beta mu psi chi x b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    (dbfoldr delta beta mu psi chi x b)</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    (dbfoldr' delta beta mu psi chi x b)</a></code></pre></div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_dbfoldr ::</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">CoArbitrary</span> (t a)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  , <span class="dt">CoArbitrary</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">Show</span> b, <span class="dt">CoArbitrary</span> c, <span class="dt">Arbitrary</span> c</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  , <span class="dt">TypeName</span> b, <span class="dt">TypeName</span> c, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">_test_dbfoldr t b c maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">  testLabel3 <span class="st">&quot;dbfoldr&quot;</span> t b c</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb4-14" data-line-number="14">      }</a>
+<a class="sourceLine" id="cb4-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">  runTest args (_test_dbfoldr_equiv t b c)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">main_dbfoldr ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">main_dbfoldr <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="dt">True</span>)          <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="dt">True</span>)          <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

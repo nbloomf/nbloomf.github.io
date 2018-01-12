@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nbloomf.blog - TakeWhile and DropWhile</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>TakeWhile and DropWhile</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-12-16 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
+\(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- predicates -->
+\(\newcommand{\ptrue}{\mathsf{ptrue}}\)
+\(\newcommand{\pfalse}{\mathsf{pfalse}}\)
+\(\newcommand{\pnot}{\mathsf{pnot}}\)
+\(\newcommand{\pand}{\mathbin{\mathsf{pand}}}\)
+\(\newcommand{\por}{\mathbin{\mathsf{por}}}\)
+\(\newcommand{\pimpl}{\mathbin{\mathsf{pimpl}}}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
+\(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
+\(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
+\(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
+\(\newcommand{\tupL}{\mathsf{tupL}}\)
+\(\newcommand{\tupR}{\mathsf{tupR}}\)
+
+<!-- disjoint unions -->
+\(\newcommand{\lft}{\mathsf{left}}\)
+\(\newcommand{\rgt}{\mathsf{right}}\)
+\(\newcommand{\either}{\mathsf{either}}\)
+\(\newcommand{\uSwap}{\mathsf{swap}_{+}}\)
+\(\newcommand{\uPair}{\mathsf{pair}_{+}}\)
+\(\newcommand{\uAssocL}{\mathsf{assocL}_{+}}\)
+\(\newcommand{\uAssocR}{\mathsf{assocR}_{+}}\)
+\(\newcommand{\isLft}{\mathsf{isLeft}}\)
+\(\newcommand{\isRgt}{\mathsf{isRight}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\unnext}{\mathsf{unnext}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+
+<!-- natural number recursion -->
+\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
+\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
+\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
+\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
+\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+
+<!-- natural number arithmetic -->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- lists -->
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
+\(\newcommand{\isnil}{\mathsf{isNil}}\)
+\(\newcommand{\tail}{\mathsf{tail}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+
+<!-- list recursion -->
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
+\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
+\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
+\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
+\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
+\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
+\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+
+<!-- list arithmetic -->
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\revcat}{\mathsf{revcat}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+\(\newcommand{\addlength}{\mathsf{addlength}}\)
+\(\newcommand{\length}{\mathsf{length}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+\(\newcommand{\at}{\mathsf{at}}\)
+\(\newcommand{\map}{\mathsf{map}}\)
+\(\newcommand{\range}{\mathsf{range}}\)
+\(\newcommand{\zip}{\mathsf{zip}}\)
+\(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
+\(\newcommand{\lcp}{\mathsf{lcp}}\)
+\(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\addcount}{\mathsf{addcount}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
+\(\newcommand{\takeBut}{\mathsf{takeBut}}\)
+\(\newcommand{\dropBut}{\mathsf{dropBut}}\)
+\(\newcommand{\takeWhile}{\mathsf{takeWhile}}\)
+\(\newcommand{\dropWhile}{\mathsf{dropWhile}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/TakeWhileAndDropWhile.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">TakeWhileAndDropWhile</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  ( takeWhile, dropWhile</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  , _test_takewhile_dropwhile, main_takewhile_dropwhile</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">ConsumingFold</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Prefix</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Repeat</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Sublist</span></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Select</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32"><span class="kw">import</span> <span class="dt">Unique</span></a>
+<a class="sourceLine" id="cb1-33" data-line-number="33"><span class="kw">import</span> <span class="dt">Delete</span></a>
+<a class="sourceLine" id="cb1-34" data-line-number="34"><span class="kw">import</span> <span class="dt">Dedupe</span></a></code></pre></div>
+<p>Today we’ll define two functions, <span class="math inline">\(\takeWhile\)</span> and <span class="math inline">\(\dropWhile\)</span>, similar to <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, but instead of taking or dropping a prefix of some length, we will take or drop the longest prefix satisfying some predicate. We’d like <span class="math inline">\(\takeBut\)</span> to have a signature like <span class="math display">\[\takeWhile : \bool^A \rightarrow {\lists{A}}^{\lists{A}}.\]</span></p>
+<p>As usual, suppose <span class="math inline">\(\takeWhile\)</span> can be defined in terms of fold; say <span class="math display">\[\takeWhile(p)(x) = \foldr{e}{\varphi}(x)\]</span> for some <span class="math inline">\(e\)</span> and <span class="math inline">\(\varphi\)</span>. To make the types work out we need <span class="math inline">\(e \in \lists{A}\)</span> and <span class="math inline">\(\varphi : A \times \lists{A} \rightarrow \lists{A}\)</span>. Thinking about the desired behavior for <span class="math inline">\(\takeWhile\)</span>, we need</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nil \\
+ &amp; = &amp; \takeWhile(p)(\nil) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\nil) \\
+ &amp; = &amp; e
+\end{eqnarray*}\]</span></p>
+<p>and</p>
+<p><span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil} \\
+ &amp; = &amp; \takeWhile(p)(\cons(a,x)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,x)) \\
+ &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
+ &amp; = &amp; \varphi(a,\takeWhile(p,x))
+\end{eqnarray*}\]</span></p>
+<p>With this in mind, we define <span class="math inline">\(\takeWhile\)</span> like so.</p>
+<div class="result">
+<div class="defn">
+<p>
+<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(p : A \rightarrow \bool\)</span>. Define <span class="math inline">\(\varphi(p) : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\varphi(p)(a,x) = \left\{ \begin{array}{ll} \cons(a,x) &amp; \mathrm{if}\ p(a) = \btrue \\ \nil &amp; \mathrm{otherwise}. \end{array} \right.\]</span></p>
+<p>We define <span class="math inline">\(\takeWhile : \bool^A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\takeWhile(p,x) = \foldr{\nil}{\varphi(p)}(x).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">takeWhile<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">takeWhile p <span class="fu">=</span> foldr nil phi</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    phi a x <span class="fu">=</span> <span class="kw">if</span> eq (p a) <span class="dt">True</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">      <span class="kw">then</span> cons a x</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="kw">else</span> nil</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>As usual, since <span class="math inline">\(\takeWhile\)</span> is defined directly in terms of foldr it is the unique solution to a system of functional equations.</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\takeWhile\)</span> is the unique function <span class="math display">\[f : \bool^A \times \lists{A} \rightarrow \lists{A}\]</span> satisfying the following system of equations for all <span class="math inline">\(p : A \rightarrow \bool\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+ f(p,\nil) = \nil \\
+ f(p,\cons(a,x)) = \bif{p(a)}{\cons(a,f(p,x)}{\nil}.
+\end{array}\right.\]</span></p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_takeWhile_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">_test_takeWhile_nil t <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;takeWhile(p)(nil) == nil&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  \p <span class="ot">-&gt;</span> eq (takeWhile p nil) (nil <span class="ot">`withTypeOf`</span> t)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">_test_takeWhile_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">_test_takeWhile_cons t <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;takeWhile(p)(cons(a,x)) == if(p(a),cons(a,takeWhile(p)(x),nil)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  \p a x <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">    (takeWhile p (cons a x))</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">    (<span class="kw">if</span> p a <span class="kw">then</span> cons a (takeWhile p x) <span class="kw">else</span> nil)</a></code></pre></div>
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\takeWhile\)</span> gives prefixes.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\prefix(\takeWhile(p,x),x) = \btrue.\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\takeWhile(p,\nil),\nil) \\
+ &amp; = &amp; \prefix(\nil,\nil) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\takeWhile(p,\cons(a,x),\cons(a,x))) \\
+ &amp; = &amp; \prefix(\bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil},\cons(a,x)) \\
+ &amp; = &amp; \bif{p(a)}{\prefix(\cons(a,\takeWhile(p,x)),\cons(a,x))}{\prefix(\nil,\cons(a,x))} \\
+ &amp; = &amp; \bif{p(a)}{\prefix(\takeWhile(p,x),x)}{\btrue} \\
+ &amp; = &amp; \bif{p(a)}{\btrue}{\btrue} \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_takeWhile_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">_test_takeWhile_prefix _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;prefix(takeWhile(p,x),x) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (prefix (takeWhile p x) x) <span class="dt">True</span></a></code></pre></div>
+</p>
+</div>
+</div>
+<p>So <span class="math inline">\(\takeWhile\)</span> also gives a sublists.</p>
+<div class="result">
+<div class="corollary">
+<p>
+Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(p : A \rightarrow \bool\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\sublist(\takeWhile(k,x),x) = \btrue.\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We have <span class="math display">\[\prefix(\takeWhile(k,x),x) = \btrue,\]</span> so <span class="math display">\[\infix(\takeWhile(k,x),x) = \btrue,\]</span> so <span class="math display">\[\sublist(\takeWhile(k,x),x) = \btrue\]</span> as claimed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_takeWhile_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">_test_takeWhile_sublist _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;sublist(takeWhile(p,x),x) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (sublist (takeWhile p x) x) <span class="dt">True</span></a></code></pre></div>
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\takeWhile\)</span> is idempotent.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p : A \rightarrow \bool\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\takeWhile(p,\takeWhile(p,x)) = \takeWhile(p,x).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \takeWhile(p,\takeWhile(p,x)) \\
+ &amp; = &amp; \takeWhile(p,\takeWhile(p,\nil)) \\
+ &amp; = &amp; \takeWhile(p,\nil) \\
+ &amp; = &amp; \takeWhile(p,x)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \takeWhile(p,\takeWhile(p,\cons(a,x))) \\
+ &amp; = &amp; \takeWhile(p,\cons(a,\takeWhile(p,x))) \\
+ &amp; = &amp; \cons(a,\takeWhile(p,\takeWhile(p,x))) \\
+ &amp; = &amp; \cons(a,\takeWhile(p,x)) \\
+ &amp; = &amp; \takeWhile(p,\cons(a,x))
+\end{eqnarray*}\]</span> as needed. If <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \takeWhile(p,\takeWhile(p,\cons(a,x))) \\
+ &amp; = &amp; \takeWhile(p,\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \takeWhile(p,\cons(a,x))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_takeWhile_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">_test_takeWhile_idempotent _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;takeWhile(p,takeWhile(p,x)) == takeWhile(p,x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (takeWhile p (takeWhile p x)) (takeWhile p x)</a></code></pre></div>
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\takeWhile\)</span> commutes with itself (kind of).</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p\)</span> and <span class="math inline">\(q\)</span> mappings <span class="math inline">\(A \rightarrow \bool\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\takeWhile(p,\takeWhile(q,x)) = \takeWhile(q,\takeWhile(p,x)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \takeWhile(p,\takeWhile(q,x)) \\
+ &amp; = &amp; \takeWhile(p,\takeWhile(q,\nil)) \\
+ &amp; = &amp; \takeWhile(p,\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \takeWhile(q,\nil) \\
+ &amp; = &amp; \takeWhile(q,\takeWhile(p,\nil)) \\
+ &amp; = &amp; \takeWhile(q,\takeWhile(p,x))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \takeWhile(p,\takeWhile(q,\cons(a,x))) \\
+ &amp; = &amp; \takeWhile(p,\bif{q(a)}{\cons(a,\takeWhile(q,x))}{\nil}) \\
+ &amp; = &amp; \bif{q(a)}{\takeWhile(p,\cons(a,\takeWhile(q,x)))}{\takeWhile(p,\nil)} \\
+ &amp; = &amp; \bif{q(a)}{\bif{p(a)}{\cons(a,\takeWhile(p,\takeWhile(q,x)))}{\nil}}{\nil} \\
+ &amp; = &amp; \bif{q(a)}{\bif{p(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\bif{p(a)}{\nil}{\nil}} \\
+ &amp; = &amp; \bif{p(a)}{\bif{q(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\bif{q(a)}{\nil}{\nil}} \\
+ &amp; = &amp; \bif{p(a)}{\bif{q(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\nil} \\
+ &amp; = &amp; \bif{p(a)}{\takeWhile(q,\cons(a,\takeWhile(p,x)))}{\takeWhile(q,\nil)} \\
+ &amp; = &amp; \takeWhile(q,\bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil}) \\
+ &amp; = &amp; \takeWhile(q,\takeWhile(p,\cons(a,x)))
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_takeWhile_commutes ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_takeWhile_commutes _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;takeWhile(p,takeWhile(q,x)) == takeWhile(q,takeWhile(p,x))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \p q x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    eq (takeWhile p (takeWhile q x)) (takeWhile q (takeWhile p x))</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>Now for <span class="math inline">\(\dropWhile\)</span>. This function should drop the longest prefix satisfying some predicate, again with signature <span class="math inline">\(\bool^A \times \lists{A} \rightarrow \lists{A}\)</span>. If we try defining this using foldr in the “obvious” way, we run into trouble, where the <span class="math inline">\(\varphi\)</span> parameter needs to have its argument and eat it too. (try it!) One way around this is the trick we used to define <span class="math inline">\(\zip\)</span>.</p>
+<p>Suppose <span class="math display">\[\dropWhile(p,x) = \foldr{e}{\varphi}(x)(x)\]</span> for some <span class="math inline">\(e\)</span> and <span class="math inline">\(\varphi\)</span>. To make the types work out, we need <span class="math display">\[e \in \lists{A}^{\lists{A}}\]</span> and <span class="math display">\[\varphi : A \times \lists{A}^{\lists{A}} \rightarrow \lists{A}^{\lists{A}};\]</span> now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nil \\
+ &amp; = &amp; \dropWhile(p,\nil) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\nil)(\nil) \\
+ &amp; = &amp; e(\nil)
+\end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \varphi(a,\foldr{e}{\varphi}(x))(\cons(a,x)) \\
+ &amp; = &amp; \foldr{e}{\varphi}(\cons(a,x))(\cons(a,x)) \\
+ &amp; = &amp; \dropWhile(p,\cons(a,x)) \\
+ &amp; = &amp; \bif{p(a)}{\dropWhile(p,x)}{\cons(a,x)}
+\end{eqnarray*}\]</span></p>
+<p>(that last line is why using a plain fold doesn’t work.) In cases like this, the consuming fold is handy.</p>
+<div class="result">
+<div class="dfn">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p : A \rightarrow \bool\)</span>. Define <span class="math inline">\(\sigma : A \times \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\sigma(a,x,y) = \bif{p(a)}{y}{\cons(a,x)}.\]</span> Now define <span class="math inline">\(\dropWhile : \bool^A \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\dropWhile(p) = \cfoldr{\nil}{\sigma}.\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">dropWhile<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">dropWhile p <span class="fu">=</span> cfoldr nil sigma</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">    sigma a x y <span class="fu">=</span> <span class="kw">if</span> p a <span class="kw">then</span> y <span class="kw">else</span> cons a x</a></code></pre></div>
+</div>
+</div>
+<p>Because <span class="math inline">\(\dropWhile\)</span> is defined as a consuming fold, it can be characterized as the unique solution to a system of functional equations.</p>
+<div class="result">
+<div class="corollary">
+<p>
+Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(p\)</span> a predicate on <span class="math inline">\(A\)</span>. Then <span class="math inline">\(\dropWhile(p)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+ f(\nil) = \nil \\
+ f(\cons(a,x)) = \bif{p(a)}{f(x)}{\cons(a,x)}
+\end{array}\right.\]</span>
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_dropWhile_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_dropWhile_nil t <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;dropWhile(p)(nil) == nil&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \p <span class="ot">-&gt;</span> eq (dropWhile p nil) (nil <span class="ot">`withTypeOf`</span> t)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">_test_dropWhile_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">_test_dropWhile_cons t <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;dropWhile(p)(cons(a,x)) == if(p(a),dropWhile(p)(x),cons(a,x))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">  \p a x <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">    (dropWhile p (cons a x))</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">    (<span class="kw">if</span> p a <span class="kw">then</span> dropWhile p x <span class="kw">else</span> cons a x)</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>Now <span class="math inline">\(\dropBut\)</span> is a <span class="math inline">\(\suffix\)</span>:</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(p : A \rightarrow \bool\)</span>, we have <span class="math display">\[\suffix(\dropWhile(p)(x),x) = \btrue.\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\dropWhile(p)(\nil),\nil) \\
+ &amp; = &amp; \suffix(\nil,\nil) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. By the inductive hypothesis we have <span class="math inline">\(\suffix(\dropWhile(p)(x),x)\)</span>, so that <span class="math inline">\(\suffix(\dropWhile(p)(x),\cons(a,x))\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\dropWhile(p)(\cons(a,x)),\cons(a,x)) \\
+ &amp; = &amp; \suffix(\bif{p(a)}{\dropWhile(p)(x)}{\cons(a,x)},\cons(a,x)) \\
+ &amp; = &amp; \bif{p(a)}{\suffix(\dropWhile(p)(x),\cons(a,x))}{\suffix(\cons(a,x),\cons(a,x))} \\
+ &amp; = &amp; \bif{p(a)}{\btrue}{\btrue} \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_dropWhile_suffix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">_test_dropWhile_suffix _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;suffix(dropWhile(p)(x),x) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (suffix (dropWhile p x) x) <span class="dt">True</span></a></code></pre></div>
+</p>
+</div>
+</div>
+<p>Like <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, <span class="math inline">\(\takeWhile\)</span> and <span class="math inline">\(\dropWhile\)</span> give a kind of <span class="math inline">\(\cat\)</span>-factorization.</p>
+<div class="result">
+<div class="thm">
+<p>
+Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[x = \cat(\takeWhile(p)(x),\dropWhile(p)(x)).\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cat(\takeWhile(p)(\nil),\dropWhile(p)(\nil)) \\
+ &amp; = &amp; \cat(\nil,\nil) \\
+ &amp; = &amp; \nil
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cat(\takeWhile(p)(\cons(a,x)),\dropWhile(p)(\cons(a,x))) \\
+ &amp; = &amp; \cat(\bif{p(a)}{\cons(a,\takeWhile(p)(x))}{\nil},\bif{p(a)}{\dropWhile(x)}{\cons(a,x)}) \\
+ &amp; = &amp; \bif{p(a)}{\cat(\cons(a,\takeWhile(p)(x)),\dropWhile(p)(x)}{\cat(\nil,\cons(a,x))} \\
+ &amp; = &amp; \bif{p(a)}{\cons(a,\cat(\takeWhile(p)(x)),\dropWhile(p)(x))}{\cons(a,x)} \\
+ &amp; = &amp; \bif{p(a)}{\cons(a,x)}{\cons(a,x)} \\
+ &amp; = &amp; \cons(a,x)
+\end{eqnarray*}\]</span> as needed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_takeWhile_dropWhile_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_takeWhile_dropWhile_cat _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;cat(takeWhile(p)(x),dropWhile(p)(x)) == x&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (cat (takeWhile p x) (dropWhile p x)) x</a></code></pre></div>
+</p>
+</div>
+</div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_takewhile_dropwhile ::</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">_test_takewhile_dropwhile t k maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">  testLabel (<span class="st">&quot;takeWhile &amp; dropWhile: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb12-14" data-line-number="14">      }</a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb12-16" data-line-number="16">  runTest args (_test_takeWhile_nil t)</a>
+<a class="sourceLine" id="cb12-17" data-line-number="17">  runTest args (_test_takeWhile_cons t)</a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">  runTest args (_test_takeWhile_prefix t)</a>
+<a class="sourceLine" id="cb12-19" data-line-number="19">  runTest args (_test_takeWhile_sublist t)</a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">  runTest args (_test_takeWhile_idempotent t)</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21">  runTest args (_test_takeWhile_commutes t)</a>
+<a class="sourceLine" id="cb12-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb12-23" data-line-number="23">  runTest args (_test_dropWhile_nil t)</a>
+<a class="sourceLine" id="cb12-24" data-line-number="24">  runTest args (_test_dropWhile_cons t)</a>
+<a class="sourceLine" id="cb12-25" data-line-number="25">  runTest args (_test_dropWhile_suffix t)</a>
+<a class="sourceLine" id="cb12-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb12-27" data-line-number="27">  runTest args (_test_takeWhile_dropWhile_cat t)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_takewhile_dropwhile ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">main_takewhile_dropwhile <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_takewhile_dropwhile (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_takewhile_dropwhile (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

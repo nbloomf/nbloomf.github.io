@@ -49,15 +49,15 @@ Posted on 2016-02-26 by nbloomf
 <hr />
 
 <p>As usual, we start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-translit: transliterate characters on stdin</span>
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- sth-translit: transliterate characters on stdin</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.Environment</span> (getArgs, getProgName)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Exit</span> (exitSuccess, exitFailure)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.IO</span> (hPutStrLn, stderr)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Data.List</span> (unfoldr)</a></code></pre></div>
 <p>See also the <a href="../../posts/software-tools-in-haskell/Lib/Backslash.html">Backslash</a> module.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lib.Backslash</span> (bsUnEsc)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Lib.Backslash</span> (bsUnEsc)</a></code></pre></div>
 <p>The purpose of <code>translit</code> is to replace characters by other characters; it applies a mapping with signature <code>Char -&gt; Char</code> to each character on stdin. (While simple, this is surprisingly useful.) The most succinct way to specify such a mapping is with two lists of characters, one denoting the domain of the character mapping and the other the codomain. For instance, calling</p>
 <pre><code>translit &quot;abc&quot; &quot;xyzw&quot;</code></pre>
 <p>replaces all <code>a</code>s by <code>x</code>, <code>b</code>s by <code>y</code>, and <code>c</code>s by <code>z</code>. (The <code>w</code> has no effect.) It is useful if we can also specify <em>ranges</em> of characters with hyphens. For instance the string <code>a-g</code> should be shorthand for <code>abcdefg</code>. If the second list is nonempty, but shorter than the first, we pretend its final character is repeated indefinitely, so that</p>
@@ -71,64 +71,64 @@ Posted on 2016-02-26 by nbloomf
 <p>What does this mean? Is the <code>y</code> just ignored? (User input should not be silently ignored.) Does the first unicode code point get mapped to <code>x</code>, and all others to <code>y</code>? Is this useful? Is it useful enough to warrant complicating <code>translit</code> with the extra code needed to handle this special case of a special case? I don’t think it is.</p>
 <p>But the ability to replace or remove characters from a <em>set complement</em> is useful. And so I will split <code>translit</code> into two: <code>translit</code> will handle the list-wise mapping of characters, and a separate program, <code>charreplace</code>, will handle set-wise mappings. My opinion (and it’s just an opinion!) is that these two uses are different enough, semantically, to deserve separate tools; this avoids burdening the user with too many special cases and cluttering the interface with delicate options.</p>
 <p>We already have most of the machinery needed for <code>translit</code>, except for the code needed to interpret command line arguments. We introduce an internal representation of character sequences: a character sequence is a list of either single characters or ranges of characters.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">CharSeq</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Single</span> <span class="dt">Char</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Range</span>  <span class="dt">Char</span> <span class="dt">Char</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; readCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> readCharSeq <span class="fu">=</span> fmap charSeqsToList <span class="fu">.</span> readCharSeqs <span class="fu">.</span> bsUnEsc
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     charSeqsToList ::</span> [<span class="dt">CharSeq</span>] <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span>     charSeqsToList <span class="fu">=</span> concatMap charSeqToList
-<span class="ot">&gt;</span>       <span class="kw">where</span>
-<span class="ot">&gt;</span>         charSeqToList (<span class="dt">Single</span> x)  <span class="fu">=</span> [x]
-<span class="ot">&gt;</span>         charSeqToList (<span class="dt">Range</span> x y) <span class="fu">=</span> enumFromTo x y
-<span class="ot">&gt;</span>     
-<span class="ot">&gt;     readCharSeqs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CharSeq</span>]
-<span class="ot">&gt;</span>     readCharSeqs <span class="fu">=</span> unfoldrMaybe firstCharSeq
-<span class="ot">&gt;</span>       <span class="kw">where</span>
-<span class="ot">&gt;         firstCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">CharSeq</span>, <span class="dt">String</span>))
-<span class="ot">&gt;</span>         firstCharSeq <span class="st">&quot;&quot;</span>      <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>         firstCharSeq [x]     <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, <span class="st">&quot;&quot;</span>))
-<span class="ot">&gt;</span>         firstCharSeq (<span class="ch">'-'</span><span class="fu">:</span>_) <span class="fu">=</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>         firstCharSeq [x,y]   <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, [y]))
-<span class="ot">&gt;</span>         firstCharSeq (x<span class="fu">:</span>y<span class="fu">:</span>z<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">case</span> y <span class="kw">of</span>
-<span class="ot">&gt;</span>           <span class="ch">'-'</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Range</span> x z, xs))
-<span class="ot">&gt;</span>           otherwise <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, y<span class="fu">:</span>z<span class="fu">:</span>xs))</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">data</span> <span class="dt">CharSeq</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">Single</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">Range</span>  <span class="dt">Char</span> <span class="dt">Char</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6"><span class="ot">readCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">readCharSeq <span class="fu">=</span> fmap charSeqsToList <span class="fu">.</span> readCharSeqs <span class="fu">.</span> bsUnEsc</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="ot">    charSeqsToList ::</span> [<span class="dt">CharSeq</span>] <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">    charSeqsToList <span class="fu">=</span> concatMap charSeqToList</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">      <span class="kw">where</span></a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">        charSeqToList (<span class="dt">Single</span> x)  <span class="fu">=</span> [x]</a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">        charSeqToList (<span class="dt">Range</span> x y) <span class="fu">=</span> enumFromTo x y</a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">    </a>
+<a class="sourceLine" id="cb7-15" data-line-number="15"><span class="ot">    readCharSeqs ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">CharSeq</span>]</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">    readCharSeqs <span class="fu">=</span> unfoldrMaybe firstCharSeq</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">      <span class="kw">where</span></a>
+<a class="sourceLine" id="cb7-18" data-line-number="18"><span class="ot">        firstCharSeq ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (<span class="dt">CharSeq</span>, <span class="dt">String</span>))</a>
+<a class="sourceLine" id="cb7-19" data-line-number="19">        firstCharSeq <span class="st">&quot;&quot;</span>      <span class="fu">=</span> <span class="dt">Just</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb7-20" data-line-number="20">        firstCharSeq [x]     <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, <span class="st">&quot;&quot;</span>))</a>
+<a class="sourceLine" id="cb7-21" data-line-number="21">        firstCharSeq (<span class="ch">'-'</span><span class="fu">:</span>_) <span class="fu">=</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb7-22" data-line-number="22">        firstCharSeq [x,y]   <span class="fu">=</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, [y]))</a>
+<a class="sourceLine" id="cb7-23" data-line-number="23">        firstCharSeq (x<span class="fu">:</span>y<span class="fu">:</span>z<span class="fu">:</span>xs) <span class="fu">=</span> <span class="kw">case</span> y <span class="kw">of</span></a>
+<a class="sourceLine" id="cb7-24" data-line-number="24">          <span class="ch">'-'</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Range</span> x z, xs))</a>
+<a class="sourceLine" id="cb7-25" data-line-number="25">          otherwise <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="dt">Just</span> (<span class="dt">Single</span> x, y<span class="fu">:</span>z<span class="fu">:</span>xs))</a></code></pre></div>
 <p>Now the main program just has to interpret its arguments and call some library functions.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> map (readCharSeq <span class="fu">.</span> bsUnEsc) args <span class="kw">of</span>
-<span class="ot">&gt;</span>     [<span class="dt">Just</span> as]          <span class="ot">-&gt;</span> return (as, <span class="st">&quot;&quot;</span>)
-<span class="ot">&gt;</span>     [<span class="dt">Just</span> as, <span class="dt">Just</span> bs] <span class="ot">-&gt;</span> return (as, bs)
-<span class="ot">&gt;</span>     otherwise          <span class="ot">-&gt;</span> argError
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     remove   <span class="fu">=</span> filter (not <span class="fu">.</span> (<span class="ot">`elem`</span> from))
-<span class="ot">&gt;</span>     translit <span class="fu">=</span> map (applyListMap <span class="fu">$</span> zip from (padLast to))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">case</span> to <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="st">&quot;&quot;</span>        <span class="ot">-&gt;</span> charFilter remove
-<span class="ot">&gt;</span>     otherwise <span class="ot">-&gt;</span> charFilter translit
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   exitSuccess
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; argError ::</span> <span class="dt">IO</span> a
-<span class="ot">&gt;</span> argError <span class="fu">=</span> reportErrorMsgs
-<span class="ot">&gt;</span>   [ <span class="st">&quot;usage:&quot;</span>
-<span class="ot">&gt;</span>   , <span class="st">&quot;  translit [FROM] [TO]  -- replace chars in FROM by those in TO&quot;</span>
-<span class="ot">&gt;</span>   , <span class="st">&quot;  translit [REMOVE]     -- remove chars in REMOVE&quot;</span>
-<span class="ot">&gt;</span>   ] <span class="fu">&gt;&gt;</span> exitFailure
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; padLast ::</span> [a] <span class="ot">-&gt;</span> [a]
-<span class="ot">&gt;</span> padLast []     <span class="fu">=</span> []
-<span class="ot">&gt;</span> padLast [x]    <span class="fu">=</span> repeat x
-<span class="ot">&gt;</span> padLast (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">:</span> padLast xs</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  args <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  (from,to) <span class="ot">&lt;-</span> <span class="kw">case</span> map (readCharSeq <span class="fu">.</span> bsUnEsc) args <span class="kw">of</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    [<span class="dt">Just</span> as]          <span class="ot">-&gt;</span> return (as, <span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    [<span class="dt">Just</span> as, <span class="dt">Just</span> bs] <span class="ot">-&gt;</span> return (as, bs)</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">    otherwise          <span class="ot">-&gt;</span> argError</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">    remove   <span class="fu">=</span> filter (not <span class="fu">.</span> (<span class="ot">`elem`</span> from))</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">    translit <span class="fu">=</span> map (applyListMap <span class="fu">$</span> zip from (padLast to))</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">  <span class="kw">case</span> to <span class="kw">of</span></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">    <span class="st">&quot;&quot;</span>        <span class="ot">-&gt;</span> charFilter remove</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">    otherwise <span class="ot">-&gt;</span> charFilter translit</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb8-18" data-line-number="18">  exitSuccess</a>
+<a class="sourceLine" id="cb8-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="ot">argError ::</span> <span class="dt">IO</span> a</a>
+<a class="sourceLine" id="cb8-22" data-line-number="22">argError <span class="fu">=</span> reportErrorMsgs</a>
+<a class="sourceLine" id="cb8-23" data-line-number="23">  [ <span class="st">&quot;usage:&quot;</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24">  , <span class="st">&quot;  translit [FROM] [TO]  -- replace chars in FROM by those in TO&quot;</span></a>
+<a class="sourceLine" id="cb8-25" data-line-number="25">  , <span class="st">&quot;  translit [REMOVE]     -- remove chars in REMOVE&quot;</span></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26">  ] <span class="fu">&gt;&gt;</span> exitFailure</a>
+<a class="sourceLine" id="cb8-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb8-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="ot">padLast ::</span> [a] <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb8-30" data-line-number="30">padLast []     <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb8-31" data-line-number="31">padLast [x]    <span class="fu">=</span> repeat x</a>
+<a class="sourceLine" id="cb8-32" data-line-number="32">padLast (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">:</span> padLast xs</a></code></pre></div>
 <p>Note that the arguments of <code>translit</code> are run through <code>bsUnEsc</code>, so that we can easily work with otherwise untypeable characters. (We could, for example, use this to replace <code>charfullwidth</code>.) With <code>translit</code>, many of the small tools we’ve written so far can suddenly be combined to do neat things. As a simple example, put the following text in a file called <code>unicode-test.txt</code>.</p>
 <pre><code>\uxyz0 \uxyz1 \uxyz2 \uxyz3
 \uxyz4 \uxyz5 \uxyz6 \uxyz7
@@ -138,34 +138,34 @@ Posted on 2016-02-26 by nbloomf
 <pre><code>cat unicode-test.txt | translit &quot;xyz&quot; &quot;001&quot; | unescape</code></pre>
 <p>replaces the <code>x</code>, <code>y</code>, and <code>z</code> with <code>0</code>, <code>0</code>, and <code>1</code> and interprets the <code>\uXXXX</code> as escape codes. This lets us see what several unicode code points look like at one time. With a larger “template” file we could see more characters at a time.</p>
 <h2 id="old-stuff">Old Stuff</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
-<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
-<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- apply a list of input-output pairs</span>
-<span class="ot">&gt; applyListMap ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [(a,a)] <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a
-<span class="ot">&gt;</span> applyListMap zs x <span class="fu">=</span> <span class="kw">case</span> lookup x zs <span class="kw">of</span>
-<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> x
-<span class="ot">&gt;</span>   <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
-<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
-<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; unfoldrMaybe ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (a,b))) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]
-<span class="ot">&gt;</span> unfoldrMaybe f x <span class="fu">=</span> <span class="kw">case</span> f x <span class="kw">of</span>
-<span class="ot">&gt;</span>   <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>   <span class="dt">Just</span> <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> []
-<span class="ot">&gt;</span>   <span class="dt">Just</span> (<span class="dt">Just</span> (a,b)) <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     as <span class="ot">&lt;-</span> unfoldrMaybe f b
-<span class="ot">&gt;</span>     <span class="dt">Just</span> (a<span class="fu">:</span>as)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- apply a map to stdin</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">charFilter f <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  xs <span class="ot">&lt;-</span> getContents</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  putStr <span class="fu">$</span> f xs</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="co">-- apply a list of input-output pairs</span></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9"><span class="ot">applyListMap ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [(a,a)] <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">applyListMap zs x <span class="fu">=</span> <span class="kw">case</span> lookup x zs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> x</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  <span class="dt">Just</span> y  <span class="ot">-&gt;</span> y</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb11-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb11-15" data-line-number="15"><span class="co">-- write list of messages to stderr</span></a>
+<a class="sourceLine" id="cb11-16" data-line-number="16"><span class="ot">reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  name <span class="ot">&lt;-</span> getProgName</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb11-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb11-22" data-line-number="22"><span class="ot">unfoldrMaybe ::</span> (b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Maybe</span> (a,b))) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [a]</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">unfoldrMaybe f x <span class="fu">=</span> <span class="kw">case</span> f x <span class="kw">of</span></a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">  <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb11-25" data-line-number="25">  <span class="dt">Just</span> <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Just</span> []</a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">  <span class="dt">Just</span> (<span class="dt">Just</span> (a,b)) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-27" data-line-number="27">    as <span class="ot">&lt;-</span> unfoldrMaybe f b</a>
+<a class="sourceLine" id="cb11-28" data-line-number="28">    <span class="dt">Just</span> (a<span class="fu">:</span>as)</a></code></pre></div>
 
 
 <!-- END BODY -->

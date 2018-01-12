@@ -6,7 +6,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nbloomf.blog - Project Euler #5: Smallest Multiple</title>
+<title>nbloomf.blog - Project Euler</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
 <link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
@@ -30,7 +30,7 @@
 </div>
 
 <div id="content">
-<h1>Project Euler #5: Smallest Multiple</h1>
+<h1>Project Euler</h1>
 <!-- BEGIN BODY -->
 
 
@@ -49,7 +49,7 @@ Posted on 2017-03-10 by nbloomf
 <hr />
 
 <p>First some boilerplate.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">ProjectEuler005</span> <span class="kw">where</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">ProjectEuler005</span> <span class="kw">where</span></a></code></pre></div>
 <p><a href="https://projecteuler.net/problem=5">Problem 5</a> from Project Euler:</p>
 <div class="problem">
 <p>2520 is the smallest number that can be divided by each of the numbers from 1 to 10 without any remainder.</p>
@@ -58,7 +58,7 @@ Posted on 2017-03-10 by nbloomf
 <p>The smallest natural number <span class="math inline">\(k\)</span> that is divisible by natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> is called their <em>least common multiple</em>; we’ll denote this by <span class="math inline">\(a \wedge b\)</span>.</p>
 <p>The inverse notion, the <em>largest</em> natural number that <em>divides</em> both <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, is called their <em>greatest common divisor</em>; we’ll denote this by <span class="math inline">\(a \vee b\)</span>.</p>
 <p>As operations, the LCM and GCD have lots of nice properties. But two are important for us. For all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>, we have the following.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li><span class="math inline">\(a \wedge b = \frac{ab}{a \vee b}\)</span></li>
 <li><span class="math inline">\(a \wedge (b \wedge c) = (a \wedge b) \wedge c\)</span></li>
 </ol>
@@ -69,75 +69,75 @@ Posted on 2017-03-10 by nbloomf
 </div>
 </div>
 <p>What makes the Euclidean Algorithm so nice is that, combined with the Well-Ordering Property of the natural numbers, it gives us a recursive algorithm for computing GCDs.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> (\<span class="fu">/</span>), (<span class="fu">/</span>\)<span class="ot"> ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> a \<span class="fu">/</span> <span class="dv">0</span> <span class="fu">=</span> a
-<span class="ot">&gt;</span> a \<span class="fu">/</span> b <span class="fu">=</span> b \<span class="fu">/</span> (a<span class="ot">`rem`</span>b)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> a <span class="fu">/</span>\ b <span class="fu">=</span> (a<span class="fu">*</span>b)<span class="ot">`div`</span>(a \<span class="fu">/</span> b)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">(\<span class="fu">/</span>), (<span class="fu">/</span>\)<span class="ot"> ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">a \<span class="fu">/</span> <span class="dv">0</span> <span class="fu">=</span> a</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">a \<span class="fu">/</span> b <span class="fu">=</span> b \<span class="fu">/</span> (a<span class="ot">`rem`</span>b)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">a <span class="fu">/</span>\ b <span class="fu">=</span> (a<span class="fu">*</span>b)<span class="ot">`div`</span>(a \<span class="fu">/</span> b)</a></code></pre></div>
 <p>The second property above says that if we want to find the LCM of a bunch of integers, we can do so pairwise, and it doesn’t matter what order we do this in. For instance, using <code>foldr1</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lcms ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> lcms <span class="fu">=</span> foldr1 (<span class="fu">/</span>\)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">lcms ::</span> [<span class="dt">Integer</span>] <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">lcms <span class="fu">=</span> foldr1 (<span class="fu">/</span>\)</a></code></pre></div>
 <p>Now <code>lcms</code> will take a nonempty list of positive integers and compute their least common multiple.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> lcms [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>]
-<span class="dv">2520</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">$&gt;</span> lcms [<span class="dv">1</span><span class="fu">..</span><span class="dv">10</span>]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dv">2520</span></a></code></pre></div>
 <p>The Euclidean Algorithm is pretty snappy. Just for fun, here are some timings.</p>
 <table style="width:38%;">
 <colgroup>
-<col width="8%" />
-<col width="28%" />
+<col style="width: 8%" />
+<col style="width: 28%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="left"><code>k</code></th>
-<th align="left"><code>lcms [1..(k*10^4)]</code></th>
+<th style="text-align: left;"><code>k</code></th>
+<th style="text-align: left;"><code>lcms [1..(k*10^4)]</code></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">1</td>
-<td align="left">0.26 s</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">0.26 s</td>
 </tr>
 <tr class="even">
-<td align="left">2</td>
-<td align="left">0.74 s</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">0.74 s</td>
 </tr>
 <tr class="odd">
-<td align="left">3</td>
-<td align="left">1.76 s</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">1.76 s</td>
 </tr>
 <tr class="even">
-<td align="left">4</td>
-<td align="left">2.67 s</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">2.67 s</td>
 </tr>
 <tr class="odd">
-<td align="left">5</td>
-<td align="left">4.26 s</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">4.26 s</td>
 </tr>
 <tr class="even">
-<td align="left">6</td>
-<td align="left">5.63 s</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">5.63 s</td>
 </tr>
 <tr class="odd">
-<td align="left">7</td>
-<td align="left">7.81 s</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">7.81 s</td>
 </tr>
 <tr class="even">
-<td align="left">8</td>
-<td align="left">9.51 s</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">9.51 s</td>
 </tr>
 <tr class="odd">
-<td align="left">9</td>
-<td align="left">11.24 s</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">11.24 s</td>
 </tr>
 </tbody>
 </table>
 <p>Anyway, the final answer is:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pe5 ::</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> pe5 <span class="fu">=</span> lcms [<span class="dv">1</span><span class="fu">..</span><span class="dv">20</span>]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> putStrLn <span class="fu">$</span> show pe5</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">pe5 ::</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">pe5 <span class="fu">=</span> lcms [<span class="dv">1</span><span class="fu">..</span><span class="dv">20</span>]</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">main <span class="fu">=</span> putStrLn <span class="fu">$</span> show pe5</a></code></pre></div>
 
 
 

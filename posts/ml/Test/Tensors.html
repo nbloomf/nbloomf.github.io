@@ -49,292 +49,292 @@ Posted on 2017-10-14 by nbloomf
 <hr />
 
 <p>First some boilerplate.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Test.Tensors</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Array</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.PrettyPrint</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Test.QuickCheck</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Indices</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">IndexIsos</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Tensors</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Test.Tensors</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Data.Array</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Text.PrettyPrint</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Test.QuickCheck</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Indices</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">IndexIsos</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Tensors</span></a></code></pre></div>
 <p>In the last post we defined a <code>Tensor</code> data type and a bunch of operations on it. Our tensor operations satisfy a bunch of identities that we can turn into executable tests. I’ve put them here to avoid cluttering up the main code too much.</p>
 <h2 id="index-tests">Index Tests</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_mapIndex_indexOf
-<span class="ot">&gt;   ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> _test_mapIndex_indexOf u v <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (indexOf v) <span class="fu">==</span> fmap (mapIndex u v) (indexOf u)
-<span class="ot">&gt;</span>   , (indexOf u) <span class="fu">==</span> fmap (mapIndex v u) (indexOf v)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_self
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_self <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex self&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span> _test_mapIndex_indexOf u u
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_zero
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_zero <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus zero&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span> and
-<span class="ot">&gt;</span>       [ _test_mapIndex_indexOf u (u <span class="fu">:+</span> <span class="dv">0</span>)
-<span class="ot">&gt;</span>       , _test_mapIndex_indexOf u (<span class="dv">0</span> <span class="fu">:+</span> u)
-<span class="ot">&gt;</span>       ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_zero
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_zero <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times zero&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span> and
-<span class="ot">&gt;</span>       [ _test_mapIndex_indexOf <span class="dv">0</span> (u <span class="fu">:*</span> <span class="dv">0</span>)
-<span class="ot">&gt;</span>       , _test_mapIndex_indexOf <span class="dv">0</span> (<span class="dv">0</span> <span class="fu">:*</span> u)
-<span class="ot">&gt;</span>       ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_one
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_one <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times one&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span> and
-<span class="ot">&gt;</span>       [ _test_mapIndex_indexOf u (u <span class="fu">:*</span> <span class="dv">1</span>)
-<span class="ot">&gt;</span>       , _test_mapIndex_indexOf u (<span class="dv">1</span> <span class="fu">:*</span> u)
-<span class="ot">&gt;</span>       ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_comm
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_comm <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus_comm&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v <span class="ot">-&gt;</span> _test_mapIndex_indexOf (u <span class="fu">:+</span> v) (v <span class="fu">:+</span> u)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_assoc
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_plus_assoc <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex plus assoc&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf
-<span class="ot">&gt;</span>       ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_assoc
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_assoc <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times assoc&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf
-<span class="ot">&gt;</span>       ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_distR
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_distR <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times distR&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf
-<span class="ot">&gt;</span>       ((u <span class="fu">:+</span> v) <span class="fu">:*</span> w) ((u <span class="fu">:*</span> w) <span class="fu">:+</span> (v <span class="fu">:*</span> w))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_distL
-<span class="ot">&gt;   ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_mapIndex_indexOf_times_distL <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;mapIndex times distL&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf
-<span class="ot">&gt;</span>       (u <span class="fu">:*</span> (v <span class="fu">:+</span> w)) ((u <span class="fu">:*</span> v) <span class="fu">:+</span> (u <span class="fu">:*</span> w))</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">_test_mapIndex_indexOf</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ot">  ::</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">_test_mapIndex_indexOf u v <span class="fu">=</span> and</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  [ (indexOf v) <span class="fu">==</span> fmap (mapIndex u v) (indexOf u)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  , (indexOf u) <span class="fu">==</span> fmap (mapIndex v u) (indexOf v)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  ]</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">_test_mapIndex_indexOf_self</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">_test_mapIndex_indexOf_self <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">  testName <span class="st">&quot;mapIndex self&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">    \u <span class="ot">-&gt;</span> _test_mapIndex_indexOf u u</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">_test_mapIndex_indexOf_plus_zero</a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">_test_mapIndex_indexOf_plus_zero <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">  testName <span class="st">&quot;mapIndex plus zero&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">    \u <span class="ot">-&gt;</span> and</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">      [ _test_mapIndex_indexOf u (u <span class="fu">:+</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20">      , _test_mapIndex_indexOf u (<span class="dv">0</span> <span class="fu">:+</span> u)</a>
+<a class="sourceLine" id="cb2-21" data-line-number="21">      ]</a>
+<a class="sourceLine" id="cb2-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">_test_mapIndex_indexOf_times_zero</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">_test_mapIndex_indexOf_times_zero <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">  testName <span class="st">&quot;mapIndex times zero&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-27" data-line-number="27">    \u <span class="ot">-&gt;</span> and</a>
+<a class="sourceLine" id="cb2-28" data-line-number="28">      [ _test_mapIndex_indexOf <span class="dv">0</span> (u <span class="fu">:*</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">      , _test_mapIndex_indexOf <span class="dv">0</span> (<span class="dv">0</span> <span class="fu">:*</span> u)</a>
+<a class="sourceLine" id="cb2-30" data-line-number="30">      ]</a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32">_test_mapIndex_indexOf_times_one</a>
+<a class="sourceLine" id="cb2-33" data-line-number="33"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-34" data-line-number="34">_test_mapIndex_indexOf_times_one <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-35" data-line-number="35">  testName <span class="st">&quot;mapIndex times one&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-36" data-line-number="36">    \u <span class="ot">-&gt;</span> and</a>
+<a class="sourceLine" id="cb2-37" data-line-number="37">      [ _test_mapIndex_indexOf u (u <span class="fu">:*</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-38" data-line-number="38">      , _test_mapIndex_indexOf u (<span class="dv">1</span> <span class="fu">:*</span> u)</a>
+<a class="sourceLine" id="cb2-39" data-line-number="39">      ]</a>
+<a class="sourceLine" id="cb2-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb2-41" data-line-number="41">_test_mapIndex_indexOf_plus_comm</a>
+<a class="sourceLine" id="cb2-42" data-line-number="42"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-43" data-line-number="43">_test_mapIndex_indexOf_plus_comm <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-44" data-line-number="44">  testName <span class="st">&quot;mapIndex plus_comm&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-45" data-line-number="45">    \u v <span class="ot">-&gt;</span> _test_mapIndex_indexOf (u <span class="fu">:+</span> v) (v <span class="fu">:+</span> u)</a>
+<a class="sourceLine" id="cb2-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb2-47" data-line-number="47">_test_mapIndex_indexOf_plus_assoc</a>
+<a class="sourceLine" id="cb2-48" data-line-number="48"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-49" data-line-number="49">_test_mapIndex_indexOf_plus_assoc <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-50" data-line-number="50">  testName <span class="st">&quot;mapIndex plus assoc&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-51" data-line-number="51">    \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf</a>
+<a class="sourceLine" id="cb2-52" data-line-number="52">      ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w) (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))</a>
+<a class="sourceLine" id="cb2-53" data-line-number="53"></a>
+<a class="sourceLine" id="cb2-54" data-line-number="54">_test_mapIndex_indexOf_times_assoc</a>
+<a class="sourceLine" id="cb2-55" data-line-number="55"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-56" data-line-number="56">_test_mapIndex_indexOf_times_assoc <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-57" data-line-number="57">  testName <span class="st">&quot;mapIndex times assoc&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-58" data-line-number="58">    \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf</a>
+<a class="sourceLine" id="cb2-59" data-line-number="59">      ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w) (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))</a>
+<a class="sourceLine" id="cb2-60" data-line-number="60"></a>
+<a class="sourceLine" id="cb2-61" data-line-number="61">_test_mapIndex_indexOf_times_distR</a>
+<a class="sourceLine" id="cb2-62" data-line-number="62"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-63" data-line-number="63">_test_mapIndex_indexOf_times_distR <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-64" data-line-number="64">  testName <span class="st">&quot;mapIndex times distR&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-65" data-line-number="65">    \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf</a>
+<a class="sourceLine" id="cb2-66" data-line-number="66">      ((u <span class="fu">:+</span> v) <span class="fu">:*</span> w) ((u <span class="fu">:*</span> w) <span class="fu">:+</span> (v <span class="fu">:*</span> w))</a>
+<a class="sourceLine" id="cb2-67" data-line-number="67"></a>
+<a class="sourceLine" id="cb2-68" data-line-number="68">_test_mapIndex_indexOf_times_distL</a>
+<a class="sourceLine" id="cb2-69" data-line-number="69"><span class="ot">  ::</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-70" data-line-number="70">_test_mapIndex_indexOf_times_distL <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-71" data-line-number="71">  testName <span class="st">&quot;mapIndex times distL&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-72" data-line-number="72">    \u v w <span class="ot">-&gt;</span> _test_mapIndex_indexOf</a>
+<a class="sourceLine" id="cb2-73" data-line-number="73">      (u <span class="fu">:*</span> (v <span class="fu">:+</span> w)) ((u <span class="fu">:*</span> v) <span class="fu">:+</span> (u <span class="fu">:*</span> w))</a></code></pre></div>
 <h2 id="vector-arithmetic-tests">Vector Arithmetic Tests</h2>
 <p>We have a few operations with signature <span class="math inline">\(\mathbb{R}^s \rightarrow \mathbb{R}^s \rightarrow \mathbb{R}^t\)</span> that are commutative; notably, tensor addition and pointwise multiplication. <code>_test_same_size_op_comm</code> can test these.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_same_size_op_comm
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r)
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_same_size_op_comm s r op <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName (s <span class="fu">++</span> <span class="st">&quot; (op a b) == (op b a)&quot;</span>) <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll2 (arbTensorOf r u) (arbTensorOf r u) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \a b <span class="ot">-&gt;</span> (op a b) <span class="fu">==</span> (op b a)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">_test_same_size_op_comm</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">_test_same_size_op_comm s r op <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  testName (s <span class="fu">++</span> <span class="st">&quot; (op a b) == (op b a)&quot;</span>) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    \u <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      forAll2 (arbTensorOf r u) (arbTensorOf r u) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">        \a b <span class="ot">-&gt;</span> (op a b) <span class="fu">==</span> (op b a)</a></code></pre></div>
 <h2 id="structural-arithmetic-tests">Structural Arithmetic Tests</h2>
 <p>We can extract the terms from an <code>oplus</code>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_termL_oplus
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_termL_oplus r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;a == termL (oplus a b)&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b <span class="ot">-&gt;</span> a <span class="fu">==</span> termL (a ⊕ b)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_termR_oplus
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_termR_oplus r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;b == termR (oplus a b)&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b <span class="ot">-&gt;</span> b <span class="fu">==</span> termR (a ⊕ b)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">_test_termL_oplus</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">_test_termL_oplus r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  testName <span class="st">&quot;a == termL (oplus a b)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    \a b <span class="ot">-&gt;</span> a <span class="fu">==</span> termL (a ⊕ b)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">_test_termR_oplus</a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">_test_termR_oplus r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">  testName <span class="st">&quot;b == termR (oplus a b)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">    \a b <span class="ot">-&gt;</span> b <span class="fu">==</span> termR (a ⊕ b)</a></code></pre></div>
 <p><code>oplus</code> and <code>otimes</code> are associative.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_oplus_assoc
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_oplus_assoc r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;oplus is associative&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b c <span class="ot">-&gt;</span> ((a ⊕ b) ⊕ c) <span class="fu">==</span> (a ⊕ (b ⊕ c))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_otimes_assoc
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_otimes_assoc r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;otimes is associative&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b c <span class="ot">-&gt;</span> ((a ⊗ b) ⊗ c) <span class="fu">==</span> (a ⊗ (b ⊗ c))</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">_test_oplus_assoc</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">_test_oplus_assoc r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  testName <span class="st">&quot;oplus is associative&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    \a b c <span class="ot">-&gt;</span> ((a ⊕ b) ⊕ c) <span class="fu">==</span> (a ⊕ (b ⊕ c))</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">_test_otimes_assoc</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">_test_otimes_assoc r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">  testName <span class="st">&quot;otimes is associative&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">    \a b c <span class="ot">-&gt;</span> ((a ⊗ b) ⊗ c) <span class="fu">==</span> (a ⊗ (b ⊗ c))</a></code></pre></div>
 <p><code>otimes</code> distributes over <code>oplus</code> from the right. From the left, it’s… more complicated.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_oplus_otimes_distR
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_oplus_otimes_distR r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;otimes right distributive&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b c <span class="ot">-&gt;</span> ((a ⊕ b) ⊗ c) <span class="fu">==</span> ((a ⊗ c) ⊕ (b ⊗ c))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- this requires an extra isomorphism I haven't found yet grr</span>
-<span class="ot">&gt;</span> _test_oplus_otimes_distL
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)
-<span class="ot">&gt;</span> _test_oplus_otimes_distL r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;otimes left distributive&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \a b c <span class="ot">-&gt;</span> (a ⊗ (b ⊕ c)) <span class="fu">==</span> ((a ⊗ b) ⊕ (a ⊗ c))</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">_test_oplus_otimes_distR</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">_test_oplus_otimes_distR r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  testName <span class="st">&quot;otimes right distributive&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    \a b c <span class="ot">-&gt;</span> ((a ⊕ b) ⊗ c) <span class="fu">==</span> ((a ⊗ c) ⊕ (b ⊗ c))</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="co">-- this requires an extra isomorphism I haven't found yet grr</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">_test_oplus_otimes_distL</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">Num</span> r)</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Tensor</span> r <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">_test_oplus_otimes_distL r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">  testName <span class="st">&quot;otimes left distributive&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">    \a b c <span class="ot">-&gt;</span> (a ⊗ (b ⊕ c)) <span class="fu">==</span> ((a ⊗ b) ⊕ (a ⊗ c))</a></code></pre></div>
 <p>The <code>comm</code> operator is an involution on both sum and product type tensors.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_comm_sum
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_comm_sum r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:+) comm . comm $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r (u <span class="fu">:+</span> v)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> comm (comm m) <span class="fu">$==</span> m
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_comm_prod
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_comm_prod r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:*) comm . comm $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r (u <span class="fu">:*</span> v)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> comm (comm m) <span class="fu">$==</span> m</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">_test_comm_sum</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">_test_comm_sum r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  testName <span class="st">&quot;(:+) comm . comm $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    \u v <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">      forAll (arbTensorOf r (u <span class="fu">:+</span> v)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">        \m <span class="ot">-&gt;</span> comm (comm m) <span class="fu">$==</span> m</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">_test_comm_prod</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">_test_comm_prod r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">  testName <span class="st">&quot;(:*) comm . comm $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">    \u v <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">      forAll (arbTensorOf r (u <span class="fu">:*</span> v)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">        \m <span class="ot">-&gt;</span> comm (comm m) <span class="fu">$==</span> m</a></code></pre></div>
 <p>The <code>assocL</code> and <code>assocR</code> operators are mutual inverses on both sum and product tensors of the appropriate shape.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_assocL_assocR_sum
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_assocL_assocR_sum r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:+) assocL . assocR $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> assocL (assocR m) <span class="fu">$==</span> m
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_assocR_assocL_sum
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_assocR_assocL_sum r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:+) assocR . assocL $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> assocR (assocL m) <span class="fu">$==</span> m
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_assocL_assocR_prod
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_assocL_assocR_prod r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:*) assocL . assocR $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> assocL (assocR m) <span class="fu">$==</span> m
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_assocR_assocL_prod
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_assocR_assocL_prod r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(:*) assocR . assocL $== id&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> assocR (assocL m) <span class="fu">$==</span> m
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_vcat_is_oplus
-<span class="ot">&gt;  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_vcat_is_oplus r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;vcat is oplus&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll2 (arbTensorOf r (u <span class="fu">:*</span> w)) (arbTensorOf r (v <span class="fu">:*</span> w)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \a b <span class="ot">-&gt;</span> (a <span class="fu">~-~</span> b) <span class="fu">==</span> (oplus a b)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- pretty sure this depends on the iso from left distributivity</span>
-<span class="ot">&gt;</span> _test_hcat_is_oplus
-<span class="ot">&gt;  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_hcat_is_oplus r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;hcat is oplus&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v w <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll2 (arbTensorOf r (u <span class="fu">:*</span> w)) (arbTensorOf r (v <span class="fu">:*</span> w)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \a b <span class="ot">-&gt;</span> (a <span class="fu">~|~</span> b) <span class="fu">==</span> (oplus a b)</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">_test_assocL_assocR_sum</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">_test_assocL_assocR_sum r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  testName <span class="st">&quot;(:+) assocL . assocR $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">      forAll (arbTensorOf r ((u <span class="fu">:+</span> v) <span class="fu">:+</span> w)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">        \m <span class="ot">-&gt;</span> assocL (assocR m) <span class="fu">$==</span> m</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">_test_assocR_assocL_sum</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">_test_assocR_assocL_sum r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">  testName <span class="st">&quot;(:+) assocR . assocL $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">      forAll (arbTensorOf r (u <span class="fu">:+</span> (v <span class="fu">:+</span> w))) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">        \m <span class="ot">-&gt;</span> assocR (assocL m) <span class="fu">$==</span> m</a>
+<a class="sourceLine" id="cb8-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb8-19" data-line-number="19">_test_assocL_assocR_prod</a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-21" data-line-number="21">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-22" data-line-number="22">_test_assocL_assocR_prod r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-23" data-line-number="23">  testName <span class="st">&quot;(:*) assocL . assocR $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-25" data-line-number="25">      forAll (arbTensorOf r ((u <span class="fu">:*</span> v) <span class="fu">:*</span> w)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26">        \m <span class="ot">-&gt;</span> assocL (assocR m) <span class="fu">$==</span> m</a>
+<a class="sourceLine" id="cb8-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb8-28" data-line-number="28">_test_assocR_assocL_prod</a>
+<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-30" data-line-number="30">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-31" data-line-number="31">_test_assocR_assocL_prod r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-32" data-line-number="32">  testName <span class="st">&quot;(:*) assocR . assocL $== id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-33" data-line-number="33">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-34" data-line-number="34">      forAll (arbTensorOf r (u <span class="fu">:*</span> (v <span class="fu">:*</span> w))) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-35" data-line-number="35">        \m <span class="ot">-&gt;</span> assocR (assocL m) <span class="fu">$==</span> m</a>
+<a class="sourceLine" id="cb8-36" data-line-number="36"></a>
+<a class="sourceLine" id="cb8-37" data-line-number="37">_test_vcat_is_oplus</a>
+<a class="sourceLine" id="cb8-38" data-line-number="38"><span class="ot"> ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-39" data-line-number="39"> <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-40" data-line-number="40">_test_vcat_is_oplus r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-41" data-line-number="41">  testName <span class="st">&quot;vcat is oplus&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-42" data-line-number="42">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-43" data-line-number="43">      forAll2 (arbTensorOf r (u <span class="fu">:*</span> w)) (arbTensorOf r (v <span class="fu">:*</span> w)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-44" data-line-number="44">        \a b <span class="ot">-&gt;</span> (a <span class="fu">~-~</span> b) <span class="fu">==</span> (oplus a b)</a>
+<a class="sourceLine" id="cb8-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb8-46" data-line-number="46"><span class="co">-- pretty sure this depends on the iso from left distributivity</span></a>
+<a class="sourceLine" id="cb8-47" data-line-number="47">_test_hcat_is_oplus</a>
+<a class="sourceLine" id="cb8-48" data-line-number="48"><span class="ot"> ::</span> (<span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb8-49" data-line-number="49"> <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb8-50" data-line-number="50">_test_hcat_is_oplus r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-51" data-line-number="51">  testName <span class="st">&quot;hcat is oplus&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-52" data-line-number="52">    \u v w <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-53" data-line-number="53">      forAll2 (arbTensorOf r (u <span class="fu">:*</span> w)) (arbTensorOf r (v <span class="fu">:*</span> w)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-54" data-line-number="54">        \a b <span class="ot">-&gt;</span> (a <span class="fu">~|~</span> b) <span class="fu">==</span> (oplus a b)</a></code></pre></div>
 <h2 id="matrix-tests">Matrix Tests</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_matmul_id
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_matmul_id r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;idMat is (***) neutral&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>     \u v <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>       forAll (arbTensorOf r (u <span class="fu">:*</span> v)) <span class="fu">$</span>
-<span class="ot">&gt;</span>         \m <span class="ot">-&gt;</span> and
-<span class="ot">&gt;</span>           [ m <span class="fu">==</span> (m <span class="fu">***</span> (idMat v))
-<span class="ot">&gt;</span>           , m <span class="fu">==</span> ((idMat u) <span class="fu">***</span> m)
-<span class="ot">&gt;</span>           ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> _test_matmul_assoc
-<span class="ot">&gt;   ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)
-<span class="ot">&gt;</span> _test_matmul_assoc r <span class="fu">=</span>
-<span class="ot">&gt;</span>   testName <span class="st">&quot;(***) is associative&quot;</span> <span class="fu">$</span>
-<span class="ot">&gt;</span>   \u v w x <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     forAll3
-<span class="ot">&gt;</span>       (arbTensorOf r (u <span class="fu">:*</span> v))
-<span class="ot">&gt;</span>       (arbTensorOf r (v <span class="fu">:*</span> w))
-<span class="ot">&gt;</span>       (arbTensorOf r (w <span class="fu">:*</span> x)) <span class="fu">$</span>
-<span class="ot">&gt;</span>       \a b c <span class="ot">-&gt;</span> (a <span class="fu">***</span> (b <span class="fu">***</span> c)) <span class="fu">==</span> ((a <span class="fu">***</span> b) <span class="fu">***</span> c)</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1">_test_matmul_id</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">_test_matmul_id r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  testName <span class="st">&quot;idMat is (***) neutral&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    \u v <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">      forAll (arbTensorOf r (u <span class="fu">:*</span> v)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">        \m <span class="ot">-&gt;</span> and</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">          [ m <span class="fu">==</span> (m <span class="fu">***</span> (idMat v))</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">          , m <span class="fu">==</span> ((idMat u) <span class="fu">***</span> m)</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">          ]</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">_test_matmul_assoc</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14"><span class="ot">  ::</span> (<span class="dt">Eq</span> r, <span class="dt">Num</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r)</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Size</span> <span class="ot">-&gt;</span> <span class="dt">Property</span>)</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">_test_matmul_assoc r <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">  testName <span class="st">&quot;(***) is associative&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">  \u v w x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">    forAll3</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">      (arbTensorOf r (u <span class="fu">:*</span> v))</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">      (arbTensorOf r (v <span class="fu">:*</span> w))</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">      (arbTensorOf r (w <span class="fu">:*</span> x)) <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">      \a b c <span class="ot">-&gt;</span> (a <span class="fu">***</span> (b <span class="fu">***</span> c)) <span class="fu">==</span> ((a <span class="fu">***</span> b) <span class="fu">***</span> c)</a></code></pre></div>
 <h2 id="the-test-suite">The Test Suite</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> _test_tensor
-<span class="ot">&gt;   ::</span> (<span class="dt">Num</span> r, <span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">TypeName</span> r)
-<span class="ot">&gt;</span>   <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> _test_tensor r num size <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   testLabel (<span class="st">&quot;Tensor &quot;</span> <span class="fu">++</span> typeName r)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     args <span class="fu">=</span> stdArgs
-<span class="ot">&gt;</span>       { maxSuccess <span class="fu">=</span> num
-<span class="ot">&gt;</span>       , maxSize <span class="fu">=</span> size
-<span class="ot">&gt;</span>       }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- mapIndex</span>
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_self
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_plus_zero
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_times_zero
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_times_one
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_plus_comm
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_plus_assoc
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_times_assoc
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_times_distR
-<span class="ot">&gt;</span>   runTest args _test_mapIndex_indexOf_times_distL
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- vector</span>
-<span class="ot">&gt;</span>   runTest args (_test_same_size_op_comm <span class="st">&quot;(.+)&quot;</span> r (<span class="fu">.+</span>))
-<span class="ot">&gt;</span>   runTest args (_test_same_size_op_comm <span class="st">&quot;(.*)&quot;</span> r (<span class="fu">.*</span>))
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- structure</span>
-<span class="ot">&gt;</span>   runTest args (_test_termL_oplus r)
-<span class="ot">&gt;</span>   runTest args (_test_termR_oplus r)
-<span class="ot">&gt;</span>   runTest args (_test_oplus_assoc r)
-<span class="ot">&gt;</span>   runTest args (_test_otimes_assoc r)
-<span class="ot">&gt;</span>   runTest args (_test_oplus_otimes_distR r)
-<span class="ot">&gt;</span>   skipTest args (_test_oplus_otimes_distL r)
-<span class="ot">&gt;</span>   runTest args (_test_comm_sum r)
-<span class="ot">&gt;</span>   runTest args (_test_comm_prod r)
-<span class="ot">&gt;</span>   runTest args (_test_assocL_assocR_sum r)
-<span class="ot">&gt;</span>   runTest args (_test_assocR_assocL_sum r)
-<span class="ot">&gt;</span>   runTest args (_test_assocL_assocR_prod r)
-<span class="ot">&gt;</span>   runTest args (_test_assocR_assocL_prod r)
-<span class="ot">&gt;</span>   runTest args (_test_vcat_is_oplus r)
-<span class="ot">&gt;</span>   skipTest args (_test_hcat_is_oplus r)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   runTest args (_test_matmul_id r)
-<span class="ot">&gt;</span>   runTest args (_test_matmul_assoc r)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; main_tensor ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main_tensor <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   _test_tensor (<span class="dv">0</span><span class="ot">::</span><span class="dt">Int</span>) <span class="dv">100</span> <span class="dv">3</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1">_test_tensor</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Num</span> r, <span class="dt">Eq</span> r, <span class="dt">Show</span> r, <span class="dt">Arbitrary</span> r, <span class="dt">TypeName</span> r)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  <span class="ot">=&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">_test_tensor r num size <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  testLabel (<span class="st">&quot;Tensor &quot;</span> <span class="fu">++</span> typeName r)</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">      }</a>
+<a class="sourceLine" id="cb10-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">  <span class="co">-- mapIndex</span></a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">  runTest args _test_mapIndex_indexOf_self</a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">  runTest args _test_mapIndex_indexOf_plus_zero</a>
+<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args _test_mapIndex_indexOf_times_zero</a>
+<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args _test_mapIndex_indexOf_times_one</a>
+<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args _test_mapIndex_indexOf_plus_comm</a>
+<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args _test_mapIndex_indexOf_plus_assoc</a>
+<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args _test_mapIndex_indexOf_times_assoc</a>
+<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args _test_mapIndex_indexOf_times_distR</a>
+<a class="sourceLine" id="cb10-22" data-line-number="22">  runTest args _test_mapIndex_indexOf_times_distL</a>
+<a class="sourceLine" id="cb10-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb10-24" data-line-number="24">  <span class="co">-- vector</span></a>
+<a class="sourceLine" id="cb10-25" data-line-number="25">  runTest args (_test_same_size_op_comm <span class="st">&quot;(.+)&quot;</span> r (<span class="fu">.+</span>))</a>
+<a class="sourceLine" id="cb10-26" data-line-number="26">  runTest args (_test_same_size_op_comm <span class="st">&quot;(.*)&quot;</span> r (<span class="fu">.*</span>))</a>
+<a class="sourceLine" id="cb10-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb10-28" data-line-number="28">  <span class="co">-- structure</span></a>
+<a class="sourceLine" id="cb10-29" data-line-number="29">  runTest args (_test_termL_oplus r)</a>
+<a class="sourceLine" id="cb10-30" data-line-number="30">  runTest args (_test_termR_oplus r)</a>
+<a class="sourceLine" id="cb10-31" data-line-number="31">  runTest args (_test_oplus_assoc r)</a>
+<a class="sourceLine" id="cb10-32" data-line-number="32">  runTest args (_test_otimes_assoc r)</a>
+<a class="sourceLine" id="cb10-33" data-line-number="33">  runTest args (_test_oplus_otimes_distR r)</a>
+<a class="sourceLine" id="cb10-34" data-line-number="34">  skipTest args (_test_oplus_otimes_distL r)</a>
+<a class="sourceLine" id="cb10-35" data-line-number="35">  runTest args (_test_comm_sum r)</a>
+<a class="sourceLine" id="cb10-36" data-line-number="36">  runTest args (_test_comm_prod r)</a>
+<a class="sourceLine" id="cb10-37" data-line-number="37">  runTest args (_test_assocL_assocR_sum r)</a>
+<a class="sourceLine" id="cb10-38" data-line-number="38">  runTest args (_test_assocR_assocL_sum r)</a>
+<a class="sourceLine" id="cb10-39" data-line-number="39">  runTest args (_test_assocL_assocR_prod r)</a>
+<a class="sourceLine" id="cb10-40" data-line-number="40">  runTest args (_test_assocR_assocL_prod r)</a>
+<a class="sourceLine" id="cb10-41" data-line-number="41">  runTest args (_test_vcat_is_oplus r)</a>
+<a class="sourceLine" id="cb10-42" data-line-number="42">  skipTest args (_test_hcat_is_oplus r)</a>
+<a class="sourceLine" id="cb10-43" data-line-number="43"></a>
+<a class="sourceLine" id="cb10-44" data-line-number="44">  runTest args (_test_matmul_id r)</a>
+<a class="sourceLine" id="cb10-45" data-line-number="45">  runTest args (_test_matmul_assoc r)</a>
+<a class="sourceLine" id="cb10-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb10-47" data-line-number="47"><span class="ot">main_tensor ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-48" data-line-number="48">main_tensor <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-49" data-line-number="49">  _test_tensor (<span class="dv">0</span><span class="ot">::</span><span class="dt">Int</span>) <span class="dv">100</span> <span class="dv">3</span></a></code></pre></div>
 
 
 

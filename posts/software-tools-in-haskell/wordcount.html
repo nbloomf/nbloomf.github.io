@@ -49,46 +49,46 @@ Posted on 2016-02-12 by nbloomf
 <hr />
 
 <p>As usual, we start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-wordcount: count words on stdin</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Char</span> (isSpace)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Foldable</span> (foldl')</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- sth-wordcount: count words on stdin</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Exit</span> (exitSuccess)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Data.Char</span> (isSpace)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Data.List</span> (unfoldr)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Data.Foldable</span> (foldl')</a></code></pre></div>
 <p>This program takes an expansive view of what a “word” is: maximal substrings not containing any whitespace characters (space, <code>\n</code>, <code>\t</code>, <code>\r</code>, <code>\v</code>, or any other unicode character which the standard <code>isSpace</code> function detects). For instance, the following are all “words”.</p>
 <pre><code>atrocious  1234  --char  #$#%#$@^^^  &quot;Horatio,</code></pre>
 <p>We already have a function to count items in a list. The <code>getWords</code> function splits a string of text into a list of words.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- split a string into words</span>
-<span class="ot">&gt; getWords ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
-<span class="ot">&gt;</span> getWords <span class="fu">=</span> unfoldr firstWord
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     firstWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
-<span class="ot">&gt;</span>     firstWord xs <span class="fu">=</span> <span class="kw">case</span> dropWhile isSpace xs <span class="kw">of</span>
-<span class="ot">&gt;</span>       <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>       ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- generic length</span>
-<span class="ot">&gt; count ::</span> (<span class="dt">Num</span> t) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> t
-<span class="ot">&gt;</span> count <span class="fu">=</span> foldl' inc <span class="dv">0</span>
-<span class="ot">&gt;</span>   <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- print a line break</span>
-<span class="ot">&gt; putNewLine ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> putNewLine <span class="fu">=</span> putStrLn <span class="st">&quot;&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- apply a map to stdin</span>
-<span class="ot">&gt; charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> charFilter f <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> getContents
-<span class="ot">&gt;</span>   putStr <span class="fu">$</span> f xs</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co">-- split a string into words</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">getWords ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">getWords <span class="fu">=</span> unfoldr firstWord</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="ot">    firstWord ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    firstWord xs <span class="fu">=</span> <span class="kw">case</span> dropWhile isSpace xs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="st">&quot;&quot;</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      ys <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="fu">$</span> break isSpace ys</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="co">-- generic length</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11"><span class="ot">count ::</span> (<span class="dt">Num</span> t) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> t</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">count <span class="fu">=</span> foldl' inc <span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  <span class="kw">where</span> inc n _ <span class="fu">=</span> n<span class="fu">+</span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"><span class="co">-- print a line break</span></a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"><span class="ot">putNewLine ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">putNewLine <span class="fu">=</span> putStrLn <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19"><span class="co">-- apply a map to stdin</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20"><span class="ot">charFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">charFilter f <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">  xs <span class="ot">&lt;-</span> getContents</a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">  putStr <span class="fu">$</span> f xs</a></code></pre></div>
 <p>For this function we used <code>getContents</code> and reused <code>count</code>. The <code>getWords</code> function takes a string and splits it into a list of words, with delimiting spaces removed. There is a standard library function in <code>Data.List</code>, called (appropriately enough) <code>words</code>, that does this. But the whole point of this exercise is reinventing wheels, and besides <code>wc</code> does all this better anyway. :)</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getWords)
-<span class="ot">&gt;</span>   putNewLine
-<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  charFilter (show <span class="fu">.</span> count <span class="fu">.</span> getWords)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  putNewLine</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  exitSuccess</a></code></pre></div>
 <p>Both <code>getWords</code> and <code>count</code> use standard library recursion operators, <code>unfoldr</code> and <code>foldl'</code>. Recursion is how functional languages handle iterated computation (a.k.a. “loops”). But much like structured programming replaced arbitrary GOTOs with a small number of control-flow statements, in functional languages we can get a lot of mileage out of a small number of recursion patterns.</p>
 
 

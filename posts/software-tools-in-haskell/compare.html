@@ -49,144 +49,144 @@ Posted on 2016-03-01 by nbloomf
 <hr />
 
 <p>As usual, we start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- compare: find the first position where two text streams differ</span>
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Maybe</span> (maybeToList)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- compare: find the first position where two text streams differ</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.Exit</span> (exitSuccess, exitFailure)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Environment</span> (getArgs, getProgName)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.IO</span> (hPutStrLn, stderr)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Data.Maybe</span> (maybeToList)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Data.List</span> (unfoldr)</a></code></pre></div>
 <p>See also the <a href="../../posts/software-tools-in-haskell/Lib/Backslash.html">Backslash</a> module.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Lib.Backslash</span> (bsUnEsc)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">import</span> <span class="dt">Lib.Backslash</span> (bsUnEsc)</a></code></pre></div>
 <p>The purpose of <code>compare</code> is to detect whether or not two streams of text are byte-for-byte identical. This alone is simple enough, but the job is complicated by the fact that (1) there are a few useful places these text streams might come from and (2) in the (typical) case that the streams are <em>not</em> identical, we want to report the position of the first difference.</p>
 <p>The <code>diffList</code> function takes two lists and returns the position of the earliest difference as well as the differing elements (if they exist).</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; diffList ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">Maybe</span> a, <span class="dt">Integer</span>)
-<span class="ot">&gt;</span> diffList <span class="fu">=</span> comp <span class="dv">1</span>
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     comp _ []     []     <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dv">0</span>)
-<span class="ot">&gt;</span>     comp k []     (y<span class="fu">:</span>_)  <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Just</span> y, k)
-<span class="ot">&gt;</span>     comp k (x<span class="fu">:</span>_)  []     <span class="fu">=</span> (<span class="dt">Just</span> x, <span class="dt">Nothing</span>, k)
-<span class="ot">&gt;</span>     comp k (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">==</span> y
-<span class="ot">&gt;</span>       <span class="kw">then</span> comp (k<span class="fu">+</span><span class="dv">1</span>) xs ys
-<span class="ot">&gt;</span>       <span class="kw">else</span> (<span class="dt">Just</span> x, <span class="dt">Just</span> y, k)</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">diffList ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> a, <span class="dt">Maybe</span> a, <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">diffList <span class="fu">=</span> comp <span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    comp _ []     []     <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    comp k []     (y<span class="fu">:</span>_)  <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Just</span> y, k)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    comp k (x<span class="fu">:</span>_)  []     <span class="fu">=</span> (<span class="dt">Just</span> x, <span class="dt">Nothing</span>, k)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    comp k (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> <span class="kw">if</span> x <span class="fu">==</span> y</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      <span class="kw">then</span> comp (k<span class="fu">+</span><span class="dv">1</span>) xs ys</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">      <span class="kw">else</span> (<span class="dt">Just</span> x, <span class="dt">Just</span> y, k)</a></code></pre></div>
 <p>This isn’t quite what we want, though. The problem is that word “position”. The most useful <em>position</em> information will depend on what kind of text is being compared. For instance, when comparing line text we’d like to report the line and column numbers of the earliest difference, rather than just the character index. The <code>diffLists</code> function does this.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; diffLists ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> [[a]]
-<span class="ot">&gt;</span>   <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> [a], <span class="dt">Maybe</span> [a], <span class="dt">Integer</span>, <span class="dt">Integer</span>)
-<span class="ot">&gt;</span> diffLists <span class="fu">=</span> comp <span class="dv">1</span>
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     comp _ []       []       <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dv">0</span>, <span class="dv">0</span>)
-<span class="ot">&gt;</span>     comp m []       (ys<span class="fu">:</span>yss) <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Just</span> ys, m, <span class="dv">1</span>)
-<span class="ot">&gt;</span>     comp m (xs<span class="fu">:</span>xss) []       <span class="fu">=</span> (<span class="dt">Just</span> xs, <span class="dt">Nothing</span>, m, <span class="dv">1</span>)
-<span class="ot">&gt;</span>     comp m (xs<span class="fu">:</span>xss) (ys<span class="fu">:</span>yss) <span class="fu">=</span> <span class="kw">case</span> diffList xs ys <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _) <span class="ot">-&gt;</span> comp (m<span class="fu">+</span><span class="dv">1</span>) xss yss
-<span class="ot">&gt;</span>       (_,_,n) <span class="ot">-&gt;</span> (<span class="dt">Just</span> xs, <span class="dt">Just</span> ys, m, n)</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">diffLists ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> [[a]]</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">-&gt;</span> (<span class="dt">Maybe</span> [a], <span class="dt">Maybe</span> [a], <span class="dt">Integer</span>, <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">diffLists <span class="fu">=</span> comp <span class="dv">1</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    comp _ []       []       <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, <span class="dv">0</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    comp m []       (ys<span class="fu">:</span>yss) <span class="fu">=</span> (<span class="dt">Nothing</span>, <span class="dt">Just</span> ys, m, <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    comp m (xs<span class="fu">:</span>xss) []       <span class="fu">=</span> (<span class="dt">Just</span> xs, <span class="dt">Nothing</span>, m, <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">    comp m (xs<span class="fu">:</span>xss) (ys<span class="fu">:</span>yss) <span class="fu">=</span> <span class="kw">case</span> diffList xs ys <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">      (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _) <span class="ot">-&gt;</span> comp (m<span class="fu">+</span><span class="dv">1</span>) xss yss</a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">      (_,_,n) <span class="ot">-&gt;</span> (<span class="dt">Just</span> xs, <span class="dt">Just</span> ys, m, n)</a></code></pre></div>
 <p>Like we did with <code>echo</code>, we’ll allow the user to specify which kind of position they mean with a <code>--char</code> option (default is line). Now the streams to be compared (of which we need two) can come from one of three places:</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li><code>stdin</code>,</li>
 <li>a file (one or two), or</li>
 <li>command line arguments (interpreted like <code>echo</code>).</li>
 </ol>
 <p>The main program first reads the arguments and extracts (1) the mode (char or line) of text being compared, (2) the name and contents of the first stream to be compared, and (3) the name and contents of the second stream to be compared. Then we evaluate either <code>diffList</code> or <code>diffLists</code> and report the results.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Mode</span> <span class="fu">=</span> <span class="dt">Chars</span> <span class="fu">|</span> <span class="dt">Lines</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- interpret arguments</span>
-<span class="ot">&gt;</span>   (mode,(name1,stream1),(name2,stream2)) <span class="ot">&lt;-</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>     <span class="kw">let</span>
-<span class="ot">&gt;</span>       (flag,rest) <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span>
-<span class="ot">&gt;</span>         (<span class="st">&quot;--char&quot;</span><span class="fu">:</span>xss) <span class="ot">-&gt;</span> (<span class="dt">Chars</span>,xss)
-<span class="ot">&gt;</span>         xss            <span class="ot">-&gt;</span> (<span class="dt">Lines</span>,xss)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     <span class="kw">case</span> rest <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="st">&quot;--to&quot;</span><span class="fu">:</span>ys) <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>         <span class="kw">let</span>
-<span class="ot">&gt;</span>           as <span class="fu">=</span> bsUnEsc <span class="fu">$</span> <span class="kw">case</span> flag <span class="kw">of</span>
-<span class="ot">&gt;</span>             <span class="dt">Chars</span> <span class="ot">-&gt;</span> concat ys
-<span class="ot">&gt;</span>             <span class="dt">Lines</span> <span class="ot">-&gt;</span> fromLines ys
-<span class="ot">&gt;</span>         bs <span class="ot">&lt;-</span> getContents
-<span class="ot">&gt;</span>         return (flag,(<span class="st">&quot;args&quot;</span>,as),(<span class="st">&quot;stdin&quot;</span>,bs))
-<span class="ot">&gt;</span>       [xs] <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>         as <span class="ot">&lt;-</span> readFile xs
-<span class="ot">&gt;</span>         bs <span class="ot">&lt;-</span> getContents
-<span class="ot">&gt;</span>         return (flag,(xs,as),(<span class="st">&quot;stdin&quot;</span>,bs))
-<span class="ot">&gt;</span>       [xs,ys] <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>         as <span class="ot">&lt;-</span> readFile xs
-<span class="ot">&gt;</span>         bs <span class="ot">&lt;-</span> readFile ys
-<span class="ot">&gt;</span>         return (flag,(xs,as),(ys,bs))
-<span class="ot">&gt;</span>       otherwise <span class="ot">-&gt;</span> argError <span class="fu">&gt;&gt;</span> exitFailure
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- Some helpers</span>
-<span class="ot">&gt;</span>   <span class="kw">let</span>
-<span class="ot">&gt;</span>     (label1,label2) <span class="fu">=</span> padToLongerWith <span class="ch">' '</span> name1 name2
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     report label [] <span class="fu">=</span> putStrLn <span class="fu">$</span> label <span class="fu">++</span> <span class="st">&quot;: (empty)&quot;</span>
-<span class="ot">&gt;</span>     report label xs <span class="fu">=</span> putStrLn <span class="fu">$</span> label <span class="fu">++</span> <span class="st">&quot;: &quot;</span> <span class="fu">++</span> xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="kw">case</span> mode <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Chars</span> <span class="ot">-&gt;</span> <span class="kw">case</span> diffList stream1 stream2 <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _) <span class="ot">-&gt;</span> return ()
-<span class="ot">&gt;</span>       (x, y, t) <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>         putStrLn <span class="fu">$</span> <span class="st">&quot;first differ at column &quot;</span> <span class="fu">++</span> show t
-<span class="ot">&gt;</span>         report label1 (maybeToList x)
-<span class="ot">&gt;</span>         report label2 (maybeToList y)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     <span class="dt">Lines</span> <span class="ot">-&gt;</span> <span class="kw">case</span> diffLists (getLines stream1) (getLines stream2) <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _, _) <span class="ot">-&gt;</span> return ()
-<span class="ot">&gt;</span>       (x, y, m, n) <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>         putStrLn <span class="fu">$</span> <span class="st">&quot;first differ at line &quot;</span> <span class="fu">++</span> show m <span class="fu">++</span> <span class="st">&quot;, column &quot;</span> <span class="fu">++</span> show n
-<span class="ot">&gt;</span>         report label1 (concat <span class="fu">$</span> maybeToList x)
-<span class="ot">&gt;</span>         report label2 (concat <span class="fu">$</span> maybeToList y) 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   exitSuccess
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; argError ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> argError <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   reportErrorMsgs
-<span class="ot">&gt;</span>     [ <span class="st">&quot;usage:&quot;</span>
-<span class="ot">&gt;</span>     , <span class="st">&quot;  compare FILE1 FILE2  -- find first discrepancy between FILE1 and FILE2&quot;</span>
-<span class="ot">&gt;</span>     , <span class="st">&quot;  compare FILE         -- find first discrepancy between FILE and stdin&quot;</span>
-<span class="ot">&gt;</span>     , <span class="st">&quot;  compare --to STR ... -- find first discrepancy between STRs and stdin&quot;</span>
-<span class="ot">&gt;</span>     , <span class="st">&quot;options:&quot;</span>
-<span class="ot">&gt;</span>     , <span class="st">&quot;  --char : compare as (unlined) character streams&quot;</span>
-<span class="ot">&gt;</span>     ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; padToLongerWith ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([a], [a])
-<span class="ot">&gt;</span> padToLongerWith _ [] [] <span class="fu">=</span> ([],[])
-<span class="ot">&gt;</span> padToLongerWith z [] ys <span class="fu">=</span> unzip <span class="fu">$</span> zip (repeat z) ys
-<span class="ot">&gt;</span> padToLongerWith z xs [] <span class="fu">=</span> unzip <span class="fu">$</span> zip xs (repeat z)
-<span class="ot">&gt;</span> padToLongerWith z (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">let</span> (as,bs) <span class="fu">=</span> padToLongerWith z xs ys
-<span class="ot">&gt;</span>   <span class="kw">in</span> (x<span class="fu">:</span>as, y<span class="fu">:</span>bs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; fromLines ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> fromLines xs <span class="fu">=</span> concat <span class="fu">$</span> zipWith (<span class="fu">++</span>) xs (repeat <span class="st">&quot;\n&quot;</span>)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Mode</span> <span class="fu">=</span> <span class="dt">Chars</span> <span class="fu">|</span> <span class="dt">Lines</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  args <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">  <span class="co">-- interpret arguments</span></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">  (mode,(name1,stream1),(name2,stream2)) <span class="ot">&lt;-</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">    <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">      (flag,rest) <span class="fu">=</span> <span class="kw">case</span> args <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">        (<span class="st">&quot;--char&quot;</span><span class="fu">:</span>xss) <span class="ot">-&gt;</span> (<span class="dt">Chars</span>,xss)</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">        xss            <span class="ot">-&gt;</span> (<span class="dt">Lines</span>,xss)</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">case</span> rest <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">      (<span class="st">&quot;--to&quot;</span><span class="fu">:</span>ys) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-16" data-line-number="16">        <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-17" data-line-number="17">          as <span class="fu">=</span> bsUnEsc <span class="fu">$</span> <span class="kw">case</span> flag <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18">            <span class="dt">Chars</span> <span class="ot">-&gt;</span> concat ys</a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">            <span class="dt">Lines</span> <span class="ot">-&gt;</span> fromLines ys</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">        bs <span class="ot">&lt;-</span> getContents</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">        return (flag,(<span class="st">&quot;args&quot;</span>,as),(<span class="st">&quot;stdin&quot;</span>,bs))</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">      [xs] <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">        as <span class="ot">&lt;-</span> readFile xs</a>
+<a class="sourceLine" id="cb5-24" data-line-number="24">        bs <span class="ot">&lt;-</span> getContents</a>
+<a class="sourceLine" id="cb5-25" data-line-number="25">        return (flag,(xs,as),(<span class="st">&quot;stdin&quot;</span>,bs))</a>
+<a class="sourceLine" id="cb5-26" data-line-number="26">      [xs,ys] <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-27" data-line-number="27">        as <span class="ot">&lt;-</span> readFile xs</a>
+<a class="sourceLine" id="cb5-28" data-line-number="28">        bs <span class="ot">&lt;-</span> readFile ys</a>
+<a class="sourceLine" id="cb5-29" data-line-number="29">        return (flag,(xs,as),(ys,bs))</a>
+<a class="sourceLine" id="cb5-30" data-line-number="30">      otherwise <span class="ot">-&gt;</span> argError <span class="fu">&gt;&gt;</span> exitFailure</a>
+<a class="sourceLine" id="cb5-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb5-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb5-33" data-line-number="33">  <span class="co">-- Some helpers</span></a>
+<a class="sourceLine" id="cb5-34" data-line-number="34">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-35" data-line-number="35">    (label1,label2) <span class="fu">=</span> padToLongerWith <span class="ch">' '</span> name1 name2</a>
+<a class="sourceLine" id="cb5-36" data-line-number="36"></a>
+<a class="sourceLine" id="cb5-37" data-line-number="37">    report label [] <span class="fu">=</span> putStrLn <span class="fu">$</span> label <span class="fu">++</span> <span class="st">&quot;: (empty)&quot;</span></a>
+<a class="sourceLine" id="cb5-38" data-line-number="38">    report label xs <span class="fu">=</span> putStrLn <span class="fu">$</span> label <span class="fu">++</span> <span class="st">&quot;: &quot;</span> <span class="fu">++</span> xs</a>
+<a class="sourceLine" id="cb5-39" data-line-number="39"></a>
+<a class="sourceLine" id="cb5-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb5-41" data-line-number="41">  <span class="kw">case</span> mode <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-42" data-line-number="42">    <span class="dt">Chars</span> <span class="ot">-&gt;</span> <span class="kw">case</span> diffList stream1 stream2 <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-43" data-line-number="43">      (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _) <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb5-44" data-line-number="44">      (x, y, t) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-45" data-line-number="45">        putStrLn <span class="fu">$</span> <span class="st">&quot;first differ at column &quot;</span> <span class="fu">++</span> show t</a>
+<a class="sourceLine" id="cb5-46" data-line-number="46">        report label1 (maybeToList x)</a>
+<a class="sourceLine" id="cb5-47" data-line-number="47">        report label2 (maybeToList y)</a>
+<a class="sourceLine" id="cb5-48" data-line-number="48"></a>
+<a class="sourceLine" id="cb5-49" data-line-number="49">    <span class="dt">Lines</span> <span class="ot">-&gt;</span> <span class="kw">case</span> diffLists (getLines stream1) (getLines stream2) <span class="kw">of</span></a>
+<a class="sourceLine" id="cb5-50" data-line-number="50">      (<span class="dt">Nothing</span>, <span class="dt">Nothing</span>, _, _) <span class="ot">-&gt;</span> return ()</a>
+<a class="sourceLine" id="cb5-51" data-line-number="51">      (x, y, m, n) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-52" data-line-number="52">        putStrLn <span class="fu">$</span> <span class="st">&quot;first differ at line &quot;</span> <span class="fu">++</span> show m <span class="fu">++</span> <span class="st">&quot;, column &quot;</span> <span class="fu">++</span> show n</a>
+<a class="sourceLine" id="cb5-53" data-line-number="53">        report label1 (concat <span class="fu">$</span> maybeToList x)</a>
+<a class="sourceLine" id="cb5-54" data-line-number="54">        report label2 (concat <span class="fu">$</span> maybeToList y) </a>
+<a class="sourceLine" id="cb5-55" data-line-number="55"></a>
+<a class="sourceLine" id="cb5-56" data-line-number="56">  exitSuccess</a>
+<a class="sourceLine" id="cb5-57" data-line-number="57"></a>
+<a class="sourceLine" id="cb5-58" data-line-number="58"></a>
+<a class="sourceLine" id="cb5-59" data-line-number="59"><span class="ot">argError ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-60" data-line-number="60">argError <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-61" data-line-number="61">  reportErrorMsgs</a>
+<a class="sourceLine" id="cb5-62" data-line-number="62">    [ <span class="st">&quot;usage:&quot;</span></a>
+<a class="sourceLine" id="cb5-63" data-line-number="63">    , <span class="st">&quot;  compare FILE1 FILE2  -- find first discrepancy between FILE1 and FILE2&quot;</span></a>
+<a class="sourceLine" id="cb5-64" data-line-number="64">    , <span class="st">&quot;  compare FILE         -- find first discrepancy between FILE and stdin&quot;</span></a>
+<a class="sourceLine" id="cb5-65" data-line-number="65">    , <span class="st">&quot;  compare --to STR ... -- find first discrepancy between STRs and stdin&quot;</span></a>
+<a class="sourceLine" id="cb5-66" data-line-number="66">    , <span class="st">&quot;options:&quot;</span></a>
+<a class="sourceLine" id="cb5-67" data-line-number="67">    , <span class="st">&quot;  --char : compare as (unlined) character streams&quot;</span></a>
+<a class="sourceLine" id="cb5-68" data-line-number="68">    ]</a>
+<a class="sourceLine" id="cb5-69" data-line-number="69"></a>
+<a class="sourceLine" id="cb5-70" data-line-number="70"></a>
+<a class="sourceLine" id="cb5-71" data-line-number="71"><span class="ot">padToLongerWith ::</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> ([a], [a])</a>
+<a class="sourceLine" id="cb5-72" data-line-number="72">padToLongerWith _ [] [] <span class="fu">=</span> ([],[])</a>
+<a class="sourceLine" id="cb5-73" data-line-number="73">padToLongerWith z [] ys <span class="fu">=</span> unzip <span class="fu">$</span> zip (repeat z) ys</a>
+<a class="sourceLine" id="cb5-74" data-line-number="74">padToLongerWith z xs [] <span class="fu">=</span> unzip <span class="fu">$</span> zip xs (repeat z)</a>
+<a class="sourceLine" id="cb5-75" data-line-number="75">padToLongerWith z (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-76" data-line-number="76">  <span class="kw">let</span> (as,bs) <span class="fu">=</span> padToLongerWith z xs ys</a>
+<a class="sourceLine" id="cb5-77" data-line-number="77">  <span class="kw">in</span> (x<span class="fu">:</span>as, y<span class="fu">:</span>bs)</a>
+<a class="sourceLine" id="cb5-78" data-line-number="78"></a>
+<a class="sourceLine" id="cb5-79" data-line-number="79"></a>
+<a class="sourceLine" id="cb5-80" data-line-number="80"><span class="ot">fromLines ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb5-81" data-line-number="81">fromLines xs <span class="fu">=</span> concat <span class="fu">$</span> zipWith (<span class="fu">++</span>) xs (repeat <span class="st">&quot;\n&quot;</span>)</a></code></pre></div>
 <p><code>compare</code> can be used to implement a very simple testing scheme by comparing the output of some program under development to its “expected” output. One improvement I can think of is to have <code>compare</code> optionally output delimited data, to make it easier to extract this information with other tools.</p>
 <h2 id="old-stuff">Old Stuff</h2>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- split on \n</span>
-<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
-<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
-<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
-<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
-<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
-<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">-- split on \n</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">getLines <span class="fu">=</span> unfoldr firstLine</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="ot">    firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">      (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">      (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">      (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12"><span class="co">-- write list of messages to stderr</span></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13"><span class="ot">reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">  name <span class="ot">&lt;-</span> getProgName</a>
+<a class="sourceLine" id="cb6-16" data-line-number="16">  sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)</a></code></pre></div>
 
 
 <!-- END BODY -->

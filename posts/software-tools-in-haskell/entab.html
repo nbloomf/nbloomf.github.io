@@ -49,119 +49,119 @@ Posted on 2016-02-18 by nbloomf
 <hr />
 
 <p>As usual, we start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sth-entab: replace spaces on stdin with tabs</span>
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Exit</span> (exitSuccess, exitFailure)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span> (getArgs, getProgName)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.IO</span> (hPutStrLn, stderr)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span> (unfoldr)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- sth-entab: replace spaces on stdin with tabs</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">System.Exit</span> (exitSuccess, exitFailure)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Environment</span> (getArgs, getProgName)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.IO</span> (hPutStrLn, stderr)</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Control.Arrow</span> ((&gt;&gt;&gt;))</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Data.List</span> (unfoldr)</a></code></pre></div>
 <p>The <a href="../../posts/2016-02-15-software-tools-in-haskell-detab.html"><code>detab</code></a> program replaced tab characters with spaces, taking arguments at the command line to let the user specify the width of the tab stops. The <code>entab</code> program reverses this process. It takes input which we assume represents some tabular data where different columns start on specific character columns, chops the input lines into columns, and replaces any trailing spaces in a given column by a single <code>\t</code> character. Just like <code>detab</code>, the default tab stop width is 8, and we allow the user to specify a list of tab stop widths at the command line with the convention that the <em>last</em> user-specified width is assumed to repeat indefinitely.</p>
 <p>The basic structure of this program is nearly identical to that of <code>detab</code> (which is not surprising).</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- Read positive integer tabstop arguments.</span>
-<span class="ot">&gt;</span>   <span class="co">-- Default is [8].</span>
-<span class="ot">&gt;</span>   ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]
-<span class="ot">&gt;</span>     <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks
-<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs
-<span class="ot">&gt;</span>                  [<span class="st">&quot;tab widths must be positive integers.&quot;</span>
-<span class="ot">&gt;</span>                  ] <span class="fu">&gt;&gt;</span> exitFailure
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- Do it!</span>
-<span class="ot">&gt;</span>   lineFilter (insertTabStops ts)
-<span class="ot">&gt;</span>   exitSuccess</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  args <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="co">-- Read positive integer tabstop arguments.</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="co">-- Default is [8].</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  ts <span class="ot">&lt;-</span> <span class="kw">case</span> readPosIntList args <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">    <span class="dt">Just</span> [] <span class="ot">-&gt;</span> return [<span class="dv">8</span>]</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">    <span class="dt">Just</span> ks <span class="ot">-&gt;</span> return ks</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> reportErrorMsgs</a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">                 [<span class="st">&quot;tab widths must be positive integers.&quot;</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">                 ] <span class="fu">&gt;&gt;</span> exitFailure</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">  <span class="co">-- Do it!</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">  lineFilter (insertTabStops ts)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">  exitSuccess</a></code></pre></div>
 <p>We reuse the functions for reading lists of nonnegative integers that we wrote for <code>detab</code>. The heavly lifting is done by <code>insertTabStops</code>.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> insertTabStops [] xs <span class="fu">=</span> xs
-<span class="ot">&gt;</span> insertTabStops ks xs <span class="fu">=</span> accum [] ks xs
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> concat <span class="fu">$</span> reverse zs
-<span class="ot">&gt;</span>     accum zs [t] ys <span class="fu">=</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
-<span class="ot">&gt;</span>       accum (as<span class="fu">:</span>zs) [t] bs
-<span class="ot">&gt;</span>     accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span>
-<span class="ot">&gt;</span>       accum (as<span class="fu">:</span>zs) ts bs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;     splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">String</span>)
-<span class="ot">&gt;</span>     splitColumn k xs
-<span class="ot">&gt;</span>       <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> (xs,<span class="st">&quot;&quot;</span>)
-<span class="ot">&gt;</span>       <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)
-<span class="ot">&gt;</span>       <span class="fu">|</span> otherwise <span class="fu">=</span> (ds,bs)
-<span class="ot">&gt;</span>           <span class="kw">where</span>
-<span class="ot">&gt;</span>             (as,bs) <span class="fu">=</span> splitAt k xs
-<span class="ot">&gt;</span>             munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)
-<span class="ot">&gt;</span>             cs <span class="fu">=</span> reverse as
-<span class="ot">&gt;</span>             ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span>
-<span class="ot">&gt;</span>                      <span class="kw">then</span> <span class="kw">let</span> es <span class="fu">=</span> reverse <span class="fu">$</span> munch cs <span class="kw">in</span>
-<span class="ot">&gt;</span>                        <span class="kw">if</span> es <span class="fu">==</span> <span class="st">&quot;&quot;</span> <span class="kw">then</span> <span class="st">&quot;\t&quot;</span> <span class="kw">else</span> es
-<span class="ot">&gt;</span>                      <span class="kw">else</span> <span class="kw">case</span> cs <span class="kw">of</span>
-<span class="ot">&gt;</span>                        <span class="ch">' '</span><span class="fu">:</span>_ <span class="ot">-&gt;</span> reverse (<span class="ch">'\t'</span><span class="fu">:</span>(munch cs))
-<span class="ot">&gt;</span>                        otherwise <span class="ot">-&gt;</span> as</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">insertTabStops ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">insertTabStops [] xs <span class="fu">=</span> xs</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">insertTabStops ks xs <span class="fu">=</span> accum [] ks xs</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">    accum zs _ <span class="st">&quot;&quot;</span> <span class="fu">=</span> concat <span class="fu">$</span> reverse zs</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">    accum zs [t] ys <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">      accum (as<span class="fu">:</span>zs) [t] bs</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    accum zs (t<span class="fu">:</span>ts) ys <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">      <span class="kw">let</span> (as,bs) <span class="fu">=</span> splitColumn t ys <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">      accum (as<span class="fu">:</span>zs) ts bs</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="ot">    splitColumn ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> (<span class="dt">String</span>, <span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">    splitColumn k xs</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">      <span class="fu">|</span> k  <span class="fu">&lt;=</span> <span class="dv">0</span>   <span class="fu">=</span> (xs,<span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">      <span class="fu">|</span> xs <span class="fu">==</span> <span class="st">&quot;&quot;</span>  <span class="fu">=</span> (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">      <span class="fu">|</span> otherwise <span class="fu">=</span> (ds,bs)</a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">          <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">            (as,bs) <span class="fu">=</span> splitAt k xs</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">            munch <span class="fu">=</span> dropWhile (<span class="fu">==</span> <span class="ch">' '</span>)</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">            cs <span class="fu">=</span> reverse as</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">            ds <span class="fu">=</span> <span class="kw">if</span> bs <span class="fu">==</span> <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">                     <span class="kw">then</span> <span class="kw">let</span> es <span class="fu">=</span> reverse <span class="fu">$</span> munch cs <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">                       <span class="kw">if</span> es <span class="fu">==</span> <span class="st">&quot;&quot;</span> <span class="kw">then</span> <span class="st">&quot;\t&quot;</span> <span class="kw">else</span> es</a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">                     <span class="kw">else</span> <span class="kw">case</span> cs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-26" data-line-number="26">                       <span class="ch">' '</span><span class="fu">:</span>_ <span class="ot">-&gt;</span> reverse (<span class="ch">'\t'</span><span class="fu">:</span>(munch cs))</a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">                       otherwise <span class="ot">-&gt;</span> as</a></code></pre></div>
 <p>Even the shape of this function on the page resembles that of its counterpart from <code>detab</code>. Note the use of an accumulating parameter helper function.</p>
 <p>In Exercise 2-2, Kernighan and Plauger ask us to make the simplest change to <code>entab</code> to make it handle tabs correctly. After thinking about this, I’ve decided the right thing to do is <strong>nothing</strong>. Let’s imagine what it means if the user is trying to use <code>entab</code> on data that contains tabs. I can think of two possible situations.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>The tabs are “semantic tabs”, used to delimit data. That is, the input either is already tab-delimited, or contains a mixture of tab-delimited and column-delimited data. In this case the user has other problems. The right thing to do in the first case is nothing, and in the second case depends on the user’s intent. We could assume that a semantic tab means “advance to the next tab stop”, but this now changes the column indices of the characters in the remainder of the line unpredictably, so the intent of any tab stop width input is unclear. It would be better here to run the data through <code>detab</code> first to remove the tabs, then run through <code>entab</code> to put them back.</li>
 <li>The tabs are “literal tabs”, as in the data itself involves tab characters for some reason, and they have a different meaning in whatever context the user cares about. This is, after all, a valid reason to use a column-delimited format. Of course in this case the right thing to do is leave the tabs alone.</li>
 </ol>
 <p>If we ignore tabs altogether, then at best this is the Right Thing and at worst the user has to use <code>detab</code> first (or has other problems). On the other hand, trying to make <code>entab</code> do something useful with tabs would make the program more complicated (and probably clutter the interface) with little benefit.</p>
 <p>Old stuff:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- parse a list of positive integers base 10</span>
-<span class="ot">&gt; readPosIntList ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]
-<span class="ot">&gt;</span> readPosIntList <span class="fu">=</span> map readDecimalNat
-<span class="ot">&gt;</span>   <span class="fu">&gt;&gt;&gt;</span> map (filterMaybe (<span class="fu">&gt;</span><span class="dv">0</span>))
-<span class="ot">&gt;</span>   <span class="fu">&gt;&gt;&gt;</span> sequence
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- parse a natural number base 10</span>
-<span class="ot">&gt; readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
-<span class="ot">&gt;</span> readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs
-<span class="ot">&gt;</span>   return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span>
-<span class="ot">&gt;</span>     decToInt x <span class="fu">=</span> lookup x
-<span class="ot">&gt;</span>       [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)
-<span class="ot">&gt;</span>       , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)
-<span class="ot">&gt;</span>       ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- apply a map to all lines on stdin</span>
-<span class="ot">&gt; lineFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> lineFilter f <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   xs <span class="ot">&lt;-</span> fmap getLines getContents
-<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> f) xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- split on \n</span>
-<span class="ot">&gt; getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]
-<span class="ot">&gt;</span> getLines <span class="fu">=</span> unfoldr firstLine
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)
-<span class="ot">&gt;</span>     firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span>
-<span class="ot">&gt;</span>       (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>       (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)
-<span class="ot">&gt;</span>       (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- write list of messages to stderr</span>
-<span class="ot">&gt; reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   name <span class="ot">&lt;-</span> getProgName
-<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; filterMaybe ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a
-<span class="ot">&gt;</span> filterMaybe p x <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   y <span class="ot">&lt;-</span> x
-<span class="ot">&gt;</span>   <span class="kw">case</span> p y <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">Just</span> y
-<span class="ot">&gt;</span>     <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">-- parse a list of positive integers base 10</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="ot">readPosIntList ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">readPosIntList <span class="fu">=</span> map readDecimalNat</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="fu">&gt;&gt;&gt;</span> map (filterMaybe (<span class="fu">&gt;</span><span class="dv">0</span>))</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  <span class="fu">&gt;&gt;&gt;</span> sequence</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="co">-- parse a natural number base 10</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">readDecimalNat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">readDecimalNat xs <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">  ys <span class="ot">&lt;-</span> sequence <span class="fu">$</span> map decToInt <span class="fu">$</span> reverse xs</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">  return <span class="fu">$</span> sum <span class="fu">$</span> zipWith (<span class="fu">*</span>) ys [<span class="dv">10</span><span class="fu">^</span>t <span class="fu">|</span> t <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>]]</a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-14" data-line-number="14"><span class="ot">    decToInt ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb4-15" data-line-number="15">    decToInt x <span class="fu">=</span> lookup x</a>
+<a class="sourceLine" id="cb4-16" data-line-number="16">      [ (<span class="ch">'0'</span>,<span class="dv">0</span>), (<span class="ch">'1'</span>,<span class="dv">1</span>), (<span class="ch">'2'</span>,<span class="dv">2</span>), (<span class="ch">'3'</span>,<span class="dv">3</span>), (<span class="ch">'4'</span>,<span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb4-17" data-line-number="17">      , (<span class="ch">'5'</span>,<span class="dv">5</span>), (<span class="ch">'6'</span>,<span class="dv">6</span>), (<span class="ch">'7'</span>,<span class="dv">7</span>), (<span class="ch">'8'</span>,<span class="dv">8</span>), (<span class="ch">'9'</span>,<span class="dv">9</span>)</a>
+<a class="sourceLine" id="cb4-18" data-line-number="18">      ]</a>
+<a class="sourceLine" id="cb4-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb4-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb4-21" data-line-number="21"><span class="co">-- apply a map to all lines on stdin</span></a>
+<a class="sourceLine" id="cb4-22" data-line-number="22"><span class="ot">lineFilter ::</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb4-23" data-line-number="23">lineFilter f <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-24" data-line-number="24">  xs <span class="ot">&lt;-</span> fmap getLines getContents</a>
+<a class="sourceLine" id="cb4-25" data-line-number="25">  sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> f) xs</a>
+<a class="sourceLine" id="cb4-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb4-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb4-28" data-line-number="28"><span class="co">-- split on \n</span></a>
+<a class="sourceLine" id="cb4-29" data-line-number="29"><span class="ot">getLines ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>]</a>
+<a class="sourceLine" id="cb4-30" data-line-number="30">getLines <span class="fu">=</span> unfoldr firstLine</a>
+<a class="sourceLine" id="cb4-31" data-line-number="31">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-32" data-line-number="32"><span class="ot">    firstLine ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">String</span>, <span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb4-33" data-line-number="33">    firstLine xs <span class="fu">=</span> <span class="kw">case</span> break (<span class="fu">==</span> <span class="ch">'\n'</span>) xs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-34" data-line-number="34">      (<span class="st">&quot;&quot;</span>,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb4-35" data-line-number="35">      (as,<span class="st">&quot;&quot;</span>)   <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,<span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb4-36" data-line-number="36">      (as,b<span class="fu">:</span>bs) <span class="ot">-&gt;</span> <span class="dt">Just</span> (as,bs)</a>
+<a class="sourceLine" id="cb4-37" data-line-number="37"></a>
+<a class="sourceLine" id="cb4-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb4-39" data-line-number="39"><span class="co">-- write list of messages to stderr</span></a>
+<a class="sourceLine" id="cb4-40" data-line-number="40"><span class="ot">reportErrorMsgs ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb4-41" data-line-number="41">reportErrorMsgs errs <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-42" data-line-number="42">  name <span class="ot">&lt;-</span> getProgName</a>
+<a class="sourceLine" id="cb4-43" data-line-number="43">  sequence_ <span class="fu">$</span> map (hPutStrLn stderr) <span class="fu">$</span> ((name <span class="fu">++</span> <span class="st">&quot; error&quot;</span>)<span class="fu">:</span>errs)</a>
+<a class="sourceLine" id="cb4-44" data-line-number="44"></a>
+<a class="sourceLine" id="cb4-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb4-46" data-line-number="46"><span class="ot">filterMaybe ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</a>
+<a class="sourceLine" id="cb4-47" data-line-number="47">filterMaybe p x <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-48" data-line-number="48">  y <span class="ot">&lt;-</span> x</a>
+<a class="sourceLine" id="cb4-49" data-line-number="49">  <span class="kw">case</span> p y <span class="kw">of</span></a>
+<a class="sourceLine" id="cb4-50" data-line-number="50">    <span class="dt">True</span>  <span class="ot">-&gt;</span> <span class="dt">Just</span> y</a>
+<a class="sourceLine" id="cb4-51" data-line-number="51">    <span class="dt">False</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span></a></code></pre></div>
 
 
 <!-- END BODY -->

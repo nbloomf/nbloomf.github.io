@@ -1,0 +1,811 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nbloomf.blog - Disjoint Unions</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Disjoint Unions</h1>
+<!-- BEGIN BODY -->
+
+
+<div class="info">
+Posted on 2017-12-21 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/literate-haskell.html">literate-haskell</a>, <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
+\(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- predicates -->
+\(\newcommand{\ptrue}{\mathsf{ptrue}}\)
+\(\newcommand{\pfalse}{\mathsf{pfalse}}\)
+\(\newcommand{\pnot}{\mathsf{pnot}}\)
+\(\newcommand{\pand}{\mathbin{\mathsf{pand}}}\)
+\(\newcommand{\por}{\mathbin{\mathsf{por}}}\)
+\(\newcommand{\pimpl}{\mathbin{\mathsf{pimpl}}}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
+\(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
+\(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
+\(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
+\(\newcommand{\tupL}{\mathsf{tupL}}\)
+\(\newcommand{\tupR}{\mathsf{tupR}}\)
+
+<!-- disjoint unions -->
+\(\newcommand{\lft}{\mathsf{left}}\)
+\(\newcommand{\rgt}{\mathsf{right}}\)
+\(\newcommand{\either}{\mathsf{either}}\)
+\(\newcommand{\uSwap}{\mathsf{swap}_{+}}\)
+\(\newcommand{\uPair}{\mathsf{pair}_{+}}\)
+\(\newcommand{\uAssocL}{\mathsf{assocL}_{+}}\)
+\(\newcommand{\uAssocR}{\mathsf{assocR}_{+}}\)
+\(\newcommand{\isLft}{\mathsf{isLeft}}\)
+\(\newcommand{\isRgt}{\mathsf{isRight}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\unnext}{\mathsf{unnext}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+
+<!-- natural number recursion -->
+\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
+\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
+\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
+\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
+\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+
+<!-- natural number arithmetic -->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- lists -->
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
+\(\newcommand{\isnil}{\mathsf{isNil}}\)
+\(\newcommand{\tail}{\mathsf{tail}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+
+<!-- list recursion -->
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
+\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
+\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
+\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
+\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
+\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
+\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+
+<!-- list arithmetic -->
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\revcat}{\mathsf{revcat}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+\(\newcommand{\addlength}{\mathsf{addlength}}\)
+\(\newcommand{\length}{\mathsf{length}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+\(\newcommand{\at}{\mathsf{at}}\)
+\(\newcommand{\map}{\mathsf{map}}\)
+\(\newcommand{\range}{\mathsf{range}}\)
+\(\newcommand{\zip}{\mathsf{zip}}\)
+\(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
+\(\newcommand{\lcp}{\mathsf{lcp}}\)
+\(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\addcount}{\mathsf{addcount}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
+\(\newcommand{\takeBut}{\mathsf{takeBut}}\)
+\(\newcommand{\dropBut}{\mathsf{dropBut}}\)
+\(\newcommand{\takeWhile}{\mathsf{takeWhile}}\)
+\(\newcommand{\dropWhile}{\mathsf{dropWhile}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/DisjointUnions.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( lft, rgt, either, uswap, upair , uassocL, uassocR, isLft, isRgt</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  , _test_disjoint_union, main_disjoint_union</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
+<p>Dual to sets of tuples are disjoint sums.</p>
+<div class="result">
+<div class="defn">
+<p><a name="dfn-disjoint-union"></a> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. There is a set <span class="math inline">\(A + B\)</span> together with two functions <span class="math inline">\(\lft : A \rightarrow A + B\)</span> and <span class="math inline">\(\rgt : B \rightarrow A + B\)</span> having the property that if <span class="math inline">\(X\)</span> is a set and <span class="math inline">\(\sigma : A \rightarrow X\)</span> and <span class="math inline">\(\tau : B \rightarrow X\)</span> functions then there is a unique map <span class="math inline">\(\Theta : A + B \rightarrow X\)</span> such that <span class="math inline">\(\Theta \circ \lft = \sigma\)</span> and <span class="math inline">\(\Theta \circ \rgt = \tau\)</span>. That is, there is a unique <span class="math inline">\(\Theta\)</span> such that the following diagram commutes.</p>
+<p><span class="math display">\[\require{AMScd}
+\begin{CD}
+A @&gt;{\lft}&gt;&gt; A + B @&lt;{\rgt}&lt;&lt; B \\
+@V{\sigma}VV @VV{\Theta}V @VV{\tau}V \\
+X @= X @= X
+\end{CD}\]</span></p>
+<p>We will denote this unique <span class="math inline">\(\Theta : A + B \rightarrow X\)</span> by <span class="math inline">\(\either(\sigma,\tau)\)</span>.</p>
+<p>More concretely, if <span class="math inline">\(f : A + B \rightarrow X\)</span> such that <span class="math inline">\(f(\lft(a)) = \sigma(a)\)</span> and <span class="math inline">\(f(\rgt(b)) = \tau(b)\)</span> for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>, then <span class="math inline">\(f = \either(\sigma,\tau)\)</span>.</p>
+</div>
+</div>
+<p>Now every element of <span class="math inline">\(A+B\)</span> is uniquely either of the form <span class="math inline">\(\lft(a)\)</span> or <span class="math inline">\(\rgt(b)\)</span> for some <span class="math inline">\(a \in A\)</span> or <span class="math inline">\(b \in B\)</span>; this allows us to use case analysis on <span class="math inline">\(A + B\)</span>. This set is sometimes called a <em>tagged union</em>, because it behaves like an ordinary set-theoretic union where elements are “tagged” with the set they came from (so, for instance, if <span class="math inline">\(x \in A\)</span> and <span class="math inline">\(x \in B\)</span>, the <span class="math inline">\(x\)</span> from <span class="math inline">\(A\)</span> and the <span class="math inline">\(x\)</span> from <span class="math inline">\(B\)</span> are distinct in <span class="math inline">\(A+B\)</span>).</p>
+<div class="result">
+<div class="thm">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets.</p>
+<ol type="1">
+<li>If <span class="math inline">\(x \in A + B\)</span>, then either <span class="math inline">\(x = \lft(a)\)</span> for some <span class="math inline">\(a \in A\)</span> or <span class="math inline">\(x = \rgt(b)\)</span> for some <span class="math inline">\(b \in B\)</span>.</li>
+<li>There does not exist <span class="math inline">\(x \in A + B\)</span> such that <span class="math inline">\(x = \lft(a)\)</span> and <span class="math inline">\(x = \rgt(b)\)</span> for some <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>.</li>
+<li><span class="math inline">\(\lft : A \rightarrow A+B\)</span> and <span class="math inline">\(\rgt : B \rightarrow A+B\)</span> are injective.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol type="1">
+<li>Suppose to the contrary that there exists some <span class="math inline">\(z \in A+B\)</span> which is not of the form <span class="math inline">\(\lft(a)\)</span> or <span class="math inline">\(\rgt(b)\)</span> for any <span class="math inline">\(a\)</span> or <span class="math inline">\(b\)</span>. Now consider the following two functions <span class="math inline">\(A+B \rightarrow \bool\)</span>: <span class="math display">\[\Psi(x) = \btrue\]</span> and <span class="math display">\[\Omega(x) = \left\{\begin{array}{ll}
+ \bfalse &amp; \mathrm{if}\ x = z \\
+ \btrue  &amp; \mathrm{otherwise.}
+\end{array}\right.\]</span> Note in particular that if <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\Omega \circ \lft)(a) \\
+ &amp; = &amp; \Omega(\lft(a)) \\
+ &amp; = &amp; \btrue \\
+ &amp; = &amp; \Psi(\lft(a)) \\
+ &amp; = &amp; (\Psi \circ \lft)(a)
+\end{eqnarray*}\]</span> since <span class="math inline">\(z \neq \lft(a)\)</span>, and if <span class="math inline">\(b \in B\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\Omega \circ \rgt)(b) \\
+ &amp; = &amp; \Omega(\rgt(b)) \\
+ &amp; = &amp; \btrue \\
+ &amp; = &amp; \Psi(\rgt(b)) \\
+ &amp; = &amp; (\Psi \circ \rgt)(b)
+\end{eqnarray*}\]</span> similarly. By the universal property of <span class="math inline">\(A + B\)</span>, we thus have <span class="math display">\[\Psi = \either(\const(\btrue),\const(\btrue)) = \Omega.\]</span> But now we have <span class="math display">\[\btrue = \Psi(z) = \Omega(z) = \bfalse,\]</span> which is absurd.</li>
+<li>Suppose to the contrary that we have <span class="math inline">\(z \in A + B\)</span> with <span class="math inline">\(\lft(a) = z = \rgt(b)\)</span> for some <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>, and consider now <span class="math inline">\(\Theta : A+B \rightarrow \bool\)</span> given by <span class="math display">\[\Theta = \either(\const(\btrue),\const(\bfalse)).\]</span> We then have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \const(\btrue)(a) \\
+ &amp; = &amp; (\Theta \circ \lft)(a) \\
+ &amp; = &amp; \Theta(\lft(a)) \\
+ &amp; = &amp; \Theta(z) \\
+ &amp; = &amp; \Theta(\rgt(b)) \\
+ &amp; = &amp; (\Theta \circ \rgt)(b) \\
+ &amp; = &amp; \const(\bfalse)(b) \\
+ &amp; = &amp; \bfalse,
+\end{eqnarray*}\]</span> which is absurd.</li>
+<li>Let <span class="math inline">\(u,v \in A\)</span>, and suppose <span class="math inline">\(\lft(u) = \lft(v)\)</span>. Now define <span class="math inline">\(f : A \rightarrow \bool\)</span> by <span class="math display">\[f(x) = \left\{\begin{array}{ll}
+ \bfalse &amp; \mathrm{if}\ x = u \\
+ \btrue  &amp; \mathrm{otherwise},
+\end{array}\right.\]</span> and consider <span class="math inline">\(\Theta = \either(f,\const(\btrue))\)</span>. We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bfalse \\
+ &amp; = &amp; f(u) \\
+ &amp; = &amp; (\Theta \circ \lft)(u) \\
+ &amp; = &amp; \Theta(\lft(u)) \\
+ &amp; = &amp; \Theta(\lft(v)) \\
+ &amp; = &amp; (\Theta \circ \lft)(v) \\
+ &amp; = &amp; f(v);
+\end{eqnarray*}\]</span> thus <span class="math inline">\(v = u\)</span> as needed. A similar argument holds for <span class="math inline">\(\rgt\)</span>.</li>
+</ol>
+</p>
+</div>
+</div>
+<p>The previous results suggest that we can model <span class="math inline">\(A + B\)</span> with the Haskell type <code>Either a b</code>, and the maps in the universal property like so.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">lft ::</span> a <span class="ot">-&gt;</span> <span class="dt">Either</span> a b</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">lft a <span class="fu">=</span> <span class="dt">Left</span> a</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">rgt ::</span> b <span class="ot">-&gt;</span> <span class="dt">Either</span> a b</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">rgt b <span class="fu">=</span> <span class="dt">Right</span> b</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">either<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> x</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">either f _ (<span class="dt">Left</span>  a) <span class="fu">=</span> f a</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">either _ g (<span class="dt">Right</span> b) <span class="fu">=</span> g b</a></code></pre></div>
+<p>For example, <span class="math inline">\(\id_{A + B}\)</span> is an <span class="math inline">\(\either\)</span>.</p>
+<div class="result">
+<div class="thm">
+<p>
+Provided the types match up, we have <span class="math display">\[\either(\lft,\rgt) = \id_{A + B}.\]</span>
+</p>
+</div>
+<div class="proof">
+<p>
+If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\id_{A + B} \circ \lft)(a) \\
+ &amp; = &amp; \id_{A+B}(\lft(a)) \\
+ &amp; = &amp; \lft(a)
+\end{eqnarray*}\]</span> and likewise if <span class="math inline">\(b \in B\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\id_{A + B} \circ \rgt)(a) \\
+ &amp; = &amp; \id_{A + B}(\rgt(b)) \\
+ &amp; = &amp; \rgt(b).
+\end{eqnarray*}\]</span> Since <span class="math inline">\(\either(\lft,\rgt)\)</span> is unique with this property, we have <span class="math inline">\(\either(\lft,\rgt) = \id_{A+B}\)</span> as claimed.
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_either_lft_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">_test_either_lft_rgt _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;either(lft,rgt) == id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (either lft rgt x) x</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>We define <span class="math inline">\(\uSwap\)</span> on disjoint unions like so.</p>
+<div class="result">
+<div class="defn">
+<p><a name="dfn-uswap"></a> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\uSwap : A + B \rightarrow B + A\)</span> by <span class="math display">\[\uSwap = \either(\rgt,\lft).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">uswap ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> b a</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">uswap <span class="fu">=</span> either rgt lft</a></code></pre></div>
+</div>
+</div>
+<p>Now <span class="math inline">\(\uSwap\)</span> effectively toggles the tag of its argument.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then we have the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\uSwap(\lft(a)) = \rgt(a)\)</span>.</li>
+<li><span class="math inline">\(\uSwap(\rgt(b)) = \lft(b)\)</span>.</li>
+<li><span class="math inline">\(\uSwap \circ \uSwap = \id_{A + B}\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol type="1">
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uSwap(\lft(a)) \\
+ &amp; = &amp; \either(\rgt,\lft)(\lft(a)) \\
+ &amp; = &amp; \rgt(a)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uSwap(\rgt(a)) \\
+ &amp; = &amp; \either(\rgt,\lft)(\lft(a)) \\
+ &amp; = &amp; \rgt(a)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Let <span class="math inline">\(x \in A+B\)</span>; we have two possibilities. If <span class="math inline">\(x = \lft(a)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uSwap \circ \uSwap)(\lft(a)) \\
+ &amp; = &amp; \uSwap(\uSwap(\lft(a))) \\
+ &amp; = &amp; \uSwap(\rgt(a)) \\
+ &amp; = &amp; \lft(a),
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(b)\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uSwap \circ \uSwap)(\rgt(b)) \\
+ &amp; = &amp; \uSwap(\uSwap(\rgt(b))) \\
+ &amp; = &amp; \uSwap(\lft(b)) \\
+ &amp; = &amp; \rgt(b)
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_uswap_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">_test_uswap_lft _ y <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;uswap(left(a)) == right(a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    (uswap (lft a))</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    ((rgt a) <span class="ot">`withTypeOf`</span> (lft y))</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10"><span class="ot">_test_uswap_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">_test_uswap_rgt x _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">  testName <span class="st">&quot;uswap(right(a)) == left(a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">  \b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">    (uswap (rgt b))</a>
+<a class="sourceLine" id="cb5-16" data-line-number="16">    ((lft b) <span class="ot">`withTypeOf`</span> (rgt x))</a>
+<a class="sourceLine" id="cb5-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19"><span class="ot">_test_uswap_uswap ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">_test_uswap_uswap _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">  testName <span class="st">&quot;swap(swap(x)) == x&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">  \x <span class="ot">-&gt;</span> eq (uswap (uswap x)) x</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>Next, the utility <span class="math inline">\(\uPair\)</span> facilitates defining functions from one disjoint union to another.</p>
+<div class="result">
+<div class="defn">
+<p>
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets. We define <span class="math inline">\(\uPair : U^A \times V^B \rightarrow (U + V)^{A + B}\)</span> by <span class="math display">\[\uPair(f,g) = \either(\lft \circ f, \rgt \circ g).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">upair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> u v</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">upair f g <span class="fu">=</span> either (lft <span class="fu">.</span> f) (rgt <span class="fu">.</span> g)</a></code></pre></div>
+</p>
+</div>
+</div>
+<p><span class="math inline">\(\uPair\)</span> has some nice properties.</p>
+<div class="result">
+<div class="thm">
+<p>For all <span class="math inline">\(f\)</span>, <span class="math inline">\(g\)</span>, <span class="math inline">\(h\)</span>, <span class="math inline">\(k\)</span>, <span class="math inline">\(a\)</span>, and <span class="math inline">\(b\)</span> we have the following.</p>
+<ol type="1">
+<li><span class="math inline">\(\uPair(f,g)(\lft(a)) = \lft(f(a))\)</span>.</li>
+<li><span class="math inline">\(\uPair(f,g)(\rgt(b)) = \rgt(g(b))\)</span>.</li>
+<li><span class="math inline">\(\uPair(f,g) \circ \uPair(h,k) = \uPair(f \circ h, g \circ k)\)</span>.</li>
+</ol>
+</div>
+<div class="proof">
+<p>
+<ol type="1">
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uPair(f,g)(\lft(a)) \\
+ &amp; = &amp; \either(\lft \circ f, \rgt \circ g)(\lft(a)) \\
+ &amp; = &amp; (\lft \circ f)(a) \\
+ &amp; = &amp; \lft(f(a))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uPair(f,g)(\rgt(b)) \\
+ &amp; = &amp; \either(\lft \circ f, \rgt \circ g)(\rgt(b)) \\
+ &amp; = &amp; (\rgt \circ g)(b) \\
+ &amp; = &amp; \rgt(g(b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We consider two possibilities: note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uPair(f,g) \circ \uPair(h,k))(\lft(a)) \\
+ &amp; = &amp; \uPair(f,g)(\uPair(h,k)(\lft(a))) \\
+ &amp; = &amp; \uPair(f,g)(\lft(h(a))) \\
+ &amp; = &amp; \lft(f(h(a))) \\
+ &amp; = &amp; \uPair(f \circ h, g \circ k)(\lft(a))
+\end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uPair(f,g) \circ \uPair(h,k))(\rgt(b)) \\
+ &amp; = &amp; \uPair(f,g)(\uPair(h,k)(\rgt(b))) \\
+ &amp; = &amp; \uPair(f,g)(\rgt(h(b))) \\
+ &amp; = &amp; \rgt(g(k(b))) \\
+ &amp; = &amp; \uPair(f \circ h, g \circ k)(\rgt(b))
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_upair_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_upair_lft _ y <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;upair(f,g)(lft(a)) == lft(f(a))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \f g a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    (upair f g ((lft a) <span class="ot">`withTypeOf`</span> (rgt y)))</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    ((lft (f a)) <span class="ot">`withTypeOf`</span> (rgt y))</a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb7-10" data-line-number="10"><span class="ot">_test_upair_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">_test_upair_rgt x _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13">  testName <span class="st">&quot;upair(f,g)(rgt(b)) == rgt(g(b))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">  \f g b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">    (upair f g ((rgt b) <span class="ot">`withTypeOf`</span> (lft x)))</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">    ((rgt (g b)) <span class="ot">`withTypeOf`</span> (lft x))</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb7-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb7-19" data-line-number="19"><span class="ot">_test_upair_upair ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb7-20" data-line-number="20">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b</a>
+<a class="sourceLine" id="cb7-21" data-line-number="21">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb7-22" data-line-number="22">      <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-23" data-line-number="23">_test_upair_upair _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-24" data-line-number="24">  testName <span class="st">&quot;upair(f,g) . upair(h,k) == upair(f . h, g . k)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-25" data-line-number="25">  \f g h k x <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb7-26" data-line-number="26">    eq</a>
+<a class="sourceLine" id="cb7-27" data-line-number="27">      (upair f g (upair h k x))</a>
+<a class="sourceLine" id="cb7-28" data-line-number="28">      (upair (f <span class="fu">.</span> h) (g <span class="fu">.</span> k) x)</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>Finally, note that although as sets <span class="math inline">\(A + (B + C)\)</span> and <span class="math inline">\((A + B) + C\)</span> cannot possibly be equal to each other in general, they are naturally isomorphic via <span class="math inline">\(\uAssocL\)</span> and <span class="math inline">\(\uAssocR\)</span>.</p>
+<div class="result">
+<div class="defn">
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. We define <span class="math inline">\(\uAssocL : A + (B + C) \rightarrow (A + B) + C\)</span> by <span class="math display">\[\uAssocL = \either(\lft \circ \lft, \either(\lft \circ \rgt, \rgt))\]</span> and define <span class="math inline">\(\uAssocR : (A + B) + C \rightarrow A + (B + C)\)</span> by <span class="math display">\[\uAssocR = \either(\either(\lft,\rgt \circ \lft),\rgt \circ \rgt).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">uassocL ::</span> <span class="dt">Either</span> a (<span class="dt">Either</span> b c) <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">Either</span> a b) c</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">uassocL <span class="fu">=</span> either (lft <span class="fu">.</span> lft) (either (lft <span class="fu">.</span> rgt) rgt)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">uassocR ::</span> <span class="dt">Either</span> (<span class="dt">Either</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Either</span> a (<span class="dt">Either</span> b c)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">uassocR <span class="fu">=</span> either (either lft (rgt <span class="fu">.</span> lft)) (rgt <span class="fu">.</span> rgt)</a></code></pre></div>
+</div>
+</div>
+<p>Now <span class="math inline">\(\uAssocL\)</span> and <span class="math inline">\(\uAssocR\)</span> have some nice properties.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>The following hold whenever everything has the appropriate type.</p>
+<ol type="1">
+<li><span class="math inline">\(\uAssocL(\lft(a)) = \lft(\lft(a))\)</span>.</li>
+<li><span class="math inline">\(\uAssocL(\rgt(\lft(b))) = \lft(\rgt(b))\)</span>.</li>
+<li><span class="math inline">\(\uAssocL(\rgt(\rgt(c))) = \rgt(c)\)</span>.</li>
+<li><span class="math inline">\(\uAssocR(\lft(\lft(a))) = \lft(a)\)</span>.</li>
+<li><span class="math inline">\(\uAssocR(\lft(\rgt(b))) = \rgt(\lft(b))\)</span>.</li>
+<li><span class="math inline">\(\uAssocR(\rgt(c)) = \rgt(\rgt(c))\)</span>.</li>
+<li><span class="math inline">\(\uAssocR \circ \uAssocL = \id_{A + (B + C)}\)</span>.</li>
+<li><span class="math inline">\(\uAssocL \circ \uAssocR = \id_{(A + B) + C}\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocL(\lft(a)) \\
+ &amp; = &amp; \either(\lft \circ \lft, \either(\lft \circ \rgt, \rgt))(\lft(a)) \\
+ &amp; = &amp; (\lft \circ \lft)(a) \\
+ &amp; = &amp; \lft(\lft(a))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocL(\rgt(\lft(b))) \\
+ &amp; = &amp; \either(\lft \circ \lft, \either(\lft \circ \rgt, \rgt))(\rgt(\lft(b))) \\
+ &amp; = &amp; \either(\lft \circ \rgt, \rgt)(\lft(b)) \\
+ &amp; = &amp; (\lft \circ \rgt)(b) \\
+ &amp; = &amp; \lft(\rgt(b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocL(\rgt(\rgt(c))) \\
+ &amp; = &amp; \either(\lft \circ \lft, \either(\lft \circ \rgt, \rgt))(\rgt(\rgt(c))) \\
+ &amp; = &amp; \either(\lft \circ \rgt, \rgt)(\rgt(c)) \\
+ &amp; = &amp; \rgt(c)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocR(\lft(\lft(a))) \\
+ &amp; = &amp; \either(\either(\lft,\rgt \circ \lft),\rgt \circ \rgt)(\lft(\lft(a))) \\
+ &amp; = &amp; \either(\lft,\rgt \circ \lft)(\lft(a)) \\
+ &amp; = &amp; \lft(a)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocR(\lft(\rgt(b))) \\
+ &amp; = &amp; \either(\either(\lft,\rgt \circ \lft),\rgt \circ \rgt)(\lft(\rgt(b))) \\
+ &amp; = &amp; \either(\lft,\rgt \circ \lft)(\rgt(b)) \\
+ &amp; = &amp; (\rgt \circ \lft)(b) \\
+ &amp; = &amp; \rgt(\lft(b))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \uAssocR(\rgt(c)) \\
+ &amp; = &amp; \either(\either(\lft,\rgt \circ \lft),\rgt \circ \rgt)(\rgt(c)) \\
+ &amp; = &amp; (\rgt \circ \rgt)(c) \\
+ &amp; = &amp; \rgt(\rgt(c))
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>If <span class="math inline">\(x \in A + (B + C)\)</span>, we have three possibilities. If <span class="math inline">\(x = \lft(a)\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocR \circ \uAssocL)(x) \\
+ &amp; = &amp; \uAssocR(\uAssocL(\lft(a))) \\
+ &amp; = &amp; \uAssocR(\lft(\lft(a))) \\
+ &amp; = &amp; \lft(a) \\
+ &amp; = &amp; x;
+\end{eqnarray*}\]</span> if <span class="math inline">\(x = \rgt(\lft(b))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocR \circ \uAssocL)(x) \\
+ &amp; = &amp; \uAssocR(\uAssocL(\rgt(\lft(b)))) \\
+ &amp; = &amp; \uAssocR(\lft(\rgt(b))) \\
+ &amp; = &amp; \rgt(\lft(b)) \\
+ &amp; = &amp; x;
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(\rgt(c))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocR \circ \uAssocL)(x) \\
+ &amp; = &amp; \uAssocR(\uAssocL(\rgt(\rgt(c)))) \\
+ &amp; = &amp; \uAssocR(\rgt(c)) \\
+ &amp; = &amp; \rgt(\rgt(c)) \\
+ &amp; = &amp; x,
+\end{eqnarray*}\]</span> as needed.</li>
+<li>If <span class="math inline">\(x \in (A + B) + C\)</span>, we have three possibilities. If <span class="math inline">\(x = \lft(\lft(a))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocL \circ \uAssocR)(x) \\
+ &amp; = &amp; \uAssocL(\uAssocR(\lft(\lft(a)))) \\
+ &amp; = &amp; \uAssocL(\lft(a)) \\
+ &amp; = &amp; \lft(\lft(a)) \\
+ &amp; = &amp; x;
+\end{eqnarray*}\]</span> if <span class="math inline">\(x = \lft(\rgt(b))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocL \circ \uAssocR)(x) \\
+ &amp; = &amp; \uAssocL(\uAssocR(\lft(\rgt(b)))) \\
+ &amp; = &amp; \uAssocL(\rgt(\lft(b))) \\
+ &amp; = &amp; \lft(\rgt(b)) \\
+ &amp; = &amp; x;
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(c)\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; (\uAssocL \circ \uAssocR)(x) \\
+ &amp; = &amp; \uAssocL(\uAssocR(\rgt(c))) \\
+ &amp; = &amp; \uAssocL(\rgt(\rgt(c))) \\
+ &amp; = &amp; \rgt(c) \\
+ &amp; = &amp; x,
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_uassocL_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_uassocL_lft _ y z <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;uassocL(lft(a)) == lft(lft(a))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \a <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="kw">let</span> w <span class="fu">=</span> (lft y) <span class="ot">`withTypeOf`</span> (rgt z)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">in</span> eq</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">      (uassocL ((lft a) <span class="ot">`withTypeOf`</span> (rgt w)))</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">      (lft (lft a))</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"><span class="ot">_test_uassocL_rgt_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">_test_uassocL_rgt_lft x _ z <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">  testName <span class="st">&quot;uassocL(rgt(lft(b))) == lft(rgt(b))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">  \b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">    (uassocL </a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">      ((rgt ((lft b) <span class="ot">`withTypeOf`</span> (rgt z)) <span class="ot">`withTypeOf`</span> (lft x))))</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">    (lft (rgt b))</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb9-22" data-line-number="22"><span class="ot">_test_uassocL_rgt_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-24" data-line-number="24">_test_uassocL_rgt_rgt x y _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-25" data-line-number="25">  testName <span class="st">&quot;uassocL(rgt(rgt(c))) == rgt(c)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-26" data-line-number="26">  \c <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-27" data-line-number="27">    (uassocL</a>
+<a class="sourceLine" id="cb9-28" data-line-number="28">      ((rgt ((rgt c) <span class="ot">`withTypeOf`</span> (lft y)) <span class="ot">`withTypeOf`</span> (lft x))))</a>
+<a class="sourceLine" id="cb9-29" data-line-number="29">    (rgt c)</a>
+<a class="sourceLine" id="cb9-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb9-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb9-32" data-line-number="32"><span class="ot">_test_uassocR_lft_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-33" data-line-number="33">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-34" data-line-number="34">_test_uassocR_lft_lft _ y z <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-35" data-line-number="35">  testName <span class="st">&quot;uassocR(lft(lft(a))) == lft(a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-36" data-line-number="36">  \a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-37" data-line-number="37">    (uassocR</a>
+<a class="sourceLine" id="cb9-38" data-line-number="38">      ((lft ((lft a) <span class="ot">`withTypeOf`</span> (rgt y)) <span class="ot">`withTypeOf`</span> (rgt z))))</a>
+<a class="sourceLine" id="cb9-39" data-line-number="39">    (lft a)</a>
+<a class="sourceLine" id="cb9-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb9-41" data-line-number="41"></a>
+<a class="sourceLine" id="cb9-42" data-line-number="42"><span class="ot">_test_uassocR_lft_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-43" data-line-number="43">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-44" data-line-number="44">_test_uassocR_lft_rgt x _ z <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-45" data-line-number="45">  testName <span class="st">&quot;uassocR(lft(rgt(b))) == rgt(lft(b))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-46" data-line-number="46">  \b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-47" data-line-number="47">    (uassocR</a>
+<a class="sourceLine" id="cb9-48" data-line-number="48">      ((lft ((rgt b) <span class="ot">`withTypeOf`</span> (lft x)) <span class="ot">`withTypeOf`</span> (rgt z))))</a>
+<a class="sourceLine" id="cb9-49" data-line-number="49">    (rgt (lft b))</a>
+<a class="sourceLine" id="cb9-50" data-line-number="50"></a>
+<a class="sourceLine" id="cb9-51" data-line-number="51"></a>
+<a class="sourceLine" id="cb9-52" data-line-number="52"><span class="ot">_test_uassocR_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-53" data-line-number="53">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-54" data-line-number="54">_test_uassocR_rgt x y _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-55" data-line-number="55">  testName <span class="st">&quot;uassocR(rgt(c)) == rgt(rgt(c))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-56" data-line-number="56">  \c <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb9-57" data-line-number="57">    <span class="kw">let</span> w <span class="fu">=</span> (lft x) <span class="ot">`withTypeOf`</span> (rgt y)</a>
+<a class="sourceLine" id="cb9-58" data-line-number="58">    <span class="kw">in</span> eq</a>
+<a class="sourceLine" id="cb9-59" data-line-number="59">      (uassocR ((rgt c) <span class="ot">`withTypeOf`</span> (lft w)))</a>
+<a class="sourceLine" id="cb9-60" data-line-number="60">      (rgt (rgt c))</a>
+<a class="sourceLine" id="cb9-61" data-line-number="61"></a>
+<a class="sourceLine" id="cb9-62" data-line-number="62"></a>
+<a class="sourceLine" id="cb9-63" data-line-number="63"><span class="ot">_test_uassocR_uassocL ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-64" data-line-number="64">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a (<span class="dt">Either</span> b c) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-65" data-line-number="65">_test_uassocR_uassocL _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-66" data-line-number="66">  testName <span class="st">&quot;uassocR . uassocL == id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-67" data-line-number="67">  \x <span class="ot">-&gt;</span> eq (uassocR (uassocL x)) x</a>
+<a class="sourceLine" id="cb9-68" data-line-number="68"></a>
+<a class="sourceLine" id="cb9-69" data-line-number="69"></a>
+<a class="sourceLine" id="cb9-70" data-line-number="70"><span class="ot">_test_uassocL_uassocR ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-71" data-line-number="71">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> (<span class="dt">Either</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-72" data-line-number="72">_test_uassocL_uassocR _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-73" data-line-number="73">  testName <span class="st">&quot;uassocL . uassocR == id&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-74" data-line-number="74">  \x <span class="ot">-&gt;</span> eq (uassocL (uassocR x)) x</a></code></pre></div>
+</p>
+</div>
+</div>
+<p>We also define some helper functions which detect whether an element of <span class="math inline">\(A + B\)</span> is a <span class="math inline">\(\lft\)</span> or a <span class="math inline">\(\rgt\)</span>.</p>
+<div class="result">
+<div class="defn">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\isLft : A + B \rightarrow \bool\)</span> by <span class="math display">\[\isLft = \either(\const(\btrue),\const(\bfalse))\]</span> and <span class="math inline">\(\isRgt : A + B \rightarrow \bool\)</span> by <span class="math display">\[\isRgt = \either(\const(\bfalse),\const(\btrue)).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">isLft ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">isLft <span class="fu">=</span> either (const <span class="dt">True</span>) (const <span class="dt">False</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">isRgt ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">isRgt <span class="fu">=</span> either (const <span class="dt">False</span>) (const <span class="dt">True</span>)</a></code></pre></div>
+</div>
+</div>
+<p>Now <span class="math inline">\(\isLft\)</span> and <span class="math inline">\(\isRgt\)</span> have some nice properties.</p>
+<div class="result">
+<div class="thm">
+<p>
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then we have the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\isLft(\lft(a)) = \btrue\)</span>.</li>
+<li><span class="math inline">\(\isLft(\rgt(b)) = \bfalse\)</span>.</li>
+<li><span class="math inline">\(\isRgt(\lft(a)) = \bfalse\)</span>.</li>
+<li><span class="math inline">\(\isRgt(\rgt(b)) = \btrue\)</span>.</li>
+</ol>
+</p>
+</div>
+<div class="proof">
+<p>
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isLft(\lft(a)) \\
+ &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\lft(a)) \\
+ &amp; = &amp; \const(\btrue)(a) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isLft(\rgt(b)) \\
+ &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\rgt(b)) \\
+ &amp; = &amp; \const(\bfalse)(b) \\
+ &amp; = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isRgt(\lft(a)) \\
+ &amp; = &amp; \either(\const(\bfalse),\const(\btrue))(\lft(a)) \\
+ &amp; = &amp; \const(\bfalse)(a) \\
+ &amp; = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isRgt(\rgt(b)) \\
+ &amp; = &amp; \either(\const(\bfalse),\const(\btrue))(\rgt(b)) \\
+ &amp; = &amp; \const(\btrue)(b) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</p>
+</div>
+<div class="test">
+<p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_isLft_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_isLft_lft _ y <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;isLft(lft(a)) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (isLft ((lft a) <span class="ot">`withTypeOf`</span> (rgt y))) <span class="dt">True</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="ot">_test_isLft_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">_test_isLft_rgt x _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">  testName <span class="st">&quot;isLft(rgt(b)) == false&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  \b <span class="ot">-&gt;</span> eq (isLft ((rgt b) <span class="ot">`withTypeOf`</span> (lft x))) <span class="dt">False</span></a>
+<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb11-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb11-15" data-line-number="15"><span class="ot">_test_isRgt_lft ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">_test_isRgt_lft _ y <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  testName <span class="st">&quot;isRgt(lft(a)) == false&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  \a <span class="ot">-&gt;</span> eq (isRgt ((lft a) <span class="ot">`withTypeOf`</span> (rgt y))) <span class="dt">False</span></a>
+<a class="sourceLine" id="cb11-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb11-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb11-22" data-line-number="22"><span class="ot">_test_isRgt_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">_test_isRgt_rgt x _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-25" data-line-number="25">  testName <span class="st">&quot;isRgt(rgt(b)) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">  \b <span class="ot">-&gt;</span> eq (isRgt ((rgt b) <span class="ot">`withTypeOf`</span> (lft x))) <span class="dt">True</span></a></code></pre></div>
+</p>
+</div>
+</div>
+<h2 id="testing">Testing</h2>
+<p>The suite:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">_test_disjoint_union</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">  ::</span> ( <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Show</span> c</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">     , <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">     , <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">Arbitrary</span> c</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">     , <span class="dt">CoArbitrary</span> a, <span class="dt">CoArbitrary</span> b )</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">_test_disjoint_union a b c size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">  testLabel <span class="st">&quot;Disjoint Union&quot;</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb12-14" data-line-number="14">      }</a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb12-16" data-line-number="16">  runTest args (_test_either_lft_rgt a b)</a>
+<a class="sourceLine" id="cb12-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">  runTest args (_test_uswap_lft a b)</a>
+<a class="sourceLine" id="cb12-19" data-line-number="19">  runTest args (_test_uswap_rgt a b)</a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">  runTest args (_test_uswap_uswap a b)</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb12-22" data-line-number="22">  runTest args (_test_upair_lft a b)</a>
+<a class="sourceLine" id="cb12-23" data-line-number="23">  runTest args (_test_upair_rgt a b)</a>
+<a class="sourceLine" id="cb12-24" data-line-number="24">  runTest args (_test_upair_upair a b)</a>
+<a class="sourceLine" id="cb12-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb12-26" data-line-number="26">  runTest args (_test_uassocL_lft a b c)</a>
+<a class="sourceLine" id="cb12-27" data-line-number="27">  runTest args (_test_uassocL_rgt_lft a b c)</a>
+<a class="sourceLine" id="cb12-28" data-line-number="28">  runTest args (_test_uassocL_rgt_rgt a b c)</a>
+<a class="sourceLine" id="cb12-29" data-line-number="29">  runTest args (_test_uassocR_lft_lft a b c)</a>
+<a class="sourceLine" id="cb12-30" data-line-number="30">  runTest args (_test_uassocR_lft_rgt a b c)</a>
+<a class="sourceLine" id="cb12-31" data-line-number="31">  runTest args (_test_uassocR_rgt a b c)</a>
+<a class="sourceLine" id="cb12-32" data-line-number="32">  runTest args (_test_uassocR_uassocL a b c)</a>
+<a class="sourceLine" id="cb12-33" data-line-number="33">  runTest args (_test_uassocL_uassocR a b c)</a>
+<a class="sourceLine" id="cb12-34" data-line-number="34"></a>
+<a class="sourceLine" id="cb12-35" data-line-number="35">  runTest args (_test_isLft_lft a b)</a>
+<a class="sourceLine" id="cb12-36" data-line-number="36">  runTest args (_test_isLft_rgt a b)</a>
+<a class="sourceLine" id="cb12-37" data-line-number="37">  runTest args (_test_isRgt_lft a b)</a>
+<a class="sourceLine" id="cb12-38" data-line-number="38">  runTest args (_test_isRgt_rgt a b)</a></code></pre></div>
+<p>And <code>main</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_disjoint_union ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">main_disjoint_union <span class="fu">=</span> _test_disjoint_union <span class="dt">True</span> <span class="dt">True</span> <span class="dt">True</span> <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+
+
+
+<!-- END BODY -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

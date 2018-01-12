@@ -76,41 +76,41 @@
 </ul>
 <h2 id="aside-mortons-z-order">Aside: Morton’s Z-order</h2>
 <p>Morton’s Z order maps a natural number <span class="math inline">\(k\)</span> to a pair of natural numbers <span class="math inline">\((u,v)\)</span> using the base 4 expansion of <span class="math inline">\(k\)</span> and the base 2 expansions of <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>. (Naturally generalizes to higher dimensional arrays.)</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- Base b digits of a positive integer</span>
-<span class="co">-- (least significant first)</span>
-<span class="ot">base ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]
-base b k
-  <span class="fu">|</span> b <span class="fu">&lt;=</span> <span class="dv">1</span> <span class="fu">=</span> []
-  <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="fu">=</span> []
-  <span class="fu">|</span> otherwise <span class="fu">=</span> (rem k b) <span class="fu">:</span> base b (quot k b)
-
-
-<span class="ot">mapIndexToEntry ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)
-mapIndexToEntry k <span class="fu">=</span> foldr (<span class="fu">.+</span>) (<span class="dv">0</span>,<span class="dv">0</span>) <span class="fu">$</span> map eps <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> base <span class="dv">4</span> k
-  <span class="kw">where</span>
-    <span class="co">-- Pointwise sum</span>
-    (a1,a2) <span class="fu">.+</span> (b1,b2) <span class="fu">=</span> (a1<span class="fu">+</span>b1, a2<span class="fu">+</span>b2)
-
-    <span class="co">-- Offset vector</span>
-    eps (t,<span class="dv">0</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">0</span>)
-    eps (t,<span class="dv">1</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">0</span>)
-    eps (t,<span class="dv">2</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">2</span><span class="fu">^</span>t)
-    eps (t,<span class="dv">3</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">2</span><span class="fu">^</span>t)
-
-
-<span class="ot">mapEntryToIndex ::</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>) <span class="ot">-&gt;</span> <span class="dt">Integer</span>
-mapEntryToIndex (u,v) <span class="fu">=</span> sum <span class="fu">$</span> map del <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> pad (base <span class="dv">2</span> u) (base <span class="dv">2</span> v)
-  <span class="kw">where</span>
-    <span class="co">-- Like zip, but shorter list is padded with zero.</span>
-    pad []     ys     <span class="fu">=</span> map (\y <span class="ot">-&gt;</span> (<span class="dv">0</span>,y)) ys
-    pad xs     []     <span class="fu">=</span> map (\x <span class="ot">-&gt;</span> (x,<span class="dv">0</span>)) xs
-    pad (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> (x,y) <span class="fu">:</span> pad xs ys
-
-    <span class="co">-- Offset index</span>
-    del (t,(<span class="dv">0</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">0</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
-    del (t,(<span class="dv">1</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
-    del (t,(<span class="dv">0</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t
-    del (t,(<span class="dv">1</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">3</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">-- Base b digits of a positive integer</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co">-- (least significant first)</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="ot">base ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [<span class="dt">Integer</span>]</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">base b k</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  <span class="fu">|</span> b <span class="fu">&lt;=</span> <span class="dv">1</span> <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6">  <span class="fu">|</span> k <span class="fu">&lt;=</span> <span class="dv">0</span> <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">  <span class="fu">|</span> otherwise <span class="fu">=</span> (rem k b) <span class="fu">:</span> base b (quot k b)</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="ot">mapIndexToEntry ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11">mapIndexToEntry k <span class="fu">=</span> foldr (<span class="fu">.+</span>) (<span class="dv">0</span>,<span class="dv">0</span>) <span class="fu">$</span> map eps <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> base <span class="dv">4</span> k</a>
+<a class="sourceLine" id="cb1-12" data-line-number="12">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13">    <span class="co">-- Pointwise sum</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14">    (a1,a2) <span class="fu">.+</span> (b1,b2) <span class="fu">=</span> (a1<span class="fu">+</span>b1, a2<span class="fu">+</span>b2)</a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16">    <span class="co">-- Offset vector</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17">    eps (t,<span class="dv">0</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb1-18" data-line-number="18">    eps (t,<span class="dv">1</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb1-19" data-line-number="19">    eps (t,<span class="dv">2</span>) <span class="fu">=</span> (<span class="dv">0</span>,   <span class="dv">2</span><span class="fu">^</span>t)</a>
+<a class="sourceLine" id="cb1-20" data-line-number="20">    eps (t,<span class="dv">3</span>) <span class="fu">=</span> (<span class="dv">2</span><span class="fu">^</span>t, <span class="dv">2</span><span class="fu">^</span>t)</a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="ot">mapEntryToIndex ::</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>) <span class="ot">-&gt;</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24">mapEntryToIndex (u,v) <span class="fu">=</span> sum <span class="fu">$</span> map del <span class="fu">$</span> zip [<span class="dv">0</span><span class="fu">..</span>] <span class="fu">$</span> pad (base <span class="dv">2</span> u) (base <span class="dv">2</span> v)</a>
+<a class="sourceLine" id="cb1-25" data-line-number="25">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26">    <span class="co">-- Like zip, but shorter list is padded with zero.</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27">    pad []     ys     <span class="fu">=</span> map (\y <span class="ot">-&gt;</span> (<span class="dv">0</span>,y)) ys</a>
+<a class="sourceLine" id="cb1-28" data-line-number="28">    pad xs     []     <span class="fu">=</span> map (\x <span class="ot">-&gt;</span> (x,<span class="dv">0</span>)) xs</a>
+<a class="sourceLine" id="cb1-29" data-line-number="29">    pad (x<span class="fu">:</span>xs) (y<span class="fu">:</span>ys) <span class="fu">=</span> (x,y) <span class="fu">:</span> pad xs ys</a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31">    <span class="co">-- Offset index</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32">    del (t,(<span class="dv">0</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">0</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</a>
+<a class="sourceLine" id="cb1-33" data-line-number="33">    del (t,(<span class="dv">1</span>,<span class="dv">0</span>)) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</a>
+<a class="sourceLine" id="cb1-34" data-line-number="34">    del (t,(<span class="dv">0</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</a>
+<a class="sourceLine" id="cb1-35" data-line-number="35">    del (t,(<span class="dv">1</span>,<span class="dv">1</span>)) <span class="fu">=</span> <span class="dv">3</span> <span class="fu">*</span> <span class="dv">4</span><span class="fu">^</span>t</a></code></pre></div>
 <!-- END BODY -->
 </div>
 

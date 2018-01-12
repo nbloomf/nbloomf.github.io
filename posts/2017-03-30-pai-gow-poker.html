@@ -50,7 +50,7 @@ Posted on 2017-03-30 by nbloomf
 <p>At any rate, here is my best understanding as a non-gambler of the rules for basic pai gow poker.</p>
 <ul>
 <li><strong>The Players</strong>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>The game requires seven players, including the Dealer, seated at table positions numbered 1 to 7. One of the players (possibly the Dealer) is the Banker.</li>
 <li>If there are not seven people present to play, the missing players’ hands are dealt anyway. These unmanned hands are called <em>dragon hands</em>.</li>
 <li>The role of Banker alternates between the dealer and the other players in order.</li>
@@ -58,7 +58,7 @@ Posted on 2017-03-30 by nbloomf
 <li>A player may only act as the Banker if in the previous round they were a non-Banker and they have enough chips to pay out all bets.</li>
 </ol></li>
 <li><strong>The Game</strong>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>All players place their bets on the table before the cards are dealt.</li>
 <li>The dealer shuffles a standard deck with one joker and deals seven cards to each position, whether manned or not. The remaining 4 cards are discarded without being turned over.</li>
 <li>All players divide their cards into two hands: one of five cards, and one of two cards.</li>
@@ -67,7 +67,7 @@ Posted on 2017-03-30 by nbloomf
 <li>The Dealer reconciles all bets against the Banker. The Dealer (i.e. House) takes a commission called the <em>rake</em> on all winnings at the table, typically 5%.</li>
 </ol></li>
 <li><strong>The Reckoning</strong>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>The joker acts as a <em>bug</em>. That is, it is an ace, unless it can be used to complete a straight or flush, and in that case it is the highest ranked card which completes the hand.</li>
 <li>Five-card hands are ranked using standard poker rules, although some casinos use one exception: the ace-low straight (5432A) ranks below the ace-high straight (AKQJT) and above the king-high straight (KQJT9), rather than as the lowest straight (as in standard rules). I’ll call this special case the <em>ace-low hack</em>.</li>
 <li>Two-card hands are ranked as follows: pairs beat non-pairs, pairs are compared by rank, and non-pairs are compared reverse-lexicographically.</li>
@@ -76,7 +76,7 @@ Posted on 2017-03-30 by nbloomf
 </ol></li>
 </ul>
 <p>Players really only have three choices to make: (1) how much to bet, (2) how to set their cards, and (3) whether or not to bank on their turn. In general there is more than one way to divide a seven-card hand into a five-card and a two-card hand, and due to the win condition it is not obvious to me that one way is strictly better than the others. Obviously the Dealer has the advantage (they always do!) but exactly <em>how much</em> of an advantage? To try to answer this, I’ll start with some simplifying assumptions.</p>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>The real game is played with seven players, but from the perspective of a non-banker this is really a two-player game. I’ll simulate only two players.</li>
 <li>Some casinos tack on extra frilly bits. For instance, under some rules players can bet on the dragon hands, or bet on <em>each other’s</em> hands, or place an “envy” bet that pays in case anyone at the table plays a hand of a given rank. No doubt these change the strategy, but I will ignore this stuff.</li>
 <li>Exactly how is the joker (the bug) interpreted? Every definition I can find says something like this: <strong>the joker is an ace, unless it can be used to complete a straight or flush, in which case it is the highest-ranked card that completes the hand</strong>. A strict reading of this definition would force the player, in some cases, to play a suboptimal hand. For instance, if the player has 5432 and the joker, then playing the bug as a 6 gives the 6-high straight while playing it as an ace gives the ace-low straight. Without the ace-low hack this forces the player into a suboptimal play, and I suspect this is the reason for the ace-low hack in the first place. As another example, suppose the player has 5678 all of one suit, plus the joker. A strict reading of the bug rule here gives an ambiguous outcome. The joker must be a 9, but of what suit? Certainly this hand should be a straight flush, which ranks higher than a straight, but the bug rule is ambiguous. A better interpretation of the bug would be, I think, that <strong>the joker is either an ace or the card which yields the highest ranking straight or flush</strong>. Because hands are linearly ordered modulo suit, this does away with both the suit ambiguity and the ugly ace-low hack. This is the interpretation of the bug I will use.</li>
@@ -84,487 +84,487 @@ Posted on 2017-03-30 by nbloomf
 </ol>
 <p>This is my best understanding after reading the “official” rules from several sources including casinos and gaming commissions. But bear in mind that I have never played this game. :)</p>
 <p>Now for the code. We start with some imports.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">PaiGow</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.List</span>                <span class="kw">as</span> <span class="dt">L</span>
-<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Set</span>                 <span class="kw">as</span> <span class="dt">S</span>
-<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Control.Monad.State.Lazy</span> <span class="kw">as</span> <span class="dt">ST</span>
-<span class="ot">&gt;</span> <span class="kw">import qualified</span> <span class="dt">Data.Maybe</span>               <span class="kw">as</span> <span class="dt">M</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Control.Monad.Trans.Class</span> (lift)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Random</span> (<span class="dt">RVar</span>)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Random.Extras</span> (choice)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.RVar</span> (sampleRVar)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">PaiGow</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.List</span>                <span class="kw">as</span> <span class="dt">L</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Set</span>                 <span class="kw">as</span> <span class="dt">S</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Control.Monad.State.Lazy</span> <span class="kw">as</span> <span class="dt">ST</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Maybe</span>               <span class="kw">as</span> <span class="dt">M</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Control.Monad</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Control.Monad.Trans.Class</span> (lift)</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Data.Random</span> (<span class="dt">RVar</span>)</a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Data.Random.Extras</span> (choice)</a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Data.RVar</span> (sampleRVar)</a></code></pre></div>
 <h2 id="the-deck">The Deck</h2>
 <p>Pai gow poker is played with a standard French deck plus one joker. We’ll model the cards with a few types.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Suit</span>
-<span class="ot">&gt;</span>   <span class="co">-- we impose the usual poker order on suits</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Clubs</span> <span class="fu">|</span> <span class="dt">Diamonds</span> <span class="fu">|</span> <span class="dt">Hearts</span> <span class="fu">|</span> <span class="dt">Spades</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; suits ::</span> [<span class="dt">Suit</span>]
-<span class="ot">&gt;</span> suits <span class="fu">=</span> [<span class="dt">Clubs</span> <span class="fu">..</span>]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="co">-- we also impose the aces-high order on ranks</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">Two</span>   <span class="fu">|</span> <span class="dt">Three</span> <span class="fu">|</span> <span class="dt">Four</span> <span class="fu">|</span> <span class="dt">Five</span> <span class="fu">|</span> <span class="dt">Six</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Seven</span> <span class="fu">|</span> <span class="dt">Eight</span> <span class="fu">|</span> <span class="dt">Nine</span> <span class="fu">|</span> <span class="dt">Ten</span>  <span class="fu">|</span> <span class="dt">Jack</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Queen</span> <span class="fu">|</span> <span class="dt">King</span>  <span class="fu">|</span> <span class="dt">Ace</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; ranks ::</span> [<span class="dt">Rank</span>]
-<span class="ot">&gt;</span> ranks <span class="fu">=</span> [<span class="dt">Two</span> <span class="fu">..</span>]</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Suit</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="co">-- we impose the usual poker order on suits</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="fu">=</span> <span class="dt">Clubs</span> <span class="fu">|</span> <span class="dt">Diamonds</span> <span class="fu">|</span> <span class="dt">Hearts</span> <span class="fu">|</span> <span class="dt">Spades</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="ot">suits ::</span> [<span class="dt">Suit</span>]</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">suits <span class="fu">=</span> [<span class="dt">Clubs</span> <span class="fu">..</span>]</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">data</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">  <span class="co">-- we also impose the aces-high order on ranks</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">  <span class="fu">=</span> <span class="dt">Two</span>   <span class="fu">|</span> <span class="dt">Three</span> <span class="fu">|</span> <span class="dt">Four</span> <span class="fu">|</span> <span class="dt">Five</span> <span class="fu">|</span> <span class="dt">Six</span></a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">  <span class="fu">|</span> <span class="dt">Seven</span> <span class="fu">|</span> <span class="dt">Eight</span> <span class="fu">|</span> <span class="dt">Nine</span> <span class="fu">|</span> <span class="dt">Ten</span>  <span class="fu">|</span> <span class="dt">Jack</span></a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">  <span class="fu">|</span> <span class="dt">Queen</span> <span class="fu">|</span> <span class="dt">King</span>  <span class="fu">|</span> <span class="dt">Ace</span></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Enum</span>)</a>
+<a class="sourceLine" id="cb2-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb2-17" data-line-number="17"><span class="ot">ranks ::</span> [<span class="dt">Rank</span>]</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">ranks <span class="fu">=</span> [<span class="dt">Two</span> <span class="fu">..</span>]</a></code></pre></div>
 <p>It will be convenient to distinguish between the “standard” deck of cards and the “full” deck which also includes the joker. So I’ll use two card types: <code>Carte</code>, the French word for <em>card</em>, will represent the standard cards. <code>Card</code> will represent either a standard card or a joker.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Carte</span> <span class="fu">=</span> <span class="dt">Carte</span>
-<span class="ot">&gt;</span>   {<span class="ot"> rank ::</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   ,<span class="ot"> suit ::</span> <span class="dt">Suit</span>
-<span class="ot">&gt;</span>   } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; standardDeck ::</span> [<span class="dt">Carte</span>]
-<span class="ot">&gt;</span> standardDeck <span class="fu">=</span> [<span class="dt">Carte</span> r s <span class="fu">|</span> r <span class="ot">&lt;-</span> ranks, s <span class="ot">&lt;-</span> suits]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Card</span> <span class="fu">=</span> <span class="dt">Card</span> <span class="dt">Carte</span> <span class="fu">|</span> <span class="dt">Joker</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; fullDeck ::</span> [<span class="dt">Card</span>]
-<span class="ot">&gt;</span> fullDeck <span class="fu">=</span> (map <span class="dt">Card</span> standardDeck) <span class="fu">++</span> [<span class="dt">Joker</span>]</code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Carte</span> <span class="fu">=</span> <span class="dt">Carte</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  {<span class="ot"> rank ::</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  ,<span class="ot"> suit ::</span> <span class="dt">Suit</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="ot">standardDeck ::</span> [<span class="dt">Carte</span>]</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">standardDeck <span class="fu">=</span> [<span class="dt">Carte</span> r s <span class="fu">|</span> r <span class="ot">&lt;-</span> ranks, s <span class="ot">&lt;-</span> suits]</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb3-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb3-10" data-line-number="10"><span class="kw">data</span> <span class="dt">Card</span> <span class="fu">=</span> <span class="dt">Card</span> <span class="dt">Carte</span> <span class="fu">|</span> <span class="dt">Joker</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"><span class="ot">fullDeck ::</span> [<span class="dt">Card</span>]</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">fullDeck <span class="fu">=</span> (map <span class="dt">Card</span> standardDeck) <span class="fu">++</span> [<span class="dt">Joker</span>]</a></code></pre></div>
 <p>Sanity check:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> length fullDeck
-<span class="dv">53</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="fu">$&gt;</span> length fullDeck</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="dv">53</span></a></code></pre></div>
 <p>Note the derived <code>Ord</code> instance for <code>Card</code>; we’ve cooked it up so that cards sort on rank and then suit. This will be handy later.</p>
 <p>We derived <code>Show</code> instances for the <code>Suit</code>, <code>Rank</code>, and <code>Card</code> types to make debugging easier. But it’d also be nice to have a more succinct string representation for cards. We’ll use the <code>Pretty</code> class to represent this.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">class</span> <span class="dt">Pretty</span> t <span class="kw">where</span>
-<span class="ot">&gt;   pretty ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   <span class="co">-- for convenience</span>
-<span class="ot">&gt;   prettyIO ::</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span>   prettyIO <span class="fu">=</span> putStrLn <span class="fu">.</span> pretty
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Maybe</span> t) <span class="kw">where</span>
-<span class="ot">&gt;</span>   pretty <span class="dt">Nothing</span>  <span class="fu">=</span> <span class="st">&quot;*&quot;</span>
-<span class="ot">&gt;</span>   pretty (<span class="dt">Just</span> x) <span class="fu">=</span> pretty x
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> [t] <span class="kw">where</span>
-<span class="ot">&gt;</span>   pretty xs <span class="fu">=</span> concat <span class="fu">$</span> L.intersperse <span class="st">&quot; &quot;</span> <span class="fu">$</span> map pretty xs</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Pretty</span> t <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">  pretty ::</span> t <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="co">-- for convenience</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="ot">  prettyIO ::</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  prettyIO <span class="fu">=</span> putStrLn <span class="fu">.</span> pretty</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb5-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb5-9" data-line-number="9"><span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Maybe</span> t) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">  pretty <span class="dt">Nothing</span>  <span class="fu">=</span> <span class="st">&quot;*&quot;</span></a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">  pretty (<span class="dt">Just</span> x) <span class="fu">=</span> pretty x</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb5-13" data-line-number="13"><span class="kw">instance</span> (<span class="dt">Pretty</span> t) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> [t] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">  pretty xs <span class="fu">=</span> concat <span class="fu">$</span> L.intersperse <span class="st">&quot; &quot;</span> <span class="fu">$</span> map pretty xs</a></code></pre></div>
 <p>And Unicode conveniently has characters for playing cards. Woo!</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Carte</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   pretty (<span class="dt">Carte</span> rank suit) <span class="fu">=</span> <span class="kw">case</span> suit <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Clubs</span>    <span class="ot">-&gt;</span> get <span class="st">&quot;🃒🃓🃔🃕🃖🃗🃘🃙🃚🃛🃝🃞🃑&quot;</span>
-<span class="ot">&gt;</span>     <span class="dt">Diamonds</span> <span class="ot">-&gt;</span> get <span class="st">&quot;🃂🃃🃄🃅🃆🃇🃈🃉🃊🃋🃍🃎🃁&quot;</span>
-<span class="ot">&gt;</span>     <span class="dt">Hearts</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂲🂳🂴🂵🂶🂷🂸🂹🂺🂻🂽🂾🂱&quot;</span>
-<span class="ot">&gt;</span>     <span class="dt">Spades</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂢🂣🂤🂥🂦🂧🂨🂩🂪🂫🂭🂮🂡&quot;</span>
-<span class="ot">&gt;</span>     <span class="kw">where</span>
-<span class="ot">&gt;</span>       get cs <span class="fu">=</span>
-<span class="ot">&gt;</span>         <span class="co">-- pattern match should always succeed</span>
-<span class="ot">&gt;</span>         <span class="kw">let</span> <span class="dt">Just</span> c <span class="fu">=</span> L.lookup rank <span class="fu">$</span> zip ranks cs
-<span class="ot">&gt;</span>         <span class="kw">in</span> [c]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Card</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   pretty (<span class="dt">Card</span> c) <span class="fu">=</span> pretty c
-<span class="ot">&gt;</span>   pretty <span class="dt">Joker</span>    <span class="fu">=</span> <span class="st">&quot;🃏&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Carte</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  pretty (<span class="dt">Carte</span> rank suit) <span class="fu">=</span> <span class="kw">case</span> suit <span class="kw">of</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="dt">Clubs</span>    <span class="ot">-&gt;</span> get <span class="st">&quot;🃒🃓🃔🃕🃖🃗🃘🃙🃚🃛🃝🃞🃑&quot;</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">    <span class="dt">Diamonds</span> <span class="ot">-&gt;</span> get <span class="st">&quot;🃂🃃🃄🃅🃆🃇🃈🃉🃊🃋🃍🃎🃁&quot;</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">    <span class="dt">Hearts</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂲🂳🂴🂵🂶🂷🂸🂹🂺🂻🂽🂾🂱&quot;</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    <span class="dt">Spades</span>   <span class="ot">-&gt;</span> get <span class="st">&quot;🂢🂣🂤🂥🂦🂧🂨🂩🂪🂫🂭🂮🂡&quot;</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">      get cs <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">        <span class="co">-- pattern match should always succeed</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">        <span class="kw">let</span> <span class="dt">Just</span> c <span class="fu">=</span> L.lookup rank <span class="fu">$</span> zip ranks cs</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">        <span class="kw">in</span> [c]</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb6-13" data-line-number="13"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Card</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">  pretty (<span class="dt">Card</span> c) <span class="fu">=</span> pretty c</a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">  pretty <span class="dt">Joker</span>    <span class="fu">=</span> <span class="st">&quot;🃏&quot;</span></a></code></pre></div>
 <p>For example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
-<span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
-<span class="fu">$&gt;</span> pretty <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
-<span class="st">&quot;\127170&quot;</span>
-<span class="fu">$&gt;</span> prettyIO <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span>
-🃂</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="fu">$&gt;</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="fu">$&gt;</span> pretty <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="st">&quot;\127170&quot;</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="fu">$&gt;</span> prettyIO <span class="fu">$</span> <span class="dt">Carte</span> <span class="dt">Two</span> <span class="dt">Diamonds</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">🃂</a></code></pre></div>
 <h2 id="detecting-hands">Detecting Hands</h2>
 <p>We have a type representing the cards. Now let’s think about dividing groups of seven cards into hands.</p>
 <p>First, given a list of five cards, what kind of hand is it?</p>
 <p>With the joker present, there are 10 different kinds of five-card poker hands. I had never thought about this before, but when comparing poker hands we mod out the suits. That is, hands that differ only by suit are equivalent. The bottom line is although there are <span class="math inline">\(\binom{53}{5} = 2869685\)</span> different ways to draw 5 cards from the deck, the number of distinct <em>hands</em> is much smaller.</p>
 <p>Our <code>Hand5</code> type represents the possible five-card hands. Note that this type does not depend on <code>Suit</code> at all!</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- arguments to each constructor must be decreasing</span>
-<span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Hand5</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">HighCard</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">OnePair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">TwoPair</span> <span class="dt">Pair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">ThreeOfAKind</span> <span class="dt">Triplet</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Straight</span> <span class="dt">High</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">Flush</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FullHouse</span> <span class="dt">Triplet</span> <span class="dt">Pair</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FourOfAKind</span> <span class="dt">Quad</span> <span class="dt">Kicker</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">StraightFlush</span> <span class="dt">High</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">FiveOfAKind</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Kicker</span>  <span class="fu">=</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Pair</span>    <span class="fu">=</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Triplet</span> <span class="fu">=</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">High</span>    <span class="fu">=</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Quad</span>    <span class="fu">=</span> <span class="dt">Rank</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">-- arguments to each constructor must be decreasing</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw">data</span> <span class="dt">Hand5</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="fu">=</span> <span class="dt">HighCard</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  <span class="fu">|</span> <span class="dt">OnePair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="fu">|</span> <span class="dt">TwoPair</span> <span class="dt">Pair</span> <span class="dt">Pair</span> <span class="dt">Kicker</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  <span class="fu">|</span> <span class="dt">ThreeOfAKind</span> <span class="dt">Triplet</span> <span class="dt">Kicker</span> <span class="dt">Kicker</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">  <span class="fu">|</span> <span class="dt">Straight</span> <span class="dt">High</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">  <span class="fu">|</span> <span class="dt">Flush</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">  <span class="fu">|</span> <span class="dt">FullHouse</span> <span class="dt">Triplet</span> <span class="dt">Pair</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  <span class="fu">|</span> <span class="dt">FourOfAKind</span> <span class="dt">Quad</span> <span class="dt">Kicker</span></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">  <span class="fu">|</span> <span class="dt">StraightFlush</span> <span class="dt">High</span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">  <span class="fu">|</span> <span class="dt">FiveOfAKind</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15"><span class="kw">type</span> <span class="dt">Kicker</span>  <span class="fu">=</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="kw">type</span> <span class="dt">Pair</span>    <span class="fu">=</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-17" data-line-number="17"><span class="kw">type</span> <span class="dt">Triplet</span> <span class="fu">=</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="kw">type</span> <span class="dt">High</span>    <span class="fu">=</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="kw">type</span> <span class="dt">Quad</span>    <span class="fu">=</span> <span class="dt">Rank</span></a></code></pre></div>
 <p>Also the order on hands is graded lexicographic (!) meaning we can derive our <code>Ord</code> instance. Later on we can compare hands with <code>&lt;</code>. This is what motivated me to tweak the interpretation of the bug – the order on hands becomes much simpler and we don’t need a special case for the ace-low straight.</p>
 <p>Now some helper functions.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- sort items by count, then by rank</span>
-<span class="ot">&gt; tally ::</span> (<span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]
-<span class="ot">&gt;</span> tally <span class="fu">=</span> revlex <span class="fu">.</span> count
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     count ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]
-<span class="ot">&gt;</span>     count [] <span class="fu">=</span> []
-<span class="ot">&gt;</span>     count xs <span class="fu">=</span>
-<span class="ot">&gt;</span>       <span class="kw">let</span>
-<span class="ot">&gt;</span>         x <span class="fu">=</span> head xs
-<span class="ot">&gt;</span>         n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> filter (<span class="fu">==</span>x) xs
-<span class="ot">&gt;</span>       <span class="kw">in</span> (x,n)<span class="fu">:</span>(count <span class="fu">$</span> filter (<span class="fu">/=</span> x) xs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>     revlex <span class="fu">=</span> L.sortBy <span class="fu">$</span> \(a,h) (b,k) <span class="ot">-&gt;</span> <span class="kw">if</span> h <span class="fu">==</span> k
-<span class="ot">&gt;</span>       <span class="kw">then</span> compare b a
-<span class="ot">&gt;</span>       <span class="kw">else</span> compare k h
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- detect if items in a list are sequential</span>
-<span class="ot">&gt; isSequential ::</span> (<span class="dt">Enum</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> isSequential xs <span class="fu">=</span> <span class="kw">case</span> xs <span class="kw">of</span>
-<span class="ot">&gt;</span>   []  <span class="ot">-&gt;</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>   x<span class="fu">:</span>_ <span class="ot">-&gt;</span> and <span class="fu">$</span> zipWith (<span class="fu">==</span>) xs [x <span class="fu">..</span>]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- detect if items in a list are all equal</span>
-<span class="ot">&gt; allEqual ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> allEqual list <span class="fu">=</span> <span class="kw">case</span> list <span class="kw">of</span>
-<span class="ot">&gt;</span>   []   <span class="ot">-&gt;</span> <span class="dt">True</span>
-<span class="ot">&gt;</span>   x<span class="fu">:</span>xs <span class="ot">-&gt;</span> all (<span class="fu">==</span> x) xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- all length k sublists</span>
-<span class="ot">&gt; choose ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]
-<span class="ot">&gt;</span> choose <span class="dv">0</span> _  <span class="fu">=</span> [[]]
-<span class="ot">&gt;</span> choose _ [] <span class="fu">=</span> []
-<span class="ot">&gt;</span> choose k (x<span class="fu">:</span>xs) <span class="fu">=</span> (map (x<span class="fu">:</span>) <span class="fu">$</span> choose (k<span class="fu">-</span><span class="dv">1</span>) xs) <span class="fu">++</span> choose k xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- all length k and n-k cuts</span>
-<span class="ot">&gt; cuts ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [([a],[a])]
-<span class="ot">&gt;</span> cuts k xs <span class="fu">=</span> map (\as <span class="ot">-&gt;</span> (as, xs <span class="dt">L</span><span class="fu">.</span>\\ as)) <span class="fu">$</span> choose k xs
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- while we're at it</span>
-<span class="ot">&gt; isStraightOrFlush ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">Straight</span> _)      <span class="fu">=</span> <span class="dt">True</span>
-<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">Flush</span> _ _ _ _ _) <span class="fu">=</span> <span class="dt">True</span>
-<span class="ot">&gt;</span> isStraightOrFlush (<span class="dt">StraightFlush</span> _) <span class="fu">=</span> <span class="dt">True</span>
-<span class="ot">&gt;</span> isStraightOrFlush _                 <span class="fu">=</span> <span class="dt">False</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">-- sort items by count, then by rank</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="ot">tally ::</span> (<span class="dt">Ord</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">tally <span class="fu">=</span> revlex <span class="fu">.</span> count</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="ot">    count ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [(a, <span class="dt">Integer</span>)]</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    count [] <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    count xs <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">      <span class="kw">let</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">        x <span class="fu">=</span> head xs</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">        n <span class="fu">=</span> sum <span class="fu">$</span> map (const <span class="dv">1</span>) <span class="fu">$</span> filter (<span class="fu">==</span>x) xs</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">      <span class="kw">in</span> (x,n)<span class="fu">:</span>(count <span class="fu">$</span> filter (<span class="fu">/=</span> x) xs)</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">    revlex <span class="fu">=</span> L.sortBy <span class="fu">$</span> \(a,h) (b,k) <span class="ot">-&gt;</span> <span class="kw">if</span> h <span class="fu">==</span> k</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">      <span class="kw">then</span> compare b a</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">      <span class="kw">else</span> compare k h</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb9-18" data-line-number="18"><span class="co">-- detect if items in a list are sequential</span></a>
+<a class="sourceLine" id="cb9-19" data-line-number="19"><span class="ot">isSequential ::</span> (<span class="dt">Enum</span> a, <span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">isSequential xs <span class="fu">=</span> <span class="kw">case</span> xs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">  []  <span class="ot">-&gt;</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">  x<span class="fu">:</span>_ <span class="ot">-&gt;</span> and <span class="fu">$</span> zipWith (<span class="fu">==</span>) xs [x <span class="fu">..</span>]</a>
+<a class="sourceLine" id="cb9-23" data-line-number="23"></a>
+<a class="sourceLine" id="cb9-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb9-25" data-line-number="25"><span class="co">-- detect if items in a list are all equal</span></a>
+<a class="sourceLine" id="cb9-26" data-line-number="26"><span class="ot">allEqual ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb9-27" data-line-number="27">allEqual list <span class="fu">=</span> <span class="kw">case</span> list <span class="kw">of</span></a>
+<a class="sourceLine" id="cb9-28" data-line-number="28">  []   <span class="ot">-&gt;</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-29" data-line-number="29">  x<span class="fu">:</span>xs <span class="ot">-&gt;</span> all (<span class="fu">==</span> x) xs</a>
+<a class="sourceLine" id="cb9-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb9-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb9-32" data-line-number="32"><span class="co">-- all length k sublists</span></a>
+<a class="sourceLine" id="cb9-33" data-line-number="33"><span class="ot">choose ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]</a>
+<a class="sourceLine" id="cb9-34" data-line-number="34">choose <span class="dv">0</span> _  <span class="fu">=</span> [[]]</a>
+<a class="sourceLine" id="cb9-35" data-line-number="35">choose _ [] <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb9-36" data-line-number="36">choose k (x<span class="fu">:</span>xs) <span class="fu">=</span> (map (x<span class="fu">:</span>) <span class="fu">$</span> choose (k<span class="fu">-</span><span class="dv">1</span>) xs) <span class="fu">++</span> choose k xs</a>
+<a class="sourceLine" id="cb9-37" data-line-number="37"></a>
+<a class="sourceLine" id="cb9-38" data-line-number="38"></a>
+<a class="sourceLine" id="cb9-39" data-line-number="39"><span class="co">-- all length k and n-k cuts</span></a>
+<a class="sourceLine" id="cb9-40" data-line-number="40"><span class="ot">cuts ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [([a],[a])]</a>
+<a class="sourceLine" id="cb9-41" data-line-number="41">cuts k xs <span class="fu">=</span> map (\as <span class="ot">-&gt;</span> (as, xs <span class="dt">L</span><span class="fu">.</span>\\ as)) <span class="fu">$</span> choose k xs</a>
+<a class="sourceLine" id="cb9-42" data-line-number="42"></a>
+<a class="sourceLine" id="cb9-43" data-line-number="43"></a>
+<a class="sourceLine" id="cb9-44" data-line-number="44"><span class="co">-- while we're at it</span></a>
+<a class="sourceLine" id="cb9-45" data-line-number="45"><span class="ot">isStraightOrFlush ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb9-46" data-line-number="46">isStraightOrFlush (<span class="dt">Straight</span> _)      <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-47" data-line-number="47">isStraightOrFlush (<span class="dt">Flush</span> _ _ _ _ _) <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-48" data-line-number="48">isStraightOrFlush (<span class="dt">StraightFlush</span> _) <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-49" data-line-number="49">isStraightOrFlush _                 <span class="fu">=</span> <span class="dt">False</span></a></code></pre></div>
 <p>To detect a five-card hand we start by tallying the cards by rank. If there are at least two cards of equal rank we have an <span class="math inline">\(N\)</span>-of-a-kind, a full house, or two pairs. If all the cards have different ranks we have to check whether or not they all have the same suit and whether or not their ranks are sequential (with a special case for the ace-low straight).</p>
 <p>By the way, note how the <a href="https://en.wikipedia.org/wiki/Partition_%28number_theory%29">partitions</a> of 5 show up in the cases. Neat! Poker hands make way more sense to me now. :)</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand5</span>
-<span class="ot">&gt;</span> toHand5 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span>
-<span class="ot">&gt;</span>   [(a,<span class="dv">5</span>)] <span class="ot">-&gt;</span>              
-<span class="ot">&gt;</span>     <span class="dt">FiveOfAKind</span> a
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">4</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">FourOfAKind</span> a b
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">3</span>),(b,<span class="dv">2</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">FullHouse</span> a b
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">3</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">ThreeOfAKind</span> a b c
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>),(b,<span class="dv">2</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">TwoPair</span> a b c
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">OnePair</span> a b c d
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>),(e,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="kw">if</span> allEqual <span class="fu">$</span> map suit cs
-<span class="ot">&gt;</span>       <span class="kw">then</span> <span class="kw">if</span> isSequential [e,d,c,b,a]
-<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">StraightFlush</span> a
-<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]
-<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">StraightFlush</span> <span class="dt">Five</span> <span class="co">-- the steel wheel</span>
-<span class="ot">&gt;</span>           <span class="kw">else</span> <span class="dt">Flush</span> a b c d e
-<span class="ot">&gt;</span>       <span class="kw">else</span> <span class="kw">if</span> isSequential [e,d,c,b,a]
-<span class="ot">&gt;</span>         <span class="kw">then</span> <span class="dt">Straight</span> a
-<span class="ot">&gt;</span>         <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]
-<span class="ot">&gt;</span>           <span class="kw">then</span> <span class="dt">Straight</span> <span class="dt">Five</span> <span class="co">-- the wheel</span>
-<span class="ot">&gt;</span>           <span class="kw">else</span> <span class="dt">HighCard</span> a b c d e
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand5: unrecognized hand!&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- compare lists of Cartes as hands</span>
-<span class="ot">&gt; compareHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Ordering</span>
-<span class="ot">&gt;</span> compareHand5 as bs <span class="fu">=</span> compare (toHand5 as) (toHand5 bs)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- test lists of Cartes for equality as hands</span>
-<span class="ot">&gt; equalHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> equalHand5 as bs <span class="fu">=</span> (toHand5 as) <span class="fu">==</span> (toHand5 bs)</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">toHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand5</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">toHand5 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  [(a,<span class="dv">5</span>)] <span class="ot">-&gt;</span>              </a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">    <span class="dt">FiveOfAKind</span> a</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  [(a,<span class="dv">4</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">    <span class="dt">FourOfAKind</span> a b</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">  [(a,<span class="dv">3</span>),(b,<span class="dv">2</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">    <span class="dt">FullHouse</span> a b</a>
+<a class="sourceLine" id="cb10-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">  [(a,<span class="dv">3</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">    <span class="dt">ThreeOfAKind</span> a b c</a>
+<a class="sourceLine" id="cb10-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">  [(a,<span class="dv">2</span>),(b,<span class="dv">2</span>),(c,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-16" data-line-number="16">    <span class="dt">TwoPair</span> a b c</a>
+<a class="sourceLine" id="cb10-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb10-18" data-line-number="18">  [(a,<span class="dv">2</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-19" data-line-number="19">    <span class="dt">OnePair</span> a b c d</a>
+<a class="sourceLine" id="cb10-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb10-21" data-line-number="21">  [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>),(c,<span class="dv">1</span>),(d,<span class="dv">1</span>),(e,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb10-22" data-line-number="22">    <span class="kw">if</span> allEqual <span class="fu">$</span> map suit cs</a>
+<a class="sourceLine" id="cb10-23" data-line-number="23">      <span class="kw">then</span> <span class="kw">if</span> isSequential [e,d,c,b,a]</a>
+<a class="sourceLine" id="cb10-24" data-line-number="24">        <span class="kw">then</span> <span class="dt">StraightFlush</span> a</a>
+<a class="sourceLine" id="cb10-25" data-line-number="25">        <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]</a>
+<a class="sourceLine" id="cb10-26" data-line-number="26">          <span class="kw">then</span> <span class="dt">StraightFlush</span> <span class="dt">Five</span> <span class="co">-- the steel wheel</span></a>
+<a class="sourceLine" id="cb10-27" data-line-number="27">          <span class="kw">else</span> <span class="dt">Flush</span> a b c d e</a>
+<a class="sourceLine" id="cb10-28" data-line-number="28">      <span class="kw">else</span> <span class="kw">if</span> isSequential [e,d,c,b,a]</a>
+<a class="sourceLine" id="cb10-29" data-line-number="29">        <span class="kw">then</span> <span class="dt">Straight</span> a</a>
+<a class="sourceLine" id="cb10-30" data-line-number="30">        <span class="kw">else</span> <span class="kw">if</span> [a,b,c,d,e] <span class="fu">==</span> [<span class="dt">Ace</span>,<span class="dt">Five</span>,<span class="dt">Four</span>,<span class="dt">Three</span>,<span class="dt">Two</span>]</a>
+<a class="sourceLine" id="cb10-31" data-line-number="31">          <span class="kw">then</span> <span class="dt">Straight</span> <span class="dt">Five</span> <span class="co">-- the wheel</span></a>
+<a class="sourceLine" id="cb10-32" data-line-number="32">          <span class="kw">else</span> <span class="dt">HighCard</span> a b c d e</a>
+<a class="sourceLine" id="cb10-33" data-line-number="33"></a>
+<a class="sourceLine" id="cb10-34" data-line-number="34">  _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand5: unrecognized hand!&quot;</span></a>
+<a class="sourceLine" id="cb10-35" data-line-number="35"></a>
+<a class="sourceLine" id="cb10-36" data-line-number="36"></a>
+<a class="sourceLine" id="cb10-37" data-line-number="37"><span class="co">-- compare lists of Cartes as hands</span></a>
+<a class="sourceLine" id="cb10-38" data-line-number="38"><span class="ot">compareHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Ordering</span></a>
+<a class="sourceLine" id="cb10-39" data-line-number="39">compareHand5 as bs <span class="fu">=</span> compare (toHand5 as) (toHand5 bs)</a>
+<a class="sourceLine" id="cb10-40" data-line-number="40"></a>
+<a class="sourceLine" id="cb10-41" data-line-number="41"><span class="co">-- test lists of Cartes for equality as hands</span></a>
+<a class="sourceLine" id="cb10-42" data-line-number="42"><span class="ot">equalHand5 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-43" data-line-number="43">equalHand5 as bs <span class="fu">=</span> (toHand5 as) <span class="fu">==</span> (toHand5 bs)</a></code></pre></div>
 <p>As a sanity check, let’s try to count the hands of each type.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; handType5 ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> handType5 h <span class="fu">=</span> <span class="kw">case</span> h <span class="kw">of</span>
-<span class="ot">&gt;</span>   <span class="dt">HighCard</span> _ _ _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;High Card&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">OnePair</span> _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;One Pair&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">TwoPair</span> _ _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Two Pairs&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">ThreeOfAKind</span> _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;Three of a Kind&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">Straight</span> _         <span class="ot">-&gt;</span> <span class="st">&quot;Straight&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">Flush</span> _ _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Flush&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">FullHouse</span> _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Full House&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">FourOfAKind</span> _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Four of a Kind&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">StraightFlush</span> _    <span class="ot">-&gt;</span> <span class="st">&quot;Straight Flush&quot;</span>
-<span class="ot">&gt;</span>   <span class="dt">FiveOfAKind</span> _      <span class="ot">-&gt;</span> <span class="st">&quot;Five of a Kind&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">handType5 ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">handType5 h <span class="fu">=</span> <span class="kw">case</span> h <span class="kw">of</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  <span class="dt">HighCard</span> _ _ _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;High Card&quot;</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  <span class="dt">OnePair</span> _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;One Pair&quot;</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  <span class="dt">TwoPair</span> _ _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Two Pairs&quot;</span></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="dt">ThreeOfAKind</span> _ _ _ <span class="ot">-&gt;</span> <span class="st">&quot;Three of a Kind&quot;</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">  <span class="dt">Straight</span> _         <span class="ot">-&gt;</span> <span class="st">&quot;Straight&quot;</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="dt">Flush</span> _ _ _ _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Flush&quot;</span></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">  <span class="dt">FullHouse</span> _ _      <span class="ot">-&gt;</span> <span class="st">&quot;Full House&quot;</span></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  <span class="dt">FourOfAKind</span> _ _    <span class="ot">-&gt;</span> <span class="st">&quot;Four of a Kind&quot;</span></a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">  <span class="dt">StraightFlush</span> _    <span class="ot">-&gt;</span> <span class="st">&quot;Straight Flush&quot;</span></a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  <span class="dt">FiveOfAKind</span> _      <span class="ot">-&gt;</span> <span class="st">&quot;Five of a Kind&quot;</span></a></code></pre></div>
 <p>This command constructs all possible five-card hands and tallies them by hand type. It runs on my machine in about 4 minutes.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> tally <span class="fu">$</span> map (handType5 <span class="fu">.</span> toHand5) <span class="fu">$</span> choose <span class="dv">5</span> standardDeck</code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="fu">$&gt;</span> tally <span class="fu">$</span> map (handType5 <span class="fu">.</span> toHand5) <span class="fu">$</span> choose <span class="dv">5</span> standardDeck</a></code></pre></div>
 <p>And cleaned up, the output matches the number of hands of each type given on <a href="https://en.wikipedia.org/wiki/List_of_poker_hands">wikipedia</a>. This gives some confidence that we’re counting hands correctly.</p>
 <table style="width:30%;">
 <colgroup>
-<col width="21%" />
-<col width="8%" />
+<col style="width: 21%" />
+<col style="width: 8%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="left">Hand Type</th>
-<th align="left">Number</th>
+<th style="text-align: left;">Hand Type</th>
+<th style="text-align: left;">Number</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">High Card</td>
-<td align="left">1302540</td>
+<td style="text-align: left;">High Card</td>
+<td style="text-align: left;">1302540</td>
 </tr>
 <tr class="even">
-<td align="left">One Pair</td>
-<td align="left">1098240</td>
+<td style="text-align: left;">One Pair</td>
+<td style="text-align: left;">1098240</td>
 </tr>
 <tr class="odd">
-<td align="left">Two Pairs</td>
-<td align="left">123552</td>
+<td style="text-align: left;">Two Pairs</td>
+<td style="text-align: left;">123552</td>
 </tr>
 <tr class="even">
-<td align="left">Three of a Kind</td>
-<td align="left">54912</td>
+<td style="text-align: left;">Three of a Kind</td>
+<td style="text-align: left;">54912</td>
 </tr>
 <tr class="odd">
-<td align="left">Straight</td>
-<td align="left">10200</td>
+<td style="text-align: left;">Straight</td>
+<td style="text-align: left;">10200</td>
 </tr>
 <tr class="even">
-<td align="left">Flush</td>
-<td align="left">5108</td>
+<td style="text-align: left;">Flush</td>
+<td style="text-align: left;">5108</td>
 </tr>
 <tr class="odd">
-<td align="left">Full House</td>
-<td align="left">3744</td>
+<td style="text-align: left;">Full House</td>
+<td style="text-align: left;">3744</td>
 </tr>
 <tr class="even">
-<td align="left">Four of a Kind</td>
-<td align="left">624</td>
+<td style="text-align: left;">Four of a Kind</td>
+<td style="text-align: left;">624</td>
 </tr>
 <tr class="odd">
-<td align="left">Straight Flush</td>
-<td align="left">40</td>
+<td style="text-align: left;">Straight Flush</td>
+<td style="text-align: left;">40</td>
 </tr>
 </tbody>
 </table>
 <p>So now we can recognize five-card hands from a standard deck, and detect when one such hand beats another. Let’s do the same for two-card hands. There are only two kinds of hands:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Hand2</span>
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">NoPair</span> <span class="dt">Rank</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="fu">|</span> <span class="dt">YesPair</span> <span class="dt">Rank</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Hand2</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">NoPair</span> <span class="dt">Rank</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  <span class="fu">|</span> <span class="dt">YesPair</span> <span class="dt">Rank</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</a></code></pre></div>
 <p>And detecting them is simpler:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; toHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand2</span>
-<span class="ot">&gt;</span> toHand2 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span>
-<span class="ot">&gt;</span>   [(a,<span class="dv">2</span>)] <span class="ot">-&gt;</span>              
-<span class="ot">&gt;</span>     <span class="dt">YesPair</span> a
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span>
-<span class="ot">&gt;</span>     <span class="dt">NoPair</span> a b
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand2: unrecognized hand!&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- test lists of Cartes for equality as hands</span>
-<span class="ot">&gt; equalHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> equalHand2 as bs <span class="fu">=</span> (toHand2 as) <span class="fu">==</span> (toHand2 bs)</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">toHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Hand2</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">toHand2 cs <span class="fu">=</span> <span class="kw">case</span> tally <span class="fu">$</span> map rank cs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  [(a,<span class="dv">2</span>)] <span class="ot">-&gt;</span>              </a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">    <span class="dt">YesPair</span> a</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">  [(a,<span class="dv">1</span>),(b,<span class="dv">1</span>)] <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">    <span class="dt">NoPair</span> a b</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  _ <span class="ot">-&gt;</span> error <span class="st">&quot;toHand2: unrecognized hand!&quot;</span></a>
+<a class="sourceLine" id="cb14-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11"><span class="co">-- test lists of Cartes for equality as hands</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12"><span class="ot">equalHand2 ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb14-13" data-line-number="13">equalHand2 as bs <span class="fu">=</span> (toHand2 as) <span class="fu">==</span> (toHand2 bs)</a></code></pre></div>
 <p>And now to detect when a five-card hand outranks a two-card hand.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; compareFiveToTwo ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Hand2</span> <span class="ot">-&gt;</span> <span class="dt">Ordering</span>
-<span class="ot">&gt;</span> compareFiveToTwo h5 h2 <span class="fu">=</span> <span class="kw">case</span> h5 <span class="kw">of</span>
-<span class="ot">&gt;</span>   <span class="dt">OnePair</span> a _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">YesPair</span> b <span class="ot">-&gt;</span> compare a b
-<span class="ot">&gt;</span>     <span class="dt">NoPair</span> _ _ <span class="ot">-&gt;</span> <span class="dt">GT</span>
-<span class="ot">&gt;</span>   <span class="dt">HighCard</span> a b _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">YesPair</span> _ <span class="ot">-&gt;</span> <span class="dt">LT</span>
-<span class="ot">&gt;</span>     <span class="dt">NoPair</span> c d <span class="ot">-&gt;</span> compare [a,b] [c,d]
-<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> <span class="dt">GT</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">compareFiveToTwo ::</span> <span class="dt">Hand5</span> <span class="ot">-&gt;</span> <span class="dt">Hand2</span> <span class="ot">-&gt;</span> <span class="dt">Ordering</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">compareFiveToTwo h5 h2 <span class="fu">=</span> <span class="kw">case</span> h5 <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">  <span class="dt">OnePair</span> a _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">    <span class="dt">YesPair</span> b <span class="ot">-&gt;</span> compare a b</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">    <span class="dt">NoPair</span> _ _ <span class="ot">-&gt;</span> <span class="dt">GT</span></a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  <span class="dt">HighCard</span> a b _ _ _ <span class="ot">-&gt;</span> <span class="kw">case</span> h2 <span class="kw">of</span></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">    <span class="dt">YesPair</span> _ <span class="ot">-&gt;</span> <span class="dt">LT</span></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">    <span class="dt">NoPair</span> c d <span class="ot">-&gt;</span> compare [a,b] [c,d]</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">  _ <span class="ot">-&gt;</span> <span class="dt">GT</span></a></code></pre></div>
 <p>A single play consists of a five-card hand and a two-card hand:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Play</span> <span class="fu">=</span> <span class="dt">Play</span>
-<span class="ot">&gt;</span>   {<span class="ot"> fiveCard ::</span> [<span class="dt">Carte</span>]
-<span class="ot">&gt;</span>   ,<span class="ot"> twoCard  ::</span> [<span class="dt">Carte</span>]
-<span class="ot">&gt;</span>   }
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; play ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Play</span>
-<span class="ot">&gt;</span> play a<span class="fu">@</span>[_,_,_,_,_] b<span class="fu">@</span>[_,_] <span class="fu">=</span> <span class="dt">Play</span> a b
-<span class="ot">&gt;</span> play _ _ <span class="fu">=</span> error <span class="st">&quot;play: invalid hand!&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Play</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   pretty (<span class="dt">Play</span> five two) <span class="fu">=</span> pretty five <span class="fu">++</span> <span class="st">&quot;   &quot;</span> <span class="fu">++</span> pretty two
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; equalPlay ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> equalPlay p1 p2 <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ equalHand5 (fiveCard p1) (fiveCard p2)
-<span class="ot">&gt;</span>   , equalHand2 (twoCard p1) (twoCard p2)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; beats ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> beats p1 p2 <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard p1) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard p2)
-<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard p1)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard p2)
-<span class="ot">&gt;</span>   ]</code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Play</span> <span class="fu">=</span> <span class="dt">Play</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  {<span class="ot"> fiveCard ::</span> [<span class="dt">Carte</span>]</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  ,<span class="ot"> twoCard  ::</span> [<span class="dt">Carte</span>]</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  }</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6"><span class="ot">play ::</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>] <span class="ot">-&gt;</span> <span class="dt">Play</span></a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">play a<span class="fu">@</span>[_,_,_,_,_] b<span class="fu">@</span>[_,_] <span class="fu">=</span> <span class="dt">Play</span> a b</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8">play _ _ <span class="fu">=</span> error <span class="st">&quot;play: invalid hand!&quot;</span></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10"><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">Play</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb16-11" data-line-number="11">  pretty (<span class="dt">Play</span> five two) <span class="fu">=</span> pretty five <span class="fu">++</span> <span class="st">&quot;   &quot;</span> <span class="fu">++</span> pretty two</a>
+<a class="sourceLine" id="cb16-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb16-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb16-14" data-line-number="14"><span class="ot">equalPlay ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb16-15" data-line-number="15">equalPlay p1 p2 <span class="fu">=</span> and</a>
+<a class="sourceLine" id="cb16-16" data-line-number="16">  [ equalHand5 (fiveCard p1) (fiveCard p2)</a>
+<a class="sourceLine" id="cb16-17" data-line-number="17">  , equalHand2 (twoCard p1) (twoCard p2)</a>
+<a class="sourceLine" id="cb16-18" data-line-number="18">  ]</a>
+<a class="sourceLine" id="cb16-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb16-20" data-line-number="20"><span class="ot">beats ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb16-21" data-line-number="21">beats p1 p2 <span class="fu">=</span> and</a>
+<a class="sourceLine" id="cb16-22" data-line-number="22">  [ (toHand5 <span class="fu">$</span> fiveCard p1) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard p2)</a>
+<a class="sourceLine" id="cb16-23" data-line-number="23">  , (toHand2 <span class="fu">$</span> twoCard p1)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard p2)</a>
+<a class="sourceLine" id="cb16-24" data-line-number="24">  ]</a></code></pre></div>
 <p>So we can classify and compare both five-card and two-card hands consisting of <code>Carte</code>s. But what about the joker? Here’s how I will handle that: given seven cards, we will build the list of all possible ways to divide the cards and all valid assignments of the joker. Along the way we can filter out any choices that are beaten by other choices, because they necessarily have a lower probability of winning.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- highest ranked valid assignment of the joker (if present)</span>
-<span class="ot">&gt; mapJoker5 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]
-<span class="ot">&gt;</span> mapJoker5 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> L.maximumBy compareHand5 <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   c <span class="ot">&lt;-</span> standardDeck
-<span class="ot">&gt;</span>   <span class="kw">let</span> as <span class="fu">=</span> map (to c) cs
-<span class="ot">&gt;</span>   guard <span class="fu">$</span> (<span class="dt">Ace</span> <span class="fu">==</span> rank c) <span class="fu">||</span> (isStraightOrFlush <span class="fu">$</span> toHand5 as)
-<span class="ot">&gt;</span>   return as
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;     to ::</span> <span class="dt">Carte</span> <span class="ot">-&gt;</span> <span class="dt">Card</span> <span class="ot">-&gt;</span> <span class="dt">Carte</span>
-<span class="ot">&gt;</span>     to c <span class="dt">Joker</span>    <span class="fu">=</span> c
-<span class="ot">&gt;</span>     to _ (<span class="dt">Card</span> x) <span class="fu">=</span> x
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- assign the joker to an ace (if present)</span>
-<span class="ot">&gt; mapJoker2 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]
-<span class="ot">&gt;</span> mapJoker2 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> <span class="kw">case</span> cs <span class="kw">of</span>
-<span class="ot">&gt;</span>   [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ _), <span class="dt">Card</span> b<span class="fu">@</span>(<span class="dt">Carte</span> _ _)] <span class="ot">-&gt;</span> [a,b]
-<span class="ot">&gt;</span>   [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s), <span class="dt">Joker</span>] <span class="ot">-&gt;</span> [a, <span class="dt">Carte</span> <span class="dt">Ace</span> s]
-<span class="ot">&gt;</span>   [<span class="dt">Joker</span>, <span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s)] <span class="ot">-&gt;</span> [<span class="dt">Carte</span> <span class="dt">Ace</span> s, a]
-<span class="ot">&gt;</span>   _ <span class="ot">-&gt;</span> error <span class="st">&quot;mapJoker2: unrecognized hand!&quot;</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- all valid hands</span>
-<span class="ot">&gt; playChoices ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Play</span>]
-<span class="ot">&gt;</span> playChoices cs <span class="fu">=</span> L.nubBy equalPlay <span class="fu">$</span> optimal <span class="fu">$</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   (cs2, cs5) <span class="ot">&lt;-</span> cuts <span class="dv">2</span> cs
-<span class="ot">&gt;</span>   <span class="kw">let</span> (h2, h5) <span class="fu">=</span> (mapJoker2 cs2, mapJoker5 cs5)
-<span class="ot">&gt;</span>   guard <span class="fu">$</span> <span class="dt">GT</span> <span class="fu">==</span> compareFiveToTwo (toHand5 h5) (toHand2 h2)
-<span class="ot">&gt;</span>   return <span class="fu">$</span> play h5 h2
-<span class="ot">&gt;</span>   <span class="kw">where</span>
-<span class="ot">&gt;</span>     <span class="co">-- if one choice is beaten by another, toss it out.</span>
-<span class="ot">&gt;</span>     optimal (p<span class="fu">:</span>ps) <span class="fu">=</span> <span class="kw">if</span> any (\q <span class="ot">-&gt;</span> q<span class="ot">`beats`</span>p) ps
-<span class="ot">&gt;</span>       <span class="kw">then</span> optimal ps
-<span class="ot">&gt;</span>       <span class="kw">else</span> p <span class="fu">:</span> optimal ps
-<span class="ot">&gt;</span>     optimal ps <span class="fu">=</span> ps</code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">-- highest ranked valid assignment of the joker (if present)</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="ot">mapJoker5 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]</a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">mapJoker5 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> L.maximumBy compareHand5 <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  c <span class="ot">&lt;-</span> standardDeck</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">  <span class="kw">let</span> as <span class="fu">=</span> map (to c) cs</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6">  guard <span class="fu">$</span> (<span class="dt">Ace</span> <span class="fu">==</span> rank c) <span class="fu">||</span> (isStraightOrFlush <span class="fu">$</span> toHand5 as)</a>
+<a class="sourceLine" id="cb17-7" data-line-number="7">  return as</a>
+<a class="sourceLine" id="cb17-8" data-line-number="8">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb17-9" data-line-number="9"><span class="ot">    to ::</span> <span class="dt">Carte</span> <span class="ot">-&gt;</span> <span class="dt">Card</span> <span class="ot">-&gt;</span> <span class="dt">Carte</span></a>
+<a class="sourceLine" id="cb17-10" data-line-number="10">    to c <span class="dt">Joker</span>    <span class="fu">=</span> c</a>
+<a class="sourceLine" id="cb17-11" data-line-number="11">    to _ (<span class="dt">Card</span> x) <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb17-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb17-13" data-line-number="13"><span class="co">-- assign the joker to an ace (if present)</span></a>
+<a class="sourceLine" id="cb17-14" data-line-number="14"><span class="ot">mapJoker2 ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Carte</span>]</a>
+<a class="sourceLine" id="cb17-15" data-line-number="15">mapJoker2 cs <span class="fu">=</span> L.sortBy (flip compare) <span class="fu">$</span> <span class="kw">case</span> cs <span class="kw">of</span></a>
+<a class="sourceLine" id="cb17-16" data-line-number="16">  [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ _), <span class="dt">Card</span> b<span class="fu">@</span>(<span class="dt">Carte</span> _ _)] <span class="ot">-&gt;</span> [a,b]</a>
+<a class="sourceLine" id="cb17-17" data-line-number="17">  [<span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s), <span class="dt">Joker</span>] <span class="ot">-&gt;</span> [a, <span class="dt">Carte</span> <span class="dt">Ace</span> s]</a>
+<a class="sourceLine" id="cb17-18" data-line-number="18">  [<span class="dt">Joker</span>, <span class="dt">Card</span> a<span class="fu">@</span>(<span class="dt">Carte</span> _ s)] <span class="ot">-&gt;</span> [<span class="dt">Carte</span> <span class="dt">Ace</span> s, a]</a>
+<a class="sourceLine" id="cb17-19" data-line-number="19">  _ <span class="ot">-&gt;</span> error <span class="st">&quot;mapJoker2: unrecognized hand!&quot;</span></a>
+<a class="sourceLine" id="cb17-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb17-21" data-line-number="21"><span class="co">-- all valid hands</span></a>
+<a class="sourceLine" id="cb17-22" data-line-number="22"><span class="ot">playChoices ::</span> [<span class="dt">Card</span>] <span class="ot">-&gt;</span> [<span class="dt">Play</span>]</a>
+<a class="sourceLine" id="cb17-23" data-line-number="23">playChoices cs <span class="fu">=</span> L.nubBy equalPlay <span class="fu">$</span> optimal <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-24" data-line-number="24">  (cs2, cs5) <span class="ot">&lt;-</span> cuts <span class="dv">2</span> cs</a>
+<a class="sourceLine" id="cb17-25" data-line-number="25">  <span class="kw">let</span> (h2, h5) <span class="fu">=</span> (mapJoker2 cs2, mapJoker5 cs5)</a>
+<a class="sourceLine" id="cb17-26" data-line-number="26">  guard <span class="fu">$</span> <span class="dt">GT</span> <span class="fu">==</span> compareFiveToTwo (toHand5 h5) (toHand2 h2)</a>
+<a class="sourceLine" id="cb17-27" data-line-number="27">  return <span class="fu">$</span> play h5 h2</a>
+<a class="sourceLine" id="cb17-28" data-line-number="28">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb17-29" data-line-number="29">    <span class="co">-- if one choice is beaten by another, toss it out.</span></a>
+<a class="sourceLine" id="cb17-30" data-line-number="30">    optimal (p<span class="fu">:</span>ps) <span class="fu">=</span> <span class="kw">if</span> any (\q <span class="ot">-&gt;</span> q<span class="ot">`beats`</span>p) ps</a>
+<a class="sourceLine" id="cb17-31" data-line-number="31">      <span class="kw">then</span> optimal ps</a>
+<a class="sourceLine" id="cb17-32" data-line-number="32">      <span class="kw">else</span> p <span class="fu">:</span> optimal ps</a>
+<a class="sourceLine" id="cb17-33" data-line-number="33">    optimal ps <span class="fu">=</span> ps</a></code></pre></div>
 <p>As an example, try this command: it takes the first seven cards from the full deck, divides them into two hands in all 21 possible ways, and pretty prints them.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> sequence_ <span class="fu">$</span> map prettyIO <span class="fu">$</span> playChoices <span class="fu">$</span> take <span class="dv">7</span> fullDeck</code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="fu">$&gt;</span> sequence_ <span class="fu">$</span> map prettyIO <span class="fu">$</span> playChoices <span class="fu">$</span> take <span class="dv">7</span> fullDeck</a></code></pre></div>
 <p>To recap: given seven cards, we can construct a list of all the (maximally ranked) valid hands they can form. We can also compare individual hands. We’re nearly in a position to simulate the game.</p>
 <p>Before we can do that, we need to be able to actually deal the cards!</p>
 <h2 id="randomness">Randomness</h2>
 <p>To model a game of pai gow, we need to be able to keep track of a deck and randomly draw cards from it. This is a job for the <code>State</code> and <code>RVar</code> monads, which we’ll roll into a transformer stack like so.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Deal</span> <span class="fu">=</span> <span class="dt">ST.StateT</span> [<span class="dt">Card</span>] <span class="dt">RVar</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Deal</span> <span class="fu">=</span> <span class="dt">ST.StateT</span> [<span class="dt">Card</span>] <span class="dt">RVar</span></a></code></pre></div>
 <p>Now an expression of type <code>Deal t</code> is a computation that keeps a deck as state, may use randomness, and returns a value of type <code>t</code> when “run”. We’ll use two helper functions for the “running”.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="co">-- carry out the computation, returning the result.</span>
-<span class="ot">&gt; runDeal ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> t
-<span class="ot">&gt;</span> runDeal x <span class="fu">=</span> runDeal' x <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> fst)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- carry out the computation, returning both the</span>
-<span class="ot">&gt;</span> <span class="co">-- result and the final state of the deck.</span>
-<span class="ot">&gt; runDeal' ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> (t, [<span class="dt">Card</span>])
-<span class="ot">&gt;</span> runDeal' <span class="fu">=</span> sampleRVar <span class="fu">.</span> (<span class="fu">$</span> fullDeck) <span class="fu">.</span> ST.runStateT</code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co">-- carry out the computation, returning the result.</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="ot">runDeal ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> t</a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">runDeal x <span class="fu">=</span> runDeal' x <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> fst)</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb20-5" data-line-number="5"><span class="co">-- carry out the computation, returning both the</span></a>
+<a class="sourceLine" id="cb20-6" data-line-number="6"><span class="co">-- result and the final state of the deck.</span></a>
+<a class="sourceLine" id="cb20-7" data-line-number="7"><span class="ot">runDeal' ::</span> <span class="dt">Deal</span> t <span class="ot">-&gt;</span> <span class="dt">IO</span> (t, [<span class="dt">Card</span>])</a>
+<a class="sourceLine" id="cb20-8" data-line-number="8">runDeal' <span class="fu">=</span> sampleRVar <span class="fu">.</span> (<span class="fu">$</span> fullDeck) <span class="fu">.</span> ST.runStateT</a></code></pre></div>
 <p>For example, here is a computation that attempts to deal a single card.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; drawCard ::</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> <span class="dt">Card</span>)
-<span class="ot">&gt;</span> drawCard <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   deck <span class="ot">&lt;-</span> ST.get <span class="co">-- get the state of the deck</span>
-<span class="ot">&gt;</span>   <span class="kw">case</span> deck <span class="kw">of</span>
-<span class="ot">&gt;</span>     [] <span class="ot">-&gt;</span> return <span class="dt">Nothing</span>
-<span class="ot">&gt;</span>     _  <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       c <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice deck <span class="co">-- draw a random card</span>
-<span class="ot">&gt;</span>       ST.put <span class="fu">$</span> L.delete c deck <span class="co">-- remove it from the deck</span>
-<span class="ot">&gt;</span>       return <span class="fu">$</span> <span class="dt">Just</span> c</code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">drawCard ::</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> <span class="dt">Card</span>)</a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">drawCard <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3">  deck <span class="ot">&lt;-</span> ST.get <span class="co">-- get the state of the deck</span></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">  <span class="kw">case</span> deck <span class="kw">of</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5">    [] <span class="ot">-&gt;</span> return <span class="dt">Nothing</span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6">    _  <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb21-7" data-line-number="7">      c <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice deck <span class="co">-- draw a random card</span></a>
+<a class="sourceLine" id="cb21-8" data-line-number="8">      ST.put <span class="fu">$</span> L.delete c deck <span class="co">-- remove it from the deck</span></a>
+<a class="sourceLine" id="cb21-9" data-line-number="9">      return <span class="fu">$</span> <span class="dt">Just</span> c</a></code></pre></div>
 <p>Now try running the following command a few times.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal drawCard <span class="fu">&gt;&gt;=</span> prettyIO</code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="fu">$&gt;</span> runDeal drawCard <span class="fu">&gt;&gt;=</span> prettyIO</a></code></pre></div>
 <p>Sequencing a list of <code>drawCard</code>s allows us to draw more than one at a time.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; drawCards ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> [<span class="dt">Card</span>])
-<span class="ot">&gt;</span> drawCards k <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   deck <span class="ot">&lt;-</span> ST.get <span class="co">-- save the state of the deck</span>
-<span class="ot">&gt;</span>   draw <span class="ot">&lt;-</span> sequence [drawCard <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]
-<span class="ot">&gt;</span>   <span class="kw">case</span> sequence draw <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Just</span> cs <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> cs <span class="co">-- successful draw</span>
-<span class="ot">&gt;</span>     <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span> <span class="co">-- ran out of cards!</span>
-<span class="ot">&gt;</span>       ST.put deck <span class="co">-- return deck to original state</span>
-<span class="ot">&gt;</span>       return <span class="dt">Nothing</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="ot">drawCards ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> (<span class="dt">Maybe</span> [<span class="dt">Card</span>])</a>
+<a class="sourceLine" id="cb23-2" data-line-number="2">drawCards k <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb23-3" data-line-number="3">  deck <span class="ot">&lt;-</span> ST.get <span class="co">-- save the state of the deck</span></a>
+<a class="sourceLine" id="cb23-4" data-line-number="4">  draw <span class="ot">&lt;-</span> sequence [drawCard <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]</a>
+<a class="sourceLine" id="cb23-5" data-line-number="5">  <span class="kw">case</span> sequence draw <span class="kw">of</span></a>
+<a class="sourceLine" id="cb23-6" data-line-number="6">    <span class="dt">Just</span> cs <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">Just</span> cs <span class="co">-- successful draw</span></a>
+<a class="sourceLine" id="cb23-7" data-line-number="7">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span> <span class="co">-- ran out of cards!</span></a>
+<a class="sourceLine" id="cb23-8" data-line-number="8">      ST.put deck <span class="co">-- return deck to original state</span></a>
+<a class="sourceLine" id="cb23-9" data-line-number="9">      return <span class="dt">Nothing</span></a></code></pre></div>
 <p>Now try running the following command a few times.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">5</span>) <span class="fu">&gt;&gt;=</span> prettyIO</code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">5</span>) <span class="fu">&gt;&gt;=</span> prettyIO</a></code></pre></div>
 <p>This command draws 7 cards from a fresh deck and prints all the best valid pai gow plays they can form. Try running it a few times.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">7</span>) <span class="fu">&gt;&gt;=</span> (sequence_ <span class="fu">.</span> map prettyIO <span class="fu">.</span> playChoices <span class="fu">.</span> M.fromJust)</code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="fu">$&gt;</span> runDeal (drawCards <span class="dv">7</span>) <span class="fu">&gt;&gt;=</span> (sequence_ <span class="fu">.</span> map prettyIO <span class="fu">.</span> playChoices <span class="fu">.</span> M.fromJust)</a></code></pre></div>
 <h2 id="the-game">The Game</h2>
 <p>Finally! We have the parts needed to model a game of pai gow. I’ll make one further simplification: each player has a number of plays to choose from, and we will select one at random. This ignores the House Way for the dealer and one of only three choices the players can make, but implementing a complete pai gow AI is beyond the scope of this post. :) I’ll be happy getting some concrete win percentages even in this simplified situation.</p>
 <p>Each round between the player and the banker has one of three possible outcomes.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Outcome</span> <span class="fu">=</span> <span class="dt">PlayerWin</span> <span class="fu">|</span> <span class="dt">Push</span> <span class="fu">|</span> <span class="dt">BankerWin</span>
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Outcome</span> <span class="fu">=</span> <span class="dt">PlayerWin</span> <span class="fu">|</span> <span class="dt">Push</span> <span class="fu">|</span> <span class="dt">BankerWin</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Ord</span>, <span class="dt">Show</span>)</a></code></pre></div>
 <p>And the game: first note the asymmetric win conditions for the player and the banker.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; beatsBanker ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> beatsBanker p b <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard p) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard b)
-<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard p)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard b)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; beatsPlayer ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-<span class="ot">&gt;</span> beatsPlayer b p <span class="fu">=</span> and
-<span class="ot">&gt;</span>   [ (toHand5 <span class="fu">$</span> fiveCard b) <span class="fu">&gt;=</span> (toHand5 <span class="fu">$</span> fiveCard p)
-<span class="ot">&gt;</span>   , (toHand2 <span class="fu">$</span> twoCard b)  <span class="fu">&gt;=</span> (toHand2 <span class="fu">$</span> twoCard p)
-<span class="ot">&gt;</span>   ]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- simulate a round of pai gow</span>
-<span class="ot">&gt; playPaiGow' ::</span> <span class="dt">Deal</span> <span class="dt">Outcome</span>
-<span class="ot">&gt;</span> playPaiGow' <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
-<span class="ot">&gt;</span>   <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
-<span class="ot">&gt;</span>   player <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices playerHand
-<span class="ot">&gt;</span>   banker <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices bankerHand
-<span class="ot">&gt;</span>   <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker
-<span class="ot">&gt;</span>     <span class="kw">then</span> return <span class="dt">PlayerWin</span>
-<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player
-<span class="ot">&gt;</span>       <span class="kw">then</span> return <span class="dt">BankerWin</span>
-<span class="ot">&gt;</span>       <span class="kw">else</span> return <span class="dt">Push</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- simulate k rounds of pai gow</span>
-<span class="ot">&gt; playRounds' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Outcome</span>]
-<span class="ot">&gt;</span> playRounds' k <span class="fu">=</span> sequence [runDeal playPaiGow' <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]</code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="ot">beatsBanker ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">beatsBanker p b <span class="fu">=</span> and</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">  [ (toHand5 <span class="fu">$</span> fiveCard p) <span class="fu">&gt;</span> (toHand5 <span class="fu">$</span> fiveCard b)</a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">  , (toHand2 <span class="fu">$</span> twoCard p)  <span class="fu">&gt;</span> (toHand2 <span class="fu">$</span> twoCard b)</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">  ]</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb27-7" data-line-number="7"><span class="ot">beatsPlayer ::</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Play</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb27-8" data-line-number="8">beatsPlayer b p <span class="fu">=</span> and</a>
+<a class="sourceLine" id="cb27-9" data-line-number="9">  [ (toHand5 <span class="fu">$</span> fiveCard b) <span class="fu">&gt;=</span> (toHand5 <span class="fu">$</span> fiveCard p)</a>
+<a class="sourceLine" id="cb27-10" data-line-number="10">  , (toHand2 <span class="fu">$</span> twoCard b)  <span class="fu">&gt;=</span> (toHand2 <span class="fu">$</span> twoCard p)</a>
+<a class="sourceLine" id="cb27-11" data-line-number="11">  ]</a>
+<a class="sourceLine" id="cb27-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb27-13" data-line-number="13"><span class="co">-- simulate a round of pai gow</span></a>
+<a class="sourceLine" id="cb27-14" data-line-number="14"><span class="ot">playPaiGow' ::</span> <span class="dt">Deal</span> <span class="dt">Outcome</span></a>
+<a class="sourceLine" id="cb27-15" data-line-number="15">playPaiGow' <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb27-16" data-line-number="16">  <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span></a>
+<a class="sourceLine" id="cb27-17" data-line-number="17">  <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span></a>
+<a class="sourceLine" id="cb27-18" data-line-number="18">  player <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices playerHand</a>
+<a class="sourceLine" id="cb27-19" data-line-number="19">  banker <span class="ot">&lt;-</span> lift <span class="fu">$</span> choice <span class="fu">$</span> playChoices bankerHand</a>
+<a class="sourceLine" id="cb27-20" data-line-number="20">  <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker</a>
+<a class="sourceLine" id="cb27-21" data-line-number="21">    <span class="kw">then</span> return <span class="dt">PlayerWin</span></a>
+<a class="sourceLine" id="cb27-22" data-line-number="22">    <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player</a>
+<a class="sourceLine" id="cb27-23" data-line-number="23">      <span class="kw">then</span> return <span class="dt">BankerWin</span></a>
+<a class="sourceLine" id="cb27-24" data-line-number="24">      <span class="kw">else</span> return <span class="dt">Push</span></a>
+<a class="sourceLine" id="cb27-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb27-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb27-27" data-line-number="27"><span class="co">-- simulate k rounds of pai gow</span></a>
+<a class="sourceLine" id="cb27-28" data-line-number="28"><span class="ot">playRounds' ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">Outcome</span>]</a>
+<a class="sourceLine" id="cb27-29" data-line-number="29">playRounds' k <span class="fu">=</span> sequence [runDeal playPaiGow' <span class="fu">|</span> i <span class="ot">&lt;-</span> [<span class="dv">1</span><span class="fu">..</span>k]]</a></code></pre></div>
 <p>Now this command will run 10 rounds of pai gow and tally the results.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> playRounds' <span class="dv">10</span> <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> tally)</code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="fu">$&gt;</span> playRounds' <span class="dv">10</span> <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> tally)</a></code></pre></div>
 <p>I ran the simulation a few times to try to estimate what the win/lose/draw percentages are. It’s pretty slow in GHCi, so this took a while! Of course if I ran the simulation again these numbers would be slightly different, but thanks to the <a href="https://en.wikipedia.org/wiki/Law_of_large_numbers">law of large numbers</a> the percentages converge to their ideal values for this simplified version.</p>
 <table style="width:49%;">
 <colgroup>
-<col width="10%" />
-<col width="16%" />
-<col width="8%" />
-<col width="13%" />
+<col style="width: 10%" />
+<col style="width: 16%" />
+<col style="width: 8%" />
+<col style="width: 13%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="left">Rounds</th>
-<th align="left">Banker Win</th>
-<th align="left">Push</th>
-<th align="left">Player Win</th>
+<th style="text-align: left;">Rounds</th>
+<th style="text-align: left;">Banker Win</th>
+<th style="text-align: left;">Push</th>
+<th style="text-align: left;">Player Win</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">1000</td>
-<td align="left">264</td>
-<td align="left">473</td>
-<td align="left">263</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">264</td>
+<td style="text-align: left;">473</td>
+<td style="text-align: left;">263</td>
 </tr>
 <tr class="even">
-<td align="left">2000</td>
-<td align="left">561</td>
-<td align="left">891</td>
-<td align="left">548</td>
+<td style="text-align: left;">2000</td>
+<td style="text-align: left;">561</td>
+<td style="text-align: left;">891</td>
+<td style="text-align: left;">548</td>
 </tr>
 <tr class="odd">
-<td align="left">3000</td>
-<td align="left">863</td>
-<td align="left">1267</td>
-<td align="left">870</td>
+<td style="text-align: left;">3000</td>
+<td style="text-align: left;">863</td>
+<td style="text-align: left;">1267</td>
+<td style="text-align: left;">870</td>
 </tr>
 <tr class="even">
-<td align="left">4000</td>
-<td align="left">1132</td>
-<td align="left">1764</td>
-<td align="left">1104</td>
+<td style="text-align: left;">4000</td>
+<td style="text-align: left;">1132</td>
+<td style="text-align: left;">1764</td>
+<td style="text-align: left;">1104</td>
 </tr>
 </tbody>
 </table>
@@ -573,29 +573,29 @@ Posted on 2017-03-30 by nbloomf
 <h2 id="strategy">Strategy?</h2>
 <p>Here I simulated a game between two players who follow the rules but otherwise make random choices. I doubt this is the optimal strategy. It might be interesting to see what other strategies are possible, but this post is already too long and I am tired. :)</p>
 <p>We can think of a <em>strategy</em> here as a mapping <code>[Play] -&gt; Deal Play</code> that takes a list of possible plays (as given by <code>playChoices</code>) and selects one. <code>playPaiGow'</code> does this with the strategy <code>lift . choice</code> for each player (randomly choose one), but by parameterizing on this map we can pass in other strategies.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">type</span> <span class="dt">Strategy</span> <span class="fu">=</span> [<span class="dt">Play</span>] <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Play</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- simulate a round of pai gow</span>
-<span class="ot">&gt; playPaiGow ::</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Outcome</span>
-<span class="ot">&gt;</span> playPaiGow playerStrategy bankerStrategy <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   <span class="co">-- normally wouldn't pattern match like this,</span>
-<span class="ot">&gt;</span>   <span class="co">-- but if this fails something is wrong</span>
-<span class="ot">&gt;</span>   <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
-<span class="ot">&gt;</span>   <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span>
-<span class="ot">&gt;</span>   player <span class="ot">&lt;-</span> playerStrategy <span class="fu">$</span> playChoices playerHand
-<span class="ot">&gt;</span>   banker <span class="ot">&lt;-</span> bankerStrategy <span class="fu">$</span> playChoices bankerHand
-<span class="ot">&gt;</span>   <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker
-<span class="ot">&gt;</span>     <span class="kw">then</span> return <span class="dt">PlayerWin</span>
-<span class="ot">&gt;</span>     <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player
-<span class="ot">&gt;</span>       <span class="kw">then</span> return <span class="dt">BankerWin</span>
-<span class="ot">&gt;</span>       <span class="kw">else</span> return <span class="dt">Push</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="co">-- choose an optimal hand at random</span>
-<span class="ot">&gt; randomStrategy ::</span> <span class="dt">Strategy</span>
-<span class="ot">&gt;</span> randomStrategy <span class="fu">=</span> lift <span class="fu">.</span> choice</code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">type</span> <span class="dt">Strategy</span> <span class="fu">=</span> [<span class="dt">Play</span>] <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Play</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="co">-- simulate a round of pai gow</span></a>
+<a class="sourceLine" id="cb29-4" data-line-number="4"><span class="ot">playPaiGow ::</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Strategy</span> <span class="ot">-&gt;</span> <span class="dt">Deal</span> <span class="dt">Outcome</span></a>
+<a class="sourceLine" id="cb29-5" data-line-number="5">playPaiGow playerStrategy bankerStrategy <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb29-6" data-line-number="6">  <span class="co">-- normally wouldn't pattern match like this,</span></a>
+<a class="sourceLine" id="cb29-7" data-line-number="7">  <span class="co">-- but if this fails something is wrong</span></a>
+<a class="sourceLine" id="cb29-8" data-line-number="8">  <span class="dt">Just</span> playerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span></a>
+<a class="sourceLine" id="cb29-9" data-line-number="9">  <span class="dt">Just</span> bankerHand <span class="ot">&lt;-</span> drawCards <span class="dv">7</span></a>
+<a class="sourceLine" id="cb29-10" data-line-number="10">  player <span class="ot">&lt;-</span> playerStrategy <span class="fu">$</span> playChoices playerHand</a>
+<a class="sourceLine" id="cb29-11" data-line-number="11">  banker <span class="ot">&lt;-</span> bankerStrategy <span class="fu">$</span> playChoices bankerHand</a>
+<a class="sourceLine" id="cb29-12" data-line-number="12">  <span class="kw">if</span> player <span class="ot">`beatsBanker`</span> banker</a>
+<a class="sourceLine" id="cb29-13" data-line-number="13">    <span class="kw">then</span> return <span class="dt">PlayerWin</span></a>
+<a class="sourceLine" id="cb29-14" data-line-number="14">    <span class="kw">else</span> <span class="kw">if</span> banker <span class="ot">`beatsPlayer`</span> player</a>
+<a class="sourceLine" id="cb29-15" data-line-number="15">      <span class="kw">then</span> return <span class="dt">BankerWin</span></a>
+<a class="sourceLine" id="cb29-16" data-line-number="16">      <span class="kw">else</span> return <span class="dt">Push</span></a>
+<a class="sourceLine" id="cb29-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb29-18" data-line-number="18"><span class="co">-- choose an optimal hand at random</span></a>
+<a class="sourceLine" id="cb29-19" data-line-number="19"><span class="ot">randomStrategy ::</span> <span class="dt">Strategy</span></a>
+<a class="sourceLine" id="cb29-20" data-line-number="20">randomStrategy <span class="fu">=</span> lift <span class="fu">.</span> choice</a></code></pre></div>
 <p>Anyway, if you’ve followed along in GHCi, you can try writing different strategy – maybe maximize the rank of the five-card hand, or try to favor pushes if no hand beats a majority, or minimize the sum of the ranks of the five-card and two-card hands, or something else. Have fun. :)</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> putStrLn <span class="st">&quot;ok&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb30-2" data-line-number="2">main <span class="fu">=</span> putStrLn <span class="st">&quot;ok&quot;</span></a></code></pre></div>
 
 
 <!-- END BODY -->

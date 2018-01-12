@@ -93,25 +93,25 @@ Posted on 2017-01-26 by nbloomf
 <li>Replace the shortcode string with <strong>the <code>iframe</code> representation of a type <code>t</code> object</strong>.</li>
 </ul>
 <p>The magic is in that type <code>t</code>. Haskell is <strong>really picky</strong> about what kinds of things it considers <code>t</code>s. But what is it? Well, an extremely simple form of the YouTube “shortcode type” might look something like this.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
-  {<span class="ot"> yt_id ::</span> <span class="dt">String</span>
-  }</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  {<span class="ot"> yt_id ::</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  }</a></code></pre></div>
 <p>If you’re not familiar with Haskell, this is saying “a YouTubeEmbed object has a single property, <code>yt_id</code>, which itself has type <code>String</code>”. And this is flawed, because in the absence of any explicit sanitization checks that string could be</p>
 <pre><code>&quot; onload=launch_the_missiles() unused=&quot;</code></pre>
 <p>To prevent shenanigans, we need to restrict what characters can be in the ID of a YouTube embed. There’s apparently no public documentation for this, but it appears that these IDs consist exclusively of alphanumeric characters with occasional hyphens and underscores.</p>
 <p>So our shortcode type could just as easily look like this:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
-  {<span class="ot"> yt_id ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span>
-  }</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  {<span class="ot"> yt_id ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  }</a></code></pre></div>
 <p>where <code>AlphanumericWithHyphensAndUnderscores</code> is a not very creative name for the type of strings consisting only of alphanumeric characters, hyphens, and underscores. We can design the type so that we are barred from constructing values that do not satisfy that property. In this way, we can encode constraints on values in their types, and force our shortcode expander to only expand well typed shortcodes.</p>
 <p>And here’s the kicker – Haskell is <strong>so</strong> strongly typed that this is basically all we have to do to make sure that <code>yt_id</code> only holds safe strings, because all data is immutable. By exposing the right API to shortcode authors, they/I can define new shortcodes by writing “obvious” things like</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span>
-  {<span class="ot"> yt_id       ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span>
-  ,<span class="ot"> yt_height   ::</span> <span class="dt">DecimalDigits</span>
-  ,<span class="ot"> yt_width    ::</span> <span class="dt">DecimalDigits</span>
-  ,<span class="ot"> yt_autoplay ::</span> <span class="dt">YesOrNo</span>
-  <span class="co">-- ...and so on</span>
-  }</code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw">data</span> <span class="dt">YouTubeEmbed</span> <span class="fu">=</span> <span class="dt">YouTubeEmbed</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  {<span class="ot"> yt_id       ::</span> <span class="dt">AlphanumericWithHyphensAndUnderscores</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  ,<span class="ot"> yt_height   ::</span> <span class="dt">DecimalDigits</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  ,<span class="ot"> yt_width    ::</span> <span class="dt">DecimalDigits</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  ,<span class="ot"> yt_autoplay ::</span> <span class="dt">YesOrNo</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  <span class="co">-- ...and so on</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">  }</a></code></pre></div>
 <p>and the type checker will not allow invalid embed objects to exist. Those details can happen behind the API, invisible to the shortcode implementer – no explicit sanitization or validation required.</p>
 <p>This moves the game from “check that we never output unsafe data” to “check that unsafe data is invalid” or equivalently “check that valid data is safe”, which I claim (without proof) is easier.</p>
 <p>I do not claim that these shortcodes are invulnerable to all possible attacks; such claims are always false. But using the type system to force shortcode data to have very specific colors helps eliminate a large class of errors.</p>

@@ -52,172 +52,172 @@ Posted on 2017-12-06 by nbloomf
 │  └─ quux
 └─ baz</code></pre>
 <p>Let’s figure out how to do this from scratch.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="ot">{-# LANGUAGE LambdaCase #-}</span>
-<span class="ot">&gt;</span> <span class="kw">module</span> <span class="dt">RenderingTrees</span> <span class="kw">where</span>
-<span class="ot">&gt;</span> 
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.List</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Environment</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">System.Directory.Tree</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.ParserCombinators.Parsec</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.ParserCombinators.Parsec.Lisp</span>
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Text.XML.HXT.Core</span> <span class="kw">hiding</span> (<span class="dt">Tree</span>)
-<span class="ot">&gt;</span> <span class="kw">import </span><span class="dt">Data.Tree.NTree.TypeDefs</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">{-# LANGUAGE LambdaCase #-}</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw">module</span> <span class="dt">RenderingTrees</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Data.List</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="kw">import</span> <span class="dt">System.Environment</span></a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="kw">import</span> <span class="dt">System.Directory.Tree</span></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Text.ParserCombinators.Parsec</span></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Text.ParserCombinators.Parsec.Lisp</span></a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Text.XML.HXT.Core</span> <span class="kw">hiding</span> (<span class="dt">Tree</span>)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Data.Tree.NTree.TypeDefs</span></a></code></pre></div>
 <p>A directory listing is a multi-way tree, sometimes called a <em>rose tree</em>. We can define such trees recursively like so.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">data</span> <span class="dt">Tree</span> a
-<span class="ot">&gt;</span>   <span class="fu">=</span> <span class="dt">T</span> a [<span class="dt">Tree</span> a]
-<span class="ot">&gt;</span>   <span class="kw">deriving</span> <span class="dt">Show</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Tree</span> a</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">T</span> a [<span class="dt">Tree</span> a]</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="kw">deriving</span> <span class="dt">Show</span></a></code></pre></div>
 <p>For example, here’s some trees.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> tA, tB, tC, tD,<span class="ot"> tE ::</span> <span class="dt">Tree</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> tA <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;A&quot;</span> []
-<span class="ot">&gt;</span> tB <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;B&quot;</span> [tA]
-<span class="ot">&gt;</span> tC <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;C&quot;</span> [tA, tB]
-<span class="ot">&gt;</span> tD <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;D&quot;</span> [tA, tB, tC]
-<span class="ot">&gt;</span> tE <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;E&quot;</span> [tA, tB, tC, tD]
-<span class="ot">&gt;</span> tF <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;F&quot;</span> [tA, tB, tC, tD, tE]
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; fib ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">Integer</span>
-<span class="ot">&gt;</span> fib <span class="dv">0</span> <span class="fu">=</span> <span class="dt">T</span> <span class="dv">0</span> []
-<span class="ot">&gt;</span> fib <span class="dv">1</span> <span class="fu">=</span> <span class="dt">T</span> <span class="dv">1</span> []
-<span class="ot">&gt;</span> fib k <span class="fu">=</span> <span class="dt">T</span> k [fib (k<span class="fu">-</span><span class="dv">1</span>), fib (k<span class="fu">-</span><span class="dv">2</span>)]</code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">tA, tB, tC, tD,<span class="ot"> tE ::</span> <span class="dt">Tree</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">tA <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;A&quot;</span> []</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">tB <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;B&quot;</span> [tA]</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">tC <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;C&quot;</span> [tA, tB]</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">tD <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;D&quot;</span> [tA, tB, tC]</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">tE <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;E&quot;</span> [tA, tB, tC, tD]</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">tF <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;F&quot;</span> [tA, tB, tC, tD, tE]</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9"><span class="ot">fib ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">fib <span class="dv">0</span> <span class="fu">=</span> <span class="dt">T</span> <span class="dv">0</span> []</a>
+<a class="sourceLine" id="cb4-11" data-line-number="11">fib <span class="dv">1</span> <span class="fu">=</span> <span class="dt">T</span> <span class="dv">1</span> []</a>
+<a class="sourceLine" id="cb4-12" data-line-number="12">fib k <span class="fu">=</span> <span class="dt">T</span> k [fib (k<span class="fu">-</span><span class="dv">1</span>), fib (k<span class="fu">-</span><span class="dv">2</span>)]</a></code></pre></div>
 <p>The <code>Tree</code> type is functorial.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt;</span> <span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Tree</span> <span class="kw">where</span>
-<span class="ot">&gt;</span>   fmap f (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> (f x) (map (fmap f) bs)</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Tree</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  fmap f (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> (f x) (map (fmap f) bs)</a></code></pre></div>
 <p>We can serialize a tree depth-first:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; flatten ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> [a]
-<span class="ot">&gt;</span> flatten (<span class="dt">T</span> x bs) <span class="fu">=</span> x <span class="fu">:</span> concatMap flatten bs</code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">flatten ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">flatten (<span class="dt">T</span> x bs) <span class="fu">=</span> x <span class="fu">:</span> concatMap flatten bs</a></code></pre></div>
 <p>And a <code>Tree String</code> can be rendered just by printing the nodes one per line, in depth-first order.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; render ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> render <span class="fu">=</span> concat <span class="fu">.</span> intersperse <span class="st">&quot;\n&quot;</span> <span class="fu">.</span> flatten</code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">render ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">render <span class="fu">=</span> concat <span class="fu">.</span> intersperse <span class="st">&quot;\n&quot;</span> <span class="fu">.</span> flatten</a></code></pre></div>
 <p><code>render</code> <em>kind of</em> does what we want – just without the nice line art along the left side.</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> putStrLn <span class="fu">$</span> render tD
-<span class="dt">D</span>
-<span class="dt">A</span>
-<span class="dt">B</span>
-<span class="dt">A</span>
-<span class="dt">C</span>
-<span class="dt">A</span>
-<span class="dt">B</span>
-<span class="dt">A</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="fu">$&gt;</span> putStrLn <span class="fu">$</span> render tD</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="dt">D</span></a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="dt">A</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="dt">B</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="dt">A</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"><span class="dt">C</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="dt">A</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="dt">B</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="dt">A</span></a></code></pre></div>
 <p>So now to append the right prefix to each line. <code>Tree</code> is a recursive type, so let’s think recursively. We can imagine rendering the child branches of a node, then appending a prefix to each line depending on whether that line is an immediate child node, the <em>last</em> immediate child node, a descendant of a child node, or a descendant of the last child node.</p>
 <p>We need to map over the list of branches, applying a different map to the last element:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mapLast ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]
-<span class="ot">&gt;</span> mapLast f g <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>   []   <span class="ot">-&gt;</span> []
-<span class="ot">&gt;</span>   x<span class="fu">:</span>[] <span class="ot">-&gt;</span> [g x]
-<span class="ot">&gt;</span>   x<span class="fu">:</span>xs <span class="ot">-&gt;</span> (f x) <span class="fu">:</span> mapLast f g xs</code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">mapLast ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [b]</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">mapLast f g <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  []   <span class="ot">-&gt;</span> []</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  x<span class="fu">:</span>[] <span class="ot">-&gt;</span> [g x]</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  x<span class="fu">:</span>xs <span class="ot">-&gt;</span> (f x) <span class="fu">:</span> mapLast f g xs</a></code></pre></div>
 <p>And we need to map over a tree, applying a different map to the root:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; mapRoot ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> b
-<span class="ot">&gt;</span> mapRoot f g (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> (f x) (map (fmap g) bs)</code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">mapRoot ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> b</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">mapRoot f g (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> (f x) (map (fmap g) bs)</a></code></pre></div>
 <p>With that, adding prefixes works like so.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; addPrefix ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> addPrefix (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> x <span class="fu">$</span> mapLast
-<span class="ot">&gt;</span>   (mapRoot (<span class="st">&quot;├─ &quot;</span> <span class="fu">++</span>) (<span class="st">&quot;│  &quot;</span> <span class="fu">++</span>))
-<span class="ot">&gt;</span>   (mapRoot (<span class="st">&quot;└─ &quot;</span> <span class="fu">++</span>) (<span class="st">&quot;   &quot;</span> <span class="fu">++</span>))
-<span class="ot">&gt;</span>   (map addPrefix bs)</code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">addPrefix ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">addPrefix (<span class="dt">T</span> x bs) <span class="fu">=</span> <span class="dt">T</span> x <span class="fu">$</span> mapLast</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  (mapRoot (<span class="st">&quot;├─ &quot;</span> <span class="fu">++</span>) (<span class="st">&quot;│  &quot;</span> <span class="fu">++</span>))</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  (mapRoot (<span class="st">&quot;└─ &quot;</span> <span class="fu">++</span>) (<span class="st">&quot;   &quot;</span> <span class="fu">++</span>))</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  (map addPrefix bs)</a></code></pre></div>
 <p>For example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> putStrLn <span class="fu">$</span> render <span class="fu">$</span> addPrefix tD
-<span class="dt">D</span>
-├─ <span class="dt">A</span>
-├─ <span class="dt">B</span>
-│  └─ <span class="dt">A</span>
-└─ <span class="dt">C</span>
-   ├─ <span class="dt">A</span>
-   └─ <span class="dt">B</span>
-      └─ <span class="dt">A</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="fu">$&gt;</span> putStrLn <span class="fu">$</span> render <span class="fu">$</span> addPrefix tD</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="dt">D</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">├─ <span class="dt">A</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">├─ <span class="dt">B</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">│  └─ <span class="dt">A</span></a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">└─ <span class="dt">C</span></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">   ├─ <span class="dt">A</span></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">   └─ <span class="dt">B</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">      └─ <span class="dt">A</span></a></code></pre></div>
 <p>woo</p>
 <p>For fun, let’s define a helper:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; pretty ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> pretty <span class="fu">=</span> render <span class="fu">.</span> addPrefix</code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">pretty ::</span> <span class="dt">Tree</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">pretty <span class="fu">=</span> render <span class="fu">.</span> addPrefix</a></code></pre></div>
 <h2 id="directory-listings-why-not">directory listings, why not</h2>
 <p>The <code>System.Directory.Tree</code> library module has some functions for getting the <em>tree</em> structure of a <em>directory</em> on the <em>system</em>. We’ll need to convert the native tree type of that library to our <code>Tree</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; dir ::</span> <span class="dt">DirTree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> dir (<span class="dt">Failed</span> path _) <span class="fu">=</span> <span class="dt">T</span> path []
-<span class="ot">&gt;</span> dir (<span class="dt">Dir</span> path xs) <span class="fu">=</span> <span class="dt">T</span> path (map dir xs)
-<span class="ot">&gt;</span> dir (<span class="dt">File</span> path _) <span class="fu">=</span> <span class="dt">T</span> path []</code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">dir ::</span> <span class="dt">DirTree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">dir (<span class="dt">Failed</span> path _) <span class="fu">=</span> <span class="dt">T</span> path []</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">dir (<span class="dt">Dir</span> path xs) <span class="fu">=</span> <span class="dt">T</span> path (map dir xs)</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">dir (<span class="dt">File</span> path _) <span class="fu">=</span> <span class="dt">T</span> path []</a></code></pre></div>
 <p>blah blah</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; theDirTree ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> theDirTree path <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   (_ <span class="fu">:/</span> dtree) <span class="ot">&lt;-</span> readDirectory path
-<span class="ot">&gt;</span>   putStrLn <span class="fu">$</span> pretty <span class="fu">$</span> dir <span class="fu">$</span> sortDir dtree</code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">theDirTree ::</span> FilePath <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">theDirTree path <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">  (_ <span class="fu">:/</span> dtree) <span class="ot">&lt;-</span> readDirectory path</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  putStrLn <span class="fu">$</span> pretty <span class="fu">$</span> dir <span class="fu">$</span> sortDir dtree</a></code></pre></div>
 <h2 id="s-expressions-because-sure">s-expressions because sure</h2>
 <p>The <code>Text.ParserCombinators.Parsec.Lisp</code> library module has some functions for parsing lisp code, a.k.a. S-expressions. We’ll need to convert the native tree type of that library to our <code>Tree</code>:</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; lisp ::</span> <span class="dt">LispVal</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> lisp (<span class="dt">Atom</span> str) <span class="fu">=</span> <span class="dt">T</span> str []
-<span class="ot">&gt;</span> lisp (<span class="dt">List</span> xs) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;()&quot;</span> (map lisp <span class="fu">$</span> xs <span class="fu">++</span> [<span class="dt">Atom</span> <span class="st">&quot;nil&quot;</span>])
-<span class="ot">&gt;</span> lisp (<span class="dt">DottedList</span> xs y) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;()&quot;</span> (map lisp <span class="fu">$</span> xs <span class="fu">++</span> [y])
-<span class="ot">&gt;</span> lisp (<span class="dt">Number</span> k) <span class="fu">=</span> <span class="dt">T</span> (show k) []
-<span class="ot">&gt;</span> lisp (<span class="dt">String</span> str) <span class="fu">=</span> <span class="dt">T</span> (show str) []
-<span class="ot">&gt;</span> lisp (<span class="dt">Bool</span> <span class="dt">True</span>) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;#t&quot;</span> []
-<span class="ot">&gt;</span> lisp (<span class="dt">Bool</span> <span class="dt">False</span>) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;#f&quot;</span> []</code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">lisp ::</span> <span class="dt">LispVal</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">lisp (<span class="dt">Atom</span> str) <span class="fu">=</span> <span class="dt">T</span> str []</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">lisp (<span class="dt">List</span> xs) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;()&quot;</span> (map lisp <span class="fu">$</span> xs <span class="fu">++</span> [<span class="dt">Atom</span> <span class="st">&quot;nil&quot;</span>])</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">lisp (<span class="dt">DottedList</span> xs y) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;()&quot;</span> (map lisp <span class="fu">$</span> xs <span class="fu">++</span> [y])</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">lisp (<span class="dt">Number</span> k) <span class="fu">=</span> <span class="dt">T</span> (show k) []</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">lisp (<span class="dt">String</span> str) <span class="fu">=</span> <span class="dt">T</span> (show str) []</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">lisp (<span class="dt">Bool</span> <span class="dt">True</span>) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;#t&quot;</span> []</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8">lisp (<span class="dt">Bool</span> <span class="dt">False</span>) <span class="fu">=</span> <span class="dt">T</span> <span class="st">&quot;#f&quot;</span> []</a></code></pre></div>
 <p>frou frou</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; theLispTree ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> theLispTree str <span class="fu">=</span>
-<span class="ot">&gt;</span>   <span class="kw">case</span> parse parseExpr <span class="st">&quot;&quot;</span> str <span class="kw">of</span>
-<span class="ot">&gt;</span>     <span class="dt">Left</span> err <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> show err
-<span class="ot">&gt;</span>     <span class="dt">Right</span> t <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> pretty <span class="fu">$</span> lisp t</code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">theLispTree ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">theLispTree str <span class="fu">=</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  <span class="kw">case</span> parse parseExpr <span class="st">&quot;&quot;</span> str <span class="kw">of</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">    <span class="dt">Left</span> err <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> show err</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> putStrLn <span class="fu">$</span> pretty <span class="fu">$</span> lisp t</a></code></pre></div>
 <p>for example:</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> theLispTree <span class="st">&quot;(foo bar (quux xyzzy) baz)&quot;</span>
-()
-├─ foo
-├─ bar
-├─ ()
-│  ├─ quux
-│  ├─ xyzzy
-│  └─ nil
-├─ baz
-└─ nil</code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="fu">$&gt;</span> theLispTree <span class="st">&quot;(foo bar (quux xyzzy) baz)&quot;</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">()</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">├─ foo</a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">├─ bar</a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">├─ ()</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">│  ├─ quux</a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">│  ├─ xyzzy</a>
+<a class="sourceLine" id="cb18-8" data-line-number="8">│  └─ nil</a>
+<a class="sourceLine" id="cb18-9" data-line-number="9">├─ baz</a>
+<a class="sourceLine" id="cb18-10" data-line-number="10">└─ nil</a></code></pre></div>
 <h2 id="html-ok">html, ok</h2>
 <p>The HXT library can parse arbitrary XML into rose trees. With some glue code we can render those too.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; xmlTree ::</span> <span class="dt">NTree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a
-<span class="ot">&gt;</span> xmlTree (<span class="dt">NTree</span> x ts) <span class="fu">=</span> <span class="dt">T</span> x (map xmlTree ts)
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; xml ::</span> <span class="dt">NTree</span> <span class="dt">XNode</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> xml <span class="fu">=</span> fmap fromNode <span class="fu">.</span> xmlTree
-<span class="ot">&gt;</span> 
-<span class="ot">&gt; fromNode ::</span> <span class="dt">XNode</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-<span class="ot">&gt;</span> fromNode <span class="fu">=</span> \<span class="kw">case</span>
-<span class="ot">&gt;</span>   <span class="dt">XText</span> str <span class="ot">-&gt;</span> str
-<span class="ot">&gt;</span>   <span class="dt">XBlob</span> blob <span class="ot">-&gt;</span> blobToString blob
-<span class="ot">&gt;</span>   <span class="dt">XCharRef</span> k <span class="ot">-&gt;</span> <span class="st">&quot;char: &quot;</span> <span class="fu">++</span> show k
-<span class="ot">&gt;</span>   <span class="dt">XEntityRef</span> str <span class="ot">-&gt;</span> str
-<span class="ot">&gt;</span>   <span class="dt">XCmt</span> str <span class="ot">-&gt;</span> str
-<span class="ot">&gt;</span>   <span class="dt">XCdata</span> str <span class="ot">-&gt;</span> str
-<span class="ot">&gt;</span>   <span class="dt">XPi</span> name _ <span class="ot">-&gt;</span> show name
-<span class="ot">&gt;</span>   <span class="dt">XTag</span> name attr <span class="ot">-&gt;</span> show name
-<span class="ot">&gt;</span>   <span class="dt">XDTD</span> dtd _ <span class="ot">-&gt;</span> show dtd
-<span class="ot">&gt;</span>   <span class="dt">XAttr</span> name <span class="ot">-&gt;</span> show name
-<span class="ot">&gt;</span>   <span class="dt">XError</span> _ msg <span class="ot">-&gt;</span> msg</code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">xmlTree ::</span> <span class="dt">NTree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">xmlTree (<span class="dt">NTree</span> x ts) <span class="fu">=</span> <span class="dt">T</span> x (map xmlTree ts)</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="ot">xml ::</span> <span class="dt">NTree</span> <span class="dt">XNode</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">xml <span class="fu">=</span> fmap fromNode <span class="fu">.</span> xmlTree</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb19-7" data-line-number="7"><span class="ot">fromNode ::</span> <span class="dt">XNode</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">fromNode <span class="fu">=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb19-9" data-line-number="9">  <span class="dt">XText</span> str <span class="ot">-&gt;</span> str</a>
+<a class="sourceLine" id="cb19-10" data-line-number="10">  <span class="dt">XBlob</span> blob <span class="ot">-&gt;</span> blobToString blob</a>
+<a class="sourceLine" id="cb19-11" data-line-number="11">  <span class="dt">XCharRef</span> k <span class="ot">-&gt;</span> <span class="st">&quot;char: &quot;</span> <span class="fu">++</span> show k</a>
+<a class="sourceLine" id="cb19-12" data-line-number="12">  <span class="dt">XEntityRef</span> str <span class="ot">-&gt;</span> str</a>
+<a class="sourceLine" id="cb19-13" data-line-number="13">  <span class="dt">XCmt</span> str <span class="ot">-&gt;</span> str</a>
+<a class="sourceLine" id="cb19-14" data-line-number="14">  <span class="dt">XCdata</span> str <span class="ot">-&gt;</span> str</a>
+<a class="sourceLine" id="cb19-15" data-line-number="15">  <span class="dt">XPi</span> name _ <span class="ot">-&gt;</span> show name</a>
+<a class="sourceLine" id="cb19-16" data-line-number="16">  <span class="dt">XTag</span> name attr <span class="ot">-&gt;</span> show name</a>
+<a class="sourceLine" id="cb19-17" data-line-number="17">  <span class="dt">XDTD</span> dtd _ <span class="ot">-&gt;</span> show dtd</a>
+<a class="sourceLine" id="cb19-18" data-line-number="18">  <span class="dt">XAttr</span> name <span class="ot">-&gt;</span> show name</a>
+<a class="sourceLine" id="cb19-19" data-line-number="19">  <span class="dt">XError</span> _ msg <span class="ot">-&gt;</span> msg</a></code></pre></div>
 <p>and…</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; theHTMLTree ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> theHTMLTree str <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   ts <span class="ot">&lt;-</span> runX
-<span class="ot">&gt;</span>           <span class="fu">$</span> readString [withParseHTML yes, withValidate no]
-<span class="ot">&gt;</span>           <span class="fu">$</span> filter (<span class="fu">/=</span> <span class="ch">'\n'</span>) str
-<span class="ot">&gt;</span>   sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> pretty <span class="fu">.</span> xml) ts</code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">theHTMLTree ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">theHTMLTree str <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">  ts <span class="ot">&lt;-</span> runX</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">          <span class="fu">$</span> readString [withParseHTML yes, withValidate no]</a>
+<a class="sourceLine" id="cb20-5" data-line-number="5">          <span class="fu">$</span> filter (<span class="fu">/=</span> <span class="ch">'\n'</span>) str</a>
+<a class="sourceLine" id="cb20-6" data-line-number="6">  sequence_ <span class="fu">$</span> map (putStrLn <span class="fu">.</span> pretty <span class="fu">.</span> xml) ts</a></code></pre></div>
 <p>such as</p>
-<div class="sourceCode"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="fu">$&gt;</span> theHTMLTree <span class="st">&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;a thing&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;wut&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span>
-<span class="st">&quot;/&quot;</span>
-└─ <span class="st">&quot;html&quot;</span>
-   ├─ <span class="st">&quot;head&quot;</span>
-   │  └─ <span class="st">&quot;title&quot;</span>
-   │     └─ a thing
-   └─ <span class="st">&quot;body&quot;</span>
-      └─ <span class="st">&quot;p&quot;</span>
-         └─ wut</code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="fu">$&gt;</span> theHTMLTree <span class="st">&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;a thing&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;wut&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="st">&quot;/&quot;</span></a>
+<a class="sourceLine" id="cb21-3" data-line-number="3">└─ <span class="st">&quot;html&quot;</span></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">   ├─ <span class="st">&quot;head&quot;</span></a>
+<a class="sourceLine" id="cb21-5" data-line-number="5">   │  └─ <span class="st">&quot;title&quot;</span></a>
+<a class="sourceLine" id="cb21-6" data-line-number="6">   │     └─ a thing</a>
+<a class="sourceLine" id="cb21-7" data-line-number="7">   └─ <span class="st">&quot;body&quot;</span></a>
+<a class="sourceLine" id="cb21-8" data-line-number="8">      └─ <span class="st">&quot;p&quot;</span></a>
+<a class="sourceLine" id="cb21-9" data-line-number="9">         └─ wut</a></code></pre></div>
 <h2 id="the-end">the end</h2>
 <p>Finally a <code>main</code> function so we can use this from the command line.</p>
-<div class="sourceCode"><pre class="sourceCode literate literatehaskell"><code class="sourceCode literatehaskell"><span class="ot">&gt; main ::</span> <span class="dt">IO</span> ()
-<span class="ot">&gt;</span> main <span class="fu">=</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>   args <span class="ot">&lt;-</span> getArgs
-<span class="ot">&gt;</span>   <span class="kw">case</span> args <span class="kw">of</span>
-<span class="ot">&gt;</span>     [<span class="st">&quot;--path&quot;</span>,path] <span class="ot">-&gt;</span> theDirTree path
-<span class="ot">&gt;</span>     [<span class="st">&quot;--lisp&quot;</span>] <span class="ot">-&gt;</span> getContents <span class="fu">&gt;&gt;=</span> theLispTree
-<span class="ot">&gt;</span>     [<span class="st">&quot;--html&quot;</span>] <span class="ot">-&gt;</span> getContents <span class="fu">&gt;&gt;=</span> theHTMLTree
-<span class="ot">&gt;</span>     _ <span class="ot">-&gt;</span> <span class="kw">do</span>
-<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;Usage:&quot;</span>
-<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;  rendering-trees --path PATH : print listing for PATH&quot;</span>
-<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;  rendering-trees --lisp      : print lisp file on stdin&quot;</span>
-<span class="ot">&gt;</span>       putStrLn <span class="st">&quot;  rendering-trees --html      : print html file on stdin&quot;</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">  args <span class="ot">&lt;-</span> getArgs</a>
+<a class="sourceLine" id="cb22-4" data-line-number="4">  <span class="kw">case</span> args <span class="kw">of</span></a>
+<a class="sourceLine" id="cb22-5" data-line-number="5">    [<span class="st">&quot;--path&quot;</span>,path] <span class="ot">-&gt;</span> theDirTree path</a>
+<a class="sourceLine" id="cb22-6" data-line-number="6">    [<span class="st">&quot;--lisp&quot;</span>] <span class="ot">-&gt;</span> getContents <span class="fu">&gt;&gt;=</span> theLispTree</a>
+<a class="sourceLine" id="cb22-7" data-line-number="7">    [<span class="st">&quot;--html&quot;</span>] <span class="ot">-&gt;</span> getContents <span class="fu">&gt;&gt;=</span> theHTMLTree</a>
+<a class="sourceLine" id="cb22-8" data-line-number="8">    _ <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb22-9" data-line-number="9">      putStrLn <span class="st">&quot;Usage:&quot;</span></a>
+<a class="sourceLine" id="cb22-10" data-line-number="10">      putStrLn <span class="st">&quot;  rendering-trees --path PATH : print listing for PATH&quot;</span></a>
+<a class="sourceLine" id="cb22-11" data-line-number="11">      putStrLn <span class="st">&quot;  rendering-trees --lisp      : print lisp file on stdin&quot;</span></a>
+<a class="sourceLine" id="cb22-12" data-line-number="12">      putStrLn <span class="st">&quot;  rendering-trees --html      : print html file on stdin&quot;</span></a></code></pre></div>
 <p>fun fun</p>
 
 
