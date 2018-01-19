@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Norm Recursion</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-12-25 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,35 +199,31 @@ Posted on 2017-12-25 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">NormRecursion</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">NormRecursion</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a></code></pre></div>
 <p>The essence of recursion is to solve problems by combining solutions to smaller instances of the same problem. The recursion patterns we’ve identified so far take a specific and limited view of what “smaller instance” means; the instance smaller than <span class="math inline">\(\next(n)\)</span> is just <span class="math inline">\(n\)</span>. We can think of this as the recursion embodied in the induction principle, where we prove theorems about all natural numbers by assuming they hold for <span class="math inline">\(n\)</span> and showing they also hold for <span class="math inline">\(\next(n)\)</span>.</p>
 <p>We’ve seen an alternative induction principle – strong induction – which allows us to prove theorems by assuming they hold for all <span class="math inline">\(k\)</span> with <span class="math inline">\(\nleq(k,n)\)</span> and showing they hold for <span class="math inline">\(\next(n)\)</span>. Logically, strong induction is equivalent to “ordinary” induction, and so is redundant. But as we’ve seen, the stronger induction hypothesis of strong induction can make some proofs more convenient.</p>
 <p>Today we’ll establish a recursion pattern analogous to strong induction.</p>
-<div class="result">
-<div class="dfn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an iterative set. A map <span class="math inline">\(\eta : A \rightarrow \nats\)</span> is called an <em>iterative norm</em> if the following hold for all <span class="math inline">\(a \in A\)</span>.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\eta(a) = \zero\)</span>, then <span class="math inline">\(\eta(\varphi(a)) = \zero\)</span>.</li>
 <li>If <span class="math inline">\(\eta(a) = \next(n)\)</span>, then <span class="math inline">\(\nleq(\eta(\varphi(a)),n)\)</span>.</li>
 </ol>
-</p>
-</div>
 </div>
 <p>Roughly speaking, an iterative norm is a measure of “size” on <span class="math inline">\(A\)</span> with the property that this size is strictly decreasing under the action of <span class="math inline">\(\varphi\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an iterative set, with <span class="math inline">\(\eta : A \rightarrow \nats\)</span> an iterative norm. Let <span class="math inline">\(B\)</span> be a set, with <span class="math inline">\(\chi : A \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Theta : A \rightarrow B\)</span> such that, for all <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(a) = \bif{\iszero(\eta(a))}{\chi(a)}{\Theta(\varphi(a))}.\]</span> This <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\normrec{\varphi}{\eta}{\chi}\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an iterative set, with <span class="math inline">\(\eta : A \rightarrow \nats\)</span> an iterative norm. Let <span class="math inline">\(B\)</span> be a set, with <span class="math inline">\(\chi : A \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Theta : A \rightarrow B\)</span> such that, for all <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(a) = \bif{\iszero(\eta(a))}{\chi(a)}{\Theta(\varphi(a))}.\]</span> This <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\normrec{\varphi}{\eta}{\chi}\)</span>.</p>
 <div class="proof">
-<p>
 <p>We define <span class="math inline">\(\beta : \nats \times A \rightarrow \bool\)</span> by <span class="math display">\[\beta(k,a) = \iszero(\eta(a)),\]</span> define <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\psi(k,a) = \chi(a),\]</span> and define <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span> by <span class="math display">\[\omega(k,a) = \varphi(a),\]</span> and <span class="math inline">\(\Omega : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\Omega = \bailrec{\chi}{\beta}{\psi}{\omega}.\]</span> As a lemma, we need the following intermediate result: for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) = \Omega(\eta(\varphi(a)),\varphi(a)).\]</span> We proceed by double induction, starting with strong induction on <span class="math inline">\(\eta(\varphi(a))\)</span>. For the base case <span class="math inline">\(\eta(\varphi(a)) = \zero\)</span>, we proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) \\
  &amp; = &amp; \Omega(\nplus(\zero,\zero),\varphi(a)) \\
@@ -280,8 +276,7 @@ Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an iterative
  &amp; = &amp; \Omega(\eta(\varphi(a)),\varphi(a)) \\
  &amp; = &amp; \Theta(\varphi(a))
 \end{eqnarray*}\]</span> as claimed.</p>
-We show that <span class="math inline">\(\Theta\)</span> is unique by strong induction. Suppose <span class="math inline">\(\Pi\)</span> is another function <span class="math inline">\(A \rightarrow B\)</span> such that <span class="math inline">\(\Pi(a) = \chi(a)\)</span> if <span class="math inline">\(\eta(a) = \zero\)</span> and <span class="math inline">\(\Pi(a) = \Pi(\varphi(a))\)</span> otherwise. For the base case, if <span class="math inline">\(\eta(a) = \zero\)</span>, we have <span class="math display">\[\Pi(a) = \chi(a) = \Theta(a).\]</span> For the inductive step, suppose <span class="math inline">\(\Pi(a) = \Theta(a)\)</span> whenever <span class="math inline">\(\nleq(\eta(a),m)\)</span> for some <span class="math inline">\(m\)</span>, and suppose <span class="math inline">\(\eta(a) = \next(m)\)</span>. Then <span class="math inline">\(\nleq(\eta(\varphi(a)),m)\)</span> and <span class="math display">\[\Pi(a) = \Pi(\varphi(a)) = \Theta(\varphi(a)) = \Theta(a)\]</span> as needed.
-</p>
+<p>We show that <span class="math inline">\(\Theta\)</span> is unique by strong induction. Suppose <span class="math inline">\(\Pi\)</span> is another function <span class="math inline">\(A \rightarrow B\)</span> such that <span class="math inline">\(\Pi(a) = \chi(a)\)</span> if <span class="math inline">\(\eta(a) = \zero\)</span> and <span class="math inline">\(\Pi(a) = \Pi(\varphi(a))\)</span> otherwise. For the base case, if <span class="math inline">\(\eta(a) = \zero\)</span>, we have <span class="math display">\[\Pi(a) = \chi(a) = \Theta(a).\]</span> For the inductive step, suppose <span class="math inline">\(\Pi(a) = \Theta(a)\)</span> whenever <span class="math inline">\(\nleq(\eta(a),m)\)</span> for some <span class="math inline">\(m\)</span>, and suppose <span class="math inline">\(\eta(a) = \next(m)\)</span>. Then <span class="math inline">\(\nleq(\eta(\varphi(a)),m)\)</span> and <span class="math display">\[\Pi(a) = \Pi(\varphi(a)) = \Theta(\varphi(a)) = \Theta(a)\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
@@ -303,15 +298,13 @@ We show that <span class="math inline">\(\Theta\)</span> is unique by strong ind
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">Left</span> () <span class="ot">-&gt;</span> chi a</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">Right</span> _ <span class="ot">-&gt;</span> normRec phi eta chi (phi a)</a></code></pre></div>
 <p>As with our other recursion operators, <span class="math inline">\(\normrec{\varphi}{\eta}{\chi}\)</span> is the unique solution to a system of functional equations. Specifically, we have the following.</p>
-<div class="result">
-<div class="thm">
+<div class="corollary">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(\varphi : A \rightarrow A\)</span>, <span class="math inline">\(\eta : A \rightarrow \nats\)</span> an iterative norm on <span class="math inline">\((A,\varepsilon,\varphi)\)</span> for some <span class="math inline">\(\varepsilon\)</span>, and <span class="math inline">\(\chi : A \rightarrow B\)</span>. Then <span class="math inline">\(\normrec{\varphi}{\eta}{\chi}\)</span> is the unique solution <span class="math inline">\(f : A \rightarrow B\)</span> to the following functional equation for all <span class="math inline">\(a \in A\)</span>: <span class="math display">\[f(a) = \bif{\iszero(\eta(a))}{\chi(a)}{f(\varphi(a))}.\]</span></p>
 </div>
-</div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

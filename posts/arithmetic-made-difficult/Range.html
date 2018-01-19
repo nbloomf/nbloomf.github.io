@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Range</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,47 +199,43 @@ Posted on 2017-05-05 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Range</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( range, _test_range, main_range</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">At</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">UnfoldN</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Range</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( range, _test_range, main_range</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">At</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a></code></pre></div>
 <p>For our first application of <span class="math inline">\(\unfoldN{\ast}\)</span> we’ll define a function, <span class="math inline">\(\range\)</span>, that constructs lists of natural numbers. There are a few ways to do this. We could take an argument <span class="math inline">\(n\)</span> and construct the list of natural numbers from <span class="math inline">\(\zero\)</span> to <span class="math inline">\(n\)</span>, but this is too specialized. We could instead take <em>two</em> arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> and construct the list of natural numbers from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span>, but we’ll have to check whether or not the arguments are in order. A third option – and the one we’ll take – is to take two arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and construct the list of the first <span class="math inline">\(b\)</span> natural numbers starting from <span class="math inline">\(a\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Define <span class="math inline">\(f : \nats \rightarrow \ast + \nats \times \nats\)</span> by <span class="math display">\[f(k) = (\next(k),k).\]</span> We then define <span class="math inline">\(\range : \nats \times \nats \rightarrow \lists{\nats}\)</span> by <span class="math display">\[\range(a,b) = \unfoldN(f,b,a).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">range<span class="ot"> ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">range a b <span class="fu">=</span> unfoldN f b a</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span> f k <span class="fu">=</span> rgt (next k, k)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\range\)</span> is an <span class="math inline">\(\unfoldN{\ast}\)</span>, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\range\)</span> is the unique <span class="math inline">\(f : \nats \times \nats \rightarrow \lists{\nats}\)</span> satisfying the following system of equations for all <span class="math inline">\(a,b \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span class="math inline">\(\range\)</span> is the unique <span class="math inline">\(f : \nats \times \nats \rightarrow \lists{\nats}\)</span> satisfying the following system of equations for all <span class="math inline">\(a,b \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(a,\zero) = \nil \\
  f(a,\next(b)) = \cons(a,f(\next(a),b))
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_range_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_range_zero t <span class="fu">=</span></a>
@@ -254,78 +250,56 @@ Posted on 2017-05-05 by nbloomf
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">    ((range a (next b)) <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">    (cons a (range (next a) b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>A special case.</p>
-<div class="result">
-<div class="thm">
-<p>
-For all <span class="math inline">\(a \in \nats\)</span> we have <span class="math inline">\(\range(a,\next(\zero)) = \cons(a,\nil)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>For all <span class="math inline">\(a \in \nats\)</span> we have <span class="math inline">\(\range(a,\next(\zero)) = \cons(a,\nil)\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\next(\zero)) \\
  &amp; = &amp; \cons(a,\range(\next(a),\zero)) \\
  &amp; = &amp; \cons(a,\nil)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_range_one ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_range_one t <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;range(a,next(zero)) == cons(a,nil)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (range a (next zero)) ((cons a nil) <span class="ot">`withTypeOf`</span> t)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>The <span class="math inline">\(\length\)</span> of a <span class="math inline">\(\range\)</span> is predictable.</p>
-<div class="result">
-<div class="thm">
-<p>
-For all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math inline">\(\length(\range(a,b)) = b\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>For all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math inline">\(\length(\range(a,b)) = b\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\range(a,b)) \\
  &amp; = &amp; \length(\range(a,\zero)) \\
  &amp; = &amp; \length(\nil) \\
  &amp; = &amp; \zero \\
  &amp; = &amp; b
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \length(\range(a,\next(b)) \\
+ &amp;   &amp; \length(\range(a,\next(b))) \\
  &amp; = &amp; \length(\cons(a,\range(\next(a),b))) \\
- &amp; = &amp; \next(\length(\range(\next(a),b)) \\
+ &amp; = &amp; \next(\length(\range(\next(a),b))) \\
  &amp; = &amp; \next(b)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_range_length ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_range_length t <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;length(range(a,b)) == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (length ((range a b) <span class="ot">`withTypeOf`</span> t)) b</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\range\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math display">\[\range(a,\next(b)) = \snoc(\nplus(a,b),\range(a,b)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math display">\[\range(a,\next(b)) = \snoc(\nplus(a,b),\range(a,b)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\next(b)) \\
  &amp; = &amp; \range(a,\next(\zero)) \\
  &amp; = &amp; \cons(a,\nil) \\
@@ -338,11 +312,9 @@ We proceed by induction on <span class="math inline">\(b\)</span>. For the base 
  &amp; = &amp; \cons(a,\snoc(\nplus(\next(a),b),\range(\next(a),b))) \\
  &amp; = &amp; \snoc(\nplus(\next(a),b),\cons(a,\range(\next(a),b))) \\
  &amp; = &amp; \snoc(\nplus(a,\next(b)),\range(a,\next(b)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_range_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_range_snoc t <span class="fu">=</span></a>
@@ -350,19 +322,13 @@ We proceed by induction on <span class="math inline">\(b\)</span>. For the base 
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6">    ((range a (next b)) <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb6-7" data-line-number="7">    (snoc (plus a b) (range a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\range\)</span> interacts with <span class="math inline">\(\nplus\)</span> in its second argument.</p>
-<div class="result">
-<div class="thm">
-<p>
-If <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\range(a,\nplus(b,c)) = \cat(\range(a,b),\range(\nplus(a,b),c).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>If <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\range(a,\nplus(b,c)) = \cat(\range(a,b),\range(\nplus(a,b),c)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\nplus(b,c)) \\
  &amp; = &amp; \range(a,\nplus(b,\zero)) \\
  &amp; = &amp; \range(a,b) \\
@@ -377,11 +343,9 @@ We proceed by induction on <span class="math inline">\(c\)</span>. For the base 
  &amp; = &amp; \snoc(\nplus(\nplus(a,b),c),\cat(\range(a,b),\range(\nplus(a,b),c))) \\
  &amp; = &amp; \cat(\range(a,b),\snoc(\nplus(\nplus(a,b),c),\range(\nplus(a,b),c))) \\
  &amp; = &amp; \cat(\range(a,b),\range(\nplus(a,b),\next(c)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_range_plus_right ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_range_plus_right t <span class="fu">=</span></a>
@@ -389,19 +353,13 @@ We proceed by induction on <span class="math inline">\(c\)</span>. For the base 
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">    ((range a (plus b c)) <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">    (cat (range a b) (range (plus a b) c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\range\)</span> interacts with <span class="math inline">\(\next\)</span> in its first argument.</p>
-<div class="result">
-<div class="thm">
-<p>
-For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math display">\[\range(\next(a),b) = \map(\next)(\range(a,b)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math display">\[\range(\next(a),b) = \map(\next)(\range(a,b)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(\next(a),b) \\
  &amp; = &amp; \range(\next(a),\zero) \\
  &amp; = &amp; \nil \\
@@ -414,11 +372,9 @@ We proceed by induction on <span class="math inline">\(b\)</span>. For the base 
  &amp; = &amp; \cons(\next(a),\map(\next)(\range(\next(a),b))) \\
  &amp; = &amp; \map(\next)(\cons(a,\range(\next(a),b))) \\
  &amp; = &amp; \map(\next)(\range(a,\next(b)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_range_next_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_range_next_left t <span class="fu">=</span></a>
@@ -426,19 +382,13 @@ We proceed by induction on <span class="math inline">\(b\)</span>. For the base 
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">    ((range (next a) b) <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb8-7" data-line-number="7">    (map next (range a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\range\)</span> interacts with <span class="math inline">\(\nplus\)</span> in its first argument. In this theorem we use a bit of new notation. When a function argument is replaced by a dash, we implicitly mean lambda-abstraction. That is, if <span class="math inline">\(f\)</span> is a function, then <span class="math inline">\(f(-)\)</span> is short for <span class="math inline">\(\lambda x. f(x)\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-If <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\range(\nplus(a,b),c) = \map(\nplus(a,-))(\range(b,c)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>If <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\range(\nplus(a,b),c) = \map(\nplus(a,-))(\range(b,c)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span> note that <span class="math inline">\(\nplus(a,-) = \id\)</span>, since for all <span class="math inline">\(b \in \nats\)</span> we have <span class="math display">\[\nplus(\zero,-)(b) = \nplus(\zero,b) = b.\]</span> Thus <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span> note that <span class="math inline">\(\nplus(a,-) = \id\)</span>, since for all <span class="math inline">\(b \in \nats\)</span> we have <span class="math display">\[\nplus(\zero,-)(b) = \nplus(\zero,b) = b.\]</span> Thus <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(\nplus(a,b),c) \\
  &amp; = &amp; \range(\nplus(\zero,b),c) \\
  &amp; = &amp; \range(b,c) \\
@@ -453,11 +403,9 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; (\map(\next) \circ \map(\nplus(a,-)))(\range(b,c)) \\
  &amp; = &amp; \map(\next(\nplus(a,-)))(\range(b,c)) \\
  &amp; = &amp; \map(\nplus(\next(a),-))(\range(b,c))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_range_plus_left ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t n), <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_range_plus_left t <span class="fu">=</span></a>
@@ -465,7 +413,6 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6">    ((range (plus a b) c) <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb9-7" data-line-number="7">    (map (plus a) (range b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -475,7 +422,7 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">TypeName</span> (t n), <span class="dt">List</span> t, <span class="dt">Equal</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Arbitrary</span> (t n)</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">_test_range t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  testLabel (<span class="st">&quot;range: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  testLabel1 <span class="st">&quot;range&quot;</span> t</a>
 <a class="sourceLine" id="cb10-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb10-8" data-line-number="8">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb10-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
@@ -498,7 +445,7 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

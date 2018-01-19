@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Head and Tail</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2018-01-03 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,24 +199,27 @@ Posted on 2018-01-03 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">HeadAndTail</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  head, tail, isNil, _test_head_tail, main_head_tail</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">HeadAndTail</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  head, tail, isNil, _test_head_tail, main_head_tail</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
 <p>We define some helper functions in terms of <span class="math inline">\(\uncons\)</span>, analogous to <span class="math inline">\(\prev\)</span> and <span class="math inline">\(\iszero\)</span> on <span class="math inline">\(\nats\)</span>. These do not require recursion.</p>
-<div class="result">
-<div class="dfn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\isnil : \lists{A} \rightarrow \bool\)</span> by <span class="math display">\[\isnil = \either(\const(\btrue),\const(\bfalse)) \circ \uncons\]</span> and <span class="math inline">\(\head : \lists{A} \rightarrow 1 + A\)</span> by <span class="math display">\[\head = \uPair(\id,\fst) \circ \uncons\]</span> and <span class="math inline">\(\tail : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\tail = \either(\const(\nil),\snd) \circ \uncons.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">isNil ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">isNil <span class="fu">=</span> (either (const <span class="dt">True</span>) (const <span class="dt">False</span>)) <span class="fu">.</span> uncons</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">isNil <span class="fu">=</span> (either (const true) (const false)) <span class="fu">.</span> uncons</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">head<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Either</span> () a</a>
@@ -225,22 +228,15 @@ Posted on 2018-01-03 by nbloomf
 <a class="sourceLine" id="cb2-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb2-9" data-line-number="9">tail<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-10" data-line-number="10">tail <span class="fu">=</span> (either (const nil) snd) <span class="fu">.</span> uncons</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Now <span class="math inline">\(\isnil\)</span> detects <span class="math inline">\(\nil\)</span>:</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\isnil(\nil) = \btrue\)</span>.</li>
 <li><span class="math inline">\(\isnil(\cons(a,x)) = \bfalse\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \isnil(\nil) \\
@@ -257,10 +253,8 @@ Posted on 2018-01-03 by nbloomf
  &amp; = &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
-<div class="thm">
-<p>
+<div class="test">
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_isNil_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_isNil_nil z <span class="fu">=</span></a>
@@ -273,23 +267,17 @@ Posted on 2018-01-03 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">_test_isNil_cons z <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  testName <span class="st">&quot;isNil(cons(a,x)) == false&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-13" data-line-number="13">  \a x <span class="ot">-&gt;</span> eq (isNil (cons a x)) <span class="dt">False</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  \a x <span class="ot">-&gt;</span> eq (isNil (cons a x)) false</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\head\)</span> extracts the “first” entry of a list:</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\head(\nil) = \lft(\ast)\)</span>.</li>
 <li><span class="math inline">\(\head(\cons(a,x)) = \rgt(a)\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \head(\nil) \\
@@ -306,10 +294,8 @@ Posted on 2018-01-03 by nbloomf
  &amp; = &amp; \rgt(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
-<div class="thm">
-<p>
+<div class="test">
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_head_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> a)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_head_nil z <span class="fu">=</span></a>
@@ -323,22 +309,16 @@ Posted on 2018-01-03 by nbloomf
 <a class="sourceLine" id="cb4-11" data-line-number="11">_test_head_cons z <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  testName <span class="st">&quot;head(cons(a,x)) == rgt(a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-13" data-line-number="13">  \a x <span class="ot">-&gt;</span> eq (head (cons a x)) (rgt a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\tail\)</span> peels off the “first” entry of a list.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tail(\nil) = \nil\)</span>.</li>
 <li><span class="math inline">\(\tail(\cons(a,x)) = x\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tail(\nil) \\
@@ -355,10 +335,8 @@ Posted on 2018-01-03 by nbloomf
  &amp; = &amp; x
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
-<div class="thm">
-<p>
+<div class="test">
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_tail_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_tail_nil z <span class="fu">=</span></a>
@@ -372,27 +350,20 @@ Posted on 2018-01-03 by nbloomf
 <a class="sourceLine" id="cb5-11" data-line-number="11">_test_tail_cons z <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  testName <span class="st">&quot;tail(cons(a,x)) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-13" data-line-number="13">  \a x <span class="ot">-&gt;</span> eq (tail (cons a x)) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>While we’re at it, no cons can be its own tail.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math inline">\(\cons(a,x) \neq x\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math inline">\(\nil \neq \cons(a,\nil)\)</span> for all <span class="math inline">\(a\)</span> as needed. For the inductive step, suppose the inequality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Suppose further by way of contradiction that <span class="math inline">\(\cons(b,x) = \cons(a,\cons(b,x))\)</span>. Then we have <span class="math inline">\(a = b\)</span> and <span class="math inline">\(x = \cons(b,x)\)</span>, a contradiction. So in fact <span class="math inline">\(\cons(b,x) \neq \cons(a,\cons(b,x))\)</span> as needed.
-</p>
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math inline">\(\nil \neq \cons(a,\nil)\)</span> for all <span class="math inline">\(a\)</span> as needed. For the inductive step, suppose the inequality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Suppose further by way of contradiction that <span class="math inline">\(\cons(b,x) = \cons(a,\cons(b,x))\)</span>. Then we have <span class="math inline">\(a = b\)</span> and <span class="math inline">\(x = \cons(b,x)\)</span>, a contradiction. So in fact <span class="math inline">\(\cons(b,x) \neq \cons(a,\cons(b,x))\)</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_cons_self ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_cons_self _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;x /= cons(a,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> not (eq (cons a x) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -402,7 +373,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb7-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">_test_head_tail t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">  testLabel (<span class="st">&quot;head and tail: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  testLabel1 <span class="st">&quot;head and tail&quot;</span> t</a>
 <a class="sourceLine" id="cb7-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb7-8" data-line-number="8">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb7-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
@@ -425,7 +396,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

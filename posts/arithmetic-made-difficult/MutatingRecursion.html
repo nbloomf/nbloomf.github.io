@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Mutating Recursion</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,74 +199,129 @@ Posted on 2014-05-22 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">MutatingRecursion</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( mutatingRec</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">MutatingRecursion</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( mutatingRec, _test_mutatingrec, main_mutatingrec</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>Note that both simple recursion and bailout recursion produce functions with type <span class="math display">\[\nats \times A \rightarrow B;\]</span> we can call that <span class="math inline">\(A\)</span> argument the <em>parameter</em>. Now simple and bailout recursion use the parameter in different ways. Simple recursion is only allowed to change <span class="math inline">\(A\)</span> “outside” the recursive call, while bailout recursion can only change <span class="math inline">\(A\)</span> “inside” the recursive call. These restrictions were necessary so that simple and bailout recursion would have tail-recursive implementations. But there are times when we will want a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span> that can change its <span class="math inline">\(A\)</span> parameter both inside and outside the recursion.</p>
 <p>For this situation we introduce yet another recursion operator on <span class="math inline">\(\nats\)</span>, which we’ll call <em>mutating recursion</em>.</p>
-<div class="result">
-<div class="thm">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, and suppose we have mappings <span class="math display">\[\varphi : A \rightarrow B,\]</span> <span class="math display">\[\omega : A \rightarrow A,\]</span> and <span class="math display">\[\chi : A \times B^A \rightarrow B.\]</span> There is a unique map <span class="math inline">\(\Theta : \nats \rightarrow A \rightarrow B\)</span> such that <span class="math display">\[\Theta(\zero)(a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(n))(a) = \chi(\omega(a),\Theta(n)).\]</span> We will call such functions <em>mutating recursive</em>, and denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\mutrec{\varphi}{\omega}{\chi}\)</span>.</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have mappings <span class="math inline">\(\varepsilon : A \rightarrow B\)</span>, <span class="math inline">\(\beta : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span>, and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that <span class="math display">\[\Theta(\zero,a) = \varepsilon(a)\]</span> and <span class="math display">\[\Theta(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Theta(n,\omega(n,a)))}.\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\mutrec{\varepsilon}{\beta}{\psi}{\chi}{\omega}\)</span>.</p>
 <div class="proof">
-<p>Define <span class="math inline">\(\Omega : B^A \rightarrow B^A\)</span> by <span class="math display">\[\Omega(f)(a) = \chi(\omega(a),f).\]</span> Now <span class="math inline">\((B^A, \varphi, \Omega)\)</span> is an inductive set; define <span class="math inline">\(\Theta = \natrec{\varphi}{\Omega}\)</span>. Then <span class="math inline">\(\Theta\)</span> is unique such that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\zero)(a) \\
- &amp; = &amp; \natrec{\varphi}{\Omega}(\zero)(a) \\
- &amp; = &amp; \varphi(a)
+<p>Define <span class="math inline">\(\delta \in B^{A \times \nats}\)</span> by <span class="math display">\[\delta(a,n) = \varepsilon(a)\]</span> and <span class="math inline">\(\sigma : B^{A \times \nats} \rightarrow B^{A \times \nats}\)</span> by <span class="math display">\[\sigma(g)(a,n) = \bif{\beta(\prev(n),a)}{\psi(\prev(n),a)}{\chi(\prev(n),a,g(\omega(\prev(n),a)),\prev(n))}.\]</span> Now <span class="math inline">\((B^{A \times \nats},\delta,\sigma)\)</span> is an iterative set. We now define <span class="math display">\[\Theta(n,a) = \natrec{\delta}{\sigma}(n)(a,n).\]</span></p>
+<p>To see that <span class="math inline">\(\Theta\)</span> has the claimed properties, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\zero,a) \\
+ &amp; = &amp; \natrec{\delta}{\sigma}(\zero)(a,\zero) \\
+ &amp; = &amp; \delta(a,\zero) \\
+ &amp; = &amp; \varepsilon(a)
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(n))(a) \\
- &amp; = &amp; \natrec{\varphi}{\Omega}(\next(n))(a) \\
- &amp; = &amp; \Omega(\natrec{\varphi}{\Omega}(n))(a) \\
- &amp; = &amp; \chi(\omega(a),\natrec{\varphi}{\Omega}(n)) \\
- &amp; = &amp; \chi(\omega(a),\Theta(n))
+ &amp;   &amp; \Theta(\next(n),a) \\
+ &amp; = &amp; \natrec{\delta}{\sigma}(\next(n))(a,\next(n)) \\
+ &amp; = &amp; \sigma(\natrec{\delta}{\sigma}(n))(a,\next(n)) \\
+ &amp; = &amp; \bif{\beta(\prev(\next(n)),a)}{\psi(\prev(\next(n)),a)}{\chi(\prev(\next(n)),a,\natrec{\delta}{\sigma}(n)(\omega(\prev(\next(n)),a),\prev(\next(n))))} \\
+ &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\natrec{\delta}{\sigma}(n)(\omega(n,a),n))}
 \end{eqnarray*}\]</span> as claimed.</p>
+<p>Now we show that <span class="math inline">\(\Theta\)</span> is unique with this property. To that end, suppose <span class="math inline">\(\Psi\)</span> does as well; we show that <span class="math inline">\(\Theta(n,a) = \Psi(n,a)\)</span> for all <span class="math inline">\(n\)</span> by induction. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\zero,a) \\
+ &amp; = &amp; \varepsilon(a) \\
+ &amp; = &amp; \Psi(\zero,a).
+\end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(n\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(\next(n),a) \\
+ &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Theta(n,\omega(n,a)))} \\
+ &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Psi(n,\omega(n,a)))} \\
+ &amp; = &amp; \Psi(\next(n),a)
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
-<p>As usual we now want to implement <span class="math inline">\(\mutrec{\ast}{\ast}{\ast}\)</span> in software, and there are a couple of ways to go about this. First, the signature.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mutatingRec,<span class="ot"> mutatingRec' ::</span> (<span class="dt">Natural</span> n)</a>
+<p>As usual we now want to implement <span class="math inline">\(\mutrec{\ast}{\ast}{\ast}{\ast}{\ast}\)</span> in software, and there are a couple of ways to go about this. First, the signature.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mutatingRec,<span class="ot"> mutatingRec' ::</span> (<span class="dt">Natural</span> n, <span class="dt">Boolean</span> bool)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="ot">-&gt;</span> n</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="ot">-&gt;</span> a</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="ot">-&gt;</span> b</a></code></pre></div>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> bool)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="ot">-&gt;</span> n</a>
+<a class="sourceLine" id="cb2-8" data-line-number="8">  <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">  <span class="ot">-&gt;</span> b</a></code></pre></div>
 <p>There’s the naive way:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">mutatingRec phi omega chi <span class="fu">=</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">    theta n a <span class="fu">=</span> <span class="kw">case</span> unnext n <span class="kw">of</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">      <span class="dt">Left</span> () <span class="ot">-&gt;</span> phi a</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">      <span class="dt">Right</span> m <span class="ot">-&gt;</span> chi (omega a) (theta m)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">  <span class="kw">in</span> theta</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">mutatingRec epsilon beta psi chi omega n a <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">case</span> unnext n <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> epsilon a</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="dt">Right</span> m <span class="ot">-&gt;</span> ifThenElse (beta m a)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">      (psi m a)</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">      (chi m a (mutatingRec epsilon beta psi chi omega m (omega m a)))</a></code></pre></div>
 <p>And there’s the definition from the proof:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">mutatingRec' phi omega chi <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">let</span> w f a <span class="fu">=</span> chi (omega a) f <span class="kw">in</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  naturalRec phi w</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">mutatingRec' epsilon beta psi chi omega n a <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  naturalRec delta sigma n (a,n)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    delta (a,n) <span class="fu">=</span> epsilon a</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    sigma g (a,n) <span class="fu">=</span> ifThenElse (beta (prev n) a)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">      (psi (prev n) a)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">      (chi (prev n) a (g (omega (prev n) a, (prev n))))</a></code></pre></div>
 <p>The naive implementation of mutating recursion is not tail recursive, and I think (without proof) that no truly tail recursive implementation exists (that is sort of the reason for this operator).</p>
+<p>While we’re at it, we should test that the two are not <em>not</em> equivalent.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_mutatingrec_equiv ::</span> (<span class="dt">Natural</span> n, <span class="dt">Boolean</span> bool, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> bool</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> bool) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">_test_mutatingrec_equiv _ _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  testName <span class="st">&quot;mutatingRec(delta,beta,psi,chi,omega)(n,a) == mutatingRec'(delta,beta,psi,chi,omega)(n,a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  \delta beta psi chi omega n a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    (mutatingRec delta beta psi chi omega n a)</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    (mutatingRec' delta beta psi chi omega n a)</a></code></pre></div>
 <h2 id="what-it-does">What it does</h2>
 <p>As with the other recursion operators, the “uniqueness” part of mutating recursion is also handy. To be a little more explicit, it says the following.</p>
-<div class="result">
-<div class="thm">
+<div class="corollary">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with mappings <span class="math display">\[\begin{eqnarray*}
- \varphi &amp; : &amp; A \rightarrow B \\
- \omega &amp; : &amp; A \rightarrow A \\
- \chi &amp; : &amp; A \times B^A \rightarrow B.
-\end{eqnarray*}\]</span> Then <span class="math inline">\(\mutrec{\varphi}{\omega}{\chi}\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>: <span class="math display">\[\left\{\begin{array}{l}
- f(\zero)(a) = \varphi(a) \\
- f(\next(n))(a) = \chi(\omega(a),f(n))
+ \varepsilon &amp; : &amp; A \rightarrow B \\
+ \beta &amp; : &amp; \nats \times A \rightarrow \bool \\
+ \psi &amp; : &amp; \nats \times A \rightarrow B \\
+ \chi &amp; : &amp; \nats \times A \times B \rightarrow B \\
+ \omega &amp; : &amp; \nats \times A \rightarrow A.
+\end{eqnarray*}\]</span> Then <span class="math inline">\(\mutrec{\varepsilon}{\beta}{\psi}{\chi}{\omega}\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>: <span class="math display">\[\left\{\begin{array}{l}
+ f(\zero,a) = \varepsilon(a) \\
+ f(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,f(n,\omega(n,a)))}
 \end{array}\right.\]</span></p>
 </div>
-</div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">_test_mutatingrec</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  , <span class="dt">Boolean</span> bool, <span class="dt">Arbitrary</span> bool</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  , <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">CoArbitrary</span> n)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> bool <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">_test_mutatingrec n a b p maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">  testLabel3 <span class="st">&quot;mutatingRec&quot;</span> n a b</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">      }</a>
+<a class="sourceLine" id="cb6-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16">  runTest args (_test_mutatingrec_equiv n a b p)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main_mutatingrec ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">main_mutatingrec <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  _test_mutatingrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  _test_mutatingrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  _test_mutatingrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  _test_mutatingrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>The Uniqueness of the Natural Numbers</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -200,17 +200,22 @@ Posted on 2014-05-23 by nbloomf
 <hr />
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE BangPatterns #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">Natural</span>(<span class="fu">..</span>), <span class="dt">Unary</span>()</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  , isZero, prev, naturalRec</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6">  , _test_nats, main_nats</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ( <span class="dt">Natural</span>(<span class="fu">..</span>), <span class="dt">Unary</span>()</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  , isZero, prev, naturalRec</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7">  , _test_nats, main_nats</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
 <p>We have assumed the existence of a set <span class="math inline">\(\nats\)</span> such that there is a unique inductive set homomorphism from <span class="math inline">\(\nats\)</span> to any other inductive set. But it turns out that this set is not <em>unique</em> with this property; any other inductive set which is <em>isomorphic</em> to <span class="math inline">\(\nats\)</span> enjoys it as well. In fact we’ve already seen one such set, namely <span class="math inline">\(1 + \nats\)</span>.</p>
 <p>Here’s a handwavy proof. Let <span class="math inline">\((A,\varphi,e)\)</span> be an inductive set, and suppose the unique map <span class="math inline">\(\theta : \nats \rightarrow A\)</span> is bijective. Then there is a unique inductive set homomorphism <span class="math inline">\(\omega : A \rightarrow \nats\)</span>; namely, <span class="math inline">\(\omega = \theta^{-1}\)</span>. Now any homomorphism from <span class="math inline">\(A\)</span> factors through the (unique) map <span class="math inline">\(\omega\)</span>.</p>
 <p>From a mathematical point of view, isomorphic objects are interchangeable. But as we’ll eventually see, from a <em>computational</em> point of view, isomorphic objects can behave very differently. For this reason we will think of the properties of <span class="math inline">\(\nats\)</span> as a kind of interface, and write our programs against that. Specifically, every element of a <span class="math inline">\(\nats\)</span>-like set is either the zero or the successor of some other element, and <span class="math inline">\(\unnext\)</span> discriminates between the two.</p>
@@ -225,7 +230,7 @@ Posted on 2014-05-23 by nbloomf
 <a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">  natural ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> n</a></code></pre></div>
 <p>Our helpers <span class="math inline">\(\iszero\)</span> and <span class="math inline">\(\prev\)</span> can be written against this interface:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">isZero ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">isZero <span class="fu">=</span> (either (const <span class="dt">True</span>) (const <span class="dt">False</span>)) <span class="fu">.</span> unnext</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">isZero <span class="fu">=</span> (either (const true) (const false)) <span class="fu">.</span> unnext</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">prev ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb3-5" data-line-number="5">prev <span class="fu">=</span> (either (const zero) id) <span class="fu">.</span> unnext</a></code></pre></div>
@@ -290,19 +295,19 @@ Posted on 2014-05-23 by nbloomf
 <a class="sourceLine" id="cb6-36" data-line-number="36">  testName <span class="st">&quot;isZero(0) == true&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-37" data-line-number="37">  eq</a>
 <a class="sourceLine" id="cb6-38" data-line-number="38">    (isZero (zero <span class="ot">`withTypeOf`</span> m))</a>
-<a class="sourceLine" id="cb6-39" data-line-number="39">    <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-39" data-line-number="39">    true</a>
 <a class="sourceLine" id="cb6-40" data-line-number="40"></a>
 <a class="sourceLine" id="cb6-41" data-line-number="41"></a>
 <a class="sourceLine" id="cb6-42" data-line-number="42"><span class="ot">_test_isZero_next ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-43" data-line-number="43">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-44" data-line-number="44">_test_isZero_next _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-45" data-line-number="45">  testName <span class="st">&quot;isZero(next(m)) == false&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-46" data-line-number="46">  \m <span class="ot">-&gt;</span> eq (isZero (next m)) <span class="dt">False</span></a></code></pre></div>
+<a class="sourceLine" id="cb6-46" data-line-number="46">  \m <span class="ot">-&gt;</span> eq (isZero (next m)) false</a></code></pre></div>
 <p>Suite.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_nats ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_nats n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  testLabel (<span class="st">&quot;plus: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testLabel1 <span class="st">&quot;nats&quot;</span> n</a>
 <a class="sourceLine" id="cb7-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
@@ -323,7 +328,7 @@ Posted on 2014-05-23 by nbloomf
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

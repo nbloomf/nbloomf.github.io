@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Choose</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-15 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,20 +199,23 @@ Posted on 2017-04-15 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Choose</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( choose, _test_choose, main_choose</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DoubleNaturalRecursion</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Choose</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( choose, _test_choose, main_choose</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DoubleNaturalRecursion</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
 <p>Today we’ll define the binomial coefficient operator, <span class="math inline">\(\nchoose\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Define <span class="math inline">\(\delta : \nats \rightarrow \nats\)</span> by <span class="math display">\[\delta(k) = \bif{\iszero(k)}{\next(\zero)}{\zero},\]</span> <span class="math inline">\(\psi : \nats \rightarrow \nats\)</span> by <span class="math display">\[\psi(m) = \next(\zero),\]</span> and <span class="math inline">\(\chi : \nats \times \nats \times \nats\)</span> by <span class="math display">\[\chi(t,a,b) = \nplus(a,b).\]</span> Now define <span class="math inline">\(\nchoose : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nchoose = \dnatrec{\delta}{\psi}{\chi}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">choose ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
@@ -220,20 +223,15 @@ Posted on 2017-04-15 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    delta k <span class="fu">=</span> <span class="kw">if</span> isZero k <span class="kw">then</span> next zero <span class="kw">else</span> zero</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">    chi _ a b <span class="fu">=</span> plus a b</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Because <span class="math inline">\(\nchoose\)</span> is implemented in terms of double natural recursion, it is the unique solution to a system of equations.</p>
-<div class="result">
 <div class="corollary">
 <p><span class="math inline">\(\nchoose\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> to the following system of functional equations for all <span class="math inline">\(n,k \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,k) = \bif{\iszero(k)}{\next(\zero)}{\zero} \\
  f(\next(n),\zero) = \next(\zero) \\
  f(\next(n),\next(k)) = \nplus(f(n,k),f(n,\next(k))).
 \end{array}\right.\]</span></p>
-</div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_choose_zero_nat ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_choose_zero_nat _ <span class="fu">=</span></a>
@@ -257,17 +255,13 @@ Posted on 2017-04-15 by nbloomf
 <a class="sourceLine" id="cb3-21" data-line-number="21">  \n k <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-22" data-line-number="22">    (choose (next n) (next k))</a>
 <a class="sourceLine" id="cb3-23" data-line-number="23">    (plus (choose n (next k)) (choose n k))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can show that <span class="math inline">\(\nchoose\)</span> satisfies the usual properties of binomial coefficients. First, if <span class="math inline">\(k\)</span> is large enough then <span class="math inline">\(\nchoose(n,k) = \zero\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(n,k \in \nats\)</span>. If <span class="math inline">\(\nleq(\next(n),k) = \btrue\)</span>, then <span class="math inline">\(\nchoose(n,k) = \zero\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that if <span class="math inline">\(\nleq(\next(n),k) = \btrue\)</span> then <span class="math inline">\(k \neq \zero\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that if <span class="math inline">\(\nleq(\next(n),k) = \btrue\)</span> then <span class="math inline">\(k \neq \zero\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nchoose(n,k) \\
  &amp; = &amp; \nchoose(\zero,k) \\
  &amp; = &amp; \bif{\iszero(k)}{\next(\zero)}{\zero} \\
@@ -283,32 +277,26 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
  &amp; = &amp; \nplus(\nchoose(\next(n),m),\nchoose(\next(n),\next(m))) \\
  &amp; = &amp; \nplus(\zero,\zero) \\
  &amp; = &amp; \zero
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_choose_big_k ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_choose_big_k _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;leq(next(n),k) ==&gt; choose(n,k) == 0&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \n k <span class="ot">-&gt;</span> <span class="kw">if</span> leq (next n) k</a>
 <a class="sourceLine" id="cb4-6" data-line-number="6">    <span class="kw">then</span> eq (choose n k) zero</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>The special cases:</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(n \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nchoose(n,\zero) = \next(\zero)\)</span>.</li>
 <li><span class="math inline">\(\nchoose(n,n) = \next(\zero)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have two possibilities for <span class="math inline">\(n\)</span>. If <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nchoose(n,\zero) \\
@@ -331,10 +319,8 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
  &amp; = &amp; \next(\zero)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_choose_nat_zero ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_choose_nat_zero _ <span class="fu">=</span></a>
@@ -347,17 +333,13 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_choose_equal_args _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;choose(n,n) == 1&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \n <span class="ot">-&gt;</span> eq (choose n n) (next zero)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nchoose\)</span> is kind of symmetric:</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(n \in \nats\)</span>, and suppose <span class="math inline">\(n = \nplus(k,m)\)</span>. Then <span class="math display">\[\nchoose(n,k) = \nchoose(n,m).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math inline">\(k = m = \zero\)</span>. Then we have <span class="math inline">\(\nchoose(n,k) = \nchoose(n,m)\)</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Say <span class="math inline">\(\next(n) = \nplus(k,m)\)</span>. We now consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math inline">\(m = \next(n)\)</span>, so that <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math inline">\(k = m = \zero\)</span>. Then we have <span class="math inline">\(\nchoose(n,k) = \nchoose(n,m)\)</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Say <span class="math inline">\(\next(n) = \nplus(k,m)\)</span>. We now consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math inline">\(m = \next(n)\)</span>, so that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nchoose(\next(n),k) \\
  &amp; = &amp; \nchoose(\next(n),\zero) \\
  &amp; = &amp; \next(\zero) \\
@@ -388,17 +370,14 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
  &amp; = &amp; \nplus(\nchoose(n,u),\nchoose(n,\next(u))) \\
  &amp; = &amp; \nplus(\next(n),\next(u)) \\
  &amp; = &amp; \nplus(\next(n),m)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_choose_plus ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_choose_plus _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;choose(plus(a,b),a) == choose(plus(a,b),b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (choose (plus a b) a) (choose (plus a b) b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -407,7 +386,7 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 <a class="sourceLine" id="cb7-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">_test_choose n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  testLabel (<span class="st">&quot;choose: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  testLabel1 <span class="st">&quot;choose&quot;</span> n</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb7-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -429,7 +408,7 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

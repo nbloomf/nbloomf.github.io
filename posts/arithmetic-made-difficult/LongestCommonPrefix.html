@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Longest Common Prefix</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,25 +199,28 @@ Posted on 2017-05-09 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">LongestCommonPrefix</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( lcp, lcs, _test_lcp, main_lcp</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Prefix</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">LongestCommonPrefix</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( lcp, lcs, _test_lcp, main_lcp</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a></code></pre></div>
 <p>Today we’ll compute the <em>longest common prefix</em> of two lists (and while we’re at it, the <em>longest common suffix</em>). Given two lists <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, their longest common prefix is the longest list which is a prefix of both, just like it says on the tin. We’ll denote this function <span class="math inline">\(\lcp\)</span>, and we want it to have a signature like <span class="math display">\[\lists{A} \times \lists{A} \rightarrow \lists{A}.\]</span> Double fold was made for situations like this.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math inline">\(\delta(y) = \nil\)</span>, <span class="math inline">\(\psi : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\psi(a,x) = \nil,\]</span> and <span class="math inline">\(\chi : A \times A \times \lists{A} \times \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\chi(a,b,y,z,w) = \bif{\beq(a,b)}{cons(a,z)}{\nil}.\]</span> Now define <span class="math inline">\(\lcp : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcp = \dfoldr{\delta}{\psi}{\chi}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">lcp ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
@@ -226,22 +229,15 @@ Posted on 2017-05-09 by nbloomf
 <a class="sourceLine" id="cb2-4" data-line-number="4">    delta _ <span class="fu">=</span> nil</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">    psi _ _ <span class="fu">=</span> nil</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">    chi a b _ z _ <span class="fu">=</span> <span class="kw">if</span> eq a b <span class="kw">then</span> cons a z <span class="kw">else</span> nil</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\lcp\)</span> is defined as a double fold, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\lcp\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\lcp\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \nil \\
  f(\cons(a,x),\nil) = \nil \\
  f(\cons(a,x),\cons(b,y)) = \bif{\beq(a,b)}{\cons(a,f(x,y))}{\nil}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_lcp_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_lcp_nil_list _ <span class="fu">=</span></a>
@@ -259,26 +255,20 @@ Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inli
 <a class="sourceLine" id="cb3-15" data-line-number="15"><span class="ot">_test_lcp_cons_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-16" data-line-number="16">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-17" data-line-number="17">_test_lcp_cons_cons _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb3-18" data-line-number="18">  testName <span class="st">&quot;lcp(cons(a,x),cons(b,y)) == if(eq(a,b),cons(a,lcp(x,y),nil)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">  testName <span class="st">&quot;lcp(cons(a,x),cons(b,y)) == if(eq(a,b),cons(a,lcp(x,y),nil))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-20" data-line-number="20">    (lcp (cons a x) (cons b y))</a>
 <a class="sourceLine" id="cb3-21" data-line-number="21">    (<span class="kw">if</span> eq a b <span class="kw">then</span> cons a (lcp x y) <span class="kw">else</span> nil)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\lcp\)</span> lives up to the name (the <em>universal property</em> of <span class="math inline">\(\lcp\)</span>):</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\prefix(\lcp(x,y),x)\)</span> and <span class="math inline">\(\prefix(\lcp(x,y),y)\)</span>.</li>
 <li>If <span class="math inline">\(\prefix(z,x)\)</span> and <span class="math inline">\(\prefix(z,y)\)</span>, then <span class="math inline">\(\prefix(z,\lcp(x,y))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(x,y),x) \\
@@ -333,10 +323,8 @@ Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inli
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_lcp_is_common ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_lcp_is_common _ <span class="fu">=</span></a>
@@ -350,20 +338,14 @@ Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inli
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;if and(prefix(z,x),prefix(z,y)) then prefix(z,lcp(x,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> <span class="kw">if</span> and (prefix z x) (prefix z y)</a>
 <a class="sourceLine" id="cb4-13" data-line-number="13">    <span class="kw">then</span> prefix z (lcp x y)</a>
-<a class="sourceLine" id="cb4-14" data-line-number="14">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb4-14" data-line-number="14">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\lcp\)</span> is idempotent.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,x) = x\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,x) = x\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,x) \\
  &amp; = &amp; \lcp(\nil,\nil) \\
  &amp; = &amp; \nil \\
@@ -372,29 +354,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp;   &amp; \lcp(\cons(a,x),\cons(a,x)) \\
  &amp; = &amp; \cons(a,\lcp(x,x)) \\
  &amp; = &amp; \cons(a,x)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_lcp_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_lcp_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;lcp(x,x) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (lcp x x) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcp\)</span> is commutative.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,y) = \lcp(y,x)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,y) = \lcp(y,x)\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,y) \\
  &amp; = &amp; \lcp(\nil,y) \\
  &amp; = &amp; \nil \\
@@ -413,51 +387,35 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bif{\beq(b,a)}{\lcp(w,x)}{\nil} \\
  &amp; = &amp; \lcp(\cons(b,w),\cons(a,x)) \\
  &amp; = &amp; \lcp(y,\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_lcp_commutative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_lcp_commutative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;lcp(x,y) == lcp(y,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (lcp x y) (lcp y x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcp\)</span> is associative.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(\lcp(x,y),z) = \lcp(x,\lcp(y,z))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(\lcp(x,y),z) = \lcp(x,\lcp(y,z))\)</span>.</p>
 <div class="proof">
-<p>
-Let <span class="math inline">\(h = \lcp(\lcp(x,y),z)\)</span>, <span class="math inline">\(k = \lcp(x,\lcp(y,z))\)</span>, <span class="math inline">\(u = \lcp(x,y)\)</span>, and <span class="math inline">\(v = \lcp(y,z)\)</span>. First we show that <span class="math inline">\(\prefix(h,k)\)</span>. Note that <span class="math inline">\(\prefix(h,u)\)</span>, so that <span class="math inline">\(\prefix(h,x)\)</span> and <span class="math inline">\(\prefix(h,y)\)</span>. Now <span class="math inline">\(\prefix(h,z)\)</span>, so that <span class="math inline">\(\prefix(h,v)\)</span>. Thus <span class="math inline">\(\prefix(h,k)\)</span>. The proof that <span class="math inline">\(\prefix(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.
-</p>
+<p>Let <span class="math inline">\(h = \lcp(\lcp(x,y),z)\)</span>, <span class="math inline">\(k = \lcp(x,\lcp(y,z))\)</span>, <span class="math inline">\(u = \lcp(x,y)\)</span>, and <span class="math inline">\(v = \lcp(y,z)\)</span>. First we show that <span class="math inline">\(\prefix(h,k)\)</span>. Note that <span class="math inline">\(\prefix(h,u)\)</span>, so that <span class="math inline">\(\prefix(h,x)\)</span> and <span class="math inline">\(\prefix(h,y)\)</span>. Now <span class="math inline">\(\prefix(h,z)\)</span>, so that <span class="math inline">\(\prefix(h,v)\)</span>. Thus <span class="math inline">\(\prefix(h,k)\)</span>. The proof that <span class="math inline">\(\prefix(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_lcp_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_lcp_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;lcp(lcp(x,y),z) == lcp(x,lcp(y,z))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (lcp (lcp x y) z) (lcp x (lcp y z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\cat\)</span> distributes over <span class="math inline">\(\lcp\)</span> from the left.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(x,\lcp(y,z)) = \lcp(\cat(x,y),\cat(x,z))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(x,\lcp(y,z)) = \lcp(\cat(x,y),\cat(x,z))\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\lcp(y,z)) \\
  &amp; = &amp; \cat(\nil,\lcp(y,z)) \\
  &amp; = &amp; \lcp(y,z) \\
@@ -469,29 +427,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons(a,\lcp(\cat(x,y),\cat(x,z))) \\
  &amp; = &amp; \lcp(\cons(a,\cat(x,y)),\cons(a,\cat(x,z))) \\
  &amp; = &amp; \lcp(\cat(\cons(a,x),y),\cat(\cons(a,x),z))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_lcp_cat_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_lcp_cat_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;cat(x,lcp(y,z)) == lcp(cat(x,y),cat(x,z))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (cat x (lcp y z)) (lcp (cat x y) (cat x z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcp\)</span> detects prefixes.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math inline">\(\lcp(x,y) = x\)</span> if and only if <span class="math inline">\(\prefix(x,y) = \btrue\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math inline">\(\lcp(x,y) = x\)</span> if and only if <span class="math inline">\(\prefix(x,y) = \btrue\)</span>.</p>
 <div class="proof">
-<p>
-To see the “if” part, suppose <span class="math inline">\(\prefix(x,y)\)</span>. Then we have <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+<p>To see the “if” part, suppose <span class="math inline">\(\prefix(x,y)\)</span>. Then we have <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,y) \\
  &amp; = &amp; \lcp(\cat(x,\nil),\cat(x,z)) \\
  &amp; = &amp; \cat(x,\lcp(\nil,z)) \\
@@ -501,29 +451,21 @@ To see the “if” part, suppose <span class="math inline">\(\prefix(x,y)\)</sp
  &amp;   &amp; \prefix(x,y) \\
  &amp; = &amp; \prefix(\lcp(x,y),y) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_lcp_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_lcp_prefix _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;lcp(x,y) == x iff prefix(x,y)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (eq (lcp x y) x) (prefix x y)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\lcp\)</span> interacts with <span class="math inline">\(\zip\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(u,v \in \lists{B}\)</span>. Then <span class="math display">\[\lcp(\zip(x,u),\zip(y,v)) = \zip(\lcp(x,y),\lcp(u,v)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(u,v \in \lists{B}\)</span>. Then <span class="math display">\[\lcp(\zip(x,u),\zip(y,v)) = \zip(\lcp(x,y),\lcp(u,v)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\zip(x,u),\zip(y,v)) \\
  &amp; = &amp; \lcp(\zip(\nil,u),\zip(y,v)) \\
  &amp; = &amp; \lcp(\nil,\zip(y,v)) \\
@@ -582,29 +524,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \zip(\lcp(\cons(a,x),\cons(a,w)),\lcp(\cons(b,h),\cons(b,k))) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),\cons(c,w)),\lcp(\cons(b,h),\cons(d,k))) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v)) \\
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_lcp_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t (a,a)))</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_lcp_zip _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;zip(lcp(x,y),lcp(u,v)) == lcp(zip(x,u),zip(y,v))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  \x y u v <span class="ot">-&gt;</span> eq (zip (lcp x y) (lcp u v)) (lcp (zip x u) (zip y v))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcp\)</span> interacts with <span class="math inline">\(\map(f)\)</span> if <span class="math inline">\(f\)</span> is injective.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcp(x,y)) = \lcp(\map(f)(x),\map(f)(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcp(x,y)) = \lcp(\map(f)(x),\map(f)(y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\lcp(x,y)) \\
  &amp; = &amp; \map(f)(\lcp(\nil,y)) \\
  &amp; = &amp; \map(f)(\nil) \\
@@ -639,23 +573,17 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \lcp(\cons(f(a),\map(f)(x)),\cons(f(b),\map(f)(u))) \\
  &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(\cons(b,u))) \\
  &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\map(f)(y))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\lcp\)</span> interacts with <span class="math inline">\(\map(f)\)</span> and <span class="math inline">\(\map(g)\)</span> if <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> have no images in common.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets</p>
 <ol type="1">
 <li>Suppose <span class="math inline">\(f,g : A \rightarrow B\)</span> are functions with the property that <span class="math inline">\(f(a) \neq g(b)\)</span> for all <span class="math inline">\(a,b \in A\)</span>. Then <span class="math inline">\(\lcp(\map(f)(x),\map(g)(y)) = \nil\)</span> for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</li>
 <li>In particular, <span class="math inline">\(f(x) = \cons(a,x)\)</span> and <span class="math inline">\(g(x) = \cons(b,x)\)</span> have this property if <span class="math inline">\(a \neq b\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\map(f)(\nil),\map(g)(y)) \\
@@ -672,45 +600,33 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Note that if <span class="math inline">\(\cons(a,x) = \cons(b,y)\)</span>, we must have <span class="math inline">\(a = b\)</span>.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_lcp_map_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> (t (t a)))</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t (t a) <span class="ot">-&gt;</span> t (t a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_lcp_map_cons _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;if a /= b then lcp(map(cons(a,-))(x),map(cons(b,-))(y)) == nil&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \a b x y <span class="ot">-&gt;</span> <span class="kw">if</span> not (eq a b)</a>
 <a class="sourceLine" id="cb11-6" data-line-number="6">    <span class="kw">then</span> eq (lcp (map (cons a) x) (map (cons b) y)) nil</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>We can define the dual operation, longest common suffix, in terms of <span class="math inline">\(\lcp\)</span> like so.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\lcs : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcs(x,y) = \rev(\lcp(\rev(x),\rev(y))).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">lcs ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">lcs x y <span class="fu">=</span> rev (lcp (rev x) (rev y))</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Many properties of <span class="math inline">\(\lcp\)</span> have analogues for <span class="math inline">\(\lcs\)</span>.</p>
-<div class="result">
 <div class="corollary">
-<p>
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\lcs(\nil,y) = \nil\)</span>.</li>
 <li><span class="math inline">\(\lcs(\snoc(a,x),\nil) = \nil\)</span>.</li>
 <li><span class="math inline">\(\lcs(\snoc(a,x),\snoc(b,y)) = \bif{\beq(a,b)}{\snoc(a,\lcs(x,y))}{\nil}\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_lcs_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">_test_lcs_nil_list _ <span class="fu">=</span></a>
@@ -732,22 +648,16 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb13-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb13-20" data-line-number="20">    (lcs (snoc a x) (snoc b y))</a>
 <a class="sourceLine" id="cb13-21" data-line-number="21">    (<span class="kw">if</span> eq a b <span class="kw">then</span> snoc a (lcs x y) <span class="kw">else</span> nil)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcs\)</span> lives up to the name.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y,z \in \lists{A}\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\suffix(\lcs(x,y),x)\)</span> and <span class="math inline">\(\suffix(\lcs(x,y),y)\)</span>.</li>
 <li>If <span class="math inline">\(\suffix(z,x)\)</span> and <span class="math inline">\(\suffix(z,y)\)</span>, then <span class="math inline">\(\suffix(z,\lcs(x,y))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\lcs(x,y),x) \\
@@ -778,10 +688,8 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \suffix(z,\lcs(x,y))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_lcs_is_common ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">_test_lcs_is_common _ <span class="fu">=</span></a>
@@ -795,164 +703,117 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb14-11" data-line-number="11">  testName <span class="st">&quot;if and(suffix(z,x),suffix(z,y)) then suffix(z,lcs(x,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb14-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> <span class="kw">if</span> and (suffix z x) (suffix z y)</a>
 <a class="sourceLine" id="cb14-13" data-line-number="13">    <span class="kw">then</span> suffix z (lcs x y)</a>
-<a class="sourceLine" id="cb14-14" data-line-number="14">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb14-14" data-line-number="14">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\lcs\)</span> is idempotent.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,x) = x\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,x) = x\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(x,x) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\rev(x))) \\
  &amp; = &amp; \rev(\rev(x)) \\
  &amp; = &amp; x
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_lcs_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">_test_lcs_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb15-4" data-line-number="4">  testName <span class="st">&quot;lcs(x,x) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb15-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (lcs x x) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcs\)</span> is commutative.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,y) = \lcs(y,x)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,y) = \lcs(y,x)\)</span>.</p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(x,y) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\rev(y))) \\
  &amp; = &amp; \rev(\lcp(\rev(y),\rev(x))) \\
  &amp; = &amp; \lcs(y,x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_lcs_commutative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">_test_lcs_commutative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">  testName <span class="st">&quot;lcs(x,y) == lcs(y,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb16-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (lcs x y) (lcs y x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcs\)</span> is associative.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(\lcs(x,y),z) = \lcs(x,\lcs(y,z))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(\lcs(x,y),z) = \lcs(x,\lcs(y,z))\)</span>.</p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(\lcs(x,y),z) \\
  &amp; = &amp; \lcs(\rev(\lcp(\rev(x),\rev(y))),z) \\
- &amp; = &amp; \rev(\lcp(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(z)) \\
+ &amp; = &amp; \rev(\lcp(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(z))) \\
  &amp; = &amp; \rev(\lcp(\lcp(\rev(x),\rev(y)),\rev(z))) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\lcp(\rev(y),\rev(z)))) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\rev(\rev(\lcp(\rev(y),\rev(z)))))) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\rev(\lcs(y,z)))) \\
  &amp; = &amp; \lcs(x,\lcs(y,z))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">_test_lcs_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb17-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb17-3" data-line-number="3">_test_lcs_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb17-4" data-line-number="4">  testName <span class="st">&quot;lcs(lcs(x,y),z) == lcs(x,lcs(y,z))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb17-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (lcs (lcs x y) z) (lcs x (lcs y z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\cat\)</span> distributes over <span class="math inline">\(\lcs\)</span> from the right.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(\lcs(x,y),z) = \lcs(\cat(x,z),\cat(y,z))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(\lcs(x,y),z) = \lcs(\cat(x,z),\cat(y,z))\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(\cat(x,z),\cat(y,z)) \\
  &amp; = &amp; \rev(\lcp(\rev(\cat(x,z)),\rev(\cat(y,z)))) \\
  &amp; = &amp; \rev(\lcp(\cat(\rev(z),\rev(x)),\cat(\rev(z),\rev(y)))) \\
  &amp; = &amp; \rev(\cat(\rev(z),\lcp(\rev(x),\rev(y)))) \\
  &amp; = &amp; \cat(\rev(\lcp(\rev(x),\rev(y))),\rev(\rev(z))) \\
  &amp; = &amp; \cat(\lcs(x,y),z)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">_test_lcs_cat_right ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb18-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb18-3" data-line-number="3">_test_lcs_cat_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb18-4" data-line-number="4">  testName <span class="st">&quot;cat(lcs(x,y),z) == lcs(cat(x,z),cat(y,z))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb18-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (cat (lcs x y) z) (lcs (cat x z) (cat y z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\lcs\)</span> detects suffixes.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math inline">\(\lcs(x,y) = x\)</span> if and only if <span class="math inline">\(\suffix(x,y)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math inline">\(\lcs(x,y) = x\)</span> if and only if <span class="math inline">\(\suffix(x,y)\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\lcs(x,y) = x\]</span> if and only if <span class="math display">\[\rev(\lcp(\rev(x),\rev(y))) = x\]</span> if and only if <span class="math display">\[\rev(\rev(\lcp(\rev(x),\rev(y)))) = \rev(x)\]</span> if and only if <span class="math display">\[\lcp(\rev(x),\rev(y)) = \rev(x)\]</span> if and only if <span class="math display">\[\prefix(\rev(x),\rev(y)) = \btrue\]</span> if and only if <span class="math display">\[\suffix(x,y) = \btrue\]</span> as claimed.
-</p>
+<p>Note that <span class="math display">\[\lcs(x,y) = x\]</span> if and only if <span class="math display">\[\rev(\lcp(\rev(x),\rev(y))) = x\]</span> if and only if <span class="math display">\[\rev(\rev(\lcp(\rev(x),\rev(y)))) = \rev(x)\]</span> if and only if <span class="math display">\[\lcp(\rev(x),\rev(y)) = \rev(x)\]</span> if and only if <span class="math display">\[\prefix(\rev(x),\rev(y)) = \btrue\]</span> if and only if <span class="math display">\[\suffix(x,y) = \btrue\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">_test_lcs_suffix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb19-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb19-3" data-line-number="3">_test_lcs_suffix _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">  testName <span class="st">&quot;lcs(x,y) == x &lt;==&gt; suffix(x,y)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb19-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (eq (lcs x y) x) (suffix x y)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\lcs\)</span> also interacts with <span class="math inline">\(\map(f)\)</span> if <span class="math inline">\(f\)</span> is injective.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcs(x,y)) = \lcs(\map(f)(x),\map(f)(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\map(f)(\lcs(x,y)) = \lcs(\map(f)(x),\map(f)(y)).\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\lcs(x,y)) \\
  &amp; = &amp; \map(f)(\rev(\lcp(\rev(x),\rev(y)))) \\
  &amp; = &amp; \rev(\map(f)(\lcp(\rev(x),\rev(y)))) \\
  &amp; = &amp; \rev(\lcp(\map(f)(\rev(x)),\map(f)(\rev(y)))) \\
  &amp; = &amp; \rev(\lcp(\rev(\map(f)(x)),\rev(\map(f)(y)))) \\
  &amp; = &amp; \lcs(\map(f)(x),\map(f)(y))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -964,7 +825,7 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb20-5" data-line-number="5">  , <span class="dt">Arbitrary</span> (t (t a)), <span class="dt">Show</span> (t (t a)), <span class="dt">Equal</span> (t (t a))</a>
 <a class="sourceLine" id="cb20-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb20-7" data-line-number="7">_test_lcp t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb20-8" data-line-number="8">  testLabel (<span class="st">&quot;lcp &amp; lcs: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb20-8" data-line-number="8">  testLabel1 <span class="st">&quot;lcp &amp; lcs&quot;</span> t</a>
 <a class="sourceLine" id="cb20-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb20-10" data-line-number="10">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb20-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
@@ -1003,7 +864,7 @@ Note that <span class="math display">\[\begin{eqnarray*}
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

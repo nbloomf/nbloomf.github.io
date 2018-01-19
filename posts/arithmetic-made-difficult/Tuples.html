@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Tuples</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-04-02 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,16 +199,20 @@ Posted on 2014-04-02 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( fst, snd, dup, tswap, tpair, tassocL, tassocR, tupL, tupR</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  , _test_tuple, main_tuple</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( fst, snd, dup, tswap, tpair, tassocL, tassocR, tupL, tupR</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  , _test_tuple, main_tuple</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
 <p>Today we’ll establish a few basic utility functions on <em>tuples</em>. First, recall some definitions.</p>
-<div class="result">
-<div class="defn">
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. There is a set <span class="math inline">\(A \times B\)</span> together with two functions <span class="math inline">\(\fst : A \times B \rightarrow A\)</span> and <span class="math inline">\(\snd : A \times B \rightarrow B\)</span> having the property that if <span class="math inline">\(X\)</span> is a set and <span class="math inline">\(\sigma : X \rightarrow A\)</span> and <span class="math inline">\(\tau : X \rightarrow B\)</span> functions then there is a unique map <span class="math inline">\(\Theta : X \rightarrow A \times B\)</span> such that <span class="math inline">\(\fst \circ \Theta = \sigma\)</span> and <span class="math inline">\(\snd \circ \Theta = \tau\)</span>. That is, there is a unique <span class="math inline">\(\Theta\)</span> such that the following diagram commutes.</p>
 <p><span class="math display">\[\require{AMScd}
 \begin{CD}
@@ -219,18 +223,14 @@ A @&lt;&lt;{\fst}&lt; A \times B @&gt;&gt;{\snd}&gt; B
 <p>We will denote this unique <span class="math inline">\(\Theta : X \rightarrow A \times B\)</span> by <span class="math inline">\(\dup(\sigma,\tau)\)</span>.</p>
 <p>More concretely, if <span class="math inline">\(f : X \rightarrow A \times B\)</span> such that <span class="math inline">\(\fst(f(x)) = \sigma(x)\)</span> and <span class="math inline">\(\snd(f(x)) = \tau(x)\)</span> for all <span class="math inline">\(x \in X\)</span>, then <span class="math inline">\(f = \dup(\sigma,\tau)\)</span>.</p>
 </div>
-</div>
 <p>Now <span class="math inline">\(A \times B\)</span> uniquely represents all possible pairs of elements of <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> in a precise sense.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets.</p>
 <ol type="1">
 <li>If <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>, then there exists <span class="math inline">\(w \in A \times B\)</span> such that <span class="math inline">\(\fst(w) = a\)</span> and <span class="math inline">\(\snd(w) = b\)</span>.</li>
 <li>If <span class="math inline">\(x,y \in A \times B\)</span> such that <span class="math inline">\(\fst(x) = \fst(y)\)</span> and <span class="math inline">\(\snd(x) = \snd(y)\)</span>, then <span class="math inline">\(x = y\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Let <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>. Define <span class="math inline">\(\sigma : \{\ast\} \rightarrow A\)</span> by <span class="math inline">\(\sigma(\ast) = a\)</span>, and <span class="math inline">\(\tau : \{\ast\} \rightarrow B\)</span> by <span class="math inline">\(\tau(\ast) = b\)</span>. Let <span class="math inline">\(\Theta = \dup(\sigma,\tau)\)</span>, and consider <span class="math inline">\(w = \Theta(\ast) \in A \times B\)</span>. In particular, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \fst(w) \\
@@ -259,7 +259,6 @@ A @&lt;&lt;{\fst}&lt; A \times B @&gt;&gt;{\snd}&gt; B
  &amp; = &amp; \snd(g(\ast)).
 \end{eqnarray*}\]</span> In particular, we have <span class="math display">\[f = \dup(\sigma,\tau) = g\]</span> and thus <span class="math display">\[x = f(\ast) = g(\ast) = y\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 </div>
 <p>In Haskell we can model <span class="math inline">\(A \times B\)</span> with the tuple type <code>(a,b)</code>, and the maps in the universal property like so.</p>
@@ -270,57 +269,43 @@ A @&lt;&lt;{\fst}&lt; A \times B @&gt;&gt;{\snd}&gt; B
 <a class="sourceLine" id="cb2-5" data-line-number="5">snd (_,b) <span class="fu">=</span> b</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb2-7" data-line-number="7"><span class="ot">dup ::</span> (x <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (x <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> (a,b)</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">dup f g x <span class="fu">=</span> (f x, g x)</a></code></pre></div>
+<a class="sourceLine" id="cb2-8" data-line-number="8">dup f g x <span class="fu">=</span> (f x, g x)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb2-10" data-line-number="10"><span class="kw">instance</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (a,b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">  eq (a1,b1) (a2,b2) <span class="fu">=</span> and (eq a1 a2) (eq b1 b2)</a></code></pre></div>
 <p>For example, <span class="math inline">\(\id_{A \times B}\)</span> is a <span class="math inline">\(\dup\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Provided the types match up, we have <span class="math display">\[\dup(\fst,\snd) = \id_{A \times B}.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Provided the types match up, we have <span class="math display">\[\dup(\fst,\snd) = \id_{A \times B}.\]</span></p>
 <div class="proof">
-<p>
-Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dup(\fst,\snd)(a,b) \\
  &amp; = &amp; (\fst(a,b),\snd(a,b)) \\
  &amp; = &amp; (a,b)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_dup_fst_snd ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_dup_fst_snd _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;dup(fst,snd) == id&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (dup fst snd x) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We define <span class="math inline">\(\tSwap\)</span> on tuples like so.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\tSwap : A \times B \rightarrow B \times A\)</span> by <span class="math display">\[\tSwap = \dup(\snd,\fst).\]</span></p>
 <p>In Haskell,</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">tswap ::</span> (a,b) <span class="ot">-&gt;</span> (b,a)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">tswap <span class="fu">=</span> dup snd fst</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Elements of <span class="math inline">\(A \times B\)</span> act like “ordered pairs”, and <span class="math inline">\(\tSwap\)</span> effectively reverses the order of the pair.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tSwap(a,b) = (b,a)\)</span>.</li>
 <li><span class="math inline">\(\tSwap(\tSwap(a,b)) = (a,b)\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tSwap(a,b) \\
@@ -334,10 +319,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
  &amp; = &amp; (a,b)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_tswap_entries ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_tswap_entries _ _ <span class="fu">=</span></a>
@@ -350,31 +333,23 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_tswap_tswap _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;tswap(tswap(x)) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \x <span class="ot">-&gt;</span> eq (tswap (tswap x)) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Next, the utility <span class="math inline">\(\tPair\)</span> facilitates defining functions from one tuple to another.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets. We define <span class="math inline">\(\tPair : U^A \times V^B \rightarrow (U \times V)^{A \times B}\)</span> by <span class="math display">\[\tPair(f,g) = \dup(f \circ \fst, g \circ \snd).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">tpair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> (a,b) <span class="ot">-&gt;</span> (u,v)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">tpair f g <span class="fu">=</span> dup (f <span class="fu">.</span> fst) (g <span class="fu">.</span> snd)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p><span class="math inline">\(\tPair\)</span> has some nice properties.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(f\)</span>, <span class="math inline">\(g\)</span>, <span class="math inline">\(h\)</span>, <span class="math inline">\(k\)</span>, <span class="math inline">\(a\)</span>, and <span class="math inline">\(b\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tPair(f,g)(a,b) = (f(a),g(b))\)</span>.</li>
 <li><span class="math inline">\(\tPair(f,g) \circ \tPair(h,k) = \tPair(f \circ h, g \circ k)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tPair(f,g)(a,b) \\
@@ -392,10 +367,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
  &amp; = &amp; \tPair(f \circ h, g \circ k)(a,b)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_tpair_apply ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_tpair_apply _ _ <span class="fu">=</span></a>
@@ -412,12 +385,10 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb7-14" data-line-number="14">    eq</a>
 <a class="sourceLine" id="cb7-15" data-line-number="15">      (tpair f g (tpair h k x))</a>
 <a class="sourceLine" id="cb7-16" data-line-number="16">      (tpair (f <span class="fu">.</span> h) (g <span class="fu">.</span> k) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Finally, note that although as sets <span class="math inline">\(A \times (B \times C)\)</span> and <span class="math inline">\((A \times B) \times C\)</span> cannot possibly be equal to each other in general, they are naturally isomorphic via <span class="math inline">\(\tAssocL\)</span> and <span class="math inline">\(\tAssocR\)</span>.</p>
-<div class="result">
-<div class="defn">
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. We define <span class="math inline">\(\tAssocL : A \times (B \times C) \rightarrow (A \times B) \times C\)</span> by <span class="math display">\[\tAssocL = \dup(\dup(\fst, \fst \circ \snd), \snd \circ \snd)\]</span> and define <span class="math inline">\(\tAssocR : (A \times B) \times C \rightarrow A \times (B \times C)\)</span> by <span class="math display">\[\tAssocR = \dup(\fst \circ \fst, \dup(\snd \circ \fst, \snd)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">tassocL ::</span> (a,(b,c)) <span class="ot">-&gt;</span> ((a,b),c)</a>
@@ -426,11 +397,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">tassocR ::</span> ((a,b),c) <span class="ot">-&gt;</span> (a,(b,c))</a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">tassocR <span class="fu">=</span> dup (fst <span class="fu">.</span> fst) (dup (snd <span class="fu">.</span> fst) snd)</a></code></pre></div>
 </div>
-</div>
 <p>Now <span class="math inline">\(\tAssocL\)</span> and <span class="math inline">\(\tAssocR\)</span> have some nice properties.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>The following hold whenever everything has the appropriate type.</p>
 <ol type="1">
 <li><span class="math inline">\(\tAssocL(a,(b,c)) = ((a,b),c)\)</span>.</li>
@@ -438,10 +406,7 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <li><span class="math inline">\(\tAssocR \circ \tAssocL = \id\)</span>.</li>
 <li><span class="math inline">\(\tAssocL \circ \tAssocR = \id\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tAssocL(a,(b,c)) \\
@@ -472,10 +437,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
  &amp; = &amp; ((a,b),c)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_tassocL_entries ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_tassocL_entries _ _ _ <span class="fu">=</span></a>
@@ -502,13 +465,10 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb9-24" data-line-number="24">_test_tassocR_tassocL _ _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-25" data-line-number="25">  testName <span class="st">&quot;tassocR . tassocL == id&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-26" data-line-number="26">  \x <span class="ot">-&gt;</span> eq (tassocR (tassocL x)) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We also define a pair of helper functions for constructing tuples.</p>
-<div class="result">
-<div class="dfn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\tupL : A \rightarrow (A \times B)^B\)</span> by <span class="math display">\[\tup(a)(b) = (a,b)\]</span> and <span class="math inline">\(\tupR : B \rightarrow (A \times B)^B\)</span> by <span class="math display">\[\tupR(b)(a) = (a,b).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">tupL ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a,b)</a>
@@ -517,13 +477,9 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb10-4" data-line-number="4"></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5"><span class="ot">tupR ::</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> (a,b)</a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">tupR b a <span class="fu">=</span> (a,b)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p><span class="math inline">\(\tupL\)</span> and <span class="math inline">\(\tupR\)</span> interact with <span class="math inline">\(\fst\)</span> and <span class="math inline">\(\snd\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\fst(\tupL(a)(b)) = a\)</span>.</li>
@@ -531,20 +487,15 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <li><span class="math inline">\(\fst(\tupR(b)(a)) = a\)</span>.</li>
 <li><span class="math inline">\(\snd(\tupR(b)(a)) = b\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li><span class="math inline">\(\fst(\tupL(a)(b)) = \fst(a,b) = a\)</span>.</li>
 <li><span class="math inline">\(\snd(\tupL(a)(b)) = \snd(a,b) = b\)</span>.</li>
 <li><span class="math inline">\(\fst(\tupR(b)(a)) = \fst(a,b) = a\)</span>.</li>
 <li><span class="math inline">\(\snd(\tupR(b)(a)) = \snd(a,b) = b\)</span>.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_fst_tupL ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_fst_tupL _ _ <span class="fu">=</span></a>
@@ -571,22 +522,16 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb11-24" data-line-number="24">_test_snd_tupR _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-25" data-line-number="25">  testName <span class="st">&quot;snd(tupR(b)(a)) == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb11-26" data-line-number="26">  \a b <span class="ot">-&gt;</span> eq (snd (tupR b a)) b</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\tupL\)</span> and <span class="math inline">\(\tupR\)</span> interact with <span class="math inline">\(\tSwap\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tSwap \circ \tupL(a) = \tupR(a)\)</span>.</li>
 <li><span class="math inline">\(\tSwap \circ \tupR(b) = \tupL(b)\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\tSwap \circ \tupL(a))(b) \\
@@ -603,10 +548,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
  &amp; = &amp; \tupL(b)(a).
 \end{eqnarray*}\]</span></li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_tswap_tupL ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">_test_tswap_tupL _ _ <span class="fu">=</span></a>
@@ -619,22 +562,16 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb12-10" data-line-number="10">_test_tswap_tupR _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb12-11" data-line-number="11">  testName <span class="st">&quot;tswap . tupR(b) == tupL(b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb12-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (tswap (tupR b a)) (tupL b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\tupL\)</span> and <span class="math inline">\(\tupR\)</span> interact with <span class="math inline">\(\tPair\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tPair(f,g) \circ \tupL(a) = \tupL(f(a)) \circ g\)</span>.</li>
 <li><span class="math inline">\(\tPair(f,g) \circ \tupR(b) = \tupR(g(b)) \circ f\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Let <span class="math inline">\(b \in B\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\tPair(f,g) \circ \tupL(a))(b) \\
@@ -653,10 +590,8 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
  &amp; = &amp; (\tupR(g(b)) \circ f)(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_tpair_tupL ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">_test_tpair_tupL _ _ <span class="fu">=</span></a>
@@ -673,50 +608,50 @@ Note that for all <span class="math inline">\((a,b) \in A \times B\)</span> we h
 <a class="sourceLine" id="cb13-14" data-line-number="14">  \f g a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb13-15" data-line-number="15">    (((tpair f g) <span class="fu">.</span> (tupR b)) a)</a>
 <a class="sourceLine" id="cb13-16" data-line-number="16">    (((tupR (g b)) <span class="fu">.</span> f) a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
-<p>The suite:</p>
+<p>Suite:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1">_test_tuple</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2"><span class="ot">  ::</span> ( <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Show</span> c</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">     , <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c</a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">     , <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">Arbitrary</span> c</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">     , <span class="dt">CoArbitrary</span> a, <span class="dt">CoArbitrary</span> b )</a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">_test_tuple a b c size num <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-8" data-line-number="8">  testLabel <span class="st">&quot;Tuple&quot;</span></a>
-<a class="sourceLine" id="cb14-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb14-10" data-line-number="10">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb14-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb14-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb14-13" data-line-number="13">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb14-14" data-line-number="14">      }</a>
-<a class="sourceLine" id="cb14-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb14-16" data-line-number="16">  runTest args (_test_dup_fst_snd a b)</a>
-<a class="sourceLine" id="cb14-17" data-line-number="17">  runTest args (_test_tswap_entries a b)</a>
-<a class="sourceLine" id="cb14-18" data-line-number="18">  runTest args (_test_tswap_tswap a b)</a>
-<a class="sourceLine" id="cb14-19" data-line-number="19">  runTest args (_test_tpair_apply a b)</a>
-<a class="sourceLine" id="cb14-20" data-line-number="20">  runTest args (_test_tpair_tpair a b)</a>
-<a class="sourceLine" id="cb14-21" data-line-number="21">  runTest args (_test_tassocL_entries a b c)</a>
-<a class="sourceLine" id="cb14-22" data-line-number="22">  runTest args (_test_tassocR_entries a b c)</a>
-<a class="sourceLine" id="cb14-23" data-line-number="23">  runTest args (_test_tassocL_tassocR a b c)</a>
-<a class="sourceLine" id="cb14-24" data-line-number="24">  runTest args (_test_tassocR_tassocL a b c)</a>
-<a class="sourceLine" id="cb14-25" data-line-number="25">  runTest args (_test_fst_tupL a b)</a>
-<a class="sourceLine" id="cb14-26" data-line-number="26">  runTest args (_test_snd_tupL a b)</a>
-<a class="sourceLine" id="cb14-27" data-line-number="27">  runTest args (_test_fst_tupR a b)</a>
-<a class="sourceLine" id="cb14-28" data-line-number="28">  runTest args (_test_snd_tupR a b)</a>
-<a class="sourceLine" id="cb14-29" data-line-number="29">  runTest args (_test_tswap_tupL a b)</a>
-<a class="sourceLine" id="cb14-30" data-line-number="30">  runTest args (_test_tswap_tupR a b)</a>
-<a class="sourceLine" id="cb14-31" data-line-number="31">  runTest args (_test_tpair_tupL a b)</a>
-<a class="sourceLine" id="cb14-32" data-line-number="32">  runTest args (_test_tpair_tupR a b)</a></code></pre></div>
-<p>And <code>main</code>:</p>
+<a class="sourceLine" id="cb14-5" data-line-number="5">     , <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">TypeName</span> c</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">     , <span class="dt">CoArbitrary</span> a, <span class="dt">CoArbitrary</span> b )</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">_test_tuple a b c size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  testLabel3 <span class="st">&quot;Tuple&quot;</span> a b c</a>
+<a class="sourceLine" id="cb14-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb14-13" data-line-number="13">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb14-14" data-line-number="14">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb14-15" data-line-number="15">      }</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb14-17" data-line-number="17">  runTest args (_test_dup_fst_snd a b)</a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">  runTest args (_test_tswap_entries a b)</a>
+<a class="sourceLine" id="cb14-19" data-line-number="19">  runTest args (_test_tswap_tswap a b)</a>
+<a class="sourceLine" id="cb14-20" data-line-number="20">  runTest args (_test_tpair_apply a b)</a>
+<a class="sourceLine" id="cb14-21" data-line-number="21">  runTest args (_test_tpair_tpair a b)</a>
+<a class="sourceLine" id="cb14-22" data-line-number="22">  runTest args (_test_tassocL_entries a b c)</a>
+<a class="sourceLine" id="cb14-23" data-line-number="23">  runTest args (_test_tassocR_entries a b c)</a>
+<a class="sourceLine" id="cb14-24" data-line-number="24">  runTest args (_test_tassocL_tassocR a b c)</a>
+<a class="sourceLine" id="cb14-25" data-line-number="25">  runTest args (_test_tassocR_tassocL a b c)</a>
+<a class="sourceLine" id="cb14-26" data-line-number="26">  runTest args (_test_fst_tupL a b)</a>
+<a class="sourceLine" id="cb14-27" data-line-number="27">  runTest args (_test_snd_tupL a b)</a>
+<a class="sourceLine" id="cb14-28" data-line-number="28">  runTest args (_test_fst_tupR a b)</a>
+<a class="sourceLine" id="cb14-29" data-line-number="29">  runTest args (_test_snd_tupR a b)</a>
+<a class="sourceLine" id="cb14-30" data-line-number="30">  runTest args (_test_tswap_tupL a b)</a>
+<a class="sourceLine" id="cb14-31" data-line-number="31">  runTest args (_test_tswap_tupR a b)</a>
+<a class="sourceLine" id="cb14-32" data-line-number="32">  runTest args (_test_tpair_tupL a b)</a>
+<a class="sourceLine" id="cb14-33" data-line-number="33">  runTest args (_test_tpair_tupR a b)</a></code></pre></div>
+<p>Main:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">main_tuple ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2">main_tuple <span class="fu">=</span> _test_tuple <span class="dt">True</span> <span class="dt">True</span> <span class="dt">True</span> <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb15-2" data-line-number="2">main_tuple <span class="fu">=</span> _test_tuple (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

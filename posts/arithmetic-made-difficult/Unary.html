@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>From Arrows to Programs</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -200,26 +200,27 @@ Posted on 2014-05-07 by nbloomf
 <hr />
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE BangPatterns #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">Unary</span>(<span class="dt">Z</span>,<span class="dt">N</span>), mkUnary, natRec</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">Integer</span>, (-), (&lt;=))</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Modifiers</span> (<span class="dt">NonNegative</span>(..))</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ( <span class="dt">Unary</span>(<span class="dt">Z</span>,<span class="dt">N</span>), mkUnary, natRec</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">Integer</span>, (-), (&lt;=))</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Modifiers</span> (<span class="dt">NonNegative</span>(..))</a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
 <p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec{\ast}{\ast}\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish some structural results.</p>
-<div class="result">
-<div class="defn">
+<div class="definition">
 <p>Let <span class="math inline">\(1 = \{\ast\}\)</span>, and define <span class="math inline">\(\varphi : 1 + \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi = \rgt \circ \either(\const(\zero),\next).\]</span> In this post we consider <span class="math display">\[(1 + \nats, \lft(\ast), \varphi)\]</span> as an inductive set.</p>
 </div>
-</div>
 <p>It turns out that <span class="math inline">\(1 + \nats\)</span> is isomorphic to <span class="math inline">\(\nats\)</span>, and the map that achieves this is useful.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>The natural recursion map <span class="math inline">\(\Theta : \nats \rightarrow 1 + \nats\)</span> is an isomorphism; in particular, the inverse of <span class="math inline">\(\Theta\)</span> is <span class="math display">\[\Omega = \either(\const(\zero),\next).\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\unnext\)</span>.</p>
-</div>
 <div class="proof">
-<p>
 <p>We need to show two results: first that <span class="math inline">\(\Omega\)</span> is an inductive set homomorphism, and second that <span class="math inline">\(\Omega\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. To the first point, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Omega(\lft(\ast)) \\
  &amp; = &amp; \either(\const(\zero),\id)(\lft(\ast)) \\
@@ -244,7 +245,7 @@ Posted on 2014-05-07 by nbloomf
  &amp; = &amp; \next(\either(\const(\zero),\next)(\rgt(n))) \\
  &amp; = &amp; \next(\Omega(\rgt(n)))
 \end{eqnarray*}\]</span> as needed.</p>
-Next to see that <span class="math inline">\(\Omega\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\((\Omega \circ \Theta)(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>Next to see that <span class="math inline">\(\Omega\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\((\Omega \circ \Theta)(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\Omega \circ \Theta)(n) \\
  &amp; = &amp; \Omega(\Theta(\zero)) \\
  &amp; = &amp; \either(\const(\zero),\next)(\natrec{\lft(\ast)}{\varphi}(\zero)) \\
@@ -298,20 +299,15 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
  &amp; = &amp; (\rgt \circ \either(\const(\zero),\next))(\rgt(n)) \\
  &amp; = &amp; \rgt(\either(\const(\zero),\next)(\rgt(n))) \\
  &amp; = &amp; \rgt(\next(n))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <p>From <span class="math inline">\(\unnext\)</span> we define two helper functions.</p>
-<div class="result">
-<div class="defn">
+<div class="definition">
 <p>We define <span class="math inline">\(\prev : \nats \rightarrow \nats\)</span> by <span class="math display">\[\prev = \either(\const(\zero),\id) \circ \unnext\]</span> and <span class="math inline">\(\iszero : \nats \rightarrow \bool\)</span> by <span class="math display">\[\iszero = \either(\const(\btrue),\const(\bfalse)) \circ \unnext.\]</span></p>
 </div>
-</div>
 <p>Now <span class="math inline">\(\unnext\)</span>, <span class="math inline">\(\prev\)</span>, and <span class="math inline">\(\iszero\)</span> have some useful properties.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <ol type="1">
 <li><span class="math inline">\(\unnext(\zero) = \lft(\ast)\)</span>.</li>
 <li><span class="math inline">\(\unnext(\next(n)) = \rgt(n)\)</span>.</li>
@@ -320,10 +316,7 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
 <li><span class="math inline">\(\iszero(\zero) = \btrue\)</span>.</li>
 <li><span class="math inline">\(\iszero(\next(n)) = \bfalse\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unnext(\zero) \\
@@ -370,22 +363,16 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
  &amp; = &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 </div>
 <p>We’re now ready to finish off the Peano axioms.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <ol type="1">
 <li>Every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some natural number <span class="math inline">\(m\)</span>,</li>
 <li>No natural number is both <span class="math inline">\(\zero\)</span> and <span class="math inline">\(\next(m)\)</span> for some <span class="math inline">\(m\)</span>, and</li>
 <li><span class="math inline">\(\next(n) = \next(m)\)</span> if and only if <span class="math inline">\(n = m\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Let <span class="math inline">\(n \in \nats\)</span> and let <span class="math inline">\(\Omega\)</span> be the inverse of <span class="math inline">\(\unnext\)</span>. Consider <span class="math inline">\(\unnext(n) \in 1 + \nats\)</span>; we have either <span class="math inline">\(\unnext(n) = \lft(\ast)\)</span> or <span class="math inline">\(\unnext(n) = \rgt(m)\)</span> for some <span class="math inline">\(m \in \nats\)</span>. In the first case we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; n \\
@@ -402,7 +389,6 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
 <li>If <span class="math inline">\(\zero = \next(n)\)</span>, we have <span class="math display">\[\btrue = \iszero(\zero) = \iszero(\next(n)) = \bfalse,\]</span> which is absurd.</li>
 <li>The “if” part is trivial. To see the “only if” part, suppose we have <span class="math inline">\(\next(n) = \next(m)\)</span>; then <span class="math display">\[n = \prev(\next(n)) = \prev(\next(m)) = m\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 </div>
 <p>Establishing that every natural number is either <span class="math inline">\(\zero\)</span> or of the form <span class="math inline">\(\next(m)\)</span> for some <span class="math inline">\(m\)</span> also justifies our use of the following Haskell type to model the natural numbers.</p>
@@ -417,9 +403,9 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
 <a class="sourceLine" id="cb2-9" data-line-number="9">  typeName _ <span class="fu">=</span> <span class="st">&quot;Unary&quot;</span></a>
 <a class="sourceLine" id="cb2-10" data-line-number="10"></a>
 <a class="sourceLine" id="cb2-11" data-line-number="11"><span class="kw">instance</span> <span class="dt">Equal</span> <span class="dt">Unary</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">  eq <span class="dt">Z</span>     <span class="dt">Z</span>     <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">  eq <span class="dt">Z</span>     (<span class="dt">N</span> _) <span class="fu">=</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">  eq (<span class="dt">N</span> _) <span class="dt">Z</span>     <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">  eq <span class="dt">Z</span>     <span class="dt">Z</span>     <span class="fu">=</span> true</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">  eq <span class="dt">Z</span>     (<span class="dt">N</span> _) <span class="fu">=</span> false</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14">  eq (<span class="dt">N</span> _) <span class="dt">Z</span>     <span class="fu">=</span> false</a>
 <a class="sourceLine" id="cb2-15" data-line-number="15">  eq (<span class="dt">N</span> x) (<span class="dt">N</span> y) <span class="fu">=</span> eq x y</a></code></pre></div>
 <p>(That <code>show</code> instance is so we can display elements of <code>Nat</code> without too many parentheses.) We also define a helper function to convert integers into <code>Nat</code>s as follows.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">mkUnary ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Unary</span></a>
@@ -433,12 +419,12 @@ Next to see that <span class="math inline">\(\Omega\)</span> and <span class="ma
 <a class="sourceLine" id="cb5-2" data-line-number="2">natRec' e _    <span class="dt">Z</span>    <span class="fu">=</span> e</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">natRec' e phi (<span class="dt">N</span> n) <span class="fu">=</span> phi (natRec' e phi n)</a></code></pre></div>
 <p>For example:</p>
-<pre><code>let theta' = natRec' True not</code></pre>
+<pre><code>let theta' = natRec' true not</code></pre>
 <p>and we can test out this map by evaluating it on several natural numbers:</p>
 <pre><code>&gt; theta' $ mkUnary 10
-True
+true
 &gt; theta' $ mkUnary 11
-False</code></pre>
+false</code></pre>
 <p>Now this <code>theta'</code> is pretty silly (though not <em>that</em> silly, it detects the parity of a natural number, which we haven’t defined yet). But in the next section we’ll define a more interesting recursive function.</p>
 <h2 id="but">But…</h2>
 <p>There is a practical problem with this implementation of <code>natRec'</code>. If we evaluate on a natural number like <code>NNNZ</code>, the “stack” of function calls expands to something like this:</p>
@@ -511,7 +497,7 @@ False</code></pre>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

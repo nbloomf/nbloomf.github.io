@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Unzip</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-07 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,22 +199,27 @@ Posted on 2017-05-07 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Unzip</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( unzip, _test_unzip, main_unzip</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Zip</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Unzip</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( unzip, _test_unzip, main_unzip</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Zip</span></a></code></pre></div>
 <p>Today we will define a kind of one-sided inverse of <span class="math inline">\(\zip\)</span>, called <span class="math inline">\(\unzip\)</span>. Recall that <span class="math inline">\(\zip\)</span> has signature <span class="math display">\[\lists{A} \times \lists{B} \rightarrow \lists{A \times B}.\]</span> An inverse will then have signature <span class="math display">\[\lists{A \times B} \rightarrow \lists{A} \times \lists{B},\]</span> and should “undo” the zipping. As usual we’d like to define this as a fold if possible; to that end we need <span class="math inline">\(\varepsilon : \lists{A} \times \lists{B}\)</span> and <span class="math display">\[\varphi : (A \times B) \times (\lists{A} \times \lists{B}) \rightarrow \lists{A} \times \lists{B}\]</span> such that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\nil,\nil) \\
  &amp; = &amp; \unzip(\nil) \\
@@ -228,30 +233,21 @@ Posted on 2017-05-07 by nbloomf
  &amp; = &amp; \varphi((a,b),\unzip(x)) \\
  &amp; = &amp; \varphi((a,b),(u,v)).
 \end{eqnarray*}\]</span> With this in mind, we define <span class="math inline">\(\unzip\)</span> like so.</p>
-<div class="result">
-<div class="defn">
-<p>
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\varphi : (A \times B) \times (\lists{A} \times \lists{B}) \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\varphi((a,b),(u,v)) = (\cons(a,u),\cons(b,v).\]</span> We then define <span class="math inline">\(\unzip : \lists{A \times B} \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\unzip(x) = \foldr{(\nil,\nil)}{\varphi}(x).\]</span></p>
+<div class="definition">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\varphi : (A \times B) \times (\lists{A} \times \lists{B}) \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\varphi((a,b),(u,v)) = (\cons(a,u),\cons(b,v)).\]</span> We then define <span class="math inline">\(\unzip : \lists{A \times B} \rightarrow \lists{A} \times \lists{B}\)</span> by <span class="math display">\[\unzip(x) = \foldr{(\nil,\nil)}{\varphi}(x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">unzip<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t (a,b) <span class="ot">-&gt;</span> (t a, t b)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">unzip <span class="fu">=</span> foldr (nil,nil) phi</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi (a,b) (u,v) <span class="fu">=</span> (cons a u, cons b v)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Because <span class="math inline">\(\unzip\)</span> is defined as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span>, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\unzip\)</span> is the unique map <span class="math inline">\(f : \lists{A \times B} \rightarrow \lists{A} \times \lists{B}\)</span> such that the following hold for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\unzip\)</span> is the unique map <span class="math inline">\(f : \lists{A \times B} \rightarrow \lists{A} \times \lists{B}\)</span> such that the following hold for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = (\nil,\nil) \\
  f(\cons(a,b),z) = (\cons(a,\fst(z)),\cons(b,\snd(z))).
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_unzip_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> (t b))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_unzip_nil ta tb <span class="fu">=</span></a>
@@ -264,54 +260,40 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_unzip_cons ta tb <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;unzip(cons((a,b),z)) == (cons(a,fst(unzip(z))),cons(b,snd(unzip(z))))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b z <span class="ot">-&gt;</span> eq (unzip (cons (a,b) z)) (cons a (fst (unzip z)), cons b (snd (unzip z)))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\zip\)</span> undoes <span class="math inline">\(\unzip\)</span> as expected.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. For all <span class="math inline">\(x \in \lists{A \times B}\)</span>, we have <span class="math display">\[\zip(\unzip(x)) = x.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. For all <span class="math inline">\(x \in \lists{A \times B}\)</span>, we have <span class="math display">\[\zip(\unzip(x)) = x.\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\unzip(x)) \\
  &amp; = &amp; \zip(\unzip(\nil)) \\
  &amp; = &amp; \zip(\nil,\nil) \\
  &amp; = &amp; \nil \\
  &amp; = &amp; x
 \end{eqnarray*}\]</span> as needed. Suppose now that the result holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>. Let <span class="math inline">\((u,v) = \unzip(x)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \zip(\unzip(\cons((a,b),x)) \\
+ &amp;   &amp; \zip(\unzip(\cons((a,b),x))) \\
  &amp; = &amp; \zip(\cons(a,\fst(\unzip(x))),\cons(b,\snd(\unzip(x)))) \\
  &amp; = &amp; \cons((a,b),\zip(\fst(\unzip(x)),\snd(\unzip(x)))) \\
  &amp; = &amp; \cons((a,b),\zip(\unzip(x))) \\
  &amp; = &amp; \cons((a,b),x)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_unzip_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> (t (a,b)))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t (a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_unzip_zip _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;zip(unzip(x)) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq ((uncurry zip) (unzip x)) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>(Note that the reverse composition <span class="math inline">\(\unzip(\zip(x,y)) = (x,y),\)</span> although it makes sense type-wise, does not hold for all <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> since <span class="math inline">\(\zip\)</span> truncates its longer argument.)</p>
 <p><span class="math inline">\(\unzip\)</span> interacts with <span class="math inline">\(\tSwap\)</span>:</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets and <span class="math inline">\(x \in \lists{A \times B}\)</span>. Then we have <span class="math display">\[\tSwap(\unzip(x)) = \unzip(\map(\tSwap)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets and <span class="math inline">\(x \in \lists{A \times B}\)</span>. Then we have <span class="math display">\[\tSwap(\unzip(x)) = \unzip(\map(\tSwap)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tSwap(\unzip(x)) \\
  &amp; = &amp; \tSwap(\unzip(\nil)) \\
  &amp; = &amp; \tSwap(\nil,\nil) \\
@@ -326,29 +308,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; (\cons(b,v),\cons(a,u)) \\
  &amp; = &amp; \tSwap(\cons(a,u),\cons(b,v)) \\
  &amp; = &amp; \tSwap(\unzip(\cons((a,b),x)))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_unzip_tswap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t b), <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t (a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_unzip_tswap _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;tswap(unzip(x)) == unzip(map(tswap)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (unzip (map tswap x)) (tswap (unzip x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\unzip\)</span> interacts with <span class="math inline">\(\tPair\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. For all <span class="math inline">\(x \in \lists{A \times B}\)</span> we have <span class="math display">\[\unzip(\map(\tPair(f,g))(x)) = \tPair(\map(f),\map(g))(\unzip(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. For all <span class="math inline">\(x \in \lists{A \times B}\)</span> we have <span class="math display">\[\unzip(\map(\tPair(f,g))(x)) = \tPair(\map(f),\map(g))(\unzip(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unzip(\map(\tPair(f,g))(\nil)) \\
  &amp; = &amp; \unzip(\nil) \\
  &amp; = &amp; (\nil,\nil) \\
@@ -369,17 +343,14 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \foldr{(\nil,\nil)}{\varphi}(\cons(\tPair(f,g)(a,b),\map(\tPair(f,g))(x))) \\
  &amp; = &amp; \foldr{(\nil,\nil)}{\varphi}(\map(\tPair(f,g))(\cons((a,b),x))) \\
  &amp; = &amp; \unzip(\map(\tPair(f,g))(\cons((a,b),x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_unzip_tpair ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t b), <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t (a,b) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_unzip_tpair _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;unzip(map(tpair(f,g))(x)) == tpair(map(f),map(g))(unzip(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \f g x <span class="ot">-&gt;</span> eq (unzip (map (tpair f g) x)) (tpair (map f) (map g) (unzip x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -392,7 +363,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb7-6" data-line-number="6">  , <span class="dt">Show</span> (t (a,b)), <span class="dt">Arbitrary</span> (t (a,b)), <span class="dt">Equal</span> (t b), <span class="dt">Equal</span> (t a)</a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-8" data-line-number="8">_test_unzip t u maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-9" data-line-number="9">  testLabel (<span class="st">&quot;unzip: &quot;</span> <span class="fu">++</span> typeName t <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName u)</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">  testLabel2 <span class="st">&quot;unzip&quot;</span> t u</a>
 <a class="sourceLine" id="cb7-10" data-line-number="10"></a>
 <a class="sourceLine" id="cb7-11" data-line-number="11">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb7-12" data-line-number="12">    args <span class="fu">=</span> stdArgs</a>
@@ -413,7 +384,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

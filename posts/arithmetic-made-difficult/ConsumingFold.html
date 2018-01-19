@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Consuming Fold</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2018-01-08 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,24 +199,24 @@ Posted on 2018-01-08 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">ConsumingFold</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  cfoldr, _test_cfoldr, main_cfoldr</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">ConsumingFold</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  cfoldr, _test_cfoldr, main_cfoldr</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
 <p>Today we’ll implement another recursion operator on lists. This one is similar to <span class="math inline">\(\foldr{\ast}{\ast}\)</span> but allows us to “have our cake and eat it too” in a straightforward way.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(\gamma \in B\)</span> and <span class="math inline">\(\sigma : A \times \lists{A} \times B \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Omega : \lists{A} \rightarrow B\)</span> such that <span class="math display">\[\Omega(\nil) = \gamma\]</span> and <span class="math display">\[\Omega(\cons(a,x)) = \sigma(a,x,\Omega(x)).\]</span> We denote this map by <span class="math inline">\(\cfoldr{\gamma}{\sigma}\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(\gamma \in B\)</span> and <span class="math inline">\(\sigma : A \times \lists{A} \times B \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Omega : \lists{A} \rightarrow B\)</span> such that <span class="math display">\[\Omega(\nil) = \gamma\]</span> and <span class="math display">\[\Omega(\cons(a,x)) = \sigma(a,x,\Omega(x)).\]</span> We denote this map by <span class="math inline">\(\cfoldr{\gamma}{\sigma}\)</span>.</p>
 <div class="proof">
-<p>
-Define <span class="math inline">\(\varphi : A \times B^{\lists{A}} \rightarrow B^{\lists{A}}\)</span> casewise by <span class="math display">\[\varphi(a,g)(x) = \left\{\begin{array}{ll}
+<p>Define <span class="math inline">\(\varphi : A \times B^{\lists{A}} \rightarrow B^{\lists{A}}\)</span> casewise by <span class="math display">\[\varphi(a,g)(x) = \left\{\begin{array}{ll}
  \sigma(a,\nil,g(\nil)) &amp; \mathrm{if}\ x = \nil \\
  \sigma(a,u,g(u)) &amp; \mathrm{if}\ x = \cons(a,u),
 \end{array}\right.\]</span> and define <span class="math inline">\(\Omega(x) = \foldr{\const(\gamma)}{\varphi}(x)(x)\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
@@ -239,8 +239,7 @@ Define <span class="math inline">\(\varphi : A \times B^{\lists{A}} \rightarrow 
  &amp; = &amp; \sigma(a,x,\Psi(x)) \\
  &amp; = &amp; \sigma(a,x,\Omega(a)) \\
  &amp; = &amp; \Omega(\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
@@ -271,7 +270,7 @@ Define <span class="math inline">\(\varphi : A \times B^{\lists{A}} \rightarrow 
 <a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">CoArbitrary</span> (t a)</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">_test_cfoldr t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel (<span class="st">&quot;cfoldr: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel1 <span class="st">&quot;cfoldr&quot;</span> t</a>
 <a class="sourceLine" id="cb6-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb6-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
@@ -288,7 +287,7 @@ Define <span class="math inline">\(\varphi : A \times B^{\lists{A}} \rightarrow 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

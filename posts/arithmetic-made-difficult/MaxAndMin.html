@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Maximum and Minimum</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-07 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,21 +199,24 @@ Posted on 2017-04-07 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">MaxAndMin</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( max, min, _test_max_min, main_max_min</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Times</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Minus</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
-<p>With <span class="math inline">\(\nleq\)</span> in hand we can also define max and min functions. These are less interesting since they do not have to be defined recursively. :)</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( max, min, _test_max_min, main_max_min</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Times</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Minus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
+<p>With <span class="math inline">\(\nleq\)</span> in hand we can also define max and min functions. These are less interesting since they do not have to be defined recursively.</p>
+<div class="definition">
 <p>We define <span class="math inline">\(\nmax : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmax(a,b) = \bif{\nleq(a,b)}{b}{a}\]</span> and <span class="math inline">\(\nmin : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmin(a,b) = \bif{\nleq(a,b)}{a}{b}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">max<span class="ot"> ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
@@ -221,12 +224,9 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">min<span class="ot"> ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">min a b <span class="fu">=</span> <span class="kw">if</span> leq a b <span class="kw">then</span> a <span class="kw">else</span> b</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Special cases.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\zero,a) = a\)</span>.</li>
@@ -234,9 +234,7 @@ Posted on 2017-04-07 by nbloomf
 <li><span class="math inline">\(\nmin(\zero,a) = \zero\)</span>.</li>
 <li><span class="math inline">\(\nmin(a,a) = a\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\zero,a) \\
@@ -263,10 +261,8 @@ Posted on 2017-04-07 by nbloomf
  &amp; = &amp; a
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_max_zero ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_max_zero _ <span class="fu">=</span></a>
@@ -293,20 +289,16 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb3-24" data-line-number="24">_test_min_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-25" data-line-number="25">  testName <span class="st">&quot;a == min(a,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-26" data-line-number="26">  \a <span class="ot">-&gt;</span> eq (min a a) a</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> are commutative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(a,b) = \nmax(b,a)\)</span>.</li>
 <li><span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>If $(a,b) = , we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(a,b) \\
@@ -323,10 +315,8 @@ Posted on 2017-04-07 by nbloomf
  &amp; = &amp; \nmin(b,a)
 \end{eqnarray*}\]</span> as claimed; similarly, if <span class="math inline">\(\nleq(b,a) = \bfalse\)</span> then <span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>. Suppose then that <span class="math inline">\(\nleq(a,b) = \nleq(b,a) = \btrue\)</span>. By antisymmetry we have <span class="math inline">\(a = b\)</span>, and thus <span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_max_commutative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_max_commutative _ <span class="fu">=</span></a>
@@ -339,12 +329,10 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">_test_min_commutative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;min(a,b) == min(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (min a b) (min b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\next\)</span> distribute over <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\next(a),\next(b)) = \next(\nmax(a,b))\)</span>.</li>
@@ -352,9 +340,7 @@ Posted on 2017-04-07 by nbloomf
 <li><span class="math inline">\(\nmin(\next(a),\next(b)) = \next(\nmin(a,b))\)</span>.</li>
 <li><span class="math inline">\(\nmin(\nplus(c,a),\nplus(c,b)) = \nplus(c,\nmin(a,b))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\next(a),\next(b)) \\
@@ -385,10 +371,8 @@ Posted on 2017-04-07 by nbloomf
  &amp; = &amp; \nplus(c,\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_max_next ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_max_next _ <span class="fu">=</span></a>
@@ -415,20 +399,16 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb5-24" data-line-number="24">_test_min_plus _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-25" data-line-number="25">  testName <span class="st">&quot;min(plus(c,a),plus(c,b)) == plus(c,min(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-26" data-line-number="26">  \a b c <span class="ot">-&gt;</span> eq (min (plus c a) (plus c b)) (plus c (min a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\ntimes(c,a),\ntimes(c,b)) = \ntimes(c,\nmax(a,b))\)</span>.</li>
 <li><span class="math inline">\(\nmin(\ntimes(c,a),\ntimes(c,b)) = \ntimes(c,\nmin(a,b))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We consider two possibilities. If <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\ntimes(c,a),\ntimes(c,b)) \\
@@ -461,10 +441,8 @@ Posted on 2017-04-07 by nbloomf
  &amp; = &amp; \ntimes(c,\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_max_times ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_max_times _ <span class="fu">=</span></a>
@@ -477,20 +455,16 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb6-10" data-line-number="10">_test_min_times _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-11" data-line-number="11">  testName <span class="st">&quot;min(times(c,a),times(c,b)) == times(c,min(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> eq (min (times c a) (times c b)) (times c (min a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> are associative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(a,\nmax(b,c)) = \nmax(\nmax(a,b),c)\)</span>.</li>
 <li><span class="math inline">\(\nmin(a,\nmin(b,c)) = \nmin(\nmin(a,b),c)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Set <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(a,\nmax(b,c)) \\
@@ -509,10 +483,8 @@ Posted on 2017-04-07 by nbloomf
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(\nleq(a,b) = \btrue\)</span> and <span class="math inline">\(\nleq(b,c) = \btrue\)</span>, by transitivity we have <span class="math inline">\(\nleq(a,c) = \btrue\)</span> and <span class="math display">\[Q = \bif{\nleq(a,c)}{c}{a} = c = \bif{\nleq(b,c)}{c}{b} = R.\]</span> If <span class="math inline">\(\nleq(a,b) = \btrue\)</span> and <span class="math inline">\(\nleq(b,c) = \bfalse\)</span>, we have <span class="math display">\[Q = \bif{\nleq(a,b)}{b}{a} = b = \bif{\nleq(b,c)}{c}{b} = R.\]</span> Suppose <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>; then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c) = \btrue\)</span>, we have <span class="math inline">\(\nleq(b,c) = \btrue\)</span> and <span class="math display">\[Q = \bif{\nleq(a,c)}{c}{a} = R,\]</span> and if <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>, then <span class="math inline">\(\nleq(c,a) = \btrue\)</span> and <span class="math display">\[Q = \bif{\bfalse}{\bif{\nleq(b,c)}{c}{b}}{a} = a = \bif{\nleq(a,c)}{c}{a} = R.\]</span></li>
 <li>Analogous to (1).</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_max_associative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_max_associative _ <span class="fu">=</span></a>
@@ -525,37 +497,31 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb7-10" data-line-number="10">_test_min_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-11" data-line-number="11">  testName <span class="st">&quot;min(min(a,b),c) == min(a,min(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> eq (min (min a b) c) (min a (min b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> satisfy a “least upper bound” and “greatest lower bound” property, respectively, with respect to <span class="math inline">\(\nleq\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\nleq(a,c)\)</span> and <span class="math inline">\(\nleq(b,c)\)</span>, then <span class="math inline">\(\nleq(\nmax(a,b),c)\)</span>.</li>
 <li>If <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmin(a,b))\)</span>.</li>
 <li><span class="math inline">\(\nleq(\nmin(a,b),\nmax(a,b)) = \btrue\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>If <span class="math inline">\(\nleq(a,b) = \btrue\)</span>, then <span class="math inline">\(\nmax(a,b) = b\)</span>, and if <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, so that <span class="math inline">\(\nmax(a,b) = a\)</span>. In either case we have <span class="math inline">\(\nleq(\nmax(a,b),c)\)</span>.</li>
 <li>If <span class="math inline">\(\nleq(a,b) = \btrue\)</span>, then <span class="math inline">\(\nmin(a,b) = a\)</span>, and if <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, so that <span class="math inline">\(\nmin(a,b) = b\)</span>. In either case we have <span class="math inline">\(\nleq(c,\nmin(a,b))\)</span>.</li>
 <li>Suppose <span class="math inline">\(\nleq(a,b)\)</span>. Now <span class="math inline">\(\nmin(a,b) = a\)</span> and <span class="math inline">\(\nmax(a,b) = b\)</span>, so that <span class="math display">\[\nleq(\nmin(a,b),\nmax(a,b)) = \nleq(a,b) = \btrue\]</span> as claimed. Now if <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, and we instead have <span class="math inline">\(\nmin(a,b) = b\)</span> and <span class="math inline">\(\nmax(a,b) = a\)</span>.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_max_lub ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_max_lub _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if leq(a,c) and leq(b,c) then leq(max(a,b),c)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (leq a c) (leq b c)</a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="kw">then</span> leq (max a b) c</a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb8-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb8-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb8-10" data-line-number="10"><span class="ot">_test_min_glb ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -564,7 +530,7 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb8-13" data-line-number="13">  testName <span class="st">&quot;if leq(c,a) and leq(c,b) then leq(c,min(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-14" data-line-number="14">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (leq c a) (leq c b)</a>
 <a class="sourceLine" id="cb8-15" data-line-number="15">    <span class="kw">then</span> leq c (min a b)</a>
-<a class="sourceLine" id="cb8-16" data-line-number="16">    <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb8-17" data-line-number="17"></a>
 <a class="sourceLine" id="cb8-18" data-line-number="18"></a>
 <a class="sourceLine" id="cb8-19" data-line-number="19"><span class="ot">_test_max_min_leq ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -572,25 +538,19 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb8-21" data-line-number="21">_test_max_min_leq _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-22" data-line-number="22">  testName <span class="st">&quot;leq(min(a,b),max(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-23" data-line-number="23">  \a b <span class="ot">-&gt;</span> leq (min a b) (max a b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> interact with <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(a,b)\)</span>.</li>
 <li><span class="math inline">\(\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(a,b)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
-We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a,b)\)</span>. Now <span class="math inline">\(\nmin(a,b) = a\)</span> and <span class="math inline">\(\nmax(a,b) = b\)</span>, so that <span class="math display">\[\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(a,b)\]</span> and <span class="math display">\[\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(a,b)\]</span> as claimed. Now if <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, and we instead have <span class="math inline">\(\nmin(a,b) = b\)</span> and <span class="math inline">\(\nmax(a,b) = a\)</span>. Then <span class="math display">\[\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(b,a) = \nplus(a,b)\]</span> and <span class="math display">\[\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(b,a) = \ntimes(a,b)\]</span> as claimed.
-</p>
+<p>We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a,b)\)</span>. Now <span class="math inline">\(\nmin(a,b) = a\)</span> and <span class="math inline">\(\nmax(a,b) = b\)</span>, so that <span class="math display">\[\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(a,b)\]</span> and <span class="math display">\[\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(a,b)\]</span> as claimed. Now if <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, and we instead have <span class="math inline">\(\nmin(a,b) = b\)</span> and <span class="math inline">\(\nmax(a,b) = a\)</span>. Then <span class="math display">\[\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(b,a) = \nplus(a,b)\]</span> and <span class="math display">\[\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(b,a) = \ntimes(a,b)\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_max_min_plus ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_max_min_plus _ <span class="fu">=</span></a>
@@ -603,12 +563,10 @@ We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a
 <a class="sourceLine" id="cb9-10" data-line-number="10">_test_max_min_times _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;times(min(a,b),max(a,b)) == times(a,b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (times (min a b) (max a b)) (times a b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> distribute over each other.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmin(a,\nmax(b,c)) = \nmax(\nmin(a,b),\nmin(a,c))\)</span>.</li>
@@ -616,19 +574,36 @@ We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a
 <li><span class="math inline">\(\nmin(\nmax(b,c),a) = \nmax(\nmin(b,a),\nmin(c,a))\)</span>.</li>
 <li><span class="math inline">\(\nmax(\nmin(b,c),a) = \nmin(\nmax(b,a),\nmax(c,a))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol start="4" type="1">
-<li>Brute force time! Suppose <span class="math inline">\(\nleq(a,b) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c) = \btrue\)</span>, then <span class="math inline">\(\nleq(a,\nmin(b,c))\)</span>, so that <span class="math inline">\(\nleq(a,\nmax(b,c))\)</span>. Now we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\ &amp; = &amp; \nmax(a,a) \\ &amp; = &amp; a \\ &amp; = &amp; \nmin(a,\nmax(b,c)). \end{eqnarray*}\]</span> Suppose <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>; then <span class="math inline">\(\nleq(c,a) = \btrue\)</span>, and by transitivity <span class="math inline">\(\nleq(c,b) = \btrue\)</span> so that <span class="math inline">\(\nmax(b,c) = b\)</span>. Now <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\ &amp; = &amp; \nmax(a,c) \\ &amp; = &amp; a \\ &amp; = &amp; \nmin(a,b) \\ &amp; = &amp; \nmin(a,\nmax(b,c)). \end{eqnarray*}\]</span> Now suppose <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, so that <span class="math inline">\(\nleq(b,a) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c)\)</span>, then <span class="math inline">\(\nleq(b,c)\)</span> by transitivity. So we have <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\ &amp; = &amp; \nmax(b,a) \\ &amp; = &amp; a \\ &amp; = &amp; \nmin(a,c) \\ &amp; = &amp; \nmin(a,\nmax(b,c)). \end{eqnarray*}\]</span> If <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>, then <span class="math inline">\(\nleq(c,a) = \btrue\)</span>. In this case we have <span class="math inline">\(\nleq(\nmax(b,c),a)\)</span>, so that <span class="math display">\[\begin{eqnarray*} &amp; &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\ &amp; = &amp; \nmax(b,c) \\ &amp; = &amp; \nmin(a,\nmax(b,c)). \end{eqnarray*}\]</span></li>
+<li>Brute force time! Suppose <span class="math inline">\(\nleq(a,b) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c) = \btrue\)</span>, then <span class="math inline">\(\nleq(a,\nmin(b,c))\)</span>, so that <span class="math inline">\(\nleq(a,\nmax(b,c))\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
+ &amp; = &amp; \nmax(a,a) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nmin(a,\nmax(b,c)).
+\end{eqnarray*}\]</span> Suppose <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>; then <span class="math inline">\(\nleq(c,a) = \btrue\)</span>, and by transitivity <span class="math inline">\(\nleq(c,b) = \btrue\)</span> so that <span class="math inline">\(\nmax(b,c) = b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
+ &amp; = &amp; \nmax(a,c) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nmin(a,b) \\
+ &amp; = &amp; \nmin(a,\nmax(b,c)).
+\end{eqnarray*}\]</span> Now suppose <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, so that <span class="math inline">\(\nleq(b,a) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c)\)</span>, then <span class="math inline">\(\nleq(b,c)\)</span> by transitivity. So we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
+ &amp; = &amp; \nmax(b,a) \\
+ &amp; = &amp; a \\
+ &amp; = &amp; \nmin(a,c) \\
+ &amp; = &amp; \nmin(a,\nmax(b,c)).
+\end{eqnarray*}\]</span> If <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>, then <span class="math inline">\(\nleq(c,a) = \btrue\)</span>. In this case we have <span class="math inline">\(\nleq(\nmax(b,c),a)\)</span>, so that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
+ &amp; = &amp; \nmax(b,c) \\
+ &amp; = &amp; \nmin(a,\nmax(b,c)).
+\end{eqnarray*}\]</span></li>
 <li>Similar to (4), which we can agree was super tedious.</li>
 <li>Follows from (4) and commutativity.</li>
 <li>Follows from (5) and commutativity.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_max_min_distributive_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_max_min_distributive_left _ <span class="fu">=</span></a>
@@ -655,7 +630,6 @@ We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a
 <a class="sourceLine" id="cb10-24" data-line-number="24">_test_min_max_distributive_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-25" data-line-number="25">  testName <span class="st">&quot;min(max(b,c),a) == max(min(b,a),min(c,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-26" data-line-number="26">  \a b c <span class="ot">-&gt;</span> eq (min (max b c) a) (max (min b a) (min c a))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>woo!</p>
@@ -666,7 +640,7 @@ We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a
 <a class="sourceLine" id="cb11-3" data-line-number="3">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">_test_max_min n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">  testLabel (<span class="st">&quot;min &amp; max: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  testLabel1 <span class="st">&quot;min &amp; max&quot;</span> n</a>
 <a class="sourceLine" id="cb11-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb11-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
@@ -704,7 +678,7 @@ We’ll prove both of these at once. Suppose <span class="math inline">\(\nleq(a
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

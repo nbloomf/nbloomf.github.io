@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Zip</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,22 +199,27 @@ Posted on 2017-05-06 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( zip, _test_zip, main_zip</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( zip, _test_zip, main_zip</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
 <p>Today we’ll define a really useful function on lists called <span class="math inline">\(\zip\)</span>. This map will take two lists, one in <span class="math inline">\(\lists{A}\)</span> and one in <span class="math inline">\(\lists{B}\)</span>, and return a list in <span class="math inline">\(\lists{A \times B}\)</span>. In progress, <span class="math inline">\(\zip\)</span>ping two lists looks something like this: <span class="math display">\[\begin{array}{ccccccccccc}
           &amp;   &amp;           &amp;   &amp;           &amp;           &amp; a_4 &amp; - &amp; a_5 &amp;   &amp;     \\
           &amp;   &amp;           &amp;   &amp;           &amp; \diagup   &amp;     &amp;   &amp;     &amp;   &amp;     \\
@@ -222,9 +227,7 @@ Posted on 2017-05-06 by nbloomf
           &amp;   &amp;           &amp;   &amp;           &amp; \diagdown &amp;     &amp;   &amp;     &amp;   &amp;     \\
           &amp;   &amp;           &amp;   &amp;           &amp;           &amp; b_4 &amp; - &amp; b_5 &amp; - &amp; b_6
 \end{array}\]</span> Hence the name <span class="math inline">\(\zip\)</span> – it looks like a zipper in action. A big question has to be resolved. It seems clear what <span class="math inline">\(\zip\)</span> should do if we give it two lists with the same length. But what if we try to zip two lists of different lengths? I can see two basic strategies. On one hand we can just truncate to the length of the shortest list. Another idea is to <em>pad</em> the shorter list to the length of the longer. These are both useful but essentially different behaviors, so we will define two different functions to handle them. The truncation strategy will be called <span class="math inline">\(\zip\)</span> and the padding strategy will be called <span class="math inline">\(\zipPad\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\delta : \lists{B} \rightarrow \lists{A \times B}\)</span> by <span class="math display">\[\delta(y) = \nil,\]</span> <span class="math inline">\(\psi : A \times \lists{A \times B} \rightarrow \lists{A \times B}\)</span> by <span class="math display">\[\psi(a,z) = \nil,\]</span> and <span class="math inline">\(\chi : A \times B \times \lists{B} \times \lists{A \times B} \times \lists{A \times B} \rightarrow \lists{A \times B}\)</span> by <span class="math display">\[\chi(a,b,y,z,w) = \cons((a,b),z).\]</span> Now define <span class="math display">\[\zip : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\]</span> by <span class="math display">\[\zip = \dfoldr{\delta}{\psi}{\chi}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">zip<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> t (a,b)</a>
@@ -233,22 +236,15 @@ Posted on 2017-05-06 by nbloomf
 <a class="sourceLine" id="cb2-4" data-line-number="4">    delta _ <span class="fu">=</span> nil</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">    psi _ _ <span class="fu">=</span> nil</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">    chi a b _ z _ <span class="fu">=</span> cons (a,b) z</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\zip\)</span> is defined in terms of <span class="math inline">\(\dfoldr{\ast}{\ast}{\ast}\)</span>, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \nil \\
  f(\cons(a,x),\nil) = \nil \\
  f(\cons(a,x),\cons(b,y)) = \cons((a,b),f(x,y))
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_zip_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (a,b)))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_zip_nil_list ta _ <span class="fu">=</span></a>
@@ -268,19 +264,13 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
 <a class="sourceLine" id="cb3-17" data-line-number="17">_test_zip_cons_cons _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-18" data-line-number="18">  testName <span class="st">&quot;zip(cons(a,x),cons(b,y)) == cons((a,b),zip(x,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq (zip (cons a x) (cons b y)) (cons (a,b) (zip x y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\map(\tSwap) \circ \zip = \zip \circ \tSwap\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zip(x,y)) = \zip(y,x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zip(x,y)) = \zip(y,x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tSwap)(\zip(x,y)) \\
  &amp; = &amp; \map(\tSwap)(\zip(\nil,y)) \\
  &amp; = &amp; \map(\tSwap)(\nil) \\
@@ -302,29 +292,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons((b,a),\zip(z,x)) \\
  &amp; = &amp; \zip(\cons(b,z),\cons(a,x)) \\
  &amp; = &amp; \zip(y,\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_zip_tswap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (b,a)))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_zip_tswap _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;map(tswap)(zip(x,y)) == zip(y,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (map tswap (zip x y)) (zip y x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\map(\tPair(f,g)) \circ \zip = \zip \circ \tPair(\map(f),\map(g))\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zip(x,y)) = \zip(\map(f)(x),\map(g)(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zip(x,y)) = \zip(\map(f)(x),\map(g)(y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tPair(f,g))(\zip(x,y)) \\
  &amp; = &amp; \map(\tPair(f,g))(\zip(\nil,y)) \\
  &amp; = &amp; \map(\tPair(f,g))(\nil) \\
@@ -350,29 +332,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \zip(\cons(f(a),\map(f)(x)),\cons(g(b),\map(g)(z))) \\
  &amp; = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(\cons(b,z))) \\
  &amp; = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(y))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_zip_tpair ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (a,b)))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_zip_tpair _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;map(tpair(f,g))(zip(x,y)) == zip(map(f)(x),map(g)(y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \f g x y <span class="ot">-&gt;</span> eq (map (tpair f g) (zip x y)) (zip (map f x) (map g y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\zip\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zip(x,y)) = \nmin(\length(x),\length(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zip(x,y)) = \nmin(\length(x),\length(y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\zip(x,y)) \\
  &amp; = &amp; \length(\zip(x,\nil)) \\
  &amp; = &amp; \length(\nil) \\
@@ -396,12 +370,10 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \next(\min(\length(z),\length(y))) \\
  &amp; = &amp; \nmin(\next(\length(z)),\next(\length(y))) \\
  &amp; = &amp; \nmin(\length(\cons(a,z)),\length(\cons(b,y))) \\
- &amp; = &amp; \nmin(x),\length(\cons(b,y))) \\
-\end{eqnarray*}\]</span> as needed.
-</p>
+ &amp; = &amp; \nmin(x,\length(\cons(b,y))) \\
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_zip_length ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_zip_length _ _ n <span class="fu">=</span></a>
@@ -409,22 +381,16 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6">    ((length (zip x y)) <span class="ot">`withTypeOf`</span> n)</a>
 <a class="sourceLine" id="cb6-7" data-line-number="7">    (min (length x) (length y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\zip\)</span> is kind of associative.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
 <ol type="1">
 <li><span class="math inline">\(\zip(\zip(x,y),z) = \map(\tAssocL)(\zip(x,\zip(y,z)))\)</span>.</li>
 <li><span class="math inline">\(\zip(x,\zip(y,z)) = \map(\tAssocR)(\zip(\zip(x,y),z))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\zip(x,y),z) \\
@@ -469,10 +435,8 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \map(\tAssocR)(\zip(\zip(x,y),z)) 
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_zip_zip_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t ((a,a),a)))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_zip_zip_left _ <span class="fu">=</span></a>
@@ -485,7 +449,6 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <a class="sourceLine" id="cb7-10" data-line-number="10">_test_zip_zip_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-11" data-line-number="11">  testName <span class="st">&quot;zip(zip(x,y),z) == map(tassocR)(zip(x,zip(y,z)))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> eq (zip x (zip y z)) (map tassocR (zip (zip x y) z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -499,7 +462,7 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <a class="sourceLine" id="cb8-7" data-line-number="7">  , <span class="dt">Equal</span> (t (a,(a,a))), <span class="dt">Equal</span> (t ((a,a),a))</a>
 <a class="sourceLine" id="cb8-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb8-9" data-line-number="9">_test_zip t u n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-10" data-line-number="10">  testLabel (<span class="st">&quot;zip: &quot;</span> <span class="fu">++</span> typeName t <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName u <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  testLabel3 <span class="st">&quot;zip&quot;</span> t u n</a>
 <a class="sourceLine" id="cb8-11" data-line-number="11"></a>
 <a class="sourceLine" id="cb8-12" data-line-number="12">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb8-13" data-line-number="13">    args <span class="fu">=</span> stdArgs</a>
@@ -523,7 +486,7 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

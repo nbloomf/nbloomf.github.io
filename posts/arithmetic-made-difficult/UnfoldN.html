@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>UnfoldN</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,21 +199,26 @@ Posted on 2017-05-03 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( unfoldN, tacunfoldN, _test_unfoldN, main_unfoldN</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( unfoldN, tacunfoldN, _test_unfoldN, main_unfoldN</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
 <p>So far we’ve developed a few functions that operate on lists. But we don’t have a convenient programmatic way to <em>construct</em> lists out of nothing – we’ll remedy this today with a function called <span class="math inline">\(\unfoldN{\ast}\)</span>. From the name, it sounds like unfold should be the “opposite” (or <em>dual</em>) of a fold. But the full story is a little more complicated than this; the true opposite to fold doesn’t operate on lists at all, but on <em>streams</em> (which we’ll get to later). Roughly speaking, <span class="math inline">\(\lists{A}\)</span> is an initial algebra, elements of <span class="math inline">\(\lists{A}\)</span> are required to be “finite”, and <span class="math inline">\(\foldr{\ast}{\ast}\)</span> condenses a <span class="math inline">\(\lists{A}\)</span> element to a single item. Streams, in contrast, are required to be “infinite” and collectively form a <em>terminal algebra</em> and their universal map expands a single item to an infinite structure. All that is to say that the <span class="math inline">\(\unfoldN{\ast}\)</span> function we define here is <em>not</em> the real dual of <span class="math inline">\(\foldr{\ast}{\ast}\)</span> – which partly explains why it is so complicated looking.</p>
 <p>So what will <span class="math inline">\(\unfoldN{\ast}\)</span> do? Roughly speaking, we’d like to be able to build up interesting lists of arbitrary size using a small amount of initial data. For example, here is a version of the signature for Haskell’s standard <code>unfoldr</code> function.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">unfoldr ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a,b)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [b]</a></code></pre></div>
@@ -222,17 +227,12 @@ Posted on 2017-05-03 by nbloomf
 <p>How can we fix this? One strategy would be to impose some kind of constraint on the map so that it must eventually return a <code>Nothing</code>. That may well be possible, but my hunch is that it would make reasoning about unfolds complicated – we’d have to prove that a given map satisfies the constraint before using it.</p>
 <p>Another strategy – and the one we will take – is to give unfold a natural number argument that acts as a countdown timer. If it reaches <span class="math inline">\(\zero\)</span>, we’re done. (This also explains the <code>N</code> in <span class="math inline">\(\unfoldN{\ast}\)</span>.) This strategy also makes it possible to define <span class="math inline">\(\unfoldN{\ast}\)</span> using bailout recursion on <span class="math inline">\(\nats\)</span>.</p>
 <p>Before defining <span class="math inline">\(\unfoldN{\ast}\)</span>, we need a helper operator, <span class="math inline">\(\tacunfoldN{\ast}\)</span>, analogous to <span class="math inline">\(\revcat\)</span>. “tac” is a bad pun on “reverse cat” – since that’s kind of what this operator does.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, and let <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. There is a unique function <span class="math display">\[\Theta : \lists{B} \times \nats \times A \rightarrow \lists{B}\]</span> such that for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\Theta(x,\zero,a) = x\]</span> and <span class="math display">\[\Theta(x,\next(n),a) = \left\{\begin{array}{ll}
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, and let <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. There is a unique function <span class="math display">\[\Theta : \lists{B} \times \nats \times A \rightarrow \lists{B}\]</span> such that for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\Theta(x,\zero,a) = x\]</span> and <span class="math display">\[\Theta(x,\next(n),a) = \left\{\begin{array}{ll}
  x &amp; \mathrm{if}\ f(a) = \lft(\ast) \\
  \Theta(\snoc(b,x),n,c) &amp; \mathrm{if}\ f(a) = \rgt((c,b)).
-\end{array}\right.\]</span> We denote this unique map <span class="math inline">\(\tacunfoldN{f}\)</span>.
-</p>
-</div>
+\end{array}\right.\]</span> We denote this unique map <span class="math inline">\(\tacunfoldN{f}\)</span>.</p>
 <div class="proof">
-<p>
 <p>We define <span class="math inline">\(\varphi : A \times \lists{B} \rightarrow \lists{B}\)</span> by <span class="math display">\[\varphi(a,x) = x,\]</span> <span class="math inline">\(\beta : \nats \times (A \times \lists{B}) \rightarrow \bool\)</span> by <span class="math display">\[\beta(n,(a,x)) = \isLft(f(a)),\]</span> <span class="math inline">\(\psi : \nats \times (A \times \lists{B}) \rightarrow \lists{B}\)</span> by <span class="math display">\[\psi(n,(a,x)) = x,\]</span> and <span class="math inline">\(\omega : \nats \times (A \times \lists{B}) \rightarrow A \times \lists{B}\)</span> by <span class="math display">\[\omega(n,(a,x)) = \left\{\begin{array}{ll}
  (a,x) &amp; \mathrm{if}\ f(a) = \lft(\ast) \\
  (c,\snoc(b,x)) &amp; \mathrm{if}\ f(a) = \rgt((c,b)).
@@ -259,7 +259,7 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
  &amp; = &amp; \Omega(n,(c,\snoc(b,x))) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(b,x),n,c)
 \end{eqnarray*}\]</span> as needed.</p>
-To see uniqueness, suppose now that <span class="math inline">\(\Psi : \lists{B} \times \nats \times A \rightarrow \lists{B}\)</span> has these properties. We show that <span class="math inline">\(\Psi = \tacunfoldN{f}\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>To see uniqueness, suppose now that <span class="math inline">\(\Psi : \lists{B} \times \nats \times A \rightarrow \lists{B}\)</span> has these properties. We show that <span class="math inline">\(\Psi = \tacunfoldN{f}\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(x,\zero,a) \\
  &amp; = &amp; x \\
  &amp; = &amp; \tacunfoldN{f}(x,\zero,a)
@@ -272,8 +272,7 @@ To see uniqueness, suppose now that <span class="math inline">\(\Psi : \lists{B}
  &amp; = &amp; \Psi(\snoc(b,x),n,c) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(b,x),n,c) \\
  &amp; = &amp; \tacunfoldN{f}(x,\next(n),a)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <p>We can implement <span class="math inline">\(\tacunfoldN{f}\)</span> using the definition from the proof, or by pattern matching using the universal property.</p>
@@ -318,15 +317,10 @@ To see uniqueness, suppose now that <span class="math inline">\(\Psi : \lists{B}
 <a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) x</a>
 <a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) (tacunfoldN f (snoc b x) n c)</a></code></pre></div>
 <p><span class="math inline">\(\tacunfoldN{f}\)</span> interacts with <span class="math inline">\(\cons\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-We have <span class="math display">\[\tacunfoldN{f}(\cons(b,x),n,a) = \cons(b,\tacunfoldN{f}(x,n,a)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>We have <span class="math display">\[\tacunfoldN{f}(\cons(b,x),n,a) = \cons(b,\tacunfoldN{f}(x,n,a)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tacunfoldN{f}(\cons(b,x),\zero,a) \\
  &amp; = &amp; \cons(b,x) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(x,\zero,a))
@@ -340,29 +334,21 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
  &amp; = &amp; \tacunfoldN{f}(\cons(b,\snoc(d,x)),n,c) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(\snoc(d,x),n,c)) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(x,\next(n),a))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_tacunfoldN_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_tacunfoldN_cons _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(cons(b,x),n,a) == cons(b,tacunfoldN(x,n,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \f x b n a <span class="ot">-&gt;</span> eq (tacunfoldN f (cons b x) n a) (cons b (tacunfoldN f x n a))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\tacunfoldN{f}\)</span> interacts with <span class="math inline">\(\cat\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. For all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x,y \in \lists{B}\)</span>, and <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\tacunfoldN{f}(\cat(x,y),n,a) = \cat(x,\tacunfoldN{f}(y,n,a).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. For all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x,y \in \lists{B}\)</span>, and <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\tacunfoldN{f}(\cat(x,y),n,a) = \cat(x,\tacunfoldN{f}(y,n,a)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tacunfoldN{f}(\cat(x,y),\zero,a) \\
  &amp; = &amp; \cat(x,y) \\
  &amp; = &amp; \cat(x,\tacunfoldN{f}(y,\zero,a))
@@ -374,49 +360,37 @@ We proceed by induction on <span class="math inline">\(n\)</span>. For the base 
  &amp;   &amp; \tacunfoldN{f}(\cat(x,y),\next(n),a) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(d,\cat(x,y)),n,c) \\
  &amp; = &amp; \tacunfoldN{f}(\cat(x,\snoc(d,y)),n,c) \\
- &amp; = &amp; \cat(x,\tacunfoldN{f}(\snoc(d,y),n,c) \\
- &amp; = &amp; \cat(x,\tacunfoldN{f}(y,\next(n),a)
-\end{eqnarray*}\]</span> as needed.
-</p>
+ &amp; = &amp; \cat(x,\tacunfoldN{f}(\snoc(d,y),n,c)) \\
+ &amp; = &amp; \cat(x,\tacunfoldN{f}(y,\next(n),a))
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_tacunfoldN_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_tacunfoldN_cat _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(cat(x,y),n,a) == cat(x,tacunfoldN(y,n,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \f x y n a <span class="ot">-&gt;</span> eq (tacunfoldN f (cat x y) n a) (cat x (tacunfoldN f y n a))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now we can define <span class="math inline">\(\unfoldN{\ast}\)</span> in terms of <span class="math inline">\(\tacunfoldN{\ast}\)</span>.</p>
-<div class="result">
-<div class="dfn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. we define <span class="math inline">\(\unfoldN{f} : \nats \times A \rightarrow \lists{B}\)</span> by <span class="math display">\[\unfoldN{f}(n,a) = \tacunfoldN{f}(\nil,n,a).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">unfoldN</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,b)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b</a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">unfoldN f <span class="fu">=</span> tacunfoldN f nil</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>And <span class="math inline">\(\unfoldN{\ast}\)</span> can be characterized as the unique solution of a system of functional equations.</p>
-<div class="result">
-<div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. Then <span class="math inline">\(\unfoldN{f}\)</span> is the unique map <span class="math inline">\(g : \nats \times A \rightarrow B\)</span> such that the following hold for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(n \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow 1 + (A \times B)\)</span>. Then <span class="math inline">\(\unfoldN{f}\)</span> is the unique map <span class="math inline">\(g : \nats \times A \rightarrow B\)</span> such that the following hold for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(n \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  g(\zero,a) = \nil \\
  g(\next(n),a) = \left\{\begin{array}{ll}
   \nil &amp; \mathrm{if}\ f(a) = \lft(\ast) \\
   \cons(b,g(n,c)) &amp; \mathrm{if}\ f(a) = \rgt((c,b)). 
 \end{array}\right.
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="proof">
-<p>
 <p>To see that <span class="math inline">\(\unfoldN{\ast}\)</span> satisfies the first equation, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unfoldN{f}(\zero,a) \\
  &amp; = &amp; \tacunfoldN{f}(\nil,\zero,a) \\
@@ -431,8 +405,8 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
  &amp; = &amp; \tacunfoldN{f}(\snoc(b,\nil),\zero,c) \\
  &amp; = &amp; \snoc(b,\nil) \\
  &amp; = &amp; \cons(b,\nil) \\
- &amp; = &amp; \cons(b,\tacunfoldN{f}(\nil,\zero,a) \\
- &amp; = &amp; \cons(b,\unfoldN{f}(\zero,a)
+ &amp; = &amp; \cons(b,\tacunfoldN{f}(\nil,\zero,a)) \\
+ &amp; = &amp; \cons(b,\unfoldN{f}(\zero,a))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(n\)</span>. Let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(f(a) = \lft(\ast)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unfoldN{f}(\next(n),a) \\
  &amp; = &amp; \tacunfoldN(\nil,\next(n),a) \\
@@ -445,7 +419,7 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
  &amp; = &amp; \cons(b,\tacunfoldN{f}(\nil,n,c)) \\
  &amp; = &amp; \cons(b,\unfoldN{f}(n,c))
 \end{eqnarray*}\]</span> as needed.</p>
-To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again induct on <span class="math inline">\(n\)</span>. Suppose <span class="math inline">\(\Psi\)</span> is another solution. For the base case <span class="math inline">\(n = \zero\)</span> note that <span class="math display">\[\begin{eqnarray*}
+<p>To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again induct on <span class="math inline">\(n\)</span>. Suppose <span class="math inline">\(\Psi\)</span> is another solution. For the base case <span class="math inline">\(n = \zero\)</span> note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\zero,a) \\
  &amp; = &amp; \nil \\
  &amp; = &amp; \unfoldN{f}(\zero,a)
@@ -458,11 +432,9 @@ To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again 
  &amp; = &amp; \cons(b,\Psi(n,c)) \\
  &amp; = &amp; \cons(b,\unfoldN{f}(n,c)) \\
  &amp; = &amp; \unfoldN{f}(\next(n),a)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_unfoldN_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_unfoldN_zero t k <span class="fu">=</span></a>
@@ -477,7 +449,6 @@ To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again 
 <a class="sourceLine" id="cb9-12" data-line-number="12">  \f n a <span class="ot">-&gt;</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
 <a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="dt">Left</span> ()     <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) (nil <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb9-14" data-line-number="14">    <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) ((cons b (unfoldN f n c)) <span class="ot">`withTypeOf`</span> t)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -488,7 +459,7 @@ To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again 
 <a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Natural</span> n</a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">_test_unfoldN t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">  testLabel (<span class="st">&quot;unfoldN: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  testLabel1 <span class="st">&quot;unfoldN&quot;</span> t</a>
 <a class="sourceLine" id="cb10-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb10-9" data-line-number="9">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
@@ -512,7 +483,7 @@ To see that <span class="math inline">\(\unfoldN{f}\)</span> is unique we again 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Double Bailout Fold</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2018-01-10 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,30 +199,30 @@ Posted on 2018-01-10 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">DoubleBailoutFold</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  dbfoldr, _test_dbfoldr, main_dbfoldr</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DoubleBailoutFold</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  dbfoldr, _test_dbfoldr, main_dbfoldr</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a></code></pre></div>
 <p>In this post we’ll construct a hybrid of double fold and bailout fold.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have maps <span class="math display">\[\delta : B \rightarrow C,\]</span> <span class="math display">\[\beta : A \times \lists{A} \times B \rightarrow \bool,\]</span> <span class="math display">\[\mu : B \rightarrow B,\]</span> <span class="math display">\[\psi : A \times \lists{A} \times B \rightarrow C,\]</span> and <span class="math display">\[\chi : A \times B \times C \times C \rightarrow C.\]</span> Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \times B \rightarrow C\)</span> such that <span class="math display">\[\Theta(\nil,b) = \delta(b)\]</span> and <span class="math display">\[\Theta(\cons(a,x),b) = \left\{\begin{array}{ll}
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have maps <span class="math display">\[\delta : B \rightarrow C,\]</span> <span class="math display">\[\beta : A \times \lists{A} \times B \rightarrow \bool,\]</span> <span class="math display">\[\mu : B \rightarrow B,\]</span> <span class="math display">\[\psi : A \times \lists{A} \times B \rightarrow C,\]</span> and <span class="math display">\[\chi : A \times B \times C \times C \rightarrow C.\]</span> Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \times B \rightarrow C\)</span> such that <span class="math display">\[\Theta(\nil,b) = \delta(b)\]</span> and <span class="math display">\[\Theta(\cons(a,x),b) = \left\{\begin{array}{ll}
  \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
  \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}.
-\end{array}\right.\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\dbfoldr{\delta}{\beta}{\mu}{\psi}{\chi}\)</span>.
-</p>
-</div>
+\end{array}\right.\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\dbfoldr{\delta}{\beta}{\mu}{\psi}{\chi}\)</span>.</p>
 <div class="proof">
-<p>
-Define <span class="math inline">\(\varepsilon : B \times \lists{A} \rightarrow C\)</span> by <span class="math display">\[\varepsilon(b,x) = \delta(b)\]</span> and <span class="math inline">\(\varphi : A \times C^{B \times \lists{A}} \rightarrow C^{B \times \lists{A}}\)</span> casewise by <span class="math display">\[\varphi(a,g)(b,x) = \left\{\begin{array}{ll}
+<p>Define <span class="math inline">\(\varepsilon : B \times \lists{A} \rightarrow C\)</span> by <span class="math display">\[\varepsilon(b,x) = \delta(b)\]</span> and <span class="math inline">\(\varphi : A \times C^{B \times \lists{A}} \rightarrow C^{B \times \lists{A}}\)</span> casewise by <span class="math display">\[\varphi(a,g)(b,x) = \left\{\begin{array}{ll}
  \psi(a,\tail(x),b) &amp; \mathrm{if}\ \beta(a,\tail(x),b) \\
- \chi(a,\tail(x),b,g(b,\tail(x))),g(\mu(b),\tail(x))) &amp; \mathrm{otherwise},
+ \chi(a,\tail(x),b,g(b,\tail(x)),g(\mu(b),\tail(x))) &amp; \mathrm{otherwise},
 \end{array}\right.\]</span> and let <span class="math inline">\(\Theta(x,b) = \foldr{\varepsilon}{\varphi}(x)(b,x)\)</span>. To see that <span class="math inline">\(\Theta\)</span> solves the given equations, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Theta(\nil,b) \\
  &amp; = &amp; \foldr{\varepsilon}{\varphi}(\nil)(b,\nil) \\
@@ -232,35 +232,19 @@ Define <span class="math inline">\(\varepsilon : B \times \lists{A} \rightarrow 
  &amp;   &amp; \Theta(\cons(a,x),b) \\
  &amp; = &amp; \foldr{\delta}{\varphi}(\cons(a,x))(b,\cons(a,x)) \\
  &amp; = &amp; \varphi(a,\foldr{\delta}{\varphi}(x))(b,\cons(a,x)) \\
- &amp; = &amp; \left\{\begin{array}{ll}
-        \psi(a,\tail(\cons(a,x)),b) &amp; \mathrm{if}\ \beta(a,\tail(\cons(a,x)),b) \\
-        \chi(a,\tail(\cons(a,x)),b,\foldr{\varepsilon}{\varphi}(x)(b,\tail(\cons(a,x))),\foldr{\varepsilon}{\varphi}(x)(\mu(b),\tail(\cons(a,x)))) &amp; \mathrm{otherwise}
-       \end{array}\right. \\
- &amp; = &amp; \left\{\begin{array}{ll}
-        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
-        \chi(a,x,b,\foldr{\varepsilon}{\varphi}(x)(b,x),\foldr{\varepsilon}{\varphi}(x)(\mu(b),x)) &amp; \mathrm{otherwise}
-       \end{array}\right. \\
- &amp; = &amp; \left\{\begin{array}{ll}
-        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
-        \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}
-       \end{array}\right. \\
+ &amp; = &amp; \bif{\beta(a,\tail(\cons(a,x)),b)}{\psi(a,\tail(\cons(a,x)),b)}{\chi(a,\tail(\cons(a,x)),b,\foldr{\varepsilon}{\varphi}(x)(b,\tail(\cons(a,x))),\foldr{\varepsilon}{\varphi}(x)(\mu(b),\tail(\cons(a,x))))} \\
+ &amp; = &amp; \bif{\beta(a,x,b)}{\psi(a,x,b)}{\chi(a,x,b,\foldr{\varepsilon}{\varphi}(x)(b,x),\foldr{\varepsilon}{\varphi}(x)(\mu(b),x))} \\
+ &amp; = &amp; \bif{\beta(a,x,b)}{\psi(a,x,b)}{\chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b)))}
 \end{eqnarray*}\]</span> as needed. Now suppose <span class="math inline">\(\Psi : \lists{A} \times B \rightarrow C\)</span> also satisfies the equations; we show that <span class="math inline">\(\Psi = \Theta\)</span> by list induction. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\nil,b) \\
  &amp; = &amp; \delta(b) \\
  &amp; = &amp; \Theta(\nil,b)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equations hold for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\cons(a,x),b) \\
- &amp; = &amp; \left\{\begin{array}{ll}
-        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
-        \chi(a,x,b,\Psi(x,b),\Psi(x,\mu(b))) &amp; \mathrm{otherwise}
-       \end{array}\right. \\
- &amp; = &amp; \left\{\begin{array}{ll}
-        \psi(a,x,b) &amp; \mathrm{if}\ \beta(a,x,b) \\
-        \chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b))) &amp; \mathrm{otherwise}
-       \end{array}\right. \\
+ &amp; = &amp; \bif{\beta(a,x,b)}{\psi(a,x,b)}{\chi(a,x,b,\Psi(x,b),\Psi(x,\mu(b)))} \\
+ &amp; = &amp; \bif{\beta(a,x,b)}{\psi(a,x,b)}{\chi(a,x,b,\Theta(x,b),\Theta(x,\mu(b)))} \\
  &amp; = &amp; \Theta(\cons(a,x),b)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
@@ -324,12 +308,12 @@ Define <span class="math inline">\(\varepsilon : B \times \lists{A} \rightarrow 
 <a class="sourceLine" id="cb5-2" data-line-number="2">main_dbfoldr <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="dt">True</span>)          <span class="dv">50</span> <span class="dv">500</span></a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="dt">True</span>)          <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  _test_dbfoldr (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

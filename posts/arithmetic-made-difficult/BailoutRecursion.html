@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Bailout Recursion</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-05-21 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -200,14 +200,21 @@ Posted on 2014-05-21 by nbloomf
 <hr />
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE BangPatterns #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( bailoutRec</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ( bailoutRec, _test_bailoutrec, main_bailoutrec</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>So far we have defined two special <em>recursion operators</em>, <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. These act like program skeletons: fill in the slots with functions of the right signatures and get a computable function out. In this post we’ll define another operator, which we will call <em>bailout recursion</em>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions with the following signatures: <span class="math display">\[\begin{eqnarray*}
 \varphi &amp; : &amp; A \rightarrow B \\
 \beta &amp; : &amp; \nats \times A \rightarrow \bool \\
@@ -216,7 +223,6 @@ Posted on 2014-05-21 by nbloomf
 \end{eqnarray*}\]</span></p>
 <p>Then there is a unique function <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero, a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(m), a) = \left\{ \begin{array}{ll} \psi(m,a) &amp; \mathrm{if}\ \beta(m,a) \\ \Theta(m, \omega(m,a)) &amp; \mathrm{otherwise}. \end{array}\right.\]</span></p>
 <p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\bailrec{\varphi}{\beta}{\psi}{\omega}\)</span>.</p>
-</div>
 <div class="proof">
 <p>This proof will be very similar to the analogous proof for simple recursion.</p>
 <p>First we establish existence. To this end, define a map <span class="math inline">\(W : \nats \times {}^AB \rightarrow {}^AB\)</span> by <span class="math display">\[W(m,h)(x) = \left\{ \begin{array}{ll} \psi(m,x) &amp; \mathrm{if}\ \beta(m,x) \\ h(\omega(m,x)) &amp; \mathrm{otherwise}, \end{array} \right.\]</span> and define <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(m,h) = (\next(m), W(m,h)).\]</span></p>
@@ -256,16 +262,16 @@ Posted on 2014-05-21 by nbloomf
  &amp;   &amp; \natrec{(\zero, \varphi)}{t}(\next\ n) \\
  &amp; = &amp; t(\natrec{(\zero, \varphi)}{t}(n)) \\
  &amp; = &amp; t(n, \lambda x : \Theta(n,x)) \\
- &amp; = &amp; (\next\ n, W(n, \lambda x : \Theta(n,x))) \\
- &amp; = &amp; (\next\ n, \lambda y : W(n, \lambda x : \Theta(n,x))(y)) \\
- &amp; = &amp; (\next\ n, \lambda y : \Theta(\next\ n, y)
+ &amp; = &amp; (\next(n), W(n, \lambda x : \Theta(n,x))) \\
+ &amp; = &amp; (\next(n), \lambda y : W(n, \lambda x : \Theta(n,x))(y)) \\
+ &amp; = &amp; (\next(n), \lambda y : \Theta(\next(n),y))
 \end{eqnarray*}\]</span></p>
 <p>(Note that we used both parts of the induction hypothesis here.) Also note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(\next\ n), a) \\
- &amp; = &amp; \snd (\natrec{(\zero, \varphi)}{t}(\next(\next\ n)))(a) \\
- &amp; = &amp; \snd (t (\natrec{(\zero, \varphi)}{t}(\next\ n)))(a) \\
- &amp; = &amp; \snd (t (\next\ n, \lambda x : \Theta(\next\ n, x)))(a) \\
- &amp; = &amp; \snd (\next(\next\ n), W(\next\ n, \lambda x : \Theta(\next\ n,x)))(a) \\
+ &amp;   &amp; \Theta(\next(\next(n)), a) \\
+ &amp; = &amp; \snd (\natrec{(\zero,\varphi)}{t}(\next(\next(n))))(a) \\
+ &amp; = &amp; \snd (t (\natrec{(\zero, \varphi)}{t}(\next(n))))(a) \\
+ &amp; = &amp; \snd (t (\next(n), \lambda x : \Theta(\next(n), x)))(a) \\
+ &amp; = &amp; \snd (\next(\next(n)), W(\next(n), \lambda x : \Theta(\next\ n,x)))(a) \\
  &amp; = &amp; W(\next\ n, \lambda x : \Theta(\next\ n, x))(a).
 \end{eqnarray*}\]</span></p>
 <p>So <span class="math inline">\(\Theta\)</span> has the claimed properties by induction. To see that <span class="math inline">\(\Theta\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>. Then we have <span class="math display">\[\Psi(\zero, a) = \varphi(a) = \Theta(\zero, a)\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = \Theta(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have</p>
@@ -284,7 +290,7 @@ Posted on 2014-05-21 by nbloomf
 <p>if not, for all <span class="math inline">\(a \in A\)</span>. Thus <span class="math inline">\(\Psi = \Theta\)</span> as needed.</p>
 </div>
 </div>
-<p>You might notice that in this proof, we didn’t really use <span class="math inline">\(\beta\)</span> or <span class="math inline">\(\psi\)</span>, and the fact that <span class="math inline">\(W\)</span> is piecewise-defined plays no role. When this happens in a proof it usually means we’ve got some unnecessary details. But in this case, we will be using <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\psi\)</span> later, and the piecewiseness of <span class="math inline">\(\Theta\)</span> will be crucial in constructing an efficient tail-recursive evaluation strategy. Stay tuned. :)</p>
+<p>You might notice that in this proof, we didn’t really use <span class="math inline">\(\beta\)</span> or <span class="math inline">\(\psi\)</span>, and the fact that <span class="math inline">\(W\)</span> is piecewise-defined plays no role. When this happens in a proof it usually means we’ve got some unnecessary details. But in this case, we will be using <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\psi\)</span> later, and the piecewiseness of <span class="math inline">\(\Theta\)</span> will be crucial in constructing an efficient tail-recursive evaluation strategy. Stay tuned.</p>
 <h2 id="implementation">Implementation</h2>
 <p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\bailrec{\ast}{\ast}{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this. First, the signature.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">bailoutRec,<span class="ot"> bailoutRec' ::</span> (<span class="dt">Natural</span> n)</a>
@@ -318,6 +324,14 @@ Posted on 2014-05-21 by nbloomf
 <a class="sourceLine" id="cb4-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="kw">in</span> snd (naturalRec (zero, phi) t n) <span class="fu">$</span> a</a></code></pre></div>
 <p>Unlike simple recursion, the naive implementation of bailout recursion is already tail recursive.</p>
+<p>We should test that these are equivalent:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_bailoutrec_equiv ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">_test_bailoutrec_equiv _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;bailoutRec(phi,beta,psi,omega)(n,a) == bailoutRec'(phi,beta,psi,omega)(n,a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \phi beta psi omega n a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    (bailoutRec phi beta psi omega n a)</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    (bailoutRec' phi beta psi omega n a)</a></code></pre></div>
 <h2 id="what-it-does">What it does</h2>
 <p>Bailout recursion does some cool things that simple recursion does not. The <span class="math inline">\(\omega\)</span> map lets us “mutate” the initial parameter <span class="math inline">\(a\)</span> at each step in the recursion, and the boolean-valued function <span class="math inline">\(\beta\)</span> lets us short-circuit the recursion.</p>
 <p>Also note that simple recursion and bailout recursion were carefully chosen to have <em>tail recursive</em> evaluation strategies. Roughly speaking, a recursive function is called <em>tail recursive</em> if there is “nothing left to do” after the recursive call. For example, <span class="math display">\[f(n+1) = 1 + f(n)\]</span> is <em>not</em> tail recursive, because on the right hand side there is something waiting for the result of the recursive evaluation – in this case, the <span class="math inline">\(1+\)</span>.</p>
@@ -325,8 +339,7 @@ Posted on 2014-05-21 by nbloomf
 <p>In contrast, a <em>tail recursive</em> function by definition doesn’t have to keep track of what remains to be done after the recursion. Our recursion operators, <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, and <span class="math inline">\(\bailrec{\ast}{\ast}{\ast}{\ast}\)</span>, are carefully chosen so that they have tail recursive implementations.</p>
 <p>By the way, I think it’s helpful to compare the difference between arbitrary recursion and recursion operators to the difference between arbitrary <code>GOTO</code>s and structured loops. In both cases we have a simple but dangerous primitive operation that is hidden behind a safer and more meaningful interface. A <code>for</code> loop means “repeat this some number of times”; while the meaning of simple recursion is given by its universal property.</p>
 <p>As with natural and simple recursion, the “uniqueness” part of bailout recursion is also handy. To be a little more explicit, it says the following.</p>
-<div class="result">
-<div class="thm">
+<div class="corollary">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with mappings <span class="math display">\[\begin{eqnarray*}
 \varphi &amp; : &amp; A \rightarrow B \\
 \beta &amp; : &amp; \nats \times A \rightarrow \bool \\
@@ -337,11 +350,34 @@ Posted on 2014-05-21 by nbloomf
  f(\next(k),a) = \bif{\beta(k,a)}{\psi(m,a)}{f(k,\omega(k,a))}
 \end{array}\right.\]</span></p>
 </div>
-</div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">_test_bailoutrec</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  , <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">CoArbitrary</span> n)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">_test_bailoutrec n a b maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">  testLabel3 <span class="st">&quot;bailoutRec&quot;</span> n a b</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">  runTest args (_test_bailoutrec_equiv n a b)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main_bailoutrec ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">main_bailoutrec <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  _test_bailoutrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">100</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  _test_bailoutrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">100</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  _test_bailoutrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  _test_bailoutrec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

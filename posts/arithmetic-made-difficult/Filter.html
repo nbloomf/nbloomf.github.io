@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Filter</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,24 +199,29 @@ Posted on 2017-05-13 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( filter, _test_filter, main_filter</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Prefix</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( filter, _test_filter, main_filter</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a></code></pre></div>
 <p>Today we’ll nail down <span class="math inline">\(\filter\)</span>, which takes a list and a predicate on the items and “filters out” the items which satisfy the predicate. <span class="math inline">\(\filter\)</span> should have a signature like <span class="math display">\[\bool^A \times \lists{A} \rightarrow \lists{A}.\]</span> As usual, we want to define <span class="math inline">\(\filter\)</span> as a fold; say <span class="math display">\[\filter(p)(x) = \foldr{\varepsilon}{\varphi}(x).\]</span> Where on the right hand side of that equation should the <span class="math inline">\(p\)</span> parameter go? Lets think out loud for a moment. On the one hand, we want <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nil \\
  &amp; = &amp; \filter(p)(\nil) \\
@@ -228,32 +233,23 @@ Posted on 2017-05-13 by nbloomf
  &amp; = &amp; \varphi(a,\foldr{\varepsilon}{\varphi}(x)) \\
  &amp; = &amp; \varphi(a,\filter(p)(x)).
 \end{eqnarray*}\]</span> Intuitively, if <span class="math inline">\(p(a)\)</span> is <span class="math inline">\(\btrue\)</span> we want <span class="math display">\[\filter(p)(\cons(a,x)) = \cons(a,\filter(p)(x)),\]</span> while if <span class="math inline">\(p(a)\)</span> is <span class="math inline">\(\bfalse\)</span> we want <span class="math display">\[\filter(p)(\cons(a,x)) = \filter(p)(x).\]</span> With this in mind we define <span class="math inline">\(\filter\)</span> like so.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\varphi : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\varphi(a,w) = \left\{ \begin{array}{ll} \cons(a,w) &amp; \mathrm{if}\ p(a) = \btrue \\ w &amp; \mathrm{if}\ p(a) = \bfalse. \end{array}\right.\]</span> Now define <span class="math display">\[\filter : \bool^A \rightarrow {\lists{A}}^{\lists{A}}\]</span> by <span class="math display">\[\filter(p)(x) = \foldr{\nil}{\varphi}(x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">filter<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">filter p x <span class="fu">=</span> foldr nil phi x</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    phi a w <span class="fu">=</span> <span class="kw">if</span> eq (p a) <span class="dt">True</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    phi a w <span class="fu">=</span> <span class="kw">if</span> eq (p a) true</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">      <span class="kw">then</span> cons a w</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="kw">else</span> w</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\filter(p)\)</span> is defined as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. <span class="math inline">\(\filter(p)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{ll}
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. <span class="math inline">\(\filter(p)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{ll}
  f(\nil) = \nil \\
  f(\cons(a,x)) = \bif{p(a)}{\cons(a,f(x))}{f(x)}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_filter_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_filter_nil t <span class="fu">=</span></a>
@@ -264,23 +260,17 @@ Let <span class="math inline">\(A\)</span> be a set and <span class="math inline
 <a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">_test_filter_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_filter_cons _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;filter(p)(cons(a,x)) == if(p(a),cons(a,filter(p)(x)),filter(p)(x)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;filter(p)(cons(a,x)) == if(p(a),cons(a,filter(p)(x)),filter(p)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \p a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">    (filter p (cons a x))</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">    (<span class="kw">if</span> p a <span class="kw">then</span> cons a (filter p x) <span class="kw">else</span> filter p x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>As we might expect, the items in <span class="math inline">\(\filter(p)(x)\)</span> all satisfy <span class="math inline">\(p\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(p,\filter(p)(x)) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(p,\filter(p)(x)) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p)(\nil)) \\
  &amp; = &amp; \all(p,\nil) \\
  &amp; = &amp; \nil
@@ -294,29 +284,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp;   &amp; \all(p,\filter(p)(\cons(a,x))) \\
  &amp; = &amp; \all(p,\filter(p)(x)) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_filter_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_filter_all _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;all(p,filter(p)(x)) == true&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (all p (filter p x)) <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (all p (filter p x)) true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\filter\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\snoc(a,x)) = \bif{p(a)}{\snoc(a,\filter(p)(x))}{\filter(p)(x)}.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\snoc(a,x)) = \bif{p(a)}{\snoc(a,\filter(p)(x))}{\filter(p)(x)}.\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, if <span class="math inline">\(p(a) = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, if <span class="math inline">\(p(a) = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\snoc(a,\nil)) \\
  &amp; = &amp; \filter(p)(\cons(a,\nil)) \\
  &amp; = &amp; \cons(a,\filter(p)(\nil)) \\
@@ -352,11 +334,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \filter(p)(\snoc(a,x)) \\
  &amp; = &amp; \filter(p)(x) \\
  &amp; = &amp; \filter(p)(\cons(b,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_filter_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_filter_snoc _ <span class="fu">=</span></a>
@@ -364,19 +344,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \p a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb5-6" data-line-number="6">    (filter p (snoc a x))</a>
 <a class="sourceLine" id="cb5-7" data-line-number="7">    (<span class="kw">if</span> p a <span class="kw">then</span> snoc a (filter p x) <span class="kw">else</span> filter p x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\filter\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\rev(x)) = \rev(\filter(p)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\rev(x)) = \rev(\filter(p)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\rev(\nil)) \\
  &amp; = &amp; \filter(p)(\nil) \\
  &amp; = &amp; \nil \\
@@ -395,29 +369,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \filter(p)(\rev(x)) \\
  &amp; = &amp; \filter(p)(\snoc(a,\rev(x))) \\
  &amp; = &amp; \filter(p)(\rev(\cons(a,x)))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_filter_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_filter_rev _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;filter(p)(rev(x)) == rev(filter(p)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (filter p (rev x)) (rev (filter p x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\filter(p)\)</span> distributes over <span class="math inline">\(\cat\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\cat(x,y)) = \cat(\filter(p)(x),\filter(p)(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\cat(x,y)) = \cat(\filter(p)(x),\filter(p)(y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\cat(x,y)) \\
  &amp; = &amp; \filter(p)(\cat(\nil,y)) \\
  &amp; = &amp; \filter(p)(y) \\
@@ -437,29 +403,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \filter(p)(\cat(x,y)) \\
  &amp; = &amp; \cat(\filter(p)(x),\filter(p)(y)) \\
  &amp; = &amp; \cat(\filter(p)(\cons(a,x)),\filter(p)(y))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_filter_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_filter_cat _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;filter(p)(cat(x,y)) == cat(filter(p)(x),filter(p)(y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \p x y <span class="ot">-&gt;</span> eq (filter p (cat x y)) (cat (filter p x) (filter p y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\filter(p)\)</span> is idempotent.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(p)(x)) = \filter(p)(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(p)(x)) = \filter(p)(x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\filter(p)(x)) \\
  &amp; = &amp; \filter(p)(\filter(p)(\nil)) \\
  &amp; = &amp; \filter(p)(\nil) \\
@@ -472,29 +430,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bif{p(a)}{\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}}{\filter(p)(x)} \\
  &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)} \\
  &amp; = &amp; \filter(p)(\cons(a,x))
-\end{eqnarray*}\]</span> as needed
-</p>
+\end{eqnarray*}\]</span> as needed</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_filter_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_filter_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;filter(p)(filter(p)(x)) == filter(p)(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (filter p (filter p x)) (filter p x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>A list <span class="math inline">\(x\)</span> is invariant under <span class="math inline">\(\filter(p)\)</span> if and only if <span class="math inline">\(\all(p)(x)\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate with <span class="math inline">\(x \in \lists{A}\)</span>. We have <span class="math display">\[\beq(x,\filter(p)(x)) = \all(p,x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate with <span class="math inline">\(x \in \lists{A}\)</span>. We have <span class="math display">\[\beq(x,\filter(p)(x)) = \all(p,x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(x,\filter(p)(x)) \\
  &amp; = &amp; \beq(\nil,\filter(p)(\nil)) \\
  &amp; = &amp; \beq(\nil,\nil) \\
@@ -502,7 +452,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \all(p,\nil) \\
  &amp; = &amp; \all(p,x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possibilities. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x)) \\
+ &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x))) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{\btrue}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\cons(a,\filter(p)(x))) \\
@@ -514,7 +464,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \band(p(a),\all(p,x)) \\
  &amp; = &amp; \all(p,\cons(a,x))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(p(a) = \bfalse\)</span>. Now <span class="math inline">\(\sublist(\filter(p)(x),x) = \btrue\)</span>, and using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x)) \\
+ &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x))) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{\bfalse}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\filter(p)(x)) \\
@@ -522,44 +472,40 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \band(\bfalse,\all(p,x)) \\
  &amp; = &amp; \band(p(a),\all(p,x)) \\
  &amp; = &amp; \all(p,\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_filter_eq_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_filter_eq_all _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;eq(x,filter(p)(x)) == all(p,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (eq x (filter p x)) (all p x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="co">-- run all tests for filter</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="ot">_test_filter ::</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">_test_filter t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel (<span class="st">&quot;filter: &quot;</span> <span class="fu">++</span> typeName t)</a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb10-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb10-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb10-14" data-line-number="14">      }</a>
-<a class="sourceLine" id="cb10-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args (_test_filter_nil t)</a>
-<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args (_test_filter_cons t)</a>
-<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_filter_all t)</a>
-<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_filter_snoc t)</a>
-<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_filter_rev t)</a>
-<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args (_test_filter_cat t)</a>
-<a class="sourceLine" id="cb10-22" data-line-number="22">  runTest args (_test_filter_idempotent t)</a>
-<a class="sourceLine" id="cb10-23" data-line-number="23">  runTest args (_test_filter_eq_all t)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_filter ::</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">_test_filter t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">  testLabel1 <span class="st">&quot;filter&quot;</span> t</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb10-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">  runTest args (_test_filter_nil t)</a>
+<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args (_test_filter_cons t)</a>
+<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args (_test_filter_all t)</a>
+<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_filter_snoc t)</a>
+<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_filter_rev t)</a>
+<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_filter_cat t)</a>
+<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args (_test_filter_idempotent t)</a>
+<a class="sourceLine" id="cb10-22" data-line-number="22">  runTest args (_test_filter_eq_all t)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_filter ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">main_filter <span class="fu">=</span> <span class="kw">do</span></a>
@@ -568,7 +514,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

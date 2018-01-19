@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Map</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-29 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,46 +199,42 @@ Posted on 2017-04-29 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( map, _test_map, main_map</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">At</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( map, _test_map, main_map</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">At</span></a></code></pre></div>
 <p>Today we’ll explore one of the most useful functions on <span class="math inline">\(\lists{A}\)</span>: <span class="math inline">\(\map\)</span>. What <span class="math inline">\(\map\)</span> does is take a function <span class="math inline">\(A \rightarrow B\)</span> and a <span class="math inline">\(\lists{A}\)</span>, and apply the function “itemwise” to get a <span class="math inline">\(\lists{B}\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\varphi : B^A \rightarrow A \times \lists{B} \rightarrow \lists{B}\)</span> by <span class="math display">\[\varphi(f)(a,x) = \cons(f(a),x).\]</span> We then define <span class="math inline">\(\map : B^A \rightarrow \lists{A} \rightarrow \lists{B}\)</span> by <span class="math display">\[\map(f) = \foldr{\nil}{\varphi(f)}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">map<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">map f <span class="fu">=</span> foldr nil (phi f)</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi g a x <span class="fu">=</span> cons (g a) x</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\map\)</span> is defined as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span>, it is the unique solution to a system of functional equations.</p>
-<div class="result">
-<div class="thm">
-<p>
-<span class="math inline">\(\map(\alpha)\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \rightarrow \lists{B}\)</span> of the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>: <span class="math display">\[\left\{\begin{array}{l}
+<div class="corollary">
+<p><span class="math inline">\(\map(\alpha)\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \rightarrow \lists{B}\)</span> of the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>: <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \nil \\
  f(\cons(a,x)) = \cons(\alpha(a),f(x))
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_map_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_map_nil t <span class="fu">=</span></a>
@@ -251,7 +247,6 @@ Posted on 2017-04-29 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_map_cons _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;map(f)(cons(a,x)) == cons(f(a),map(f)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \f a x <span class="ot">-&gt;</span> eq (map f (cons a x)) (cons (f a) (map f x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>One way to think about <span class="math inline">\(\map\)</span> is that it fills in the following diagram. <span class="math display">\[\require{AMScd}
@@ -261,44 +256,31 @@ A @&gt;{f}&gt;&gt; B\\
 \lists{A} @&gt;&gt;{\map(f)}&gt; \lists{B}
 \end{CD}\]</span> This looks an awful lot like a functor diagram. Recall that given two categories, a functor associates objects to objects and morphisms to morphisms, preserving <span class="math inline">\(\id\)</span> and composition. And indeed, <span class="math inline">\(\map\)</span> is the morphism part of the <span class="math inline">\(\lists{\ast}\)</span> functor.</p>
 <p><span class="math inline">\(\map\)</span> takes <span class="math inline">\(\id_A\)</span> to <span class="math inline">\(\id_{\lists{A}}\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. Then we have <span class="math display">\[\map(\id_A)(x) = x.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. Then we have <span class="math display">\[\map(\id_A)(x) = x.\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\id)(\nil) \\
  &amp; = &amp; \nil
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(f\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\id)(\cons(a,x)) \\
  &amp; = &amp; \cons(\id(a),\map(\id)(x)) \\
  &amp; = &amp; \cons(a,x)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_map_id ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_map_id _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;map(id)(x) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (map id x) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\map\)</span> preserves composition.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with maps <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(g : B \rightarrow C\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\map(g \circ f)(x) = (\map(g) \circ \map(f))(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with maps <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(g : B \rightarrow C\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\map(g \circ f)(x) = (\map(g) \circ \map(f))(x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; (\map(g) \circ \map(f))(x) \\
  &amp; = &amp; (\map(g) \circ \map(f))(\nil) \\
  &amp; = &amp; \map(g)(\map(f)(\nil)) \\
@@ -311,31 +293,23 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \map(g)(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \cons(g(f(a)),\map(g)(\map(f)(x))) \\
  &amp; = &amp; \cons((g \circ f)(a),(\map(g) \circ \map(f))(x)) \\
- &amp; = &amp; \cons((g \circ f)(a),(\map(g \circ f)(x)) \\
+ &amp; = &amp; \cons((g \circ f)(a),\map(g \circ f)(x)) \\
  &amp; = &amp; \map(g \circ f)(\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_map_compose ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_map_compose _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;map(g . f)(x) == (map(g) . map(f))(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \g f x <span class="ot">-&gt;</span> eq (map (g <span class="fu">.</span> f) x) (((map g) <span class="fu">.</span> (map f)) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\map(f)\)</span> respects <span class="math inline">\(\tail\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\tail(x)) = \tail(\map(f)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\tail(x)) = \tail(\map(f)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\tail(\nil)) \\
  &amp; = &amp; \map(f)(\nil) \\
  &amp; = &amp; \nil \\
@@ -344,31 +318,23 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\tail(\cons(a,x))) \\
  &amp; = &amp; \map(f)(x) \\
- &amp; = &amp; \tail(\cons(f(a),\map(f)(x)) \\
+ &amp; = &amp; \tail(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \tail(\map(f)(\cons(a,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_map_tail ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_map_tail _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;map(f)(tail(x)) == tail(map(f)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \f x <span class="ot">-&gt;</span> eq (map f (tail x)) (tail (map f x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\map(f)\)</span> respects <span class="math inline">\(\cat\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\cat(x,y)) = \cat(\map(f)(x),\map(f)(y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\cat(x,y)) = \cat(\map(f)(x),\map(f)(y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\cat(x,y)) \\
  &amp; = &amp; \map(f)(\cat(\nil,y)) \\
  &amp; = &amp; \map(f)(y) \\
@@ -382,29 +348,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons(f(a),\cat(\map(f)(x),\map(f)(y))) \\
  &amp; = &amp; \cat(\cons(f(a),\map(f)(x)),\map(f)(y)) \\
  &amp; = &amp; \cat(\map(f)(\cons(a,x)),\map(f)(y))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_map_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_map_cat _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;map(f)(cat(x,y)) == cat(map(f)(x),map(f)(y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \f x y <span class="ot">-&gt;</span> eq (map f (cat x y)) (cat (map f x) (map f y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\map(f)\)</span> respects <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\snoc(a,x)) = \snoc(f(a),\map(f)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\snoc(a,x)) = \snoc(f(a),\map(f)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\snoc(a,\nil)) \\
  &amp; = &amp; \map(f)(\cons(a,\nil)) \\
  &amp; = &amp; \cons(f(a),\map(f)(\nil)) \\
@@ -418,29 +376,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons(f(b),\snoc(f(a),\map(f)(x))) \\
  &amp; = &amp; \snoc(f(a),\cons(f(b),\map(f)(x))) \\
  &amp; = &amp; \snoc(f(a),\map(f)(\cons(b,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_map_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_map_snoc _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;map(f)(snoc(a,x)) == snoc(f(a),map(f)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \f a x <span class="ot">-&gt;</span> eq (map f (snoc a x)) (snoc (f a) (map f x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\map(f)\)</span> respects <span class="math inline">\(\rev\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\rev(x)) = \rev(\map(f)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\map(f)(\rev(x)) = \rev(\map(f)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\rev(x)) \\
  &amp; = &amp; \map(f)(\rev(\nil)) \\
  &amp; = &amp; \map(f)(\nil) \\
@@ -453,32 +403,23 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \map(f)(\snoc(a,\rev(x))) \\
  &amp; = &amp; \snoc(f(a),\map(f)(\rev(x))) \\
  &amp; = &amp; \snoc(f(a),\rev(\map(f)(x))) \\
- &amp; = &amp; \rev(\cons(f(a),\map(f)(x)) \\
+ &amp; = &amp; \rev(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \rev(\map(f)(\cons(a,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_map_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_map_rev _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;map(f)(rev(x)) == rev(map(f)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \f x <span class="ot">-&gt;</span> eq (map f (rev x)) (rev (map f x))</a></code></pre></div>
-</p>
 </div>
 </div>
-<p>(@@@)</p>
 <p><span class="math inline">\(\map(f)\)</span> interacts with <span class="math inline">\(\at\)</span>:</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\at(\map(f)(x),k) = \upair(\id,f)(\at(x,k)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\at(\map(f)(x),k) = \upair(\id,f)(\at(x,k)).\]</span></p>
 <div class="proof">
-<p>
-There are two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>There are two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\map(f)(\nil),k) \\
  &amp; = &amp; \at(\nil,k) \\
  &amp; = &amp; \lft(\ast) \\
@@ -497,29 +438,21 @@ There are two possibilities for <span class="math inline">\(x\)</span>. If <span
  &amp; = &amp; \at(\map(f)(y),k) \\
  &amp; = &amp; \upair(\id,f)(\at(y,k)) \\
  &amp; = &amp; \upair(\id,f)(\at(\cons(a,y),\next(k)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_map_at ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> a)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_map_at _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;at(map(f)(x),k) == upair(id,f)(at(x,k))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  \f x k <span class="ot">-&gt;</span> eq (at (map f x) k) (upair id f (at x k))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\map\)</span> preserves <span class="math inline">\(\length\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\length(\map(f)(x)) = \length(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\length(\map(f)(x)) = \length(x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\map(f)(x)) \\
  &amp; = &amp; \length(\map(f)(\nil)) \\
  &amp; = &amp; \length(\nil) \\
@@ -530,17 +463,14 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \next(\length(\map(f)(x))) \\
  &amp; = &amp; \next(\length(x)) \\
  &amp; = &amp; \length(\cons(a,x))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_map_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> a)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_map_length _ k <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;length(map(f)(x)) == length(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \f x <span class="ot">-&gt;</span> eq (length (map f x)) ((length x) <span class="ot">`withTypeOf`</span> k)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -551,7 +481,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb12-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n</a>
 <a class="sourceLine" id="cb12-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-6" data-line-number="6">_test_map t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">  testLabel (<span class="st">&quot;map: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">  testLabel1 <span class="st">&quot;map&quot;</span> t</a>
 <a class="sourceLine" id="cb12-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb12-9" data-line-number="9">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb12-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
@@ -577,7 +507,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -1,0 +1,784 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nbloomf.blog - Prefix and Suffix</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Prefix and Suffix</h1>
+<!-- BEGIN CONTENT -->
+
+
+<div class="info">
+Posted on 2017-05-08 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
+\(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- predicates -->
+\(\newcommand{\ptrue}{\mathsf{ptrue}}\)
+\(\newcommand{\pfalse}{\mathsf{pfalse}}\)
+\(\newcommand{\pnot}{\mathsf{pnot}}\)
+\(\newcommand{\pand}{\mathbin{\mathsf{pand}}}\)
+\(\newcommand{\por}{\mathbin{\mathsf{por}}}\)
+\(\newcommand{\pimpl}{\mathbin{\mathsf{pimpl}}}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
+\(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
+\(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
+\(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
+\(\newcommand{\tupL}{\mathsf{tupL}}\)
+\(\newcommand{\tupR}{\mathsf{tupR}}\)
+
+<!-- disjoint unions -->
+\(\newcommand{\lft}{\mathsf{left}}\)
+\(\newcommand{\rgt}{\mathsf{right}}\)
+\(\newcommand{\either}{\mathsf{either}}\)
+\(\newcommand{\uSwap}{\mathsf{swap}_{+}}\)
+\(\newcommand{\uPair}{\mathsf{pair}_{+}}\)
+\(\newcommand{\uAssocL}{\mathsf{assocL}_{+}}\)
+\(\newcommand{\uAssocR}{\mathsf{assocR}_{+}}\)
+\(\newcommand{\isLft}{\mathsf{isLeft}}\)
+\(\newcommand{\isRgt}{\mathsf{isRight}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\unnext}{\mathsf{unnext}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+
+<!-- natural number recursion -->
+\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
+\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
+\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
+\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
+\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+
+<!-- natural number arithmetic -->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- lists -->
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
+\(\newcommand{\isnil}{\mathsf{isNil}}\)
+\(\newcommand{\tail}{\mathsf{tail}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+
+<!-- list recursion -->
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
+\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
+\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
+\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
+\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
+\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
+\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+
+<!-- list arithmetic -->
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\revcat}{\mathsf{revcat}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+\(\newcommand{\addlength}{\mathsf{addlength}}\)
+\(\newcommand{\length}{\mathsf{length}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+\(\newcommand{\at}{\mathsf{at}}\)
+\(\newcommand{\map}{\mathsf{map}}\)
+\(\newcommand{\range}{\mathsf{range}}\)
+\(\newcommand{\zip}{\mathsf{zip}}\)
+\(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
+\(\newcommand{\lcp}{\mathsf{lcp}}\)
+\(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\addcount}{\mathsf{addcount}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
+\(\newcommand{\takeBut}{\mathsf{takeBut}}\)
+\(\newcommand{\dropBut}{\mathsf{dropBut}}\)
+\(\newcommand{\takeWhile}{\mathsf{takeWhile}}\)
+\(\newcommand{\dropWhile}{\mathsf{dropWhile}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/PrefixAndSuffix.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( prefix, suffix, _test_prefix_suffix, main_prefix_suffix</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Zip</span></a></code></pre></div>
+<p>The <span class="math inline">\(\cat\)</span> function on <span class="math inline">\(\lists{A}\)</span> is analogous to <span class="math inline">\(\nplus\)</span> on <span class="math inline">\(\nats\)</span>. Carrying this analogy further, <span class="math inline">\(\zip\)</span> and <span class="math inline">\(\zipPad\)</span> are analogous to <span class="math inline">\(\nmin\)</span> and <span class="math inline">\(\nmax\)</span>, respectively. When analogies like this occur in mathematics it can be fruitful to see how far they go. With that in mind, today we will explore the list-analogue of <span class="math inline">\(\nleq\)</span>. This role is played by two functions which we call <span class="math inline">\(\prefix\)</span> and <span class="math inline">\(\suffix\)</span>.</p>
+<p>Intuitively, <span class="math inline">\(\prefix\)</span> will detect when one list is an initial segment of another, while <span class="math inline">\(\suffix\)</span> detects when one list is a terminal segment of another. We’ll start with <span class="math inline">\(\prefix\)</span>, which we can define as a <span class="math inline">\(\dfoldr{\ast}{\ast}{\ast}\)</span> as follows.</p>
+<div class="definition">
+<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \lists{A} \rightarrow \bool\)</span> by <span class="math inline">\(\delta(y) = \btrue\)</span>, define <span class="math inline">\(\psi : A \times \bool \rightarrow \bool\)</span> by <span class="math inline">\(\psi(a,p) = \bfalse\)</span>, and define <span class="math inline">\(\chi : A \times A \times \lists{A} \times \bool \times \bool \rightarrow \lists{A}\)</span> by <span class="math display">\[\chi(a,b,y,p,q) = \bif{\beq(a,b)}{p}{\bfalse}.\]</span> Now define <span class="math display">\[\prefix : \lists{A} \times \lists{A} \rightarrow \bool\]</span> by <span class="math display">\[\prefix = \dfoldr{\delta}{\psi}{\chi}.\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">prefix <span class="fu">=</span> dfoldr delta psi chi</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    delta _ <span class="fu">=</span> true</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    psi _ _ <span class="fu">=</span> false</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">    chi a b _ p _ <span class="fu">=</span> <span class="kw">if</span> eq a b <span class="kw">then</span> p <span class="kw">else</span> false</a></code></pre></div>
+</div>
+<p>Since <span class="math inline">\(\prefix\)</span> is defined as a double fold, it is the unique solution to a system of functional equations.</p>
+<div class="corollary">
+<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\prefix\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \bool\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+ f(\nil,y) = \btrue \\
+ f(\cons(a,x),\nil) = \bfalse \\
+ f(\cons(a,x),\cons(b,y)) = \bif{\beq(a,b)}{f(x,y)}{\bfalse}
+\end{array}\right.\]</span></p>
+<div class="test">
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_prefix_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">_test_prefix_nil_list _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;prefix(nil,y) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  \y <span class="ot">-&gt;</span> eq (prefix nil y) true</a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">_test_prefix_cons_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">_test_prefix_cons_nil _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;prefix(cons(a,x),nil) == false&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  \a x <span class="ot">-&gt;</span> eq (prefix (cons a x) nil) false</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb3-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15"><span class="ot">_test_prefix_cons_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">_test_prefix_cons_cons _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">  testName <span class="st">&quot;prefix(cons(a,x),cons(b,y)) == if(eq(a,b),prefix(x,y),false)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">    (prefix (cons a x) (cons b y))</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">    (<span class="kw">if</span> eq a b <span class="kw">then</span> prefix x y <span class="kw">else</span> false)</a></code></pre></div>
+</div>
+</div>
+<p>Now <span class="math inline">\(\prefix\)</span> is analogous to <span class="math inline">\(\nleq\)</span> in that it detects the existence of solutions <span class="math inline">\(z\)</span> to the equation <span class="math inline">\(y = \cat(x,z)\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\prefix(x,\cat(x,y)) = \btrue\)</span>.</li>
+<li>If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z \in \lists{A}\)</span>.</li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, certainly we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(x,\cat(x,y)) \\
+ &amp; = &amp; \prefix(\nil,\cat(\nil,y)) \\
+ &amp; = &amp; \prefix(\nil,y) \\
+ &amp; = &amp; \btrue.
+\end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\cons(a,x),\cat(\cons(a,x),y)) \\
+ &amp; = &amp; \prefix(\cons(a,x),\cons(a,\cat(x,y))) \\
+ &amp; = &amp; \prefix(x,\cat(x,y)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as needed.</li>
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\prefix(\nil,y) = \btrue,\]</span> and <span class="math display">\[y = \cat(\nil,y).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now suppose <span class="math inline">\(\prefix(\cons(a,x),y) = \btrue\)</span>; in particular, we must have <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and <span class="math inline">\(\prefix(x,w) = \btrue\)</span>. By the induction hypothesis we have <span class="math inline">\(w = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>, and thus <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; y \\
+ &amp; = &amp; \cons(a,w) \\
+ &amp; = &amp; \cons(a,\cat(x,z)) \\
+ &amp; = &amp; \cat(\cons(a,x),z)
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_prefix_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">_test_prefix_cat _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;prefix(x,cat(x,y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> prefix x (cat x y)</a></code></pre></div>
+</div>
+</div>
+<p>And <span class="math inline">\(\prefix\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, if <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(\prefix(x,\snoc(a,y)) = \btrue\)</span>.</p>
+<div class="proof">
+<p>If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>. Now <span class="math display">\[\snoc(a,y) = \snoc(\cat(x,z)) = \cat(x,\snoc(a,z)),\]</span> and so <span class="math inline">\(\prefix(x,\snoc(a,y)) = \btrue\)</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_prefix_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">_test_prefix_snoc _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;if prefix(x,y) then prefix(x,snoc(a,y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> prefix x y</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="kw">then</span> prefix x (snoc a y)</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\prefix\)</span> is a partial order.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\prefix(x,x) = \btrue\)</span>.</li>
+<li>If <span class="math inline">\(\prefix(x,y)\)</span> and <span class="math inline">\(\prefix(y,x)\)</span>, then <span class="math inline">\(x = y\)</span>.</li>
+<li>If <span class="math inline">\(\prefix(x,y)\)</span> and <span class="math inline">\(\prefix(y,z)\)</span>, then <span class="math inline">\(\prefix(x,z)\)</span>.</li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \prefix(x,\cat(x,\nil)) \\
+ &amp; = &amp; \prefix(x,x)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>If <span class="math inline">\(\prefix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(x,u)\)</span> for some <span class="math inline">\(u\)</span>. Similarly, if <span class="math inline">\(\prefix(y,x)\)</span> then <span class="math inline">\(x = \cat(y,v)\)</span> for some $v. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cat(x,\nil) \\
+ &amp; = &amp; x \\
+ &amp; = &amp; \cat(y,v) \\
+ &amp; = &amp; \cat(\cat(x,u),v) \\
+ &amp; = &amp; \cat(x,\cat(u,v)).
+\end{eqnarray*}\]</span> Since <span class="math inline">\(\cat\)</span> is cancellative, we have <span class="math inline">\(\nil = \cat(u,v)\)</span>, so that <span class="math inline">\(u = \nil\)</span>, and thus <span class="math inline">\(x = y\)</span> as claimed.</li>
+<li>If <span class="math inline">\(\prefix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(x,u)\)</span>. Similarly, if <span class="math inline">\(\prefix(y,z)\)</span>, we have <span class="math inline">\(z = \cat(y,v)\)</span>. Now <span class="math display">\[z = \cat(\cat(x,u),v) = \cat(x,\cat(u,v))\]</span> so that <span class="math inline">\(\prefix(x,z)\)</span> as claimed.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_prefix_reflexive ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">_test_prefix_reflexive _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;prefix(x,x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  \x <span class="ot">-&gt;</span> prefix x x</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8"><span class="ot">_test_prefix_symmetric ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">_test_prefix_symmetric _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  testName <span class="st">&quot;prefix(x,y) &amp; prefix(y,x) ==&gt; eq(x,y)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">  \x y <span class="ot">-&gt;</span> <span class="kw">if</span> and (prefix x y) (prefix y x)</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">    <span class="kw">then</span> eq x y</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">    <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb6-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb6-17" data-line-number="17"><span class="ot">_test_prefix_transitive ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-19" data-line-number="19">_test_prefix_transitive _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-20" data-line-number="20">  testName <span class="st">&quot;prefix(x,y) &amp; prefix(y,z) ==&gt; prefix(x,z)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-21" data-line-number="21">  \x y z <span class="ot">-&gt;</span> <span class="kw">if</span> and (prefix x y) (prefix y z)</a>
+<a class="sourceLine" id="cb6-22" data-line-number="22">    <span class="kw">then</span> prefix x z</a>
+<a class="sourceLine" id="cb6-23" data-line-number="23">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\map\)</span> preserves <span class="math inline">\(\prefix\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>, and let <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math display">\[\prefix(\map(f)(x),\map(f)(y)) = \btrue.\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(x,y) \\
+ &amp; = &amp; \prefix(\nil,y) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\map(f)(x),\map(f)(y)) \\
+ &amp; = &amp; \prefix(\map(f)(\nil),\map(f)(y)) \\
+ &amp; = &amp; \prefix(\nil,\map(f)(y)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed. Suppose now the implication holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y)\)</span>. Now <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \prefix(\cons(a,x),y) \\
+ &amp; = &amp; \prefix(\cons(a,x),\cons(a,w)) \\
+ &amp; = &amp; \prefix(x,w).
+\end{eqnarray*}\]</span> Using the induction hypothesis, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\map(f)(\cons(a,x)),\map(f)(y)) \\
+ &amp; = &amp; \prefix(\map(f)(\cons(a,x)),\map(f)(\cons(a,w))) \\
+ &amp; = &amp; \prefix(\cons(f(a),\map(f)(x)),\cons(f(a),\map(f)(w))) \\
+ &amp; = &amp; \prefix(\map(f)(x),\map(f)(w)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_prefix_map ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_prefix_map _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;if prefix(x,y) then prefix(map(f)(x),map(f)(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \f x y <span class="ot">-&gt;</span> <span class="kw">if</span> prefix x y</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    <span class="kw">then</span> prefix (map f x) (map f y)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p>And <span class="math inline">\(\zip\)</span> preserves <span class="math inline">\(\prefix\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(u,v \in \lists{B}\)</span>. If <span class="math inline">\(\prefix(x,y) = \btrue\)</span> and <span class="math inline">\(\prefix(u,v) = \btrue\)</span>, then <span class="math display">\[\prefix(\zip(x,u),\zip(y,v)) = \btrue.\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math inline">\(\prefix(x,y) = \btrue\)</span>. Suppose further that <span class="math inline">\(\prefix(u,v) = \btrue\)</span>; now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\zip(x,u),\zip(y,v)) \\
+ &amp; = &amp; \prefix(\zip(\nil,u),\zip(y,v)) \\
+ &amp; = &amp; \prefix(\nil,\zip(y,v)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the implication holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y)\)</span> and <span class="math inline">\(\prefix(u,v)\)</span>; in particular we must have <span class="math inline">\(y = \cons(a,k)\)</span> for some <span class="math inline">\(k \in \lists{A}\)</span> with <span class="math inline">\(\prefix(x,k)\)</span>, as otherwise <span class="math inline">\(\prefix(\cons(a,x),y) = \bfalse\)</span>. Now we have two possibilities for <span class="math inline">\(u\)</span>. If <span class="math inline">\(u = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\zip(\cons(a,x),u),\zip(y,v)) \\
+ &amp; = &amp; \prefix(\zip(\cons(a,x),\nil),\zip(y,v)) \\
+ &amp; = &amp; \prefix(\nil,\zip(y,v)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(u = \cons(b,w)\)</span>. Again we must have <span class="math inline">\(v = \cons(b,h)\)</span> with <span class="math inline">\(h \in \lists{B}\)</span> and <span class="math inline">\(\prefix(w,h)\)</span>, since otherwise we have <span class="math inline">\(\prefix(u,v) = \bfalse\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\zip(\cons(a,x),u),\zip(y,v)) \\
+ &amp; = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\zip(\cons(a,k),\cons(b,h))) \\
+ &amp; = &amp; \prefix(\cons((a,b),\zip(x,w)),\cons((a,b),\zip(k,h))) \\
+ &amp; = &amp; \prefix(\zip(x,w),\zip(k,h)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_prefix_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">_test_prefix_zip _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;prefix(x,y) &amp; prefix(u,v) ==&gt; prefix(zip(x,u),zip(y,v))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  \x y u v <span class="ot">-&gt;</span> <span class="kw">if</span> and (prefix x y) (prefix u v)</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="kw">then</span> prefix (zip x u) (zip y v)</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\prefix\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\prefix(x,y)\)</span>, then <span class="math inline">\(\nleq(\length(x),\length(y))\)</span>.</p>
+<div class="proof">
+<p>Suppose <span class="math inline">\(\prefix(x,y)\)</span>. Then we have <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>, and so <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nleq(\length(x),\length(y)) \\
+ &amp; = &amp; \nleq(\length(x),\length(\cat(x,z))) \\
+ &amp; = &amp; \nleq(\length(x),\nplus(\length(x),\length(z))) \\
+ &amp; = &amp; \nleq(\zero,\length(z)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_prefix_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_prefix_length _ k <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;if prefix(x,y) then leq(length(x),length(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> <span class="kw">if</span> prefix x y</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="kw">then</span> leq ((length x) <span class="ot">`withTypeOf`</span> k) (length y)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p>The simplest way to define <span class="math inline">\(\suffix\)</span> is in terms of <span class="math inline">\(\prefix\)</span>.</p>
+<div class="definition">
+<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\suffix : \lists{A} \times \lists{A} \rightarrow \bool\)</span> by <span class="math display">\[\suffix(x,y) = \prefix(\rev(x),\rev(y)).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">suffix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">suffix x y <span class="fu">=</span> prefix (rev x) (rev y)</a></code></pre></div>
+</div>
+<p>Not surprisingly, we can characterize <span class="math inline">\(\prefix\)</span> in terms of <span class="math inline">\(\suffix\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\prefix(x,y) = \suffix(\rev(x),\rev(y)).\]</span></p>
+<div class="proof">
+<p>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\rev(x),\rev(y)) \\
+ &amp; = &amp; \prefix(\rev(\rev(x)),\rev(\rev(y))) \\
+ &amp; = &amp; \prefix(x,y)
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_suffix_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_suffix_prefix _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;prefix(x,y) == suffix(rev(x),rev(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (prefix x y) (suffix (rev x) (rev y))</a></code></pre></div>
+</div>
+</div>
+<p>Many theorems about <span class="math inline">\(\prefix\)</span> has an analogue for <span class="math inline">\(\suffix\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
+<ol type="1">
+<li><span class="math inline">\(\suffix(\nil,y) = \btrue\)</span>.</li>
+<li><span class="math inline">\(\suffix(\snoc(a,x),\nil) = \bfalse\)</span>.</li>
+<li><span class="math display">\[\suffix(\snoc(a,x),\snoc(b,y)) = \left\{\begin{array}{ll} \bfalse &amp; \mathrm{if}\ a \neq b \\ \suffix(x,y) &amp; \mathrm{if}\ a = b. \end{array}\right.\]</span></li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\nil,y) \\
+ &amp; = &amp; \prefix(\rev(\nil),\rev(y)) \\
+ &amp; = &amp; \prefix(\nil,\rev(y)) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\snoc(a,x),\nil) \\
+ &amp; = &amp; \prefix(\rev(\snoc(a,x)),\rev(\nil)) \\
+ &amp; = &amp; \prefix(\cons(a,\rev(x)),\nil) \\
+ &amp; = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>First suppose <span class="math inline">\(a = b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\snoc(a,x),\snoc(b,y)) \\
+ &amp; = &amp; \prefix(\rev(\snoc(a,x)),\rev(\snoc(b,y))) \\
+ &amp; = &amp; \prefix(\cons(a,\rev(x)),\cons(b,\rev(y))) \\
+ &amp; = &amp; \prefix(\rev(x),\rev(y)) \\
+ &amp; = &amp; \suffix(x,y)
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\snoc(a,x),\snoc(b,y)) \\
+ &amp; = &amp; \prefix(\rev(\snoc(a,x)),\rev(\snoc(b,y))) \\
+ &amp; = &amp; \prefix(\cons(a,\rev(x)),\cons(b,\rev(y))) \\
+ &amp; = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_suffix_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">_test_suffix_nil_list _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;suffix(nil,y) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  \y <span class="ot">-&gt;</span> eq (suffix nil y) true</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="ot">_test_suffix_snoc_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">_test_suffix_snoc_nil _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11">  testName <span class="st">&quot;suffix(snoc(a,x),y) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">  \a x <span class="ot">-&gt;</span> eq (suffix (snoc a x) nil) false</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb12-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"><span class="ot">_test_suffix_snoc_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb12-16" data-line-number="16">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-17" data-line-number="17">_test_suffix_snoc_snoc _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">  testName <span class="st">&quot;suffix(snoc(a,x),snoc(b,y)) == if(eq(a,b),suffix(x,y),false)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb12-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">    (suffix (snoc a x) (snoc b y))</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21">    (<span class="kw">if</span> eq a b <span class="kw">then</span> suffix x y <span class="kw">else</span> false)</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\suffix\)</span> also detects the existence of solutions <span class="math inline">\(z\)</span> to the equation <span class="math inline">\(y = \cat(z,x)\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\suffix(x,\cat(y,x)) = \btrue\)</span>.</li>
+<li>If <span class="math inline">\(\suffix(x,y) = \btrue\)</span>, then <span class="math inline">\(y = \cat(z,x)\)</span> for some <span class="math inline">\(z \in \lists{A}\)</span>.</li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(x,\cat(y,x)) \\
+ &amp; = &amp; \prefix(\rev(x),\rev(\cat(y,x))) \\
+ &amp; = &amp; \prefix(\rev(x),\cat(\rev(x),\rev(y))) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Suppose <span class="math inline">\(\suffix(x,y) = \btrue\)</span>. Then <span class="math inline">\(\prefix(\rev(x),\rev(y)) = \btrue\)</span>, so we have <span class="math inline">\(\rev(y) = \cat(\rev(x),w)\)</span> for some <span class="math inline">\(w\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; y \\
+ &amp; = &amp; \rev(\rev(y)) \\
+ &amp; = &amp; \rev(\cat(\rev(x),w)) \\
+ &amp; = &amp; \cat(\rev(w),\rev(\rev(x))) \\
+ &amp; = &amp; \cat(\rev(w),x)
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_suffix_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">_test_suffix_cat _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;suffix(x,cat(y,x))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> suffix x (cat y x)</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\suffix\)</span> interacts with <span class="math inline">\(\cons\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>, if <span class="math inline">\(\suffix(x,y)\)</span>, then <span class="math inline">\(\suffix(x,\cons(a,y))\)</span>.</p>
+<div class="proof">
+<p>Suppose <span class="math inline">\(\suffix(x,y)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \suffix(x,y) \\
+ &amp; = &amp; \prefix(\rev(x),\rev(y)) \\
+ &amp; = &amp; \prefix(\rev(x),\snoc(a,\rev(y))) \\
+ &amp; = &amp; \prefix(\rev(x),\rev(\cons(a,y))) \\
+ &amp; = &amp; \suffix(x,\cons(a,y))
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_suffix_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">_test_suffix_cons _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  testName <span class="st">&quot;if suffix(x,y) then suffix(x,cons(a,y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> suffix x y</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">    <span class="kw">then</span> suffix x (cons a y)</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\suffix\)</span> is a partial order:</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(\suffix(x,x) = \btrue\)</span>.</li>
+<li>If <span class="math inline">\(\suffix(x,y)\)</span> and <span class="math inline">\(\suffix(y,x)\)</span>, then <span class="math inline">\(x = y\)</span>.</li>
+<li>If <span class="math inline">\(\suffix(x,y)\)</span> and <span class="math inline">\(\suffix(y,z)\)</span>, then <span class="math inline">\(\suffix(x,z)\)</span>.</li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp; = &amp; \prefix(\rev(x),\rev(x)) \\
+ &amp; = &amp; \suffix(x,x)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>If <span class="math inline">\(\suffix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(u,x)\)</span> for some <span class="math inline">\(u\)</span>. Similarly, if <span class="math inline">\(\suffix(y,x)\)</span> then <span class="math inline">\(x = \cat(v,y)\)</span> for some <span class="math inline">\(v\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \cat(\nil,x) \\
+ &amp; = &amp; x \\
+ &amp; = &amp; \cat(v,y) \\
+ &amp; = &amp; \cat(v,\cat(u,x)) \\
+ &amp; = &amp; \cat(\cat(v,u),x).
+\end{eqnarray*}\]</span> Since <span class="math inline">\(\cat\)</span> is cancellative, we have <span class="math inline">\(\nil = \cat(v,u)\)</span>, so that <span class="math inline">\(u = \nil\)</span>, and thus <span class="math inline">\(x = y\)</span> as claimed.</li>
+<li>If <span class="math inline">\(\suffix(x,y)\)</span> and <span class="math inline">\(\suffix(y,z)\)</span>, then <span class="math inline">\(\prefix(\rev(x),\rev(y))\)</span> and <span class="math inline">\(\prefix(\rev(y),\rev(z))\)</span>. So <span class="math inline">\(\prefix(\rev(x),\rev(z))\)</span>, and thus <span class="math inline">\(\suffix(x,z)\)</span>.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_suffix_reflexive ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">_test_suffix_reflexive _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  testName <span class="st">&quot;suffix(x,x) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (suffix x x) true</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb15-8" data-line-number="8"><span class="ot">_test_suffix_symmetric ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10">_test_suffix_symmetric _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">  testName <span class="st">&quot;suffix(x,y) &amp; suffix(y,x) ==&gt; eq(x,y)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">  \x y <span class="ot">-&gt;</span> <span class="kw">if</span> and (suffix x y) (suffix y x)</a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">    <span class="kw">then</span> eq x y</a>
+<a class="sourceLine" id="cb15-14" data-line-number="14">    <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb15-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb15-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb15-17" data-line-number="17"><span class="ot">_test_suffix_transitive ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19">_test_suffix_transitive _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">  testName <span class="st">&quot;suffix(x,y) &amp; suffix(y,z) ==&gt; suffix(x,z)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-21" data-line-number="21">  \x y z <span class="ot">-&gt;</span> <span class="kw">if</span> and (suffix x y) (suffix y z)</a>
+<a class="sourceLine" id="cb15-22" data-line-number="22">    <span class="kw">then</span> suffix x z</a>
+<a class="sourceLine" id="cb15-23" data-line-number="23">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\map\)</span> preserves suffixes:</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>, and let <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\suffix(x,y) = \btrue\)</span>, then <span class="math display">\[\suffix(\map(f)(x),\map(f)(y)) = \btrue.\]</span></p>
+<div class="proof">
+<p>Suppose <span class="math inline">\(\suffix(x,y)\)</span>; then <span class="math inline">\(\prefix(\rev(x),\rev(y))\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \suffix(\map(f)(x),\map(f)(y)) \\
+ &amp; = &amp; \prefix(\rev(\map(f)(x)),\rev(\map(f)(y))) \\
+ &amp; = &amp; \prefix(\map(f)(\rev(x)),\map(f)(\rev(y))) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_suffix_map ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">_test_suffix_map _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  testName <span class="st">&quot;if suffix(x,y) then suffix(map(f)(x),map(f)(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  \f x y <span class="ot">-&gt;</span> <span class="kw">if</span> suffix x y</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">    <span class="kw">then</span> suffix (map f x) (map f y)</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\suffix\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\suffix(x,y)\)</span>, then <span class="math inline">\(\nleq(\length(x),\length(y))\)</span>.</p>
+<div class="proof">
+<p>Suppose <span class="math inline">\(\suffix(x,y)\)</span>. Then <span class="math inline">\(\prefix(\rev(x),\rev(y))\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nleq(\length(x),\length(y)) \\
+ &amp; = &amp; \nleq(\length(\rev(x),\length(\rev(y)))) \\
+ &amp; = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">_test_suffix_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">_test_suffix_length _ k <span class="fu">=</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  testName <span class="st">&quot;if suffix(x,y) then leq(length(x),length(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> <span class="kw">if</span> suffix x y</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6">    <span class="kw">then</span> leq ((length x) <span class="ot">`withTypeOf`</span> k) (length y)</a>
+<a class="sourceLine" id="cb17-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p>As a special case, the prefixes and suffixes of a one-element list coincide.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\prefix(x,\cons(a,\nil)) = \suffix(x,\cons(a,\nil)).\]</span></p>
+<div class="proof">
+<p>We consider three possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(x,\cons(a,\nil)) \\
+ &amp; = &amp; \prefix(\nil,\cons(a,\nil)) \\
+ &amp; = &amp; \btrue \\
+ &amp; = &amp; \suffix(\nil,\cons(a,\nil)) \\
+ &amp; = &amp; \suffix(x,\cons(a,\nil))
+\end{eqnarray*}\]</span> as needed. If <span class="math inline">\(x = \cons(b,\nil)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(x,\cons(a,\nil)) \\
+ &amp; = &amp; \prefix(\cons(b,\nil),\cons(a,\nil)) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\prefix(\nil,\nil)}{\bfalse} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\suffix(\nil,\nil)}{\bfalse} \\
+ &amp; = &amp; \suffix(\snoc(b,\nil),\snoc(a,\nil)) \\
+ &amp; = &amp; \suffix(\cons(b,\nil),\cons(a,\nil)) \\
+ &amp; = &amp; \suffix(x,\cons(a,\nil))
+\end{eqnarray*}\]</span> as needed. Finally, suppose <span class="math inline">\(x = \cons(b,\cons(c,u))\)</span> for some <span class="math inline">\(u\)</span>. In this case we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nleq(\next(\length(\cons(a,\nil))),\length(x)) \\
+ &amp; = &amp; \nleq(\next(\next(\zero)),\length(\cons(b,\cons(c,u)))) \\
+ &amp; = &amp; \nleq(\next(\next(\zero)),\next(\next(\length(u)))) \\
+ &amp; = &amp; \nleq(\zero,\length(u)) \\
+ &amp; = &amp; \btrue,
+\end{eqnarray*}\]</span> so that <span class="math inline">\(\prefix(x,\cons(a,\nil)) = \bfalse\)</span>. Similarly, <span class="math display">\[\nleq(\next(\length(\cons(a,\nil))),\length(x)) = \btrue\]</span> so that <span class="math inline">\(\suffix(x,\cons(a,\nil)) = \bfalse\)</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">_test_prefix_suffix_singleton ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">_test_prefix_suffix_singleton _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">  testName <span class="st">&quot;prefix(x,cons(a,nil)) == suffix(x,cons(a,nil))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (prefix x (cons a nil)) (suffix x (cons a nil))</a></code></pre></div>
+</div>
+</div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">_test_prefix_suffix ::</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">_test_prefix_suffix t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb19-8" data-line-number="8">  testLabel2 <span class="st">&quot;prefix &amp; suffix&quot;</span> t n</a>
+<a class="sourceLine" id="cb19-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb19-10" data-line-number="10">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb19-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb19-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb19-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb19-14" data-line-number="14">      }</a>
+<a class="sourceLine" id="cb19-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb19-16" data-line-number="16">  runTest args (_test_prefix_nil_list t)</a>
+<a class="sourceLine" id="cb19-17" data-line-number="17">  runTest args (_test_prefix_cons_nil t)</a>
+<a class="sourceLine" id="cb19-18" data-line-number="18">  runTest args (_test_prefix_cons_cons t)</a>
+<a class="sourceLine" id="cb19-19" data-line-number="19">  runTest args (_test_prefix_cat t)</a>
+<a class="sourceLine" id="cb19-20" data-line-number="20">  runTest args (_test_prefix_snoc t)</a>
+<a class="sourceLine" id="cb19-21" data-line-number="21">  runTest args (_test_prefix_reflexive t)</a>
+<a class="sourceLine" id="cb19-22" data-line-number="22">  runTest args (_test_prefix_symmetric t)</a>
+<a class="sourceLine" id="cb19-23" data-line-number="23">  runTest args (_test_prefix_transitive t)</a>
+<a class="sourceLine" id="cb19-24" data-line-number="24">  runTest args (_test_prefix_map t)</a>
+<a class="sourceLine" id="cb19-25" data-line-number="25">  runTest args (_test_prefix_zip t)</a>
+<a class="sourceLine" id="cb19-26" data-line-number="26">  runTest args (_test_prefix_length t n)</a>
+<a class="sourceLine" id="cb19-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb19-28" data-line-number="28">  runTest args (_test_suffix_prefix t)</a>
+<a class="sourceLine" id="cb19-29" data-line-number="29">  runTest args (_test_suffix_nil_list t)</a>
+<a class="sourceLine" id="cb19-30" data-line-number="30">  runTest args (_test_suffix_snoc_nil t)</a>
+<a class="sourceLine" id="cb19-31" data-line-number="31">  runTest args (_test_suffix_snoc_snoc t)</a>
+<a class="sourceLine" id="cb19-32" data-line-number="32">  runTest args (_test_suffix_cat t)</a>
+<a class="sourceLine" id="cb19-33" data-line-number="33">  runTest args (_test_suffix_cons t)</a>
+<a class="sourceLine" id="cb19-34" data-line-number="34">  runTest args (_test_suffix_reflexive t)</a>
+<a class="sourceLine" id="cb19-35" data-line-number="35">  runTest args (_test_suffix_symmetric t)</a>
+<a class="sourceLine" id="cb19-36" data-line-number="36">  runTest args (_test_suffix_transitive t)</a>
+<a class="sourceLine" id="cb19-37" data-line-number="37">  runTest args (_test_suffix_map t)</a>
+<a class="sourceLine" id="cb19-38" data-line-number="38">  runTest args (_test_suffix_length t n)</a>
+<a class="sourceLine" id="cb19-39" data-line-number="39"></a>
+<a class="sourceLine" id="cb19-40" data-line-number="40">  runTest args (_test_prefix_suffix_singleton t)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">main_prefix_suffix ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">main_prefix_suffix <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb20-3" data-line-number="3">  _test_prefix_suffix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  _test_prefix_suffix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+
+
+
+<!-- END CONTENT -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

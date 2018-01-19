@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Lists</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -200,34 +200,30 @@ Posted on 2017-04-23 by nbloomf
 <hr />
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>(), foldr</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>(), foldr</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a></code></pre></div>
 <p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec{\ast}{\ast}\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves. Here’s an example.</p>
-<div class="result">
-<div class="defn">
-<p>
-Let <span class="math inline">\(A\)</span> be a set, and define a functor <span class="math inline">\(F_A\)</span> by <span class="math inline">\(F_A(X) = 1 + A \times X\)</span>. We assume that <span class="math inline">\(F_A\)</span> has an initial algebra, which we will denote <span class="math inline">\(\lists{A}\)</span>. We denote the component maps of the isomorphism <span class="math display">\[\theta : 1 + A \times \lists{A} \rightarrow \lists{A}\]</span> by <span class="math inline">\(\const(\nil) : 1 \rightarrow \lists{A}\)</span> and <span class="math inline">\(\cons : A \times \lists{A} \rightarrow \lists{A}\)</span>. That is, <span class="math display">\[\Theta = \either(\const(\nil),\cons).\]</span>
-</p>
-</div>
+<div class="definition">
+<p>Let <span class="math inline">\(A\)</span> be a set, and define a functor <span class="math inline">\(F_A\)</span> by <span class="math inline">\(F_A(X) = 1 + A \times X\)</span>. We assume that <span class="math inline">\(F_A\)</span> has an initial algebra, which we will denote <span class="math inline">\(\lists{A}\)</span>. We denote the component maps of the isomorphism <span class="math display">\[\theta : 1 + A \times \lists{A} \rightarrow \lists{A}\]</span> by <span class="math inline">\(\const(\nil) : 1 \rightarrow \lists{A}\)</span> and <span class="math inline">\(\cons : A \times \lists{A} \rightarrow \lists{A}\)</span>. That is, <span class="math display">\[\Theta = \either(\const(\nil),\cons).\]</span></p>
 </div>
 <p>The names <em>nil</em> and <em>cons</em> come from the Lisp programming language, where they were first introduced. Now because the algebra map <span class="math inline">\(\nil + \cons\)</span> is an isomorphism, it has an inverse; we’ll denote this map <span class="math inline">\(\uncons : \lists{A} \rightarrow 1 + \lists{A}\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\uncons(\nil) = \lft(\ast)\)</span>.</li>
 <li><span class="math inline">\(\uncons(\cons(a,x)) = \rgt((a,x))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lft(\ast) \\
@@ -244,23 +240,17 @@ Let <span class="math inline">\(A\)</span> be a set, and define a functor <span 
  &amp; = &amp; \uncons(\cons(a,x))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 </div>
-<p>As a corollary, we can use <span class="math inline">\(\uncons\)</span> to characterize equality for lists.</p>
-<div class="result">
-<div class="corollary">
-<p>
+<p>As a consequence, we can use <span class="math inline">\(\uncons\)</span> to characterize equality for lists.</p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
 <ol type="1">
 <li>Every element of <span class="math inline">\(\lists{A}\)</span> is equal to either <span class="math inline">\(\nil\)</span> or to <span class="math inline">\(\cons(a,x)\)</span> for some <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>.</li>
 <li><span class="math inline">\(\nil\)</span> and <span class="math inline">\(\cons(a,x)\)</span> are not equal for any <span class="math inline">\(a\)</span> and <span class="math inline">\(x\)</span>.</li>
 <li><span class="math inline">\(\cons(a,x) = \cons(b,y)\)</span> if and only if <span class="math inline">\(a = b\)</span> and <span class="math inline">\(x = y\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Let <span class="math inline">\(z \in \lists{A}\)</span>. We have two possibilities for <span class="math inline">\(\uncons(z)\)</span>. If <span class="math inline">\(\uncons(z) = \lft(\ast)\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; z \\
@@ -287,7 +277,6 @@ Let <span class="math inline">\(A\)</span> be a set, and define a functor <span 
  &amp; = &amp; \rgt((b,y)),
 \end{eqnarray*}\]</span> so that <span class="math inline">\((a,x) = (b,y)\)</span>, and thus <span class="math inline">\(a = b\)</span> and <span class="math inline">\(x = y\)</span> as claimed.</li>
 </ol>
-</p>
 </div>
 </div>
 <p>So what do the elements of <span class="math inline">\(\lists{A}\)</span> look like? Well, applying our “constructor” functions we can build elements like <span class="math display">\[\begin{array}{c}
@@ -296,7 +285,7 @@ Let <span class="math inline">\(A\)</span> be a set, and define a functor <span 
 \cons(b,\cons(a,\nil)) \\
 \cons(c,\cons(b,\cons(a,\nil))) \\
 \vdots
-\end{array}\]</span> We will wrap this definition up in code both as a concrete type and as a type class, so that later we can give alternative implementations. The list algebra is characterized by the components of the algebra map (<span class="math inline">\(\nil\)</span> and <span class="math inline">\(\cons\)</span>) as well as the inverse map <span class="math inline">\(\uncons\)</span>).</p>
+\end{array}\]</span> We will wrap this definition up in code both as a concrete type and as a type class, so that later we can give alternative implementations. The list algebra is characterized by the components of the algebra map (<span class="math inline">\(\nil\)</span> and <span class="math inline">\(\cons\)</span>) as well as the inverse map (<span class="math inline">\(\uncons\)</span>).</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">class</span> <span class="dt">List</span> t <span class="kw">where</span> </a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"><span class="ot">  nil ::</span> t a</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
@@ -325,9 +314,9 @@ Let <span class="math inline">\(A\)</span> be a set, and define a functor <span 
 <a class="sourceLine" id="cb3-17" data-line-number="17"></a>
 <a class="sourceLine" id="cb3-18" data-line-number="18"></a>
 <a class="sourceLine" id="cb3-19" data-line-number="19"><span class="kw">instance</span> (<span class="dt">Equal</span> a) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-20" data-line-number="20">  eq <span class="dt">N</span>       <span class="dt">N</span>       <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb3-21" data-line-number="21">  eq <span class="dt">N</span>       (<span class="dt">C</span> _ _) <span class="fu">=</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb3-22" data-line-number="22">  eq (<span class="dt">C</span> _ _) <span class="dt">N</span>       <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">  eq <span class="dt">N</span>       <span class="dt">N</span>       <span class="fu">=</span> true</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  eq <span class="dt">N</span>       (<span class="dt">C</span> _ _) <span class="fu">=</span> false</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">  eq (<span class="dt">C</span> _ _) <span class="dt">N</span>       <span class="fu">=</span> false</a>
 <a class="sourceLine" id="cb3-23" data-line-number="23">  eq (<span class="dt">C</span> a x) (<span class="dt">C</span> b y) <span class="fu">=</span> and (eq a b) (eq x y)</a>
 <a class="sourceLine" id="cb3-24" data-line-number="24"></a>
 <a class="sourceLine" id="cb3-25" data-line-number="25"></a>
@@ -348,73 +337,51 @@ Let <span class="math inline">\(A\)</span> be a set, and define a functor <span 
 <a class="sourceLine" id="cb3-40" data-line-number="40">  coarbitrary <span class="dt">N</span> <span class="fu">=</span> variant <span class="dv">0</span></a>
 <a class="sourceLine" id="cb3-41" data-line-number="41">  coarbitrary (<span class="dt">C</span> a x) <span class="fu">=</span> variant <span class="dv">1</span> <span class="fu">.</span> coarbitrary x</a></code></pre></div>
 <p>This business about initial algebras is nice, but it will be convenient to unpack this definition a little bit. First, we give the following more concrete description of <span class="math inline">\(F_A\)</span>-algebras:</p>
-<div class="result">
-<div class="defn">
-<p>
-(<span class="math inline">\(A\)</span>-inductive set.) Let <span class="math inline">\(A\)</span> be a set. An <span class="math inline">\(A\)</span>-inductive set is a set <span class="math inline">\(B\)</span> together with an element <span class="math inline">\(e\)</span> and a mapping <span class="math inline">\(f : A \times B \rightarrow B\)</span>.
-</p>
-</div>
+<div class="definition">
+<p>(<span class="math inline">\(A\)</span>-inductive set.) Let <span class="math inline">\(A\)</span> be a set. An <span class="math inline">\(A\)</span>-inductive set is a set <span class="math inline">\(B\)</span> together with an element <span class="math inline">\(e\)</span> and a mapping <span class="math inline">\(f : A \times B \rightarrow B\)</span>.</p>
 </div>
 <p>And a more concrete decription of <span class="math inline">\(F_A\)</span>-algebra morphisms:</p>
-<div class="result">
-<div class="defn">
-<p>
-(<span class="math inline">\(A\)</span>-inductive set homomorphism.) Let <span class="math inline">\(A\)</span> be a set. Given two <span class="math inline">\(A\)</span>-inductive sets <span class="math inline">\((B,e,f)\)</span> and <span class="math inline">\((C,u,g)\)</span>, an <span class="math inline">\(A\)</span>-inductive set homomorphism is a mapping <span class="math inline">\(\varphi : B \rightarrow C\)</span> such that <span class="math inline">\(\varphi(e) = u\)</span> and <span class="math display">\[\varphi(f(a,x)) = g(a,\varphi(x))\]</span> for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in B\)</span>.
-</p>
-</div>
+<div class="definition">
+<p>(<span class="math inline">\(A\)</span>-inductive set homomorphism.) Let <span class="math inline">\(A\)</span> be a set. Given two <span class="math inline">\(A\)</span>-inductive sets <span class="math inline">\((B,e,f)\)</span> and <span class="math inline">\((C,u,g)\)</span>, an <span class="math inline">\(A\)</span>-inductive set homomorphism is a mapping <span class="math inline">\(\varphi : B \rightarrow C\)</span> such that <span class="math inline">\(\varphi(e) = u\)</span> and <span class="math display">\[\varphi(f(a,x)) = g(a,\varphi(x))\]</span> for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in B\)</span>.</p>
 </div>
 <p>And finally, a more concrete description of the universal algebra from <span class="math inline">\(\lists{A}\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="axiom">
 <p>(Fold.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\((B,e,\varphi)\)</span> be an <span class="math inline">\(A\)</span>-inductive set. Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \rightarrow B\)</span> which solves the system of functional equations <span class="math display">\[\left\{ \begin{array}{l} \Theta(\nil) = e \\ \Theta(\cons(a,x)) = \varphi(a,\Theta(x)). \end{array} \right.\]</span> We denote this unique <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\foldr{e}{\varphi}\)</span>.</p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">foldr<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">foldr e phi x <span class="fu">=</span> <span class="kw">case</span> uncons x <span class="kw">of</span></a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="dt">Left</span> ()      <span class="ot">-&gt;</span> e</a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">Right</span> (a,as) <span class="ot">-&gt;</span> phi a (foldr e phi as)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Note that this definition is <em>not</em> tail recursive. This turns out not to be a huge problem in practice.</p>
 <p>It’s handy to remember that this theorem says not only that <span class="math inline">\(\foldr{\ast}{\ast}\)</span> exists, but that it is unique – in some sense foldr gives the unique solution to a system of functional equations. This gives us a strategy for showing that two programs are equivalent. If one is defined as a fold, and both programs satisfy the universal property, then they have to be equal. This is nice for showing, for instance, that a <em>slow but obviously correct</em> program is equivalent to a <em>fast but not obviously correct</em> one.</p>
 <p>Now <span class="math inline">\(\lists{A}\)</span> has an inductive proof strategy.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>(List Induction.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\(f : \lists{A} \rightarrow B\)</span> be a map. Suppose <span class="math inline">\(C \subseteq B\)</span> is a subset with the property that</p>
 <ol type="1">
 <li><span class="math inline">\(f(\nil) \in C\)</span>.</li>
 <li>If <span class="math inline">\(f(x) \in C\)</span> and <span class="math inline">\(a \in A\)</span>, then <span class="math inline">\(f(\cons(a,x)) \in C\)</span>.</li>
 </ol>
-Then we have <span class="math inline">\(f(x) \in C\)</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.
-</p>
-</div>
+<p>Then we have <span class="math inline">\(f(x) \in C\)</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.</p>
 <div class="proof">
-<p>
-This proof is analogous to the proof of the induction principle for <span class="math inline">\(\nats\)</span>. We first define <span class="math inline">\(T \subseteq \lists{A}\)</span> by <span class="math display">\[T = \{x \in \lists{A} \mid f(x) \in C \}.\]</span> Note that <span class="math inline">\(\nil \in T\)</span> and if <span class="math inline">\(x \in T\)</span> and <span class="math inline">\(a \in A\)</span> then <span class="math inline">\(\cons(a,x) \in T\)</span>; in particular, <span class="math inline">\((T,\nil,\cons)\)</span> is an <span class="math inline">\(A\)</span>-iterative set. We let <span class="math inline">\(\Theta = \foldr{\nil}{\cons}\)</span>. Now the inclusion map <span class="math inline">\(\iota : T \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inducive set homomorphism, since <span class="math inline">\(\iota(\nil) = \nil\)</span> and <span class="math display">\[\iota(\cons(a,x)) = \cons(a,x) = \cons(a,\iota(x)).\]</span> Thus <span class="math inline">\(\iota \circ \Theta : \lists{A} \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inductive set homomorphism, so it must be <span class="math inline">\(\id_A\)</span>. Thus if <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[x = \id(x) = \iota(\Theta(x)) = \Theta(x) \in T\]</span> so that <span class="math inline">\(f(x) \in C\)</span> as claimed.
-</p>
+<p>This proof is analogous to the proof of the induction principle for <span class="math inline">\(\nats\)</span>. We first define <span class="math inline">\(T \subseteq \lists{A}\)</span> by <span class="math display">\[T = \{x \in \lists{A} \mid f(x) \in C \}.\]</span> Note that <span class="math inline">\(\nil \in T\)</span> and if <span class="math inline">\(x \in T\)</span> and <span class="math inline">\(a \in A\)</span> then <span class="math inline">\(\cons(a,x) \in T\)</span>; in particular, <span class="math inline">\((T,\nil,\cons)\)</span> is an <span class="math inline">\(A\)</span>-iterative set. We let <span class="math inline">\(\Theta = \foldr{\nil}{\cons}\)</span>. Now the inclusion map <span class="math inline">\(\iota : T \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inducive set homomorphism, since <span class="math inline">\(\iota(\nil) = \nil\)</span> and <span class="math display">\[\iota(\cons(a,x)) = \cons(a,x) = \cons(a,\iota(x)).\]</span> Thus <span class="math inline">\(\iota \circ \Theta : \lists{A} \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inductive set homomorphism, so it must be <span class="math inline">\(\id_A\)</span>. Thus if <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[x = \id(x) = \iota(\Theta(x)) = \Theta(x) \in T\]</span> so that <span class="math inline">\(f(x) \in C\)</span> as claimed.</p>
 </div>
 </div>
 <p>Here’s an example using list induction.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. Then we have <span class="math display">\[\foldr{\nil}{\cons}(x) = x\]</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr{\nil}{\cons}(\nil) = \nil\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr{\nil}{\cons}(\nil) = \nil\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{\nil}{\cons}(\cons(a,x)) \\
  &amp; = &amp; \cons(a,\foldr{\nil}{\cons}(x)) \\
  &amp; = &amp; \cons(a,x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 </div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

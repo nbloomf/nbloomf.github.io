@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Find Smallest</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-12-29 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,22 +199,25 @@ Posted on 2017-12-29 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">FindSmallest</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  findSmallest, _test_findSmallest, main_findSmallest</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">FindSmallest</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  findSmallest, _test_findSmallest, main_findSmallest</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
 <p>The Well-Ordering Principle on <span class="math inline">\(\nats\)</span> gives a sufficient condition under which a natural number minimal with respect to a given property must exist; namely, that the set of all natural numbers with that property is not empty. WOP can come in really handy when we want to show that, say, the smallest number <span class="math inline">\(k\)</span> with property <em>foo</em> exists, and reason about it. Unfortunately, WOP alone is nonconstructive – it tells us nothing about how to actually <em>find</em> anything. Today we’ll establish a weak constructive form of WOP.</p>
 <p>More precisely, given a predicate <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> and two natural numbers <span class="math inline">\(k\)</span> and <span class="math inline">\(n\)</span>, we’ll define an operator <span class="math inline">\(\Theta\)</span> such that <span class="math inline">\(\Theta(\next(n),k)\)</span> is the <em>smallest</em> number <span class="math inline">\(t\)</span> between <span class="math inline">\(k\)</span> and <span class="math inline">\(\nplus(k,n)\)</span> such that <span class="math inline">\(\sigma(t) = \btrue\)</span>, if any such number exists, and <span class="math inline">\(\ast\)</span> otherwise.</p>
-<div class="result">
-<div class="dfn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span>. Define <span class="math inline">\(\varphi : \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi(k) = \lft(\ast),\]</span> <span class="math inline">\(\beta : \nats \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\beta(n,k) = \sigma(k),\]</span> <span class="math inline">\(\psi : \nats \times \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\psi(n,k) = \rgt(k),\]</span> and <span class="math inline">\(\omega : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\omega(n,k) = \next(k).\]</span> We then define <span class="math display">\[\findsmallest{} : \bool^\nats \rightarrow \nats \times \nats \rightarrow 1 + \nats\]</span> by <span class="math display">\[\findsmallest{\sigma}(n,k) = \bailrec{\varphi}{\beta}{\psi}{\omega}(n,k).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">findSmallest ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Either</span> () n</a>
@@ -224,21 +227,14 @@ Posted on 2017-12-29 by nbloomf
 <a class="sourceLine" id="cb2-5" data-line-number="5">    beta _ k <span class="fu">=</span> sigma k</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">    psi _ k <span class="fu">=</span> rgt k</a>
 <a class="sourceLine" id="cb2-7" data-line-number="7">    omega _ k <span class="fu">=</span> next k</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Because <span class="math inline">\(\findsmallest{\sigma}\)</span> is defined in terms of bailout recursion, it is the unique solution to a system of functional equations.</p>
-<div class="result">
-<div class="cor">
-<p>
-Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> be a map. Then <span class="math inline">\(\findsmallest{\sigma} : \nats \times \nats \rightarrow 1 + \nats\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow 1 + \nats\)</span> to the following system of equations for all <span class="math inline">\(n,k \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<div class="corollary">
+<p>Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> be a map. Then <span class="math inline">\(\findsmallest{\sigma} : \nats \times \nats \rightarrow 1 + \nats\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow 1 + \nats\)</span> to the following system of equations for all <span class="math inline">\(n,k \in \nats\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,k) = \lft(\ast) \\
  f(\next(n),k) = \bif{\sigma(k)}{\rgt(k)}{f(n,\next(k))}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_findSmallest_zero_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_findSmallest_zero_left _ <span class="fu">=</span></a>
@@ -253,75 +249,53 @@ Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> be a m
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \sigma n k <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">    (findSmallest sigma (next n) k)</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">    (<span class="kw">if</span> sigma k <span class="kw">then</span> rgt k <span class="kw">else</span> findSmallest sigma n (next k))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>First, if <span class="math inline">\(\findsmallest{\sigma}\)</span> returns a result <span class="math inline">\(\rgt(t)\)</span>, then <span class="math inline">\(t\)</span> satisfies <span class="math inline">\(\sigma\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span>, with <span class="math inline">\(n,k,t \in \nats\)</span>. If <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(t)\)</span>, then <span class="math inline">\(\sigma(t) = \btrue\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span>, with <span class="math inline">\(n,k,t \in \nats\)</span>. If <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(t)\)</span>, then <span class="math inline">\(\sigma(t) = \btrue\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math display">\[\findsmallest{\sigma}(\zero,k) = \lft(\ast),\]</span> so the implication holds vacuously. For the inductive step, suppose we have <span class="math inline">\(n\)</span> such that for all <span class="math inline">\(k\)</span> and <span class="math inline">\(t\)</span>, if <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(t)\)</span> then <span class="math inline">\(\sigma(t) = \btrue\)</span>. Suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>. Now we have <span class="math display">\[\findsmallest{\sigma}(\next(n),k) = \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(n,\next(k))}.\]</span> We have two possibilities. If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math display">\[\findsmallest{\sigma}(n,k) = \rgt(k),\]</span> with <span class="math inline">\(\sigma(k) = \btrue\)</span> as needed. If <span class="math inline">\(\sigma(k) = \bfalse,\)</span> we have <span class="math display">\[\rgt(t) = \findsmallest{\sigma}(\next(n),k) = \findsmallest{\sigma}(n,\next(k)),\]</span> and by the inductive hypothesis, <span class="math inline">\(\sigma(t) = \btrue\)</span> as needed.
-</p>
+<p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math display">\[\findsmallest{\sigma}(\zero,k) = \lft(\ast),\]</span> so the implication holds vacuously. For the inductive step, suppose we have <span class="math inline">\(n\)</span> such that for all <span class="math inline">\(k\)</span> and <span class="math inline">\(t\)</span>, if <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(t)\)</span> then <span class="math inline">\(\sigma(t) = \btrue\)</span>. Suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>. Now we have <span class="math display">\[\findsmallest{\sigma}(\next(n),k) = \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(n,\next(k))}.\]</span> We have two possibilities. If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math display">\[\findsmallest{\sigma}(n,k) = \rgt(k),\]</span> with <span class="math inline">\(\sigma(k) = \btrue\)</span> as needed. If <span class="math inline">\(\sigma(k) = \bfalse,\)</span> we have <span class="math display">\[\rgt(t) = \findsmallest{\sigma}(\next(n),k) = \findsmallest{\sigma}(n,\next(k)),\]</span> and by the inductive hypothesis, <span class="math inline">\(\sigma(t) = \btrue\)</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_findSmallest_satisfies ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_findSmallest_satisfies _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;if findSmallest(sigma)(n,k) == rgt(t) then sigma(t) == true&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \sigma n k <span class="ot">-&gt;</span> <span class="kw">case</span> findSmallest sigma n k <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> eq (sigma t) <span class="dt">True</span></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> eq (sigma t) true</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Next, if <span class="math inline">\(\findsmallest{\sigma}(\next(n),k)\)</span> returns a result <span class="math inline">\(\rgt(t)\)</span>, then <span class="math inline">\(t\)</span> is bounded; specifically, <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>, then <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>, then <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>.</p>
 <div class="proof">
-<p>
 <p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, if <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \findsmallest{\sigma}(\next(\zero),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\zero,\next(k))} \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\lft(\ast)}.
 \end{eqnarray*}\]</span> In particular, we must have <span class="math inline">\(\sigma(k) = \btrue\)</span> and <span class="math inline">\(t = k\)</span>. Thus <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span> as needed.</p>
-For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span> and <span class="math inline">\(t\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(\next(n)),k) = \rgt(t)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+<p>For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span> and <span class="math inline">\(t\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(\next(n)),k) = \rgt(t)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(t) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(\next(n)),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\next(n),\next(k))}.
-\end{eqnarray*}\]</span> We have two possibilities. If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math inline">\(\rgt(t) = \rgt(k)\)</span>, so that <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span> as needed. If <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math inline">\(\rgt(t) = \findsmallest{\sigma}(\next(n),\next(k))\)</span>. By the inductive hypothesis, we have <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),\next(k))\)</span>. By transitivity we thus have <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(\next(n)),k)\)</span> as needed.
-</p>
+\end{eqnarray*}\]</span> We have two possibilities. If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math inline">\(\rgt(t) = \rgt(k)\)</span>, so that <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span> as needed. If <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math inline">\(\rgt(t) = \findsmallest{\sigma}(\next(n),\next(k))\)</span>. By the inductive hypothesis, we have <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),\next(k)))\)</span>. By transitivity we thus have <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(\next(n)),k))\)</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_findSmallest_bounded ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_findSmallest_bounded _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;if findSmallest(sigma)(next(n),k) == rgt(t) then leq(k,t) and leq(t,plus(n,k))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \sigma n k <span class="ot">-&gt;</span> <span class="kw">case</span> findSmallest sigma (next n) k <span class="kw">of</span></a>
 <a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> and (leq k t) (leq t (plus n k))</a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\findsmallest{\sigma}(\next(n),k)\)</span> returns <span class="math inline">\(\lft(\ast)\)</span> if and only if <span class="math inline">\(\sigma\)</span> is false for all <span class="math inline">\(u\)</span> between <span class="math inline">\(k\)</span> and <span class="math inline">\(\nplus(n,k)\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> and <span class="math inline">\(n,k \in \nats\)</span>. Then <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \lft(\ast)\)</span> if and only if <span class="math inline">\(\sigma(t) = \bfalse\)</span> for all <span class="math inline">\(t\)</span> with <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> and <span class="math inline">\(n,k \in \nats\)</span>. Then <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \lft(\ast)\)</span> if and only if <span class="math inline">\(\sigma(t) = \bfalse\)</span> for all <span class="math inline">\(t\)</span> with <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>.</p>
 <div class="proof">
-<p>
 <p>We prove the “only if” direction by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, suppose <span class="math inline">\(\findsmallest{\sigma}(\next(\zero),k) = \lft(\ast)\)</span>. Expanding, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lft(\ast) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(\zero),k) \\
@@ -331,46 +305,38 @@ Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> and <s
  &amp;   &amp; \lft(\ast) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(\next(n)),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\next(n),\next(k))}. \\
-\end{eqnarray*}\]</span> Now we must have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and moreover <span class="math inline">\(\findsmallest{\sigma}(\next(n),\next(k)) = \lft(\ast)\)</span>. By the inductive hypothesis, we have <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),\next(k))\)</span>; thus <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(\next(n)),k)\)</span> as needed.</p>
-We also prove the “if” direction by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, suppose <span class="math inline">\(\sigma(t) = \bfalse\)</span> when <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\zero,k))\)</span>; by antisymmetry, we have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and thus <span class="math display">\[\begin{eqnarray*}
+\end{eqnarray*}\]</span> Now we must have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and moreover <span class="math inline">\(\findsmallest{\sigma}(\next(n),\next(k)) = \lft(\ast)\)</span>. By the inductive hypothesis, we have <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),\next(k)))\)</span>; thus <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(\next(n)),k))\)</span> as needed.</p>
+<p>We also prove the “if” direction by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, suppose <span class="math inline">\(\sigma(t) = \bfalse\)</span> when <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\zero,k))\)</span>; by antisymmetry, we have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and thus <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \findsmallest{\sigma}(\next(\zero),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\zero,k)} \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\lft(\ast)} \\
  &amp; = &amp; \bif{\bfalse}{\rgt(k)}{\lft(\ast)} \\
  &amp; = &amp; \lft(\ast)
-\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),k)\)</span>. Then we have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and we also have <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,\next(k))\)</span>, and by the inductive hypothesis, <span class="math inline">\(\findsmallest{\sigma}(\next(n),\next(k)) = \lft(\ast)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(k,t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(\next(n),k))\)</span>. Then we have <span class="math inline">\(\sigma(k) = \bfalse\)</span>, and we also have <span class="math inline">\(\sigma(t) = \bfalse\)</span> whenever <span class="math inline">\(\nleq(\next(k),t)\)</span> and <span class="math inline">\(\nleq(t,\nplus(n,\next(k)))\)</span>, and by the inductive hypothesis, <span class="math inline">\(\findsmallest{\sigma}(\next(n),\next(k)) = \lft(\ast)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \findsmallest{\sigma}(\next(\next(n)),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\next(n),\next(k))} \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\lft(\ast)} \\
  &amp; = &amp; \bif{\bfalse}{\rgt(k)}{\lft(\ast)} \\
  &amp; = &amp; \lft(\ast)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_findSmallest_return_lft ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_findSmallest_return_lft _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;if eq(findSmallest(sigma)(next(n),k),lft(*)) and leq(k,t) and leq(t,plus(n,k)) then eq(sigma(t),false)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \sigma n k t <span class="ot">-&gt;</span> <span class="kw">if</span> and (leq k t) (leq t (plus n k))</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6">    <span class="kw">then</span> <span class="kw">if</span> eq (findSmallest sigma (next n) k) (lft ())</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">      <span class="kw">then</span> eq (sigma t) <span class="dt">False</span></a>
-<a class="sourceLine" id="cb6-8" data-line-number="8">      <span class="kw">else</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb6-7" data-line-number="7">      <span class="kw">then</span> eq (sigma t) false</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">      <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>If <span class="math inline">\(\findsmallest{\sigma}(n,k)\)</span> returns a value, then <span class="math inline">\(\findsmallest{\sigma}(t,k)\)</span> does not, where <span class="math inline">\(t\)</span> is the difference between <span class="math inline">\(k\)</span> and the returned value.</p>
-<div class="result">
-<div class="thm">
-<p>
-If <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(\nplus(k,\next(t)))\)</span>, then <span class="math inline">\(\findsmallest{\sigma}(t,k) = \lft(\ast)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>If <span class="math inline">\(\findsmallest{\sigma}(n,k) = \rgt(\nplus(k,\next(t)))\)</span>, then <span class="math inline">\(\findsmallest{\sigma}(t,k) = \lft(\ast)\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(t\)</span>. For the base case <span class="math inline">\(t = \zero\)</span>, note that <span class="math display">\[\findsmallest{\sigma}(\zero,k) = \lft(\ast),\]</span> so the implication holds regardless of <span class="math inline">\(n\)</span> and <span class="math inline">\(k\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(n\)</span> and <span class="math inline">\(k\)</span> for some <span class="math inline">\(t\)</span>, and suppose further that <span class="math display">\[\findsmallest{\sigma}(n,k) = \rgt(\nplus(k,\next(\next(t)))).\]</span> Now we must have <span class="math inline">\(n = \next(m)\)</span> for some <span class="math inline">\(m\)</span>, and moreover <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(t\)</span>. For the base case <span class="math inline">\(t = \zero\)</span>, note that <span class="math display">\[\findsmallest{\sigma}(\zero,k) = \lft(\ast),\]</span> so the implication holds regardless of <span class="math inline">\(n\)</span> and <span class="math inline">\(k\)</span>. For the inductive step, suppose the implication holds for all <span class="math inline">\(n\)</span> and <span class="math inline">\(k\)</span> for some <span class="math inline">\(t\)</span>, and suppose further that <span class="math display">\[\findsmallest{\sigma}(n,k) = \rgt(\nplus(k,\next(\next(t)))).\]</span> Now we must have <span class="math inline">\(n = \next(m)\)</span> for some <span class="math inline">\(m\)</span>, and moreover <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(\nplus(\next(k),\next(t))) \\
  &amp; = &amp; \rgt(\nplus(k,\next(\next(t)))) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(m),k) \\
@@ -383,68 +349,53 @@ We proceed by induction on <span class="math inline">\(t\)</span>. For the base 
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(t,\next(k))} \\
  &amp; = &amp; \findsmallest{\sigma}(t,\next(k)) \\
  &amp; = &amp; \lft(\ast)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_findSmallest_value_lft ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_findSmallest_value_lft _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;if findSmallest(sigma)(n,k) == rgt(plus(k,next(t))) then findSmallest(sigma)(t,k) = lft(*)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \sigma n k t <span class="ot">-&gt;</span> <span class="kw">if</span> eq (findSmallest sigma n k) (rgt (plus k (next t)))</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">    <span class="kw">then</span> eq (findSmallest sigma t k) (lft ())</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Finally, <span class="math inline">\(\findsmallest{\sigma}\)</span> returns a least value.</p>
-<div class="result">
-<div class="thm">
-<p>
-If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>, and if <span class="math inline">\(u \in \nats\)</span> such that <span class="math inline">\(\sigma(u) = \btrue\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(n,k))\)</span>, then <span class="math inline">\(\nleq(t,u)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>, and if <span class="math inline">\(u \in \nats\)</span> such that <span class="math inline">\(\sigma(u) = \btrue\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(n,k))\)</span>, then <span class="math inline">\(\nleq(t,u)\)</span>.</p>
 <div class="proof">
-<p>
 <p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, suppose <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(t) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(\zero),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\lft(\ast)}. \\
 \end{eqnarray*}\]</span> We must have <span class="math inline">\(\sigma(k) = \btrue\)</span> and thus <span class="math inline">\(k = t\)</span>. Then we have <span class="math inline">\(\nleq(t,u)\)</span> whenever <span class="math inline">\(\nleq(k,u)\)</span> as needed.</p>
-For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span>, <span class="math inline">\(t\)</span>, and <span class="math inline">\(u\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(\next(n)),k) = \rgt(t)\)</span>. Now <span class="math inline">\(t = \nplus(k,m)\)</span> for some <span class="math inline">\(m\)</span> since <span class="math inline">\(\nleq(k,t)\)</span>. We have <span class="math display">\[\begin{eqnarray*}
+<p>For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span>, <span class="math inline">\(t\)</span>, and <span class="math inline">\(u\)</span> for some <span class="math inline">\(n\)</span>, and suppose further that <span class="math inline">\(\findsmallest{\sigma}(\next(\next(n)),k) = \rgt(t)\)</span>. Now <span class="math inline">\(t = \nplus(k,m)\)</span> for some <span class="math inline">\(m\)</span> since <span class="math inline">\(\nleq(k,t)\)</span>. We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(\nplus(k,m)) \\
  &amp; = &amp; \rgt(t) \\
  &amp; = &amp; \findsmallest{\sigma}(\next(\next(n)),k) \\
  &amp; = &amp; \bif{\sigma(k)}{\rgt(k)}{\findsmallest{\sigma}(\next(n),\next(k))}.
-\end{eqnarray*}\]</span> If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math inline">\(t = k\)</span>, and we again have <span class="math inline">\(\nleq(t,u)\)</span> as needed. If instead <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math display">\[\rgt(t) = \findsmallest{\sigma}(\next(n),\next(k)).\]</span> By the inductive hypothesis, if <span class="math inline">\(\sigma(u) = \btrue\)</span> and <span class="math inline">\(\nleq(\next(k),u)\)</span> and <span class="math inline">\(\nleq(u,\nplus(n,\next(k))\)</span>, then <span class="math inline">\(\nleq(t,u)\)</span>. Suppose <span class="math inline">\(\sigma(u) = \btrue\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(\next(n),k))\)</span>. Since <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math inline">\(\nleq(\next(k),u)\)</span>, so by the inductive hypothesis, <span class="math inline">\(\nleq(t,u)\)</span> as needed.
-</p>
+\end{eqnarray*}\]</span> If <span class="math inline">\(\sigma(k) = \btrue\)</span>, then <span class="math inline">\(t = k\)</span>, and we again have <span class="math inline">\(\nleq(t,u)\)</span> as needed. If instead <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math display">\[\rgt(t) = \findsmallest{\sigma}(\next(n),\next(k)).\]</span> By the inductive hypothesis, if <span class="math inline">\(\sigma(u) = \btrue\)</span> and <span class="math inline">\(\nleq(\next(k),u)\)</span> and <span class="math inline">\(\nleq(u,\nplus(n,\next(k)))\)</span>, then <span class="math inline">\(\nleq(t,u)\)</span>. Suppose <span class="math inline">\(\sigma(u) = \btrue\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(\next(n),k))\)</span>. Since <span class="math inline">\(\sigma(k) = \bfalse\)</span>, we have <span class="math inline">\(\nleq(\next(k),u)\)</span>, so by the inductive hypothesis, <span class="math inline">\(\nleq(t,u)\)</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_findSmallest_minimal ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_findSmallest_minimal _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if findSmallest(sigma)(next(n),k) == rgt(t) and sigma(u) and leq(k,u) and leq(u,plus(n,k) then leq(t,u)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if findSmallest(sigma)(next(n),k) == rgt(t) and sigma(u) and leq(k,u) and leq(u,plus(n,k)) then leq(t,u)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \sigma n k t u <span class="ot">-&gt;</span> <span class="kw">case</span> findSmallest sigma (next n) k <span class="kw">of</span></a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> <span class="kw">if</span> and (sigma u) (and (leq k u) (leq u (plus n k)))</a>
 <a class="sourceLine" id="cb8-7" data-line-number="7">      <span class="kw">then</span> leq t u</a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">      <span class="kw">else</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb8-8" data-line-number="8">      <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a></code></pre></div>
 </div>
 </div>
 <p>To summarize:</p>
-<div class="result">
 <div class="corollary">
-<p>
 <p>Let <span class="math inline">\(\sigma : \nats \rightarrow \bool\)</span> and <span class="math inline">\(n,k \in \nats\)</span>.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \rgt(t)\)</span>, then <span class="math inline">\(\sigma(t)\)</span>, <span class="math inline">\(\nleq(k,t)\)</span>, and <span class="math inline">\(\nleq(t,\nplus(n,k))\)</span>, and if <span class="math inline">\(u \in \nats\)</span> such that <span class="math inline">\(\sigma(u)\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(n,k))\)</span>, then <span class="math inline">\(\nleq(t,u)\)</span>.</li>
 <li>If <span class="math inline">\(\findsmallest{\sigma}(\next(n),k) = \lft(\ast)\)</span>, then there does not exist <span class="math inline">\(u \in \nats\)</span> such that <span class="math inline">\(\sigma(u)\)</span>, <span class="math inline">\(\nleq(k,u)\)</span>, and <span class="math inline">\(\nleq(u,\nplus(n,k))\)</span>.</li>
 </ol>
-</p>
-</div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
@@ -452,7 +403,7 @@ For the inductive step, suppose the implication holds for all <span class="math 
 <a class="sourceLine" id="cb9-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">CoArbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">_test_findSmallest n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">  testLabel (<span class="st">&quot;findSmallest: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  testLabel1 <span class="st">&quot;findSmallest&quot;</span> n</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb9-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb9-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -474,7 +425,7 @@ For the inductive step, suppose the implication holds for all <span class="math 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

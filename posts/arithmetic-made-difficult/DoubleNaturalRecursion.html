@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Double Natural Recursion</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,22 +199,22 @@ Posted on 2018-01-01 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">DoubleNaturalRecursion</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  dnaturalRec</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DoubleNaturalRecursion</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  dnaturalRec</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>Today we’ll implement a slight generalization of natural recursion that allows recursion on two arguments.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(\Theta : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[\Theta(\zero,k) = \delta(k),\]</span> <span class="math display">\[\Theta(\next(n),\zero) = \psi(\Theta(n,\zero)),\]</span> and <span class="math display">\[\Theta(\next(n),\next(k)) = \chi(k,\Theta(n,k),\Theta(n,\next(k)).\]</span> We denote this map by <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}.\)</span>$
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(\Theta : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[\Theta(\zero,k) = \delta(k),\]</span> <span class="math display">\[\Theta(\next(n),\zero) = \psi(\Theta(n,\zero)),\]</span> and <span class="math display">\[\Theta(\next(n),\next(k)) = \chi(k,\Theta(n,k),\Theta(n,\next(k))).\]</span> We denote this map by <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}.\)</span>$</p>
 <div class="proof">
-<p>
 <p>Define <span class="math inline">\(\varphi : A^\nats \rightarrow A^\nats\)</span> casewise by <span class="math display">\[\begin{eqnarray*}
  \varphi(g)(\zero) &amp; = &amp; \psi(g(\zero)) \\
  \varphi(g)(\next(k)) &amp; = &amp; \chi(k,g(k),g(\next(k))).
@@ -236,7 +236,7 @@ Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inlin
  &amp; = &amp; \chi(k,\natrec{\delta}{\varphi}(n)(k),\natrec{\delta}{\varphi}(n)(\next(k))) \\
  &amp; = &amp; \chi(k,\Theta(n,k),\Theta(n,\next(k)))
 \end{eqnarray*}\]</span> as claimed.</p>
-Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A\)</span> also satisfies these equations. We show that <span class="math inline">\(\Psi = \Theta\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span> for all <span class="math inline">\(k\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A\)</span> also satisfies these equations. We show that <span class="math inline">\(\Psi = \Theta\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span> for all <span class="math inline">\(k\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\zero,k) \\
  &amp; = &amp; \delta(k) \\
  &amp; = &amp; \Theta(\zero,k)
@@ -250,8 +250,7 @@ Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A
  &amp; = &amp; \chi(k,\Psi(n,m),\Psi(n,\next(m))) \\
  &amp; = &amp; \chi(k,\Theta(n,m),\Theta(n,\next(m))) \\
  &amp; = &amp; \Theta(\next(n),\next(m))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
@@ -276,19 +275,17 @@ Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A
 <a class="sourceLine" id="cb4-6" data-line-number="6">      (dnaturalRec delta psi chi m t)</a>
 <a class="sourceLine" id="cb4-7" data-line-number="7">      (dnaturalRec delta psi chi m (next t))</a></code></pre></div>
 <p>The “uniqueness” part of double natural recursion is also handy. To be a little more explicit, it says the following.</p>
-<div class="result">
-<div class="thm">
+<div class="corollary">
 <p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, and <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow A\)</span> to the following system of functional equations for all <span class="math inline">\(n,k \in \nats\)</span>: <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,k) = \delta(k) \\
  f(\next(n),\zero) = \psi(f(n,\zero)) \\
  f(\next(n),\next(k)) = \chi(k,f(n,k),f(n,\next(k)))
 \end{array}\right.\]</span></p>
 </div>
-</div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

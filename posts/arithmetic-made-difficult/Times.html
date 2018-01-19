@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Multiplication</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,21 +199,24 @@ Posted on 2017-03-31 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Times</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"> ( times, _test_times, main_times</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"> ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Times</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"> ( times, _test_times, main_times</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"> ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a></code></pre></div>
 <p>Natural number multiplication has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define it as <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span> for some appropriate <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>. Using the universal property of simple recursion and how we want multiplication to behave, note that on the one hand we want <span class="math inline">\(\Theta(\zero,m) = \zero\)</span> for all <span class="math inline">\(m\)</span>, while on the other hand we have <span class="math inline">\(\Theta(\zero,m) = \varphi(m)\)</span>. So apparently we need <span class="math inline">\(\varphi(m) = \zero\)</span> for all <span class="math inline">\(m\)</span>.</p>
 <p>Similarly, we want <span class="math inline">\(\Theta(\next(n),m) = \nplus(\Theta(n,m),m)\)</span>, but we also have <span class="math display">\[\Theta(\next(n),m) = \mu(n,m,\Theta(n,m)).\]</span> So apparently we need <span class="math inline">\(\mu(n,m,k) = \nplus(k,m)\)</span>.</p>
 <p>With this in mind, we define a binary operation <span class="math inline">\(\ntimes\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \simprec{\varphi}{\mu}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">times ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
@@ -221,21 +224,14 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi _ <span class="fu">=</span> zero</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">    mu _ a b <span class="fu">=</span> plus b a</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\ntimes\)</span> is defined in terms of simple recursion, it is the unique solution to a set of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\ntimes\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
+<p><span class="math inline">\(\ntimes\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,b) = \zero \\
  f(\next(a),b) = \nplus(f(a,b),b).
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_times_zero_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_times_zero_left _ f <span class="fu">=</span></a>
@@ -248,20 +244,16 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_times_next_left _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;times(next(a),b) == plus(times(a,b),b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (f (next a) b) (plus (f a b) b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Next we establish a version of the universal property of <span class="math inline">\(\ntimes\)</span> with the arguments reversed.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(a,\zero) = \zero\)</span>.</li>
 <li><span class="math inline">\(\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\ntimes(\zero,\zero) = \zero\)</span>. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\zero) = \zero\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\zero) \\
@@ -286,10 +278,8 @@ Posted on 2017-03-31 by nbloomf
  &amp; = &amp; \nplus(\ntimes(\next(a),b),\next(a))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_times_zero_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_times_zero_right _ f <span class="fu">=</span></a>
@@ -302,20 +292,16 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">_test_times_next_right _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;times(a,next(b)) == plus(times(a,b),a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (f a (next b)) (plus (f a b) a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\next(\zero)\)</span> is neutral under <span class="math inline">\(\ntimes\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(a \in \nats\)</span>, we have</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(\next(\zero),a) = a\)</span>.</li>
 <li><span class="math inline">\(\ntimes(a,\next(\zero)) = a\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note first that for all <span class="math inline">\(a\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(\zero),a) \\
@@ -331,10 +317,8 @@ Posted on 2017-03-31 by nbloomf
  &amp; = &amp; \next(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_times_one_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_times_one_left _ f <span class="fu">=</span></a>
@@ -347,45 +331,35 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_times_one_right _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;a == times(a,1)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \a <span class="ot">-&gt;</span> eq a (f a (next zero))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> is commutative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\ntimes(\zero,b) = \zero = \ntimes(b,\zero)\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\ntimes(\zero,b) = \zero = \ntimes(b,\zero)\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),b) \\
  &amp; = &amp; \nplus(\ntimes(a,b),b) \\
  &amp; = &amp; \nplus(\ntimes(b,a),b) \\
  &amp; = &amp; \ntimes(b,\next(a))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_times_commutative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_times_commutative _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;times(a,b) == times(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (f a b) (f b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nplus\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(a,b,c, \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span>.</li>
 <li><span class="math inline">\(\ntimes(\nplus(a,b),c) = \nplus(\ntimes(a,c),\ntimes(b,c))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\ntimes(\zero,\nplus(b,c)) = \zero = \nplus(\zero,\zero) = \nplus(\ntimes(\zero,b),\ntimes(\zero,c))\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span> for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\nplus(b,c)) \\
@@ -405,10 +379,8 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; \nplus(\ntimes(a,c),\ntimes(b,c))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_times_distributive_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_times_distributive_left _ f <span class="fu">=</span></a>
@@ -421,17 +393,13 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <a class="sourceLine" id="cb7-10" data-line-number="10">_test_times_distributive_right _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-11" data-line-number="11">  testName <span class="st">&quot;times(plus(a,b),c) == plus(times(a,c),times(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> eq (f (plus a b) c) (plus (f a c) (f b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> is associative,</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\ntimes(\ntimes(a,b),c) = \ntimes(a,\ntimes(b,c)).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\zero,\ntimes(b,c)) \\
  &amp; = &amp; \zero \\
  &amp; = &amp; \ntimes(\zero,c) \\
@@ -442,30 +410,24 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; \nplus(\ntimes(\ntimes(a,b),c),\ntimes(b,c)) \\
  &amp; = &amp; \nplus(\ntimes(a,\ntimes(b,c)),\ntimes(b,c)) \\
  &amp; = &amp; \ntimes(\next(a),\ntimes(b,c))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_times_associative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_times_associative _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;times(times(a,b),c) == times(a,times(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (f (f a b) c) (f a (f b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Finally, <span class="math inline">\(\ntimes\)</span> is <em>almost</em> cancellative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\ntimes(\next(a),b) = \ntimes(\next(a),c)\)</span> then <span class="math inline">\(b = c\)</span>.</li>
 <li>If <span class="math inline">\(\ntimes(b,\next(a)) = \ntimes(c,\next(a))\)</span> then <span class="math inline">\(b = c\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>This proof will be a little different: we will use induction twice; first on <span class="math inline">\(b\)</span>, and then on <span class="math inline">\(c\)</span>. To this end, let <span class="math display">\[B = \{ b \in \nats \mid \forall c, \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}\]</span> and given <span class="math inline">\(b \in \nats\)</span> let <span class="math display">\[C(b) = \{ c \in \nats \mid \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}.\]</span> We wish to show that <span class="math inline">\(B = \nats\)</span> by induction. For the base case, we need to show that <span class="math inline">\(b = \zero \in B\)</span>; for this it suffices to show that <span class="math inline">\(C(\zero) = \nats\)</span>, which we do by induction. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math inline">\(b = c\)</span> regardless of <span class="math inline">\(a\)</span>. For the inductive step suppose we have <span class="math inline">\(c \in C(\zero)\)</span> for some <span class="math inline">\(c\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(c)) \\
@@ -473,7 +435,7 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; \next(\nplus(\ntimes(a,\next(c)),c))
 \end{eqnarray*}\]</span> while <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),\zero) = \zero;\]</span> in particular, the statement <span class="math display">\[\ntimes(\next(a),\next(c)) = \ntimes(\next(a),b)\]</span> is false, so that <span class="math inline">\(\next(c) \in C(\zero)\)</span> <em>vacuously</em>. So we have <span class="math inline">\(C(\zero) = \nats\)</span>, and thus <span class="math inline">\(\zero \in B\)</span>. For the inductive step, suppose we have <span class="math inline">\(b \in B\)</span>; we wish to show that <span class="math inline">\(\next(b) \in B\)</span>, or equivalently that <span class="math inline">\(C(\next(b)) = \nats\)</span>. We proceed by induction on <span class="math inline">\(c\)</span> again. The base case <span class="math inline">\(c = \zero\)</span> holds vacuously. For the inductive step, suppose we have <span class="math inline">\(c \in C(\next(b))\)</span>. Now suppose further that <span class="math display">\[\ntimes(\next(a),\next(b)) = \ntimes(\next(a),\next(c)).\]</span> Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(b)) \\
- &amp; = &amp; \nplus(\ntimes(a,\next(c),\next(c)) \\
+ &amp; = &amp; \nplus(\ntimes(a,\next(c),\next(c))) \\
  &amp; = &amp; \next(\nplus(\ntimes(\next(c),a),c)) \\
  &amp; = &amp; \next(\nplus(\nplus(\ntimes(c,a),a),c)) \\
  &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)).
@@ -486,17 +448,15 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Suppose <span class="math display">\[\ntimes(b,\next(a)) = \ntimes(c,\next(a)).\]</span> Then we have <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),c),\]</span> so that b = c$ as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_times_cancellative_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_times_cancellative_left _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;if times(next(c),a) == times(next(c),b) then a == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> eq (f (next c) a) (f (next c) b)</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="kw">then</span> eq a b</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb9-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb9-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb9-10" data-line-number="10"><span class="ot">_test_times_cancellative_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -505,15 +465,14 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 <a class="sourceLine" id="cb9-13" data-line-number="13">  testName <span class="st">&quot;if times(a,next(c)) == plus(b,next(c)) then a == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-14" data-line-number="14">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> eq (f a (next c)) (f b (next c))</a>
 <a class="sourceLine" id="cb9-15" data-line-number="15">    <span class="kw">then</span> eq a b</a>
-<a class="sourceLine" id="cb9-16" data-line-number="16">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb9-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_times n f maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  testLabel (<span class="st">&quot;times: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testLabel1 <span class="st">&quot;times&quot;</span> n</a>
 <a class="sourceLine" id="cb10-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb10-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
@@ -541,7 +500,7 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

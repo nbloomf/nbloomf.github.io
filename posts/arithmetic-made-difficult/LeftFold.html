@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Left Fold</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2018-01-04 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,24 +199,24 @@ Posted on 2018-01-04 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">LeftFold</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  foldl, _test_foldl, main_foldl</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">LeftFold</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  foldl, _test_foldl, main_foldl</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
 <p>Our goal today is to get as close as possible to a tail-recursive implementation of <span class="math inline">\(\foldr{\ast}{\ast}\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(f : B \times A \rightarrow B\)</span>. There is a unique map <span class="math inline">\(\Theta : B \times \lists{A} \rightarrow B\)</span> such that <span class="math display">\[\Theta(e,\nil) = e\]</span> and <span class="math display">\[\Theta(e,\cons(a,x)) = \Theta(f(e,a),x).\]</span> We denote this map by <span class="math inline">\(\foldl{f}\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(f : B \times A \rightarrow B\)</span>. There is a unique map <span class="math inline">\(\Theta : B \times \lists{A} \rightarrow B\)</span> such that <span class="math display">\[\Theta(e,\nil) = e\]</span> and <span class="math display">\[\Theta(e,\cons(a,x)) = \Theta(f(e,a),x).\]</span> We denote this map by <span class="math inline">\(\foldl{f}\)</span>.</p>
 <div class="proof">
-<p>
 <p>First we show existence. Define <span class="math inline">\(\psi : A \times \lists{A}^B \rightarrow \lists{A}^B\)</span> by <span class="math display">\[\psi(a,g)(b) = g(f(b,a)),\]</span> and define <span class="math inline">\(\Theta : B \times \lists{A} \rightarrow B\)</span> by <span class="math display">\[\Theta(b,x) = \foldr{\id}{\psi}(x)(b).\]</span> Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Theta(e,\nil) \\
  &amp; = &amp; \foldr{\id}{\psi}(\nil)(e) \\
@@ -229,7 +229,7 @@ Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</
  &amp; = &amp; \foldr{\id}{\psi}(x)(f(e,a)) \\
  &amp; = &amp; \Theta(f(e,a),x)
 \end{eqnarray*}\]</span> as claimed.</p>
-Now we show that <span class="math inline">\(\Theta\)</span> is unique with this property; to that end, suppose we have a map <span class="math inline">\(\Omega : B \times \lists{A} \rightarrow B\)</span> such that <span class="math inline">\(\Omega(e,\nil) = e\)</span> and <span class="math inline">\(\Omega(e,\cons(a,x)) = \Omega(f(e,a),x)\)</span> for all <span class="math inline">\(e \in B\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. We show that <span class="math inline">\(\Omega(e,x) = \Theta(e,x)\)</span> by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>Now we show that <span class="math inline">\(\Theta\)</span> is unique with this property; to that end, suppose we have a map <span class="math inline">\(\Omega : B \times \lists{A} \rightarrow B\)</span> such that <span class="math inline">\(\Omega(e,\nil) = e\)</span> and <span class="math inline">\(\Omega(e,\cons(a,x)) = \Omega(f(e,a),x)\)</span> for all <span class="math inline">\(e \in B\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. We show that <span class="math inline">\(\Omega(e,x) = \Theta(e,x)\)</span> by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Omega(e,\nil) \\
  &amp; = &amp; e \\
  &amp; = &amp; \Theta(e,\nil).
@@ -238,8 +238,7 @@ Now we show that <span class="math inline">\(\Theta\)</span> is unique with this
  &amp; = &amp; \Omega(f(e,a),x) \\
  &amp; = &amp; \Theta(f(e,a),x) \\
  &amp; = &amp; \Theta(e,\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
@@ -267,7 +266,7 @@ Now we show that <span class="math inline">\(\Theta\)</span> is unique with this
 <a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">_test_foldl t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel (<span class="st">&quot;foldl: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel1 <span class="st">&quot;foldl&quot;</span> t</a>
 <a class="sourceLine" id="cb6-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb6-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
@@ -284,7 +283,7 @@ Now we show that <span class="math inline">\(\Theta\)</span> is unique with this
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

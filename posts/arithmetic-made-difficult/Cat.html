@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Cat</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-25 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,40 +199,36 @@ Posted on 2017-04-25 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( cat, _test_cat, main_cat</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Reverse</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( cat, _test_cat, main_cat</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a></code></pre></div>
 <p>In this post we’ll consider the function that takes two lists and appends one to the “end” of the other. This function is known as <span class="math inline">\(\cat\)</span>, which is short for <em>catenate</em> – a jargony word that means <em>to connect in a series</em>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>We define a map <span class="math inline">\(\cat : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\cat(x,y) = \foldr{y}{\cons}(x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">cat ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">cat x y <span class="fu">=</span> foldr y cons x</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Because <span class="math inline">\(\cat\)</span> is defined in terms of fold, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\cat\)</span> is the unique mapping <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> with the property that for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\cat\)</span> is the unique mapping <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> with the property that for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = y \\
  f(\cons(a,x),y) = \cons(a,f(x,y)).
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_cat_nil_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_cat_nil_left _ <span class="fu">=</span></a>
@@ -245,49 +241,35 @@ Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inli
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_cat_cons_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;cat(cons(a,x),y) == cons(a,cat(x,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a x y <span class="ot">-&gt;</span> eq (cat (cons a x) y) (cons a (cat x y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Note that <span class="math inline">\(\cat\)</span> works a lot like <span class="math inline">\(\snoc\)</span>; it marches down the list <span class="math inline">\(x\)</span> until it reaches the end, and then sticks <span class="math inline">\(y\)</span> there. In some ways, <span class="math inline">\(\cat\)</span> is like <span class="math inline">\(\nplus\)</span> for lists, and <span class="math inline">\(\nil\)</span> is the <span class="math inline">\(\zero\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math inline">\(\cat(x,\nil) = x\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math inline">\(\cat(x,\nil) = x\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\nil) \\
  &amp; = &amp; \foldr{\nil}{\cons}(x) \\
  &amp; = &amp; \id(x) \\
  &amp; = &amp; x
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_cat_nil_right ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_cat_nil_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;cat(x,nil) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (cat a nil) a</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\cat\)</span> interacts with <span class="math inline">\(\snoc\)</span>:</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\cat(\snoc(a,x),y) = \cat(x,\cons(a,y))\)</span>.</li>
 <li><span class="math inline">\(\cat(x,\snoc(a,y)) = \snoc(a,\cat(x,y))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\cons(a,y)) \\
@@ -308,10 +290,8 @@ Note that <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; \cat(x,\snoc(a,\cons(b,y)))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_cat_snoc_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_cat_snoc_left _ <span class="fu">=</span></a>
@@ -324,19 +304,13 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_cat_snoc_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;snoc(a,cat(x,y)) == cat(x,snoc(a,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \a x y <span class="ot">-&gt;</span> eq (snoc a (cat x y)) (cat x (snoc a y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can “solve” a simple list equation.</p>
-<div class="result">
-<div class="corollary">
-<p>
-We have <span class="math inline">\(\nil = \cat(x,y)\)</span> if and only if <span class="math inline">\(x = y = \nil\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>We have <span class="math inline">\(\nil = \cat(x,y)\)</span> if and only if <span class="math inline">\(x = y = \nil\)</span>.</p>
 <div class="proof">
-<p>
-The “only if” direction is clear. To see the “if” direction, suppose we have <span class="math inline">\(x,y \in \lists{A}\)</span> such that <span class="math inline">\(\cat(x,y) = \nil\)</span>. If <span class="math inline">\(x = \cons(a,u)\)</span>, then <span class="math display">\[\begin{eqnarray*}
+<p>The “only if” direction is clear. To see the “if” direction, suppose we have <span class="math inline">\(x,y \in \lists{A}\)</span> such that <span class="math inline">\(\cat(x,y) = \nil\)</span>. If <span class="math inline">\(x = \cons(a,u)\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \isnil(\nil) \\
  &amp; = &amp; \isnil(\cat(x,y)) \\
@@ -347,29 +321,21 @@ The “only if” direction is clear. To see the “if” direction, suppose we 
  &amp;   &amp; \btrue \\
  &amp; = &amp; \isnil(\cat(\nil,y)) \\
  &amp; = &amp; \isnil(y)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_cat_nil_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_cat_nil_nil _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;isNil(cat(x,y)) == and(isNil(x),isNil(y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (isNil (cat x y)) (and (isNil x) (isNil y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\cat\)</span> is associative.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(x,y,z \in \lists{A}\)</span>. Then <span class="math display">\[\cat(\cat(x,y),z) = \cat(x,\cat(y,z)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(x,y,z \in \lists{A}\)</span>. Then <span class="math display">\[\cat(\cat(x,y),z) = \cat(x,\cat(y,z)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\cat(x,y),\nil) \\
  &amp; = &amp; \cat(x,y) \\
  &amp; = &amp; \cat(x,\cat(y,\nil))
@@ -379,29 +345,21 @@ We proceed by list induction on <span class="math inline">\(z\)</span>. For the 
  &amp; = &amp; \cat(\cat(x,\snoc(a,y)),z) \\
  &amp; = &amp; \cat(x,\cat(\snoc(a,y),z)) \\
  &amp; = &amp; \cat(x,\cat(y,\cons(a,z)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_cat_associative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_cat_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;cat(cat(x,y),z) == cat(x,cat(y,z))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (cat (cat x y) z) (cat x (cat y z))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\rev\)</span> is antidistributive over <span class="math inline">\(\cat\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\rev(\cat(x,y)) = \cat(\rev(y),\rev(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\rev(\cat(x,y)) = \cat(\rev(y),\rev(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rev(\cat(x,\nil)) \\
  &amp; = &amp; \rev(x) \\
  &amp; = &amp; \cat(\nil,\rev(x)) \\
@@ -413,32 +371,24 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \cat(\rev(y),\cons(a,\rev(x))) \\
  &amp; = &amp; \cat(\snoc(a,\rev(y)),\rev(x)) \\
  &amp; = &amp; \cat(\rev(\cons(a,y)),\rev(x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_cat_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_cat_rev _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;rev(cat(x,y)) == cat(rev(y),rev(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (rev (cat x y)) (cat (rev y) (rev x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Finally, <span class="math inline">\(\cat\)</span> is cancellative.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\cat(z,x) = \cat(z,y)\)</span> if and only if <span class="math inline">\(x = y\)</span>.</li>
 <li><span class="math inline">\(\cat(x,z) = \cat(y,z)\)</span> if and only if <span class="math inline">\(x = y\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>The “only if” direction is clear. For the “if” direction we proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, suppose <span class="math inline">\(\cat(z,x) = \cat(z,y)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; x \\
@@ -455,39 +405,35 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \cat(\rev(z),\rev(y)).
 \end{eqnarray*}\]</span> By (1), we have <span class="math inline">\(\rev(x) = \rev(y)\)</span>, and thus <span class="math inline">\(x = y\)</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_cat_left_cancellative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">_test_cat_left_cancellative _ <span class="fu">=</span></a>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_cat_left_cancellative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_cat_left_cancellative _ p <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;eq(cat(z,x),cat(z,y)) == eq(x,y)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (eq (cat z x) (cat z y)) (eq x y)</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">_test_cat_right_cancellative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">_test_cat_right_cancellative _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;eq(cat(x,z),cat(y,z)) == eq(x,y)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> eq (eq (cat x z) (cat y z)) (eq x y)</a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">    (eq (cat z x) (cat z y))</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    ((eq x y) <span class="ot">`withTypeOf`</span> p)</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10"><span class="ot">_test_cat_right_cancellative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">_test_cat_right_cancellative _ p <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">  testName <span class="st">&quot;eq(cat(x,z),cat(y,z)) == eq(x,y)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">  \x y z <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">    (eq (cat x z) (cat y z))</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">    ((eq x y) <span class="ot">`withTypeOf`</span> p)</a></code></pre></div>
 </div>
 </div>
 <p>One more.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,u,v \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li>If <span class="math inline">\(x = \cat(x,v)\)</span> then <span class="math inline">\(v = \nil\)</span>.</li>
 <li>If <span class="math inline">\(x = \cat(u,x)\)</span> then <span class="math inline">\(u = \nil\)</span>.</li>
 <li>If <span class="math inline">\(x = \cat(u,\cat(x,v))\)</span> then <span class="math inline">\(u = v = \nil\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\nil) \\
@@ -523,22 +469,20 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
  &amp; = &amp; \cat(\cons(a,x),v)
 \end{eqnarray*}\]</span> so that <span class="math inline">\(v = u = \nil\)</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_cat_right_identity_unique ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_cat_right_identity_unique _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;if eq(cat(x,v),x) then eq(v,nil)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  \x v <span class="ot">-&gt;</span> <span class="kw">if</span> eq (cat x v) x <span class="kw">then</span> eq v nil <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \x v <span class="ot">-&gt;</span> <span class="kw">if</span> eq (cat x v) x <span class="kw">then</span> eq v nil <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb10-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb10-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb10-8" data-line-number="8"><span class="ot">_test_cat_left_identity_unique ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb10-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">_test_cat_left_identity_unique _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-11" data-line-number="11">  testName <span class="st">&quot;if eq(cat(u,x),x) then eq(u,nil)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">  \x u <span class="ot">-&gt;</span> <span class="kw">if</span> eq (cat u x) x <span class="kw">then</span> eq u nil <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">  \x u <span class="ot">-&gt;</span> <span class="kw">if</span> eq (cat u x) x <span class="kw">then</span> eq u nil <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb10-13" data-line-number="13"></a>
 <a class="sourceLine" id="cb10-14" data-line-number="14"></a>
 <a class="sourceLine" id="cb10-15" data-line-number="15"><span class="ot">_test_cat_nil_list_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
@@ -547,8 +491,7 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <a class="sourceLine" id="cb10-18" data-line-number="18">  testName <span class="st">&quot;if eq(cat(u,x),x) then eq(u,nil)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-19" data-line-number="19">  \x u v <span class="ot">-&gt;</span> <span class="kw">if</span> eq (cat u (cat x v)) x</a>
 <a class="sourceLine" id="cb10-20" data-line-number="20">    <span class="kw">then</span> and (eq u nil) (eq v nil)</a>
-<a class="sourceLine" id="cb10-21" data-line-number="21">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb10-21" data-line-number="21">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -556,38 +499,39 @@ We proceed by list induction on <span class="math inline">\(y\)</span>. For the 
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_cat ::</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">_test_cat t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">  testLabel (<span class="st">&quot;cat:&quot;</span> <span class="fu">++</span> typeName t)</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb11-10" data-line-number="10">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb11-11" data-line-number="11">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb11-12" data-line-number="12">      }</a>
-<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_cat_nil_left t)</a>
-<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_cat_cons_left t)</a>
-<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_cat_nil_right t)</a>
-<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_cat_snoc_left t)</a>
-<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_cat_snoc_right t)</a>
-<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_cat_nil_nil t)</a>
-<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_cat_associative t)</a>
-<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_cat_rev t)</a>
-<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_cat_left_cancellative t)</a>
-<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_cat_right_cancellative t)</a>
-<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_cat_right_identity_unique t)</a>
-<a class="sourceLine" id="cb11-25" data-line-number="25">  runTest args (_test_cat_left_identity_unique t)</a>
-<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_cat_nil_list_nil t)</a></code></pre></div>
-<p>And <code>main</code>:</p>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  , <span class="dt">TypeName</span> b, <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">_test_cat t p maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">  testLabel2 <span class="st">&quot;cat&quot;</span> t p</a>
+<a class="sourceLine" id="cb11-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_cat_nil_left t)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_cat_cons_left t)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_cat_nil_right t)</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_cat_snoc_left t)</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_cat_snoc_right t)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_cat_nil_nil t)</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_cat_associative t)</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_cat_rev t)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_cat_left_cancellative t p)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_cat_right_cancellative t p)</a>
+<a class="sourceLine" id="cb11-25" data-line-number="25">  runTest args (_test_cat_right_identity_unique t)</a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_cat_left_identity_unique t)</a>
+<a class="sourceLine" id="cb11-27" data-line-number="27">  runTest args (_test_cat_nil_list_nil t)</a></code></pre></div>
+<p>Main:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_cat ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_cat <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">  _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  _test_cat (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

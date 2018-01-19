@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>TakeBut and DropBut</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-12-15 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,41 +199,44 @@ Posted on 2017-12-15 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">TakeButAndDropBut</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( takeBut, dropBut, _test_takebut_dropbut, main_takebut_dropbut</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Prefix</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Elt</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Count</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Repeat</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Sublist</span></a>
-<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Select</span></a>
-<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Unique</span></a>
-<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Delete</span></a>
-<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Dedupe</span></a>
-<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">TakeAndDrop</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">TakeButAndDropBut</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( takeBut, dropBut, _test_takebut_dropbut, main_takebut_dropbut</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Repeat</span></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Sublist</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32"><span class="kw">import</span> <span class="dt">Select</span></a>
+<a class="sourceLine" id="cb1-33" data-line-number="33"><span class="kw">import</span> <span class="dt">Unique</span></a>
+<a class="sourceLine" id="cb1-34" data-line-number="34"><span class="kw">import</span> <span class="dt">Delete</span></a>
+<a class="sourceLine" id="cb1-35" data-line-number="35"><span class="kw">import</span> <span class="dt">Dedupe</span></a>
+<a class="sourceLine" id="cb1-36" data-line-number="36"><span class="kw">import</span> <span class="dt">TakeAndDrop</span></a></code></pre></div>
 <p>Today we’ll define two functions, <span class="math inline">\(\takeBut\)</span> and <span class="math inline">\(\dropBut\)</span>, analogous to <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, but acting from the end of the list rather than from the beginning. We’d like <span class="math inline">\(\takeBut\)</span> to have a signature like <span class="math display">\[\takeBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\]</span> such that <span class="math inline">\(\takeBut(k)(x)\)</span> is obtained by lopping off the last <span class="math inline">\(k\)</span> items in <span class="math inline">\(x\)</span>, and similarly <span class="math inline">\(\dropBut(k)(x)\)</span> lops off all but the last <span class="math inline">\(k\)</span> items. The simplest way to do this is with <span class="math inline">\(\take\)</span>, <span class="math inline">\(\drop\)</span>, and <span class="math inline">\(\rev\)</span>; explicit recursion is not required.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\takeBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\takeBut(k)(x) = \rev(\drop(k)(\rev(x)))\]</span> and define <span class="math inline">\(\dropBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\dropBut(k)(x) = \rev(\take(k)(\rev(x))).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">takeBut ::</span> (<span class="dt">Natural</span> n, <span class="dt">List</span> t) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
@@ -241,23 +244,16 @@ Posted on 2017-12-15 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">dropBut ::</span> (<span class="dt">Natural</span> n, <span class="dt">List</span> t) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">dropBut k x <span class="fu">=</span> rev (take k (rev x))</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>The defining equations for <span class="math inline">\(\drop\)</span> have <span class="math inline">\(\takeBut\)</span> equivalents.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(k \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\takeBut(\zero)(x) = x\)</span>.</li>
 <li><span class="math inline">\(\takeBut(\next(k))(\nil) = \nil\)</span>.</li>
 <li><span class="math inline">\(\takeBut(\next(k))(\snoc(a,x)) = \takeBut(k)(x)\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \takeBut(\zero)(x) \\
@@ -280,10 +276,8 @@ Posted on 2017-12-15 by nbloomf
  &amp; = &amp; \takeBut(k,x)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_takeBut_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_takeBut_zero _ n <span class="fu">=</span></a>
@@ -305,73 +299,51 @@ Posted on 2017-12-15 by nbloomf
 <a class="sourceLine" id="cb3-19" data-line-number="19">  \n a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-20" data-line-number="20">    (takeBut (next n) (snoc a x))</a>
 <a class="sourceLine" id="cb3-21" data-line-number="21">    (takeBut n x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\takeBut\)</span> is a prefix.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\takeBut(k,x),x) \\
  &amp; = &amp; \prefix(\rev(\drop(k,\rev(x))),x) \\
  &amp; = &amp; \prefix(\rev(\drop(k,\rev(x))),\rev(\rev(x))) \\
  &amp; = &amp; \suffix(\drop(k,\rev(x)),\rev(x)) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_takeBut_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_takeBut_prefix _ m <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;prefix(takeBut(k,x),x) == true&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (prefix (takeBut k x) x) <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (prefix (takeBut k x) x) true</a></code></pre></div>
 </div>
 </div>
 <p>So <span class="math inline">\(\takeBut\)</span> is a sublist:</p>
-<div class="result">
-<div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\infix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue\]</span> as claimed.
-</p>
+<p>We have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\infix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_takeBut_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_takeBut_sublist _ m <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;sublist(takeBut(k,x),x) == true&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (sublist (takeBut k x) x) <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (sublist (takeBut k x) x) true</a></code></pre></div>
 </div>
 </div>
 <p>Now for <span class="math inline">\(\dropBut\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
+<div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(k \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\dropBut(\zero,x) = \nil\)</span>.</li>
 <li><span class="math inline">\(\dropBut(\next(k),\nil) = \nil\)</span>.</li>
 <li><span class="math inline">\(\dropBut(\next(k),\snoc(a,x)) = \snoc(a,\dropBut(k,x))\)</span>.</li>
 </ol>
-</p>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(\zero,x) \\
@@ -395,10 +367,8 @@ We have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue,\]</span>
  &amp; = &amp; \snoc(a,\dropBut(k,x))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_dropBut_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_dropBut_zero _ n <span class="fu">=</span></a>
@@ -420,92 +390,67 @@ We have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue,\]</span>
 <a class="sourceLine" id="cb6-19" data-line-number="19">  \n a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb6-20" data-line-number="20">    (dropBut (next n) (snoc a x))</a>
 <a class="sourceLine" id="cb6-21" data-line-number="21">    (snoc a (dropBut n x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\dropBut\)</span> is a <span class="math inline">\(\suffix\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\dropBut(k,x),x) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\dropBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\dropBut(k,x),x) \\
  &amp; = &amp; \suffix(\rev(\take(k,\rev(x))),x) \\
  &amp; = &amp; \suffix(\rev(\take(k,\rev(x))),\rev(\rev(x))) \\
  &amp; = &amp; \prefix(\take(k,\rev(x)),\rev(x)) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_dropBut_suffix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_dropBut_suffix _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;suffix(dropBut(k,x),x) == true&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (suffix (dropBut k x) x) <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (suffix (dropBut k x) x) true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\dropBut\)</span> is idempotent.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\dropBut(k,\dropBut(k,x)) = \dropBut(k,x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\dropBut(k,\dropBut(k,x)) = \dropBut(k,x).\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(k,\dropBut(k,x)) \\
  &amp; = &amp; \dropBut(k,\rev(\take(k,\rev(x)))) \\
  &amp; = &amp; \rev(\take(k,\rev(\rev(\take(k,\rev(x)))))) \\
  &amp; = &amp; \rev(\take(k,\take(k,\rev(x)))) \\
  &amp; = &amp; \rev(\take(k,\rev(x))) \\
  &amp; = &amp; \dropBut(k,x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_dropBut_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_dropBut_idempotent _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;dropBut(k,dropBut(k,x)) == dropBut(k,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (dropBut k (dropBut k x)) (dropBut k x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Like <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, <span class="math inline">\(\takeBut\)</span> and <span class="math inline">\(\dropBut\)</span> give a kind of <span class="math inline">\(\cat\)</span>-factorization.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\takeBut(k,x),\dropBut(k,x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\takeBut(k,x),\dropBut(k,x)).\]</span></p>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\takeBut(k,x),\dropBut(k,x)) \\
  &amp; = &amp; \cat(\rev(\drop(k,\rev(x))),\rev(\take(k,\rev(x)))) \\
  &amp; = &amp; \rev(\cat(\take(k,\rev(x)),\drop(k,\rev(x)))) \\
  &amp; = &amp; \rev(\rev(x)) \\
  &amp; = &amp; x
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_takeBut_dropBut_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_takeBut_dropBut_cat _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;cat(takeBut(k,x),dropBut(k,x)) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (cat (takeBut k x) (dropBut k x)) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -517,7 +462,7 @@ We have <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-7" data-line-number="7">_test_takebut_dropbut t k maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel (<span class="st">&quot;takeBut &amp; dropBut: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel1 <span class="st">&quot;takeBut &amp; dropBut&quot;</span> t</a>
 <a class="sourceLine" id="cb10-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb10-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
@@ -546,7 +491,7 @@ We have <span class="math display">\[\begin{eqnarray*}
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Subtraction</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-02 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,25 +199,28 @@ Posted on 2017-04-02 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Minus</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( minus, _test_minus, main_minus</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Times</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Minus</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( minus, _test_minus, main_minus</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Times</span></a></code></pre></div>
 <p>We’d eventually like to solve some equations; for instance, one of the simplest equations we can construct with the tools we have so far is <span class="math display">\[\nplus(a,x) = b\]</span> where <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> are in <span class="math inline">\(\nats\)</span>. Putting on our third-grader hat of course the solution to <span class="math inline">\(b = a+x\)</span> is <span class="math inline">\(x = b-a\)</span>. So we’ll call this solution “b minus a”. Our goal in this post is to give a constructive characterization for subtraction.</p>
 <p>There’s a hitch: whereas sums and products of natural numbers always exist, differences do not; <span class="math inline">\(5 - 2 = 3\)</span> is a natural number, but <span class="math inline">\(5 - 7 = ?\)</span> is not. So the signature of minus cannot be <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>. What is it then? How should we handle this?</p>
 <p>I can think of three options. First, we can just declare that <span class="math inline">\(b-a\)</span> is not defined if the difference is not a natural number. The corresponding algorithm would then just error out. This should be avoided if possible.</p>
 <p>The second option is to implement so-called <em>truncated subtraction</em>, so that anytime <span class="math inline">\(b-a\)</span> is not a natural number we simply call it 0. This also is not ideal, since now <span class="math inline">\(b-a\)</span> always exists, but the equation <span class="math inline">\(b = a + (b-a)\)</span> is no longer an identity and we cannot tell just from the value of <span class="math inline">\(b-a\)</span> whether it holds or not.</p>
 <p>The third option is a blend of the first two. We can attach an extra element to <span class="math inline">\(\nats\)</span>, say <span class="math inline">\(\ast\)</span>, and then say <span class="math inline">\(b-a = \ast\)</span> if <span class="math inline">\(b-a\)</span> is not a natural number. This allows us to distinguish when <span class="math inline">\(b-a\)</span> does not exist but keeps the minus function total. So our signature for minus will be <span class="math display">\[\nats \times \nats \rightarrow 1 + \nats,\]</span> where <span class="math inline">\(1 = \{\ast\}\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Define maps <span class="math inline">\(\varphi : \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi(x) = \left\{\begin{array}{ll}
  \rgt(\zero) &amp; \mathrm{if}\ x == \zero \\
  \lft(\ast) &amp; \mathrm{otherwise};
@@ -239,26 +242,19 @@ Posted on 2017-04-02 by nbloomf
 <a class="sourceLine" id="cb2-10" data-line-number="10">    psi a _ <span class="fu">=</span> rgt (next a)</a>
 <a class="sourceLine" id="cb2-11" data-line-number="11"></a>
 <a class="sourceLine" id="cb2-12" data-line-number="12">    omega _ b <span class="fu">=</span> prev b</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Woo! Since <span class="math inline">\(\nminus\)</span> is defined in terms of bailout recursion, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\nminus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow 1 + \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
+<p><span class="math inline">\(\nminus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow 1 + \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,b) = \bif{\iszero(b)}{\rgt(\zero)}{\lft(\ast)} \\
  f(\next(a),b) = \bif{\iszero(b)}{\rgt(\next(a))}{\nminus(a,\prev(b))}.
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_minus_zero_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_minus_zero_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;minus(0,b) == if(isZero(b),rgt(0),lft(*))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">  \b <span class="ot">-&gt;</span> <span class="kw">if</span> eq (isZero b) <span class="dt">True</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  \b <span class="ot">-&gt;</span> <span class="kw">if</span> eq (isZero b) true</a>
 <a class="sourceLine" id="cb3-6" data-line-number="6">    <span class="kw">then</span> eq (minus zero b) (rgt zero)</a>
 <a class="sourceLine" id="cb3-7" data-line-number="7">    <span class="kw">else</span> eq (minus zero b) (lft ())</a>
 <a class="sourceLine" id="cb3-8" data-line-number="8"></a>
@@ -268,23 +264,19 @@ Posted on 2017-04-02 by nbloomf
 <a class="sourceLine" id="cb3-12" data-line-number="12">_test_minus_next_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">  testName</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">    <span class="st">&quot;minus(next(a),b) == if(isZero(b),rgt(next(a)),minus(a,prev(b)))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-15" data-line-number="15">  \a b <span class="ot">-&gt;</span> <span class="kw">if</span> eq (isZero b) <span class="dt">True</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">  \a b <span class="ot">-&gt;</span> <span class="kw">if</span> eq (isZero b) true</a>
 <a class="sourceLine" id="cb3-16" data-line-number="16">    <span class="kw">then</span> eq (minus (next a) b) (rgt (next a))</a>
 <a class="sourceLine" id="cb3-17" data-line-number="17">    <span class="kw">else</span> eq (minus (next a) b) (minus a (prev b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Here are some special cases:</p>
-<div class="result">
-<div class="lemma">
+<div class="theorem">
 <p>For all <span class="math inline">\(n \in \nats\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nminus(n,\zero) = \rgt(n)\)</span>.</li>
 <li><span class="math inline">\(\nminus(\zero,\next(n)) = \lft(\ast)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>If <span class="math inline">\(n = \zero\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nminus(\zero,\zero) \\
@@ -304,10 +296,8 @@ Posted on 2017-04-02 by nbloomf
  &amp; = &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_minus_nat_zero ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_minus_nat_zero _ <span class="fu">=</span></a>
@@ -320,70 +310,54 @@ Posted on 2017-04-02 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">_test_minus_zero_next _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;minus(0,next(n)) == lft(ast)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \n <span class="ot">-&gt;</span> eq (minus zero (next n)) (lft ())</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can “cancel” <span class="math inline">\(\next\)</span>s on both arguments of a <span class="math inline">\(\nminus\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have <span class="math display">\[\nminus(\next(b),\next(a)) = \nminus(b,a).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nminus(\next(b),\next(a)) \\
  &amp; = &amp; \bif{\iszero(\next(a))}{\next(b)}{\nminus(b,\prev(\next(a)))} \\
  &amp; = &amp; \bif{\bfalse}{\next(b)}{\nminus(b,\prev(\next(a)))} \\
  &amp; = &amp; \nminus(b,\prev(\next(a))) \\
  &amp; = &amp; \nminus(b,a)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_minus_next_next ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_minus_next_next _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;minus(next(b),next(a)) == minus(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (minus (next b) (next a)) (minus b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Another important special case.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have <span class="math display">\[\nminus(a,\next(a)) = \lft(\ast).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span> we have <span class="math display">\[\nminus(\zero,\next(\zero)) = \lft(\ast)\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(a\)</span>; now <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span> we have <span class="math display">\[\nminus(\zero,\next(\zero)) = \lft(\ast)\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(a\)</span>; now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nminus(\next(a),\next(\next(a))) \\
  &amp; = &amp; \nminus(a,\next(a)) \\
  &amp; = &amp; \lft(\ast)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_minus_nat_next ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_minus_nat_next _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;minus(a,next(a)) == lft(*)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (minus a (next a)) (lft ())</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>The next result shows that <span class="math inline">\(\nminus\)</span> gives a solution to the equation <span class="math inline">\(b = \nplus(a,x)\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then the following are equivalent.</p>
 <ol type="1">
 <li><span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>.</li>
 <li><span class="math inline">\(b = \nplus(a,c)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <p>First we show (1) implies (2) by induction on <span class="math inline">\(b\)</span>. For the base case, suppose we have <span class="math inline">\(\nminus(\zero,a) = \rgt(c)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(c) \\
  &amp; = &amp; \nminus(\zero,a) \\
@@ -403,54 +377,46 @@ We proceed by induction on <span class="math inline">\(a\)</span>. For the base 
  &amp; = &amp; \nplus(\next(d),c) \\
  &amp; = &amp; \nplus(a,c)
 \end{eqnarray*}\]</span> as needed.</p>
-Next we show that (2) implies (1) by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, if <span class="math inline">\(b = \nplus(a,c) = c\)</span> then <span class="math inline">\(\nminus(b,\zero) = b = c\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. In particular, if <span class="math inline">\(\nplus(a,c) = b\)</span>, then <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>. Suppose further that <span class="math inline">\(b = \nplus(\next(a),c)\)</span>. Now <span class="math inline">\(b = \next(\nplus(a,c)) = \next(d)\)</span> for some <span class="math inline">\(d\)</span>, where <span class="math inline">\(\nminus(d,a) = \rgt(c)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+<p>Next we show that (2) implies (1) by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, if <span class="math inline">\(b = \nplus(a,c) = c\)</span> then <span class="math inline">\(\nminus(b,\zero) = b = c\)</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. In particular, if <span class="math inline">\(\nplus(a,c) = b\)</span>, then <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>. Suppose further that <span class="math inline">\(b = \nplus(\next(a),c)\)</span>. Now <span class="math inline">\(b = \next(\nplus(a,c)) = \next(d)\)</span> for some <span class="math inline">\(d\)</span>, where <span class="math inline">\(\nminus(d,a) = \rgt(c)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nminus(b,\next(a)) \\
  &amp; = &amp; \nminus(\nplus(\next(a),c),\next(a)) \\
  &amp; = &amp; \nminus(\next(\nplus(a,c)),\next(a)) \\
  &amp; = &amp; \nminus(\nplus(a,c),a) \\
  &amp; = &amp; \nminus(d,a) \\
  &amp; = &amp; \rgt(c)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_minus_plus_equiv ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">_test_minus_plus_equiv _ <span class="fu">=</span></a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_minus_plus_equiv ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_minus_plus_equiv _ p <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;(minus(b,a) == rgt(c)) == (plus(a,c) == b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">    (eq (minus b a) (rgt c))</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    ((eq (minus b a) (rgt c)) <span class="ot">`withTypeOf`</span> p)</a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">    (eq (plus a c) b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\nminus\)</span> inherits several properties from <span class="math inline">\(\nplus\)</span>. For instance, <span class="math inline">\(\nminus\)</span> is cancellative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then the following are equivalent.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\nminus(b,a) = \nminus(b,c)\)</span> and <span class="math inline">\(\isRgt(\nminus(b,a)) = \btrue\)</span>, then <span class="math inline">\(a = c\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(a,b) = \nminus(c,b)\)</span> and <span class="math inline">\(\isRgt(\nminus(a,b)) = \btrue\)</span>, then <span class="math inline">\(a = c\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Say <span class="math display">\[\nminus(b,a) = \rgt(d) = \nminus(b,c).\]</span> Now <span class="math display">\[\nplus(a,d) = b = \nplus(c,d)\]</span> and thus <span class="math inline">\(a = c\)</span> as claimed.</li>
 <li>Say <span class="math display">\[\nminus(a,b) = \rgt(d) = \nminus(c,b).\]</span> Now <span class="math display">\[a = \nplus(b,d) = c\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_minus_cancellative_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_minus_cancellative_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if minus(b,a) == minus(b,c) == rgt(d) then a == c&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (eq (minus b a) (minus b c)) (isRgt (minus b a))</a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">    <span class="kw">then</span> eq a c</a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb8-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb8-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb8-10" data-line-number="10"><span class="ot">_test_minus_cancellative_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -459,29 +425,23 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <a class="sourceLine" id="cb8-13" data-line-number="13">  testName <span class="st">&quot;if minus(a,b) == minus(c,b) == rgt(d) then a == c&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-14" data-line-number="14">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (eq (minus a b) (minus c b)) (isRgt (minus a b))</a>
 <a class="sourceLine" id="cb8-15" data-line-number="15">    <span class="kw">then</span> eq a c</a>
-<a class="sourceLine" id="cb8-16" data-line-number="16">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb8-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\nminus\)</span> “undoes” <span class="math inline">\(\nplus\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then the following are equivalent.</p>
 <ol type="1">
 <li><span class="math inline">\(\nminus(\nplus(b,a),b) = \rgt(a)\)</span>.</li>
 <li><span class="math inline">\(\nminus(\nplus(a,b),b) = \rgt(a)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math inline">\(\nplus(b,a) = \nplus(b,a)\)</span>, so that <span class="math inline">\(\nminus(\nplus(b,a),b) = \rgt(a)\)</span> as claimed.</li>
-<li>We have <span class="math display">\[\nminus(\nplus(a,b),b) = \nminus(b,a),b) = \rgt(a)\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\nminus(\nplus(a,b),b) = \nminus(\nplus(b,a),b) = \rgt(a)\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_minus_plus_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_minus_plus_right _ <span class="fu">=</span></a>
@@ -494,37 +454,31 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <a class="sourceLine" id="cb9-10" data-line-number="10">_test_minus_plus_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;minus(plus(a,b),b) == rgt(a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (minus (plus a b) b) (rgt a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We are able to rearrange <span class="math inline">\(\nminus\)</span> expressions (a little bit).</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c,d \in \nats\)</span>. Then the following hold.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>, then <span class="math inline">\(\nminus(\next(b),a) = \rgt(\next(c))\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>, then <span class="math inline">\(\nminus(b,c) = \rgt(a)\)</span>.</li>
 <li>If <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>, then <span class="math inline">\(\nminus(\nplus(b,d),a) = \rgt(\nplus(c,d))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Since <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>, we have <span class="math inline">\(\nplus(a,c) = b\)</span>, so that <span class="math display">\[\nplus(a,\next(c)) = \next(\nplus(a,c)) = \next(b).\]</span> Thus we have <span class="math display">\[\nminus(\next(b),a) = \rgt(\next(c))\]</span> as claimed.</li>
 <li>Since <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>, we have <span class="math inline">\(b = \nplus(a,c) = \nplus(c,a)\)</span>, so that <span class="math inline">\(\nminus(b,c) = \rgt(a)\)</span> as claimed.</li>
 <li>Suppose <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span>; then <span class="math inline">\(b = \nplus(a,c)\)</span>. Now <span class="math display">\[\nplus(b,d) = \nplus(\nplus(a,c),d) = \nplus(a,\nplus(c,d)),\]</span> so that <span class="math display">\[\nminus(\nplus(b,d),a) = \rgt(\nplus(c,d))\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_minus_next_left_cond ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_minus_next_left_cond _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;if minus(b,a) == rgt(c) then minus(next(b),a) == rgt(next(c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> <span class="kw">case</span> minus b a <span class="kw">of</span></a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">    <span class="dt">Right</span> c <span class="ot">-&gt;</span> eq (minus (next b) a) (rgt (next c))</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a>
 <a class="sourceLine" id="cb10-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb10-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10"><span class="ot">_test_minus_swap ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -533,7 +487,7 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <a class="sourceLine" id="cb10-13" data-line-number="13">  testName <span class="st">&quot;if minus(b,a) == rgt(c) then minus(b,c) == rgt(a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-14" data-line-number="14">  \a b <span class="ot">-&gt;</span> <span class="kw">case</span> minus b a <span class="kw">of</span></a>
 <a class="sourceLine" id="cb10-15" data-line-number="15">    <span class="dt">Right</span> c <span class="ot">-&gt;</span> eq (minus b c) (rgt a)</a>
-<a class="sourceLine" id="cb10-16" data-line-number="16">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb10-16" data-line-number="16">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a>
 <a class="sourceLine" id="cb10-17" data-line-number="17"></a>
 <a class="sourceLine" id="cb10-18" data-line-number="18"></a>
 <a class="sourceLine" id="cb10-19" data-line-number="19"><span class="ot">_test_minus_plus ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -542,42 +496,32 @@ Next we show that (2) implies (1) by induction on <span class="math inline">\(a\
 <a class="sourceLine" id="cb10-22" data-line-number="22">  testName <span class="st">&quot;if minus(b,a) == rgt(c) then minus(plus(b,d),a) == rgt(plus(c,d))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-23" data-line-number="23">  \a b d <span class="ot">-&gt;</span> <span class="kw">case</span> minus b a <span class="kw">of</span></a>
 <a class="sourceLine" id="cb10-24" data-line-number="24">    <span class="dt">Right</span> c <span class="ot">-&gt;</span> eq (minus (plus b d) a) (rgt (plus c d))</a>
-<a class="sourceLine" id="cb10-25" data-line-number="25">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb10-25" data-line-number="25">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Given natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, either <span class="math inline">\(\nminus(a,b)\)</span> or <span class="math inline">\(\nminus(b,a)\)</span> is of the form <span class="math inline">\(\rgt(c)\)</span> for some <span class="math inline">\(c\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. If <span class="math inline">\(\nminus(a,b) = \lft(\ast)\)</span>, then <span class="math inline">\(\nminus(b,a) = \rgt(c)\)</span> for some <span class="math inline">\(c\)</span>.</p>
-</div>
 <div class="proof">
-<p>
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, if <span class="math inline">\(\nminus(\zero,b) = \lft(\ast)\)</span> we have <span class="math inline">\(b \neq \zero\)</span> and <span class="math inline">\(\nminus(b,\zero) = \rgt(b)\)</span> as needed.</p>
-For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Suppose further that <span class="math inline">\(\nminus(\next(a),b) = \lft(\ast)\)</span>. If <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(a),\zero) = \lft(\zero)\)</span> is false, so the implication holds vacuously. If <span class="math inline">\(b = \next(d)\)</span> for some <span class="math inline">\(d\)</span>, then we have <span class="math display">\[\lft(\ast) = \nminus(\next(a),b) = \nminus(\next(a),\next(d)) = \nminus(a,d).\]</span> By the induction hypothesis we have <span class="math display">\[\nminus(d,a) = \rgt(c)\]</span> for some <span class="math inline">\(c\)</span>, so that <span class="math display">\[\nminus(b,a) = \nminus(\next(d),a) = \rgt(\next(c))\]</span> as needed.
-</p>
+<p>For the inductive step, suppose the implication holds for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Suppose further that <span class="math inline">\(\nminus(\next(a),b) = \lft(\ast)\)</span>. If <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\nminus(\next(a),\zero) = \lft(\zero)\)</span> is false, so the implication holds vacuously. If <span class="math inline">\(b = \next(d)\)</span> for some <span class="math inline">\(d\)</span>, then we have <span class="math display">\[\lft(\ast) = \nminus(\next(a),b) = \nminus(\next(a),\next(d)) = \nminus(a,d).\]</span> By the induction hypothesis we have <span class="math display">\[\nminus(d,a) = \rgt(c)\]</span> for some <span class="math inline">\(c\)</span>, so that <span class="math display">\[\nminus(b,a) = \nminus(\next(d),a) = \rgt(\next(c))\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_minus_flip ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_minus_flip _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;if minus(a,b) == lft(*) then isRgt(minus(b,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> <span class="kw">if</span> eq (minus a b) (lft ())</a>
 <a class="sourceLine" id="cb11-6" data-line-number="6">    <span class="kw">then</span> isRgt (minus b a)</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nminus\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. If <span class="math inline">\(\nminus(a,b) = \rgt(d)\)</span> for some <span class="math inline">\(d \in \nats\)</span>, then <span class="math display">\[\nminus(\ntimes(c,a),\ntimes(c,b)) = \rgt(\ntimes(c,d)).\]</span></p>
-</div>
 <div class="proof">
-<p>
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span>, suppose we have <span class="math inline">\(\nminus(\zero,b) = \rgt(d)\)</span>; then <span class="math inline">\(d = \zero\)</span> and <span class="math inline">\(b = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \nminus(\ntimes(c,a),(\ntimes(c,b)) \\
+ &amp;   &amp; \nminus(\ntimes(c,a),\ntimes(c,b)) \\
  &amp; = &amp; \nminus(\zero,\zero) \\
  &amp; = &amp; \rgt(\zero)
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
@@ -585,18 +529,16 @@ For the inductive step, suppose the implication holds for all <span class="math 
  &amp; = &amp; \rgt(\ntimes(c,\zero)) \\
  &amp; = &amp; \zero
 \end{eqnarray*}\]</span> as claimed.</p>
-For the inductive step, suppose the equality holds for some <span class="math inline">\(a \in \nats\)</span> and suppose that <span class="math inline">\(\nminus(\next(a),b) = \rgt(d)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+<p>For the inductive step, suppose the equality holds for some <span class="math inline">\(a \in \nats\)</span> and suppose that <span class="math inline">\(\nminus(\next(a),b) = \rgt(d)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nminus(\ntimes(c,\next(a)),\ntimes(c,b)) \\
  &amp; = &amp; \nminus(\nplus(\ntimes(c,a),c),\ntimes(c,b)) \\
  &amp; = &amp; \nplus(\nminus(\ntimes(c,a),\ntimes(c,b)),c) \\
  &amp; = &amp; \nplus(\ntimes(c,\nminus(a,b)),c) \\
  &amp; = &amp; \ntimes(c,\next(\nminus(a,b))) \\
  &amp; = &amp; \ntimes(c,\nminus(\next(a),b))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_minus_times_dist_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">_test_minus_times_dist_left _ <span class="fu">=</span></a>
@@ -605,47 +547,47 @@ For the inductive step, suppose the equality holds for some <span class="math in
 <a class="sourceLine" id="cb12-6" data-line-number="6">    <span class="dt">Right</span> d <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb12-7" data-line-number="7">      (minus (times c a) (times c b))</a>
 <a class="sourceLine" id="cb12-8" data-line-number="8">      (rgt (times c d))</a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb12-9" data-line-number="9">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> true</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_minus ::</span></a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">_test_minus n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">  testLabel (<span class="st">&quot;minus: &quot;</span> <span class="fu">++</span> typeName n)</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">     { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb13-10" data-line-number="10">     , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb13-11" data-line-number="11">     }</a>
-<a class="sourceLine" id="cb13-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb13-13" data-line-number="13">  runTest args (_test_minus_zero_left n)</a>
-<a class="sourceLine" id="cb13-14" data-line-number="14">  runTest args (_test_minus_next_left n)</a>
-<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args (_test_minus_nat_zero n)</a>
-<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_minus_zero_next n)</a>
-<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_minus_next_next n)</a>
-<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_minus_nat_next n)</a>
-<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_minus_plus_equiv n)</a>
-<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_minus_cancellative_left n)</a>
-<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_minus_cancellative_right n)</a>
-<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_minus_plus_right n)</a>
-<a class="sourceLine" id="cb13-23" data-line-number="23">  runTest args (_test_minus_plus_left n)</a>
-<a class="sourceLine" id="cb13-24" data-line-number="24">  runTest args (_test_minus_next_left_cond n)</a>
-<a class="sourceLine" id="cb13-25" data-line-number="25">  runTest args (_test_minus_swap n)</a>
-<a class="sourceLine" id="cb13-26" data-line-number="26">  runTest args (_test_minus_plus n)</a>
-<a class="sourceLine" id="cb13-27" data-line-number="27">  runTest args (_test_minus_flip n)</a>
-<a class="sourceLine" id="cb13-28" data-line-number="28">  runTest args (_test_minus_times_dist_left n)</a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  , <span class="dt">TypeName</span> b, <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">_test_minus n p maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">  testLabel2 <span class="st">&quot;minus&quot;</span> n p</a>
+<a class="sourceLine" id="cb13-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb13-8" data-line-number="8">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">     { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">     , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb13-12" data-line-number="12">     }</a>
+<a class="sourceLine" id="cb13-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb13-14" data-line-number="14">  runTest args (_test_minus_zero_left n)</a>
+<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args (_test_minus_next_left n)</a>
+<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_minus_nat_zero n)</a>
+<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_minus_zero_next n)</a>
+<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_minus_next_next n)</a>
+<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_minus_nat_next n)</a>
+<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_minus_plus_equiv n p)</a>
+<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_minus_cancellative_left n)</a>
+<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_minus_cancellative_right n)</a>
+<a class="sourceLine" id="cb13-23" data-line-number="23">  runTest args (_test_minus_plus_right n)</a>
+<a class="sourceLine" id="cb13-24" data-line-number="24">  runTest args (_test_minus_plus_left n)</a>
+<a class="sourceLine" id="cb13-25" data-line-number="25">  runTest args (_test_minus_next_left_cond n)</a>
+<a class="sourceLine" id="cb13-26" data-line-number="26">  runTest args (_test_minus_swap n)</a>
+<a class="sourceLine" id="cb13-27" data-line-number="27">  runTest args (_test_minus_plus n)</a>
+<a class="sourceLine" id="cb13-28" data-line-number="28">  runTest args (_test_minus_flip n)</a>
+<a class="sourceLine" id="cb13-29" data-line-number="29">  runTest args (_test_minus_times_dist_left n)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">main_minus ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">main_minus <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  _test_minus (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">30</span> <span class="dv">50</span></a></code></pre></div>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  _test_minus (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">30</span> <span class="dv">50</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Count</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-21 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,54 +199,50 @@ Posted on 2017-05-21 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Count</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( count, addcount, _test_count, main_count</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">LeftFold</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Prefix</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Elt</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( count, addcount, _test_count, main_count</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LeftFold</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Elt</span></a></code></pre></div>
 <p>Today we’ll define <span class="math inline">\(\count\)</span>, which takes an <span class="math inline">\(A\)</span> and a <span class="math inline">\(\lists{A}\)</span> and returns the number of items in the <span class="math inline">\(\lists{A}\)</span> that are identical to the <span class="math inline">\(A\)</span>. As usual we’ll define this as a fold. Note that – unlike some of the other list functions we’ve seen – in principle, <span class="math inline">\(\count\)</span> shouldn’t care so much what <em>order</em> the items in its input come in. Moreover, note that <span class="math inline">\(\count\)</span> necessarily must examine every item in its input if it’s going to return the correct answer. When this happens – we don’t care about order but have to look at every item – the <em>left fold</em> operator can be used instead of the right fold, with the advantage that left fold is more space efficient.</p>
 <p>When dealing with left folds, it is often handier to parameterize on the base case, so that’s what we’ll do.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>, and define <span class="math inline">\(\varphi : \nats \times A \rightarrow \nats\)</span> by <span class="math display">\[\varphi(k,b) = \bif{\beq(a,b)}{\next(k)}{k}.\]</span> Now we define <span class="math inline">\(\addcount(a) : \nats \times \lists{A} \rightarrow \nats\)</span> by <span class="math display">\[\addcount(a)(n,x) = \foldl{\varphi}(n)(x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">addcount::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">addcount a <span class="fu">=</span> foldl phi</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi k b <span class="fu">=</span> <span class="kw">if</span> eq a b <span class="kw">then</span> next k <span class="kw">else</span> k</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\addcount\)</span> is defined as a left fold, it can be characterized as the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\addcount\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \nats\)</span> satisfying the following system of equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(b \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\addcount\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \nats\)</span> satisfying the following system of equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(b \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(k,\nil) = k \\
  f(k,\cons(b,x)) = f(\bif{\beq(a,b)}{\next(k)}{k},x)
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_addcount_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_addcount_nil t _ <span class="fu">=</span></a>
@@ -259,19 +255,13 @@ Let <span class="math inline">\(A\)</span> be a set with <span class="math inlin
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_addcount_cons _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;addcount(a)(k,cons(b,x)) == addcount(a)(if(eq(a,b),next(k),k),x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a k b x <span class="ot">-&gt;</span> eq (addcount a k (cons b x)) (addcount a (<span class="kw">if</span> eq a b <span class="kw">then</span> next k <span class="kw">else</span> k) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\addcount\)</span> interacts with <span class="math inline">\(\next\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(\next(k),x) = \next(\addcount(a)(k,x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(\next(k),x) = \next(\addcount(a)(k,x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \addcount(a)(\next(k),\nil) \\
  &amp; = &amp; \next(k) \\
  &amp; = &amp; \next(\addcount(a)(k,\nil))
@@ -280,29 +270,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \addcount(a)(\bif{\beq(a,b)}{\next(\next(k))}{\next(k)},x) \\
  &amp; = &amp; \next(\addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},x)) \\
  &amp; = &amp; \next(\addcount(a)(k,\cons(b,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_addcount_next ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_addcount_next _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;addcount(a)(next(k),x) == next(addcount(a)(k,x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \a k x <span class="ot">-&gt;</span> eq (addcount a (next k) x) (next (addcount a k x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now <span class="math inline">\(\addcount\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(k,\snoc(b,x)) = \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(k,\snoc(b,x)) = \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \addcount(a)(k,\snoc(b,\nil)) \\
  &amp; = &amp; \addcount(a)(k,\cons(b,\nil)) \\
  &amp; = &amp; \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},\nil)
@@ -315,29 +297,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \addcount(a)(\bif{\beq(a,c)}{\bif{\beq(a,b)}{\next(\next(k))}{\next(k)}}{\bif{\beq(a,b)}{\next(k)}{k}},x) \\
  &amp; = &amp; \addcount(a)(\bif{\beq(a,c)}{\next(\bif{\beq(a,b)}{\next(k)}{k})}{\bif{\beq(a,b)}{\next(k)}{k}},x) \\
  &amp; = &amp; \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},\cons(c,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_addcount_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_addcount_snoc _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;addcount(a)(k,snoc(b,x)) == addcount(a)(if(eq(a,b),next(k),k),x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \a k b x <span class="ot">-&gt;</span> eq (addcount a k (snoc b x)) (addcount a (<span class="kw">if</span> eq a b <span class="kw">then</span> next k <span class="kw">else</span> k) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\addcount\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(k,\rev(x)) = \addcount(a)(k,x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\addcount(a)(k,\rev(x)) = \addcount(a)(k,x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \addcount(a)(k,\rev(\nil)) \\
  &amp; = &amp; \addcount(a)(k,\nil)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
@@ -346,29 +320,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},\rev(x)) \\
  &amp; = &amp; \addcount(a)(\bif{\beq(a,b)}{\next(k)}{k},x) \\
  &amp; = &amp; \addcount(a)(k,\cons(b,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_addcount_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_addcount_rev _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;addcount(a)(k,rev(x)) == addcount(a)(k,x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a k x <span class="ot">-&gt;</span> eq (addcount a k (rev x)) (addcount a k x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can also characterize <span class="math inline">\(\addcount\)</span> as a right fold.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>, and define <span class="math inline">\(\psi : A \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\psi(b,k) = \bif{\beq(a,b)}{\next(k)}{k}.\]</span> Then we have <span class="math display">\[\addcount(a)(k,x) = \foldr{k}{\psi}(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>, and define <span class="math inline">\(\psi : A \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\psi(b,k) = \bif{\beq(a,b)}{\next(k)}{k}.\]</span> Then we have <span class="math display">\[\addcount(a)(k,x) = \foldr{k}{\psi}(x).\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \addcount(a)(k,\nil) \\
  &amp; = &amp; k \\
  &amp; = &amp; \foldr{k}{\psi}(\nil)
@@ -378,11 +344,9 @@ Note that <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; \bif{\beq(a,b)}{\addcount(a)(\next(k),x)}{\addcount(a)(k,x)} \\
  &amp; = &amp; \bif{\beq(a,b)}{\next(\addcount(a)(k,x))}{\addcount(a)(k,x)} \\
  &amp; = &amp; \psi(b,\addcount(a)(k,x)).
-\end{eqnarray*}\]</span> By the universal property of right fold, the equality holds for all <span class="math inline">\(x\)</span>.
-</p>
+\end{eqnarray*}\]</span> By the universal property of right fold, the equality holds for all <span class="math inline">\(x\)</span>.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_addcount_foldr ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_addcount_foldr _ _ <span class="fu">=</span></a>
@@ -390,21 +354,15 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a k x <span class="ot">-&gt;</span></a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">    <span class="kw">let</span> psi b k <span class="fu">=</span> <span class="kw">if</span> eq a b <span class="kw">then</span> next k <span class="kw">else</span> k <span class="kw">in</span></a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">    eq (addcount a k x) (foldr k psi x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>So we can evaluate <span class="math inline">\(\addcount\)</span> as a left fold, but reason about <span class="math inline">\(\count\)</span> as a right fold. Since <span class="math inline">\(\addcount(a)\)</span> is also a right fold, it can be characterized as the unique solution to a (different) system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Now <span class="math inline">\(\addcount(a)\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \nats\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Now <span class="math inline">\(\addcount(a)\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \nats\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(k,\nil) = k \\
  f(k,\cons(b,x)) = \bif{\beq(a,b)}{\next(f(k,x))}{f(k,x)}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_addcount_foldr_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_addcount_foldr_cons _ _ <span class="fu">=</span></a>
@@ -412,32 +370,22 @@ Let <span class="math inline">\(A\)</span> be a set with <span class="math inlin
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a k b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb8-6" data-line-number="6">    (addcount a k (cons b x))</a>
 <a class="sourceLine" id="cb8-7" data-line-number="7">    (<span class="kw">if</span> eq a b <span class="kw">then</span> next (addcount a k x) <span class="kw">else</span> addcount a k x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We define <span class="math inline">\(\count\)</span> in terms of <span class="math inline">\(\addcount\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. We define <span class="math inline">\(\count : A \rightarrow \nats^{\lists{A}}\)</span> by <span class="math display">\[\count(a)(x) = \addcount(a)(\zero,x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">count ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">count a <span class="fu">=</span> addcount a zero</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\count\)</span> is defined in terms of <span class="math inline">\(\addcount\)</span>, it is also the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\count(a)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \nats\)</span> which satisfies the following system of equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\count(a)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \nats\)</span> which satisfies the following system of equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \zero \\
  f(\cons(b,x)) = \bif{\beq(a,b)}{\next(f(x))}{f(x)}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_count_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_count_nil t k <span class="fu">=</span></a>
@@ -452,29 +400,21 @@ Let <span class="math inline">\(A\)</span> be a set with <span class="math inlin
 <a class="sourceLine" id="cb10-12" data-line-number="12">  \a b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb10-13" data-line-number="13">    ((count a (cons b x)) <span class="ot">`withTypeOf`</span> k)</a>
 <a class="sourceLine" id="cb10-14" data-line-number="14">    (<span class="kw">if</span> eq a b <span class="kw">then</span> next (count a x) <span class="kw">else</span> count a x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>A special case.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a,b \in A\)</span>. Then <span class="math display">\[\count(a,\cons(b,\nil)) = \bif{\beq(a,b)}{\next(\zero)}{\zero}.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a,b \in A\)</span>. Then <span class="math display">\[\count(a,\cons(b,\nil)) = \bif{\beq(a,b)}{\next(\zero)}{\zero}.\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a,\cons(b,\nil)) \\
  &amp; = &amp; \foldl{\zero}{\varphi(a)}(\cons(b,\nil)) \\
  &amp; = &amp; \foldl{\varphi(a)(b,\zero)}{\varphi(a)}(\nil) \\
  &amp; = &amp; \varphi(a)(b,\zero) \\
  &amp; = &amp; \bif{\beq(a,b)}{\next(\zero)}{\zero}
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_count_one ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_count_one t k <span class="fu">=</span></a>
@@ -482,28 +422,20 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb11-6" data-line-number="6">    (count a (cons b (nil <span class="ot">`withTypeOf`</span> t)))</a>
 <a class="sourceLine" id="cb11-7" data-line-number="7">    (<span class="kw">if</span> eq a b <span class="kw">then</span> (next zero <span class="ot">`withTypeOf`</span> k) <span class="kw">else</span> zero)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\count\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\count(a)(\snoc(b,x)) = \bif{\beq(a,b)}{\next(\count(a)(x))}{\count(a)(x)}.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\count(a)(\snoc(b,x)) = \bif{\beq(a,b)}{\next(\count(a)(x))}{\count(a)(x)}.\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a)(\snoc(b,x)) \\
  &amp; = &amp; \addcount(a)(\zero,\snoc(b,x)) \\
  &amp; = &amp; \bif{\beq(a,b)}{\next(\addcount(a)(\zero,x))}{\addcount(a)(\zero,x)} \\
  &amp; = &amp; \bif{\beq(a,b)}{\next(\count(a)(x))}{\count(a)(x)}
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_count_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">_test_count_snoc _ k <span class="fu">=</span></a>
@@ -511,46 +443,32 @@ Note that <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb12-5" data-line-number="5">  \a b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb12-6" data-line-number="6">    ((count a (snoc b x)) <span class="ot">`withTypeOf`</span> k)</a>
 <a class="sourceLine" id="cb12-7" data-line-number="7">    (<span class="kw">if</span> eq a b <span class="kw">then</span> next (count a x) <span class="kw">else</span> count a x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\count\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\count(a)(\rev(x)) = \count(a)(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\count(a)(\rev(x)) = \count(a)(x).\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a)(\rev(x)) \\
  &amp; = &amp; \addcount(a)(\zero,\rev(x)) \\
  &amp; = &amp; \addcount(a)(\zero,\x) \\
  &amp; = &amp; \count(a)(x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_count_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">_test_count_rev _ k <span class="fu">=</span></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;count(a)(rev(x)) == count(a)(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb13-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (count a (rev x)) ((count a x) <span class="ot">`withTypeOf`</span> k)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\count\)</span> interacts with <span class="math inline">\(\cat\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\count(a,\cat(x,y)) = \nplus(\count(a,x),\count(a,y)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\count(a,\cat(x,y)) = \nplus(\count(a,x),\count(a,y)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a,\cat(x,y)) \\
  &amp; = &amp; \count(a,\cat(\nil,y)) \\
  &amp; = &amp; \count(a,y) \\
@@ -574,11 +492,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \nplus(\count(a,x),\count(a,y)) \\
  &amp; = &amp; \nplus(\bif{\beq(a,b)}{\next(\count(a,x))}{\count(a,x)},\count(a,y)) \\
  &amp; = &amp; \nplus(\count(a,\cons(b,x)),\count(a,y))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_count_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">   <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">_test_count_cat _ k <span class="fu">=</span></a>
@@ -586,19 +502,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb14-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb14-6" data-line-number="6">    ((count a (cat x y)) <span class="ot">`withTypeOf`</span> k)</a>
 <a class="sourceLine" id="cb14-7" data-line-number="7">    (plus (count a x) (count a y))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\count\)</span> is a <span class="math inline">\(\length\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. We have <span class="math display">\[\count(a,x) = \length(\filter(\beq(a,-),x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. We have <span class="math display">\[\count(a,x) = \length(\filter(\beq(a,-),x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a,x) \\
  &amp; = &amp; \count(a,\nil) \\
  &amp; = &amp; \foldr{\zero}{\varphi(a)}(\nil) \\
@@ -620,11 +530,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \count(a,x) \\
  &amp; = &amp; \length(\filter(\beq(a,-),x)) \\
  &amp; = &amp; \length(\filter(\beq(a,-),\cons(b,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_count_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">_test_count_length t k <span class="fu">=</span></a>
@@ -632,19 +540,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb15-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb15-6" data-line-number="6">    (count a x <span class="ot">`withTypeOf`</span> k)</a>
 <a class="sourceLine" id="cb15-7" data-line-number="7">    (length (filter (eq a) x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\count\)</span> interacts with <span class="math inline">\(\map(f)\)</span> when <span class="math inline">\(f\)</span> is injective.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets and <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. Then <span class="math display">\[\count(a,x) = \count(f(a),\map(f)(x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets and <span class="math inline">\(f : A \rightarrow B\)</span> an injective map. Then <span class="math display">\[\count(a,x) = \count(f(a),\map(f)(x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \count(a,x) \\
  &amp; = &amp; \count(a,\nil) \\
  &amp; = &amp; \count(a,\map(f)(\nil)) \\
@@ -663,8 +565,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \count(f(a),\map(f)(x)) \\
  &amp; = &amp; \count(f(a),\cons(f(b),\map(f)(x))) \\
  &amp; = &amp; \count(f(a),\map(f)(\cons(b,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -676,7 +577,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb16-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
 <a class="sourceLine" id="cb16-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb16-7" data-line-number="7">_test_count t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb16-8" data-line-number="8">  testLabel (<span class="st">&quot;count: &quot;</span> <span class="fu">++</span> typeName t <span class="fu">++</span> <span class="st">&quot; &amp; &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8">  testLabel2 <span class="st">&quot;count&quot;</span> t n</a>
 <a class="sourceLine" id="cb16-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb16-10" data-line-number="10">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb16-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
@@ -707,7 +608,7 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

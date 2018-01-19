@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Exponentiation</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-14 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,26 +199,29 @@ Posted on 2017-04-14 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Exponentiation</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( power, _test_power, main_power</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Times</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Minus</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Divides</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">GreatestCommonDivisor</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">CoprimeTo</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Exponentiation</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( power, _test_power, main_power</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Times</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Minus</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Divides</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">GreatestCommonDivisor</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">CoprimeTo</span></a></code></pre></div>
 <p>We defined <span class="math inline">\(\ntimes\)</span> as iterated addition; similarly, exponentiation is iterated multiplication. We’ll call this function <span class="math inline">\(\npower\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Define <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> by <span class="math inline">\(\varphi(a) = \next(\zero)\)</span>, and define <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> by <span class="math inline">\(\mu(k,a,b) = \ntimes(b,a)\)</span>. We define <span class="math inline">\(\npower : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\npower(a,b) = \simprec{\varphi}{\mu}(b,a).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">power ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
@@ -226,21 +229,14 @@ Posted on 2017-04-14 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi _     <span class="fu">=</span> next zero</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">    mu  _ a b <span class="fu">=</span> times b a</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Because <span class="math inline">\(\npower\)</span> is defined in terms of simple recursion, it is the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\npower\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
+<p><span class="math inline">\(\npower\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
  f(a,\zero) = \next(\zero) \\
  f(a,\next(b)) = \ntimes(f(a,b),a).
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_power_zero_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_power_zero_right _ <span class="fu">=</span></a>
@@ -253,21 +249,17 @@ Posted on 2017-04-14 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_power_next_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;power(a,next(b)) == times(power(a,b),a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (power a (next b)) (times (power a b) a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Some special cases.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\npower(a,\next(\zero)) = a\)</span>.</li>
 <li><span class="math inline">\(\npower(\zero,\next(a)) = \zero\)</span>.</li>
 <li><span class="math inline">\(\npower(\next(\zero),a) = \next(\zero)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \npower(a,\next(\zero)) \\
@@ -287,10 +279,8 @@ Posted on 2017-04-14 by nbloomf
  &amp; = &amp; \next(\zero)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_power_one_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_power_one_right _ <span class="fu">=</span></a>
@@ -310,21 +300,17 @@ Posted on 2017-04-14 by nbloomf
 <a class="sourceLine" id="cb4-17" data-line-number="17">_test_power_one_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-18" data-line-number="18">  testName <span class="st">&quot;power(1,a) == 1&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-19" data-line-number="19">  \a <span class="ot">-&gt;</span> eq (power (next zero) a) (next zero)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And interaction with <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\npower(a,\nplus(b,c)) = \ntimes(\npower(a,b),\npower(a,c))\)</span>.</li>
 <li><span class="math inline">\(\npower(a,\ntimes(b,c)) = \npower(\npower(a,b),c)\)</span>.</li>
 <li><span class="math inline">\(\npower(\ntimes(a,b),c) = \ntimes(\npower(a,c),\npower(b,c))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \npower(a,\nplus(b,c)) \\
@@ -370,10 +356,8 @@ Posted on 2017-04-14 by nbloomf
  &amp; = &amp; \ntimes(\npower(a,\next(c)),\npower(b,\next(c)))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_power_plus_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_power_plus_right _ <span class="fu">=</span></a>
@@ -393,7 +377,6 @@ Posted on 2017-04-14 by nbloomf
 <a class="sourceLine" id="cb5-17" data-line-number="17">_test_power_times_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-18" data-line-number="18">  testName <span class="st">&quot;power(times(a,b),c) == times(power(a,c),power(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-19" data-line-number="19">  \a b c <span class="ot">-&gt;</span> eq (power (times a b) c) (times (power a c) (power b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -402,7 +385,7 @@ Posted on 2017-04-14 by nbloomf
 <a class="sourceLine" id="cb6-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">_test_power n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">  testLabel (<span class="st">&quot;power: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  testLabel1 <span class="st">&quot;power&quot;</span> n</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb6-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -425,7 +408,7 @@ Posted on 2017-04-14 by nbloomf
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

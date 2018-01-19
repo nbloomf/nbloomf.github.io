@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Addition</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,14 +199,19 @@ Posted on 2014-06-01 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( plus, _test_plus, main_plus</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( plus, _test_plus, main_plus</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a></code></pre></div>
 <p>So far we’ve characterized the natural numbers via a unique mapping <span class="math display">\[\natrec{\ast}{\ast} : \nats \rightarrow A,\]</span> and we defined another parameterized mapping <span class="math display">\[\simprec{\ast}{\ast} : \nats \times A \rightarrow B.\]</span> From now on, when we want to define a mapping with one of these signatures, these prepackaged recursive maps may come in handy. What’s more, we can use the universal properties of these maps to define them in terms of <em>desired behavior</em>.</p>
 <p>Natural number addition has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define addition in terms of <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. To do this, we need to find mappings <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> and <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> that make <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> act like addition. For example, we want <span class="math inline">\(\next\)</span> to act like <span class="math inline">\(+1\)</span>, and <span class="math display">\[n = \zero + n = \simprec{\varphi}{\mu}(\zero,n) = \varphi(n),\]</span> and</p>
 <p><span class="math display">\[\begin{eqnarray*}
@@ -217,26 +222,17 @@ Posted on 2014-06-01 by nbloomf
  &amp; = &amp; \mu(m,n,m+n).
 \end{eqnarray*}\]</span></p>
 <p>With this in mind, we define a binary operation <span class="math inline">\(\nplus\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \next(b)\)</span>. We then define <span class="math inline">\(\nplus : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nplus = \simprec{\id}{\mu}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">plus ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">plus <span class="fu">=</span> simpleRec id mu</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span> mu _ _ b <span class="fu">=</span> next b</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\nplus\)</span> is defined in terms of simple recursion, it is the unique solution to a set of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\nplus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{ \begin{array}{l} f(\zero,b) = b \\ f(\next(a),b) = \next(f(a,b)). \end{array} \right.\]</span>
-</p>
-</div>
+<p><span class="math inline">\(\nplus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{ \begin{array}{l} f(\zero,b) = b \\ f(\next(a),b) = \next(f(a,b)). \end{array} \right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_plus_zero_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_plus_zero_left _ f <span class="fu">=</span></a>
@@ -249,20 +245,16 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_plus_next_left _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;f(next(a),b) == next(f(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (f (next a) b) (next (f a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Next we establish a version of the universal property of <span class="math inline">\(\nplus\)</span> with the arguments reversed.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(a,\zero) = a\)</span>.</li>
 <li><span class="math inline">\(\nplus(a,\next(b)) = \next(\nplus(a,b))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the universal property of <span class="math inline">\(\nplus\)</span>. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\next(a),\zero) \\
@@ -276,10 +268,8 @@ Posted on 2014-06-01 by nbloomf
  &amp; = &amp; \next(\nplus(\next(a),b))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_plus_zero_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_plus_zero_right _ f <span class="fu">=</span></a>
@@ -292,20 +282,16 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">_test_plus_next_right _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;next(plus(a,b)) == plus(a,next(b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (f a (next b)) (next (f a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nplus\)</span> is associative and commutative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>The following hold for all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(\nplus(a,b),c) = \nplus(a,\nplus(b,c))\)</span>.</li>
 <li><span class="math inline">\(\nplus(a,b) = \nplus(b,a)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We will show this by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\nplus(\zero,b),c) = \nplus(b,c) = \nplus(\zero,\nplus(b,c)).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\nplus(\next(a),b),c) \\
@@ -321,10 +307,8 @@ Posted on 2014-06-01 by nbloomf
  &amp; = &amp; \nplus(b,\next(a))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_plus_associative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_plus_associative _ f <span class="fu">=</span></a>
@@ -337,35 +321,29 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_plus_commutative _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;plus(a,b) == plus(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (f a b) (f b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\nplus\)</span> is cancellative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>The following hold for all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\nplus(c,a) = \nplus(c,b)\)</span> then <span class="math inline">\(a = b\)</span>.</li>
 <li>If <span class="math inline">\(\nplus(a,c) = \nplus(b,c)\)</span> then <span class="math inline">\(a = b\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
-<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, note that if <span class="math inline">\(\nplus(\zero,a) = \nplus(\zero,b)\)</span>, then we have <span class="math display">\[a = \nplus(\zero,a) = \nplus(\zero,b) = b.\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(c\)</span>. Now if <span class="math display">\[\nplus(\next(c),a)) = \nplus(\next(c),b),\]</span> then <span class="math display">\[\next(\nplus(c,a)) = \next(\nplus(c,b))\]</span> so that <span class="math display">\[\nplus(c,a) = \nplus(c,b)\]</span> and thus <span class="math inline">\(a = b\)</span> as needed.</li>
+<li>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case, note that if <span class="math inline">\(\nplus(\zero,a) = \nplus(\zero,b)\)</span>, then we have <span class="math display">\[a = \nplus(\zero,a) = \nplus(\zero,b) = b.\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(c\)</span>. Now if <span class="math display">\[\nplus(\next(c),a) = \nplus(\next(c),b),\]</span> then <span class="math display">\[\next(\nplus(c,a)) = \next(\nplus(c,b))\]</span> so that <span class="math display">\[\nplus(c,a) = \nplus(c,b)\]</span> and thus <span class="math inline">\(a = b\)</span> as needed.</li>
 <li>If <span class="math display">\[\nplus(a,c) = \nplus(b,c),\]</span> then <span class="math display">\[\nplus(c,a) = \nplus(c,b),\]</span> and so <span class="math inline">\(a = b\)</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_plus_cancellative_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_plus_cancellative_left _ f <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;if plus(c,a) == plus(c,b) then a == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> eq (f c a) (f c b)</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6">    <span class="kw">then</span> eq a b</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb6-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb6-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb6-10" data-line-number="10"><span class="ot">_test_plus_cancellative_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -374,8 +352,7 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb6-13" data-line-number="13">  testName <span class="st">&quot;if plus(a,c) == plus(b,c) then a == b&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-14" data-line-number="14">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> eq (f a c) (f b c)</a>
 <a class="sourceLine" id="cb6-15" data-line-number="15">    <span class="kw">then</span> eq a b</a>
-<a class="sourceLine" id="cb6-16" data-line-number="16">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb6-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Of course we will eventually prefer to say <span class="math inline">\(a + b\)</span> instead of <span class="math inline">\(\nplus(a,b)\)</span>. But we’ll avoid the more familiar notation until we’re convinced that <span class="math inline">\(\nplus\)</span> really does act just like the usual <span class="math inline">\(+\)</span>, since familiar notation can easily lull us into using theorems we haven’t proven yet.</p>
@@ -385,7 +362,7 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">_test_plus n f maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  testLabel (<span class="st">&quot;plus: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  testLabel1 <span class="st">&quot;plus&quot;</span> n</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb7-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -408,7 +385,7 @@ Posted on 2014-06-01 by nbloomf
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

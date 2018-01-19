@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Least Common Multiple</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,44 +199,42 @@ Posted on 2017-04-12 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">LeastCommonMultiple</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( lcm, _test_lcm, main_lcm</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Times</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Minus</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Divides</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">GreatestCommonDivisor</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">CoprimeTo</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">LeastCommonMultiple</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( lcm, _test_lcm, main_lcm</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Times</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Minus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Divides</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">GreatestCommonDivisor</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">CoprimeTo</span></a></code></pre></div>
 <p>Recall the following property of <span class="math inline">\(\nmax\)</span>: if <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmax(a,b))\)</span>. This statement fell out of the definition of <span class="math inline">\(\nmax\)</span> without much fuss, and may seem anticlimactic. But compare it to this analogous statement about <span class="math inline">\(\ngcd\)</span>: if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>. Now <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\ngcd\)</span> seem to play very similar roles. Where <span class="math inline">\(\nleq\)</span> is a kind of “additive order” on <span class="math inline">\(\nats\)</span> and <span class="math inline">\(\nmax\)</span> gives an additive ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, <span class="math inline">\(\ndiv\)</span> is a kind of “multiplicative order” and <span class="math inline">\(\ngcd\)</span> gives a multiplicative ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>. When an analogy this strong holds between two concepts in mathematics, it is frequently useful to see how far the analogy goes. To that end, today we will define the multiplicative counterpart to <span class="math inline">\(\nmin\)</span>.</p>
 <p>We don’t need recursion for this.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Define <span class="math inline">\(\nlcm : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nlcm(a,b) = \nquo(\ntimes(a,b),\ngcd(a,b)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">lcm<span class="ot"> ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">lcm a b <span class="fu">=</span> quo (times a b) (gcd a b)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>woo special cases!</p>
-<div class="result">
-<div class="lemma">
+<div class="theorem">
 <p>For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nlcm(a,\zero) = \zero\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,\next(\zero)) = a\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,\zero) \\
@@ -251,10 +249,8 @@ Posted on 2017-04-12 by nbloomf
  &amp; = &amp; a.
 \end{eqnarray*}\]</span></li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_lcm_zero ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_lcm_zero _ <span class="fu">=</span></a>
@@ -267,20 +263,16 @@ Posted on 2017-04-12 by nbloomf
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_lcm_one _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;lcm(a,next(0)) == a&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a <span class="ot">-&gt;</span> eq a (lcm a (next zero))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>As we might expect, <span class="math inline">\(\nlcm\)</span> enjoys many properties analogous to those of <span class="math inline">\(\ngcd\)</span>. It is idempotent and commutative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nlcm(a,a) = a\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,b) = \nlcm(b,a)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We consider two cases: <span class="math inline">\(a = \zero\)</span> and <span class="math inline">\(a \neq \zero\)</span>. If <span class="math inline">\(a = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,a) \\
@@ -301,10 +293,8 @@ Posted on 2017-04-12 by nbloomf
  &amp; = &amp; \nlcm(b,a)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_lcm_idempotent ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_lcm_idempotent _ <span class="fu">=</span></a>
@@ -317,20 +307,16 @@ Posted on 2017-04-12 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">_test_lcm_commutative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;lcm(a,b) == lcm(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> eq (lcm a b) (lcm b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And the universal property:</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ndiv(a,\nlcm(a,b))\)</span> and <span class="math inline">\(\ndiv(b,\nlcm(a,b))\)</span>.</li>
 <li>If <span class="math inline">\(\ndiv(a,c)\)</span> and <span class="math inline">\(\ndiv(b,c)\)</span>, then <span class="math inline">\(\ndiv(\nlcm(a,b),c)\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>We consider two cases: <span class="math inline">\(\ngcd(a,b) = \zero\)</span> and <span class="math inline">\(\ngcd(a,b) \neq \zero\)</span>. If <span class="math inline">\(\ngcd(a,b) = \zero\)</span>, then we have <span class="math inline">\(a = b = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\zero,\zero) \\
@@ -362,10 +348,8 @@ c &amp; = &amp; c \\
  &amp; = &amp; \ndiv(\nlcm(a,b),c)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_lcm_div_args ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_lcm_div_args _ <span class="fu">=</span></a>
@@ -379,83 +363,61 @@ c &amp; = &amp; c \\
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;if div(a,c) and div(b,c) then div(lcm(a,b),c)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (div a c) (div b c)</a>
 <a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="kw">then</span> div (lcm a b) c</a>
-<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>And <span class="math inline">\(\nlcm(a,b)\)</span> is unique with this property.</p>
-<div class="result">
-<div class="corollary">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Suppose <span class="math inline">\(m \in \nats\)</span> satisfies the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inline">\(\ndiv(b,m)\)</span>.</li>
 <li>If <span class="math inline">\(\ndiv(a,c)\)</span> and <span class="math inline">\(\ndiv(b,c)\)</span>, then <span class="math inline">\(\ndiv(m,c)\)</span>.</li>
 </ol>
 <p>Then <span class="math inline">\(m = \nlcm(a,b)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inline">\(\ndiv(b,m)\)</span>, we have <span class="math inline">\(\ndiv(\nlcm(a,b),m)\)</span>. But likewise we have <span class="math inline">\(\ndiv(m,\nlcm(a,b))\)</span>. By antisymmetry, we have <span class="math inline">\(m = \nlcm(a,b)\)</span> as claimed.
-</p>
+<p>Since <span class="math inline">\(\ndiv(a,m)\)</span> and <span class="math inline">\(\ndiv(b,m)\)</span>, we have <span class="math inline">\(\ndiv(\nlcm(a,b),m)\)</span>. But likewise we have <span class="math inline">\(\ndiv(m,\nlcm(a,b))\)</span>. By antisymmetry, we have <span class="math inline">\(m = \nlcm(a,b)\)</span> as claimed.</p>
 </div>
 </div>
 <p><span class="math inline">\(\nlcm\)</span> is associative:</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then <span class="math inline">\(\nlcm(\nlcm(a,b),c) = \nlcm(a,\nlcm(b,c))\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Note that <span class="math inline">\(\ndiv(a,\nlcm(a,\nlcm(b,c)))\)</span>. We also have <span class="math inline">\(\ndiv(b,\nlcm(b,c))\)</span>, so that <span class="math display">\[\ndiv(b,\nlcm(a,\nlcm(b,c))\]</span> by transitivity; similarly, <span class="math display">\[\ndiv(c,\nlcm(a,\nlcm(b,c))).\]</span> By the universal property of <span class="math inline">\(\nlcm\)</span>, we thus have <span class="math display">\[\ndiv(\nlcm(a,b),\nlcm(a,\nlcm(b,c))),\]</span> so that <span class="math display">\[\ndiv(\nlcm(\nlcm(a,b),c),\nlcm(a,\nlcm(b,c))).\]</span> A similar argument shows that <span class="math display">\[\ndiv(\nlcm(a,\nlcm(b,c)),\nlcm(\nlcm(a,b),c)).\]</span> By antisymmetry, we thus have <span class="math display">\[\nlcm(a,\nlcm(b,c)) = \nlcm(\nlcm(a,b),c)\]</span> as claimed.
-</p>
+<p>Note that <span class="math inline">\(\ndiv(a,\nlcm(a,\nlcm(b,c)))\)</span>. We also have <span class="math inline">\(\ndiv(b,\nlcm(b,c))\)</span>, so that <span class="math display">\[\ndiv(b,\nlcm(a,\nlcm(b,c)))\]</span> by transitivity; similarly, <span class="math display">\[\ndiv(c,\nlcm(a,\nlcm(b,c))).\]</span> By the universal property of <span class="math inline">\(\nlcm\)</span>, we thus have <span class="math display">\[\ndiv(\nlcm(a,b),\nlcm(a,\nlcm(b,c))),\]</span> so that <span class="math display">\[\ndiv(\nlcm(\nlcm(a,b),c),\nlcm(a,\nlcm(b,c))).\]</span> A similar argument shows that <span class="math display">\[\ndiv(\nlcm(a,\nlcm(b,c)),\nlcm(\nlcm(a,b),c)).\]</span> By antisymmetry, we thus have <span class="math display">\[\nlcm(a,\nlcm(b,c)) = \nlcm(\nlcm(a,b),c)\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_lcm_associative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_lcm_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;lcm(lcm(a,b),c) == lcm(a,lcm(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (lcm (lcm a b) c) (lcm a (lcm b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nlcm\)</span> detects <span class="math inline">\(\ndiv\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then <span class="math inline">\(\nlcm(a,b) = a\)</span> if and only if <span class="math inline">\(\ndiv(b,a)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-<ol start="2" type="1">
-<li>First suppose <span class="math inline">\(\ndiv(b,a)\)</span>; say <span class="math inline">\(a = \ntimes(b,d)\)</span>. Now <span class="math inline">\(\ndiv(a,a)\)</span> and <span class="math inline">\(\ndiv(b,a)\)</span>, and if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span> then <span class="math inline">\(\ndiv(c,a)\)</span>. By the universal property of <span class="math inline">\(\nlcm\)</span> we have <span class="math inline">\(a = \nlcm(a,b)\)</span>. Conversely, suppose <span class="math inline">\(a = \nlcm(a,b)\)</span>. We consider two cases: either <span class="math inline">\((a,b) = (\zero,\zero)\)</span> or <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\((a,b) = (\zero,\zero)\)</span> then <span class="math inline">\(\ndiv(b,a)\)</span> as needed. Suppose then that <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(\ndiv(b,a)\)</span> as claimed. Suppose <span class="math inline">\(a \neq \zero\)</span>. Now let <span class="math inline">\(d = \ngcd(a,b)\)</span>; note that <span class="math inline">\(d \neq \zero\)</span>. Say <span class="math inline">\(b = \ntimes(k,d)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+<p>First suppose <span class="math inline">\(\ndiv(b,a)\)</span>; say <span class="math inline">\(a = \ntimes(b,d)\)</span>. Now <span class="math inline">\(\ndiv(a,a)\)</span> and <span class="math inline">\(\ndiv(b,a)\)</span>, and if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span> then <span class="math inline">\(\ndiv(c,a)\)</span>. By the universal property of <span class="math inline">\(\nlcm\)</span> we have <span class="math inline">\(a = \nlcm(a,b)\)</span>. Conversely, suppose <span class="math inline">\(a = \nlcm(a,b)\)</span>. We consider two cases: either <span class="math inline">\((a,b) = (\zero,\zero)\)</span> or <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\((a,b) = (\zero,\zero)\)</span> then <span class="math inline">\(\ndiv(b,a)\)</span> as needed. Suppose then that <span class="math inline">\((a,b) \neq (\zero,\zero)\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(\ndiv(b,a)\)</span> as claimed. Suppose <span class="math inline">\(a \neq \zero\)</span>. Now let <span class="math inline">\(d = \ngcd(a,b)\)</span>; note that <span class="math inline">\(d \neq \zero\)</span>. Say <span class="math inline">\(b = \ntimes(k,d)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(a,\next(\zero)) \\
  &amp; = &amp; a \\
  &amp; = &amp; \nlcm(a,b) \\
  &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
  &amp; = &amp; \nquo(\ntimes(\ntimes(a,k),d),d) \\
  &amp; = &amp; \ntimes(a,k).
-\end{eqnarray*}\]</span> Since <span class="math inline">\(a \neq \zero\)</span>, we have <span class="math inline">\(k = \next(\zero)\)</span>, and thus <span class="math inline">\(b = \ngcd(a,b)\)</span>. Hence <span class="math inline">\(\ndiv(b,a)\)</span> as claimed.</li>
-</ol>
-</p>
+\end{eqnarray*}\]</span> Since <span class="math inline">\(a \neq \zero\)</span>, we have <span class="math inline">\(k = \next(\zero)\)</span>, and thus <span class="math inline">\(b = \ngcd(a,b)\)</span>. Hence <span class="math inline">\(\ndiv(b,a)\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_lcm_div ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_lcm_div _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;lcm(a,b) == a if and only if ndiv(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (eq a (lcm a b)) (div b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nlcm\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have <span class="math display">\[\nlcm(\ntimes(c,a),ntimes(c,b)) = \ntimes(c,\nlcm(a,b)).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
  &amp; = &amp; \nlcm(\zero,\zero) \\
  &amp; = &amp; \zero \\
@@ -463,61 +425,49 @@ We consider two cases: either <span class="math inline">\(c = \zero\)</span> or 
  &amp; = &amp; \ntimes(c,\nlcm(a,b))
 \end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(c \neq \zero\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
- &amp; = &amp; \nquo(\ntimes(\ntimes(c,a),\ntimes(c,b)),\ngcd(\ntimes(c,a),\ntimes(c,b)) \\
+ &amp; = &amp; \nquo(\ntimes(\ntimes(c,a),\ntimes(c,b)),\ngcd(\ntimes(c,a),\ntimes(c,b))) \\
  &amp; = &amp; \nquo(\ntimes(\ntimes(c,\ntimes(a,b)),c),\ngcd(\ntimes(a,b),c)) \\
  &amp; = &amp; \nquo(\ntimes(c,\ntimes(a,b)),\ngcd(a,b)) \\
  &amp; = &amp; \ntimes(c,\nquo(\ntimes(a,b),\ngcd(a,b))) \\
  &amp; = &amp; \ntimes(c,\nlcm(a,b))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_lcm_distributive_times ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_lcm_distributive_times _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;lcm(times(c,a),times(c,b)) == times(c,lcm(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (lcm (times c a) (times c b)) (times c (lcm a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\nlcm\)</span> is compatible with <span class="math inline">\(\ndiv\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. If <span class="math inline">\(\ndiv(a,b)\)</span>, then <span class="math inline">\(\ndiv(\nlcm(a,c),\nlcm(b,c))\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We have <span class="math display">\[\begin{eqnarray*}
+<p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\nlcm(a,c),\nlcm(b,c)) \\
  &amp; = &amp; \nlcm(\nlcm(a,b),\nlcm(c,c)) \\
  &amp; = &amp; \nlcm(b,c) \\
-\end{eqnarray*}\]</span> so that <span class="math inline">\(\ndiv(\nlcm(a,c),\nlcm(b,c))\)</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> so that <span class="math inline">\(\ndiv(\nlcm(a,c),\nlcm(b,c))\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_lcm_div_compatible ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_lcm_div_compatible _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;if div(a,b) then div(lcm(a,c),lcm(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> div a b</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6">    <span class="kw">then</span> div (lcm a c) (lcm b c)</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb9-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Finally, <span class="math inline">\(\ngcd\)</span> and <span class="math inline">\(\nlcm\)</span> distribute over each other.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ngcd(a,\nlcm(b,c)) = \nlcm(\ngcd(a,b),\ngcd(a,c))\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,\ngcd(b,c)) = \ngcd(\nlcm(a,b),\nlcm(a,c))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <p>The proofs of these two results will not be painful, but they are a little tedious, especially with the notation we’re using for arithmetic. So for this proof – and this proof only! – I’ll make two concessions to readability. Because <span class="math inline">\(\ngcd\)</span> is associative, there is no ambiguity in an expression like <span class="math display">\[\ngcd(a,b,c).\]</span> Also, we will denote <span class="math inline">\(\ntimes(a,b)\)</span> by juxtaposition (like we’re used to anyway, but have been avoiding).</p>
 <ol type="1">
 <li>First suppose <span class="math inline">\(a = \zero\)</span>; note that <span class="math display">\[\begin{eqnarray*}
@@ -555,13 +505,13 @@ We have <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; \ngcd(a,b)\ngcd(a,c)\ngcd(b,c).
 \end{eqnarray*}\]</span> Note that <span class="math display">\[\ndiv(\ngcd(b,c),a\ngcd(b,c))\]</span> and <span class="math display">\[\ndiv(\ngcd(b,c),bc),\]</span> so that <span class="math display">\[\ndiv(\ngcd(b,c),\ngcd(a\ngcd(b,c),bc));\]</span> thus we also have <span class="math display">\[\ndiv(\ngcd(a,\ngcd(b,c)),\ngcd(a,b)\ngcd(a,c)).\]</span> By cross-multiplication, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nquo(\ngcd(a\ngcd(b,c),bc),\ngcd(b,c)) \\
- &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c)),\ngcd(a,\ngcd(b,c))).
+ &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(a,\ngcd(b,c))).
 \end{eqnarray*}\]</span> Thus we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
  &amp; = &amp; \ngcd(a,\nquo(bc,\ngcd(b,c))) \\
  &amp; = &amp; \ngcd(\nquo(a\ngcd(b,c),\ngcd(b,c)),\nquo(bc,\ngcd(b,c))) \\
  &amp; = &amp; \nquo(\ngcd(a\ngcd(b,c),bc),\ngcd(b,c)) \\
- &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(a,\ngcd(b,c))) \\
  &amp; = &amp; \nquo(\ngcd(a,b)\ngcd(a,c),\ngcd(\ngcd(a,b),\ngcd(a,c))) \\
  &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,c))
 \end{eqnarray*}\]</span> as claimed.</li>
@@ -599,7 +549,7 @@ We have <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; a\ngcd(a,b)\ngcd(a,c)\ngcd(b,c).
 \end{eqnarray*}\]</span> Note that <span class="math display">\[\ndiv(\ngcd(a,\ngcd(b,c)),a\ngcd(b,c)),\]</span> so that <span class="math display">\[\ndiv(\ngcd(a,b)\ngcd(a,c),a\ngcd(ba,bc,ca,cb)).\]</span> By cross-multiplication, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nquo(a\ngcd(ba,bc,ca,cb),\ngcd(a,b)\ngcd(a,c)) \\
- &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c)).
+ &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c))).
 \end{eqnarray*}\]</span> Thus we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(\nlcm(a,b),\nlcm(a,c)) \\
  &amp; = &amp; \ngcd(\nquo(ab,\ngcd(a,b)),\nquo(ac,\ngcd(a,c))) \\
@@ -607,14 +557,12 @@ We have <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; \nquo(\ngcd(ab\ngcd(a,c),ac\ngcd(a,b)),\ngcd(a,b)\ngcd(a,c)) \\
  &amp; = &amp; \nquo(a\ngcd(b\ngcd(a,c),c\ngcd(a,b)),\ngcd(a,b)\ngcd(a,c)) \\
  &amp; = &amp; \nquo(a\ngcd(ba,bc,ca,cb),\ngcd(a,b)\ngcd(a,c)) \\
- &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c)) \\
+ &amp; = &amp; \nquo(a\ngcd(b,c),\ngcd(a,\ngcd(b,c))) \\
  &amp; = &amp; \nlcm(a,\ngcd(b,c))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_lcm_distributive_gcd ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_lcm_distributive_gcd _ <span class="fu">=</span></a>
@@ -627,7 +575,6 @@ We have <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb10-10" data-line-number="10">_test_gcd_distributive_lcm _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-11" data-line-number="11">  testName <span class="st">&quot;gcd(lcm(c,a),lcm(c,b)) == lcm(c,gcd(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> eq (gcd (lcm c a) (lcm c b)) (lcm c (gcd a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -636,7 +583,7 @@ We have <span class="math display">\[\begin{eqnarray*}
 <a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">_test_lcm n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  testLabel (<span class="st">&quot;lcm: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  testLabel1 <span class="st">&quot;lcm&quot;</span> n</a>
 <a class="sourceLine" id="cb11-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb11-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb11-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -663,7 +610,7 @@ We have <span class="math display">\[\begin{eqnarray*}
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Greatest Common Divisor</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-04-10 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,21 +199,26 @@ Posted on 2017-04-10 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">GreatestCommonDivisor</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( gcd, _test_gcd, main_gcd</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Times</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Minus</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Divides</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">NormRecursion</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">GreatestCommonDivisor</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( gcd, _test_gcd, main_gcd</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Times</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Minus</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">DivisionAlgorithm</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Divides</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">NormRecursion</span></a></code></pre></div>
 <p>Today we’ll define the greatest common divisor of two natural numbers. The usual way to do this (in books I’ve seen) is to define what it means to say that <span class="math inline">\(d\)</span> is a greatest common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, then show (possibly nonconstructively) that any two <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> have a greatest common divisor, and finally establish the Euclidean algorithm that actually computes GCDs. We will work backwards: first <em>defining</em> the GCD of two natural numbers using the punchline of the Euclidean algorithm and then proving that the output of this function acts like the GCD.</p>
 <p>Recall that the Euclidean algorithm says <span class="math inline">\(\ngcd(a,b) = \ngcd(b,\nrem(a,b))\)</span> and <span class="math inline">\(\ngcd(a,\zero) = a\)</span>. So it is recursive, but not in quite the way that (say) plus and times are recursive, because the recursion argument does not decrease by “one” at each step, but rather by some larger amount. This is exactly what norm recursion is for.</p>
 <p>The signature of <span class="math inline">\(\ngcd\)</span> is <span class="math display">\[\nats \times \nats \rightarrow \nats,\]</span> while norm recursion takes arguments with signature <span class="math display">\[\varphi : A \rightarrow A, \eta : A \rightarrow \nats,\ \mathrm{and}\ \chi : A \rightarrow B,\]</span> and gives a function with signature <span class="math display">\[A \rightarrow B.\]</span> So we have <span class="math inline">\(A = \nats \times \nats\)</span> and <span class="math inline">\(B = \nats\)</span>, and thus we need <span class="math display">\[\varphi : \nats \times \nats \rightarrow \nats \times \nats,\]</span> with <span class="math display">\[\eta : \nats \times \nats \rightarrow \nats\]</span> an iterative norm against <span class="math inline">\(\varphi\)</span>, and <span class="math display">\[\chi : \nats \times \nats \rightarrow \nats.\]</span> Taking a cue from the Euclidean algorithm, if <span class="math display">\[\ngcd(a,b) = \normrec{\varphi}{\eta}{\chi} = \bif{\iszero(\eta(a,b))}{\chi(a,b)}{\ngcd(\varphi(a,b))},\]</span> it seems reasonable to insist that <span class="math display">\[\varphi(a,b) = (b,\nrem(a,b)).\]</span> But if <span class="math inline">\(b = \zero\)</span>, the division algorithm gets weird – to avoid this we’ll instead make <span class="math display">\[\varphi(a,b) = \bif{\iszero(b)}{(a,\zero)}{(b,\nrem(a,b))}.\]</span> The “stopping condition” on this recursion is that <span class="math inline">\(b = \zero\)</span>, in which case we should output <span class="math inline">\(\chi(a,b) = a\)</span>. What remains is to define <span class="math inline">\(\eta\)</span> so that <span class="math inline">\(\eta(a,\zero) = \zero\)</span>, but also so that <span class="math inline">\(\eta\)</span> is a bona fide iterative norm. That is, we need</p>
@@ -222,26 +227,19 @@ Posted on 2017-04-10 by nbloomf
 <li>If <span class="math inline">\(\eta(a,b) = \next(m)\)</span>, then <span class="math inline">\(\nleq(\eta(\varphi(a,b)),m)\)</span>.</li>
 </ol>
 <p>To this end:</p>
-<div class="result">
-<div class="thm">
-<p>
-Define <span class="math inline">\(\varphi : \nats \times \nats \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\varphi(a,b) = \bif{\iszero(b)}{(a,\zero)}{(b,\nrem(a,b))}.\]</span> Then <span class="math inline">\(\eta : \nats \times \nats \rightarrow \nats\)</span> given by <span class="math display">\[\eta(a,b) = \bif{\iszero(b)}{\zero}{\bif{\nleq(a,b)}{\next(\nplus(a,b))}{\nplus(a,b)}}\]</span> is an iterative norm on <span class="math inline">\((A,(\zero,\zero),\varphi)\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Define <span class="math inline">\(\varphi : \nats \times \nats \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\varphi(a,b) = \bif{\iszero(b)}{(a,\zero)}{(b,\nrem(a,b))}.\]</span> Then <span class="math inline">\(\eta : \nats \times \nats \rightarrow \nats\)</span> given by <span class="math display">\[\eta(a,b) = \bif{\iszero(b)}{\zero}{\bif{\nleq(a,b)}{\next(\nplus(a,b))}{\nplus(a,b)}}\]</span> is an iterative norm on <span class="math inline">\((A,(\zero,\zero),\varphi)\)</span>.</p>
 <div class="proof">
-<p>
 <p>Suppose <span class="math inline">\(\eta(a,b) = \zero\)</span>. We have two possibilities; either <span class="math inline">\(b = \zero\)</span>, or <span class="math inline">\(\nplus(a,b) = \zero\)</span>, so that <span class="math inline">\(a = b = \zero\)</span>. In either case we have <span class="math inline">\(b = \zero\)</span>. So we have <span class="math inline">\(\varphi(a,b) = (a,\zero)\)</span>, so that <span class="math inline">\(\eta(\varphi(a,b)) = \zero\)</span>.</p>
-Suppose instead that <span class="math inline">\(\eta(a,b) = \next(m)\)</span>. In particular <span class="math inline">\(b \neq \zero\)</span>, so we have <span class="math inline">\(\varphi(a,b) = (b,\nrem(a,b))\)</span>. Since <span class="math inline">\(\nleq(\nrem(a,b),b)\)</span> and <span class="math inline">\(\nrem(a,b) \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>Suppose instead that <span class="math inline">\(\eta(a,b) = \next(m)\)</span>. In particular <span class="math inline">\(b \neq \zero\)</span>, so we have <span class="math inline">\(\varphi(a,b) = (b,\nrem(a,b))\)</span>. Since <span class="math inline">\(\nleq(\nrem(a,b),b)\)</span> and <span class="math inline">\(\nrem(a,b) \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \eta(\varphi(a,b)) \\
  &amp; = &amp; \eta(b,\nrem(a,b)) \\
- &amp; = &amp; \bif{\iszero(\nrem(a,b))}{\zero}{\bif{\nleq(b,\nrem(a,b))}{\next(\nplus(b,\nrem(a,b))}{\nplus(b,\nrem(a,b))}} \\
- &amp; = &amp; \bif{\iszero(\nrem(a,b))}{\zero}{\bif{\bfalse}{\next(\nplus(b,\nrem(a,b))}{\nplus(b,\nrem(a,b))}} \\
+ &amp; = &amp; \bif{\iszero(\nrem(a,b))}{\zero}{\bif{\nleq(b,\nrem(a,b))}{\next(\nplus(b,\nrem(a,b)))}{\nplus(b,\nrem(a,b))}} \\
+ &amp; = &amp; \bif{\iszero(\nrem(a,b))}{\zero}{\bif{\bfalse}{\next(\nplus(b,\nrem(a,b)))}{\nplus(b,\nrem(a,b))}} \\
  &amp; = &amp; \bif{\iszero(\nrem(a,b))}{\zero}{\nplus(b,\nrem(a,b))}; \\
-\end{eqnarray*}\]</span> in particular, <span class="math display">\[\nleq(\eta(\varphi(a,b)),\nplus(b,\nrem(a,b))).\]</span> Now if <span class="math inline">\(\nleq(a,b) = \btrue\)</span>, we have <span class="math inline">\(\eta(a,b) = \next(\nplus(a,b))\)</span> and <span class="math inline">\(\nleq(a,\nrem(a,b))\)</span>, so that <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\next(\nplus(a,b)))\]</span> as needed. If <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, so that <span class="math inline">\(\nleq(\nrem(a,b),a)\)</span> and <span class="math inline">\(\nrem(a,b) \neq a\)</span>, and we have <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,b))\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> in particular, <span class="math display">\[\nleq(\eta(\varphi(a,b)),\nplus(b,\nrem(a,b))).\]</span> Now if <span class="math inline">\(\nleq(a,b) = \btrue\)</span>, we have <span class="math inline">\(\eta(a,b) = \next(\nplus(a,b))\)</span> and <span class="math inline">\(\nleq(a,\nrem(a,b))\)</span>, so that <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\next(\nplus(a,b)))\]</span> as needed. If <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>, then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>, so that <span class="math inline">\(\nleq(\nrem(a,b),a)\)</span> and <span class="math inline">\(\nrem(a,b) \neq a\)</span>, and we have <span class="math display">\[\nleq(\nplus(b,\nrem(a,b)),\nplus(a,b))\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">phi ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> (n,n) <span class="ot">-&gt;</span> (n,n)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">phi (a,b) <span class="fu">=</span> <span class="kw">if</span> isZero b</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">then</span> (a, zero)</a>
@@ -263,30 +261,20 @@ Suppose instead that <span class="math inline">\(\eta(a,b) = \next(m)\)</span>. 
 <a class="sourceLine" id="cb2-19" data-line-number="19">  \x <span class="ot">-&gt;</span> <span class="kw">case</span> unnext (eta x) <span class="kw">of</span></a>
 <a class="sourceLine" id="cb2-20" data-line-number="20">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> isZero (eta (phi x))</a>
 <a class="sourceLine" id="cb2-21" data-line-number="21">    <span class="dt">Right</span> m <span class="ot">-&gt;</span> leq (eta (phi x)) m</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Now we can define <span class="math inline">\(\ngcd\)</span> in terms of norm recursion.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\eta\)</span> be as defined in the previous theorem. We then define a map <span class="math inline">\(\ngcd : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ngcd = \normrec{\varphi}{\eta}{\fst}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">gcd<span class="ot"> ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">gcd a b <span class="fu">=</span> normRec phi eta fst (a,b)</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\ngcd\)</span> is defined in terms of norm recursion, we can also characterize it as the unique solution to a functional equation. Note that here we use the fact that <span class="math display">\[\bif{p}{a}{\bif{p}{b}{c}} = \bif{p}{a}{c}.\]</span></p>
-<div class="result">
 <div class="corollary">
-<p>
-<span class="math inline">\(\ngcd\)</span> is the unique mapping <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> such that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[f(a,b) = \bif{\iszero(b)}{a}{f(b,\nrem(a,b))}.\]</span>
-</p>
-</div>
+<p><span class="math inline">\(\ngcd\)</span> is the unique mapping <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> such that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[f(a,b) = \bif{\iszero(b)}{a}{f(b,\nrem(a,b))}.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_gcd_equation ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_gcd_equation _ <span class="fu">=</span></a>
@@ -294,32 +282,26 @@ Suppose instead that <span class="math inline">\(\eta(a,b) = \next(m)\)</span>. 
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb4-6" data-line-number="6">    (gcd a b)</a>
 <a class="sourceLine" id="cb4-7" data-line-number="7">    (<span class="kw">if</span> isZero b <span class="kw">then</span> a <span class="kw">else</span> gcd b (rem a b))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>The next theorem characterizes <span class="math inline">\(\ngcd(a,b)\)</span> in terms of a useful “universal property”: it is a common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and among the common divisors of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, it is the “largest” in an appropriate sense.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span> and <span class="math inline">\(\ndiv(\ngcd(a,b),b)\)</span>.</li>
 <li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
-<li>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\ngcd(a,b) = a\)</span>, and we have <span class="math display">\[\ndiv(\ngcd(a,b),a) = \ndiv(a,a) = \btrue\]</span> and <span class="math display">\[\ndiv(\ngcd(a,b),b) = \ndiv(a,\zero) = \btrue\]</span> as needed. For the inductive step, suppose the conclusion holds for all <span class="math inline">\(a\)</span> and for all <span class="math inline">\(b\)</span> such that <span class="math inline">\(\nleq(b,m)\)</span>, and let <span class="math inline">\(b = \next(m)\)</span> and <span class="math inline">\(a \in \nats\)</span>. In this case we have <span class="math inline">\(\ngcd(a,b) = \ngcd(b,\nrem(a,b))\)</span>. By the induction hypothesis, we have <span class="math inline">\(\ndiv(\ngcd(a,b),b)\)</span> and <span class="math inline">\(\ndiv(\ngcd(a,b),\nrem(a,b))\)</span>. Now <span class="math inline">\(\ndiv(\ngcd(a,b),\ntimes(b,\nquo(a,b))\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+<li>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math inline">\(\ngcd(a,b) = a\)</span>, and we have <span class="math display">\[\ndiv(\ngcd(a,b),a) = \ndiv(a,a) = \btrue\]</span> and <span class="math display">\[\ndiv(\ngcd(a,b),b) = \ndiv(a,\zero) = \btrue\]</span> as needed. For the inductive step, suppose the conclusion holds for all <span class="math inline">\(a\)</span> and for all <span class="math inline">\(b\)</span> such that <span class="math inline">\(\nleq(b,m)\)</span>, and let <span class="math inline">\(b = \next(m)\)</span> and <span class="math inline">\(a \in \nats\)</span>. In this case we have <span class="math inline">\(\ngcd(a,b) = \ngcd(b,\nrem(a,b))\)</span>. By the induction hypothesis, we have <span class="math inline">\(\ndiv(\ngcd(a,b),b)\)</span> and <span class="math inline">\(\ndiv(\ngcd(a,b),\nrem(a,b))\)</span>. Now <span class="math inline">\(\ndiv(\ngcd(a,b),\ntimes(b,\nquo(a,b)))\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \ndiv(\ngcd(a,b),\nplus(\ntimes(b,\nquo(a,b)),\nrem(a,b))) \\
  &amp; = &amp; \ndiv(\ngcd(a,b),a)
 \end{eqnarray*}\]</span> as needed.</li>
-<li>We again proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, suppose <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>; now <span class="math inline">\(\ngcd(a,b) = a\)</span>, so that <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> trivially. For the inductive step, suppose the implication holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(c\)</span> when <span class="math inline">\(\nleq(b,m)\)</span>, and let <span class="math inline">\(b = \next(m)\)</span> with <span class="math inline">\(a,c \in \nats\)</span>. Suppose further that <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>. Now <span class="math inline">\(\ndiv(c,\ntimes(b,\nquo(a,b))\)</span>, so that <span class="math inline">\(\ndiv(c,\nrem(a,b))\)</span>, and thus <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> as needed.</li>
+<li>We again proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, suppose <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>; now <span class="math inline">\(\ngcd(a,b) = a\)</span>, so that <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> trivially. For the inductive step, suppose the implication holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(c\)</span> when <span class="math inline">\(\nleq(b,m)\)</span>, and let <span class="math inline">\(b = \next(m)\)</span> with <span class="math inline">\(a,c \in \nats\)</span>. Suppose further that <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>. Now <span class="math inline">\(\ndiv(c,\ntimes(b,\nquo(a,b)))\)</span>, so that <span class="math inline">\(\ndiv(c,\nrem(a,b))\)</span>, and thus <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span> as needed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_gcd_common_div ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_gcd_common_div _ <span class="fu">=</span></a>
@@ -333,87 +315,65 @@ Suppose instead that <span class="math inline">\(\eta(a,b) = \next(m)\)</span>. 
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;if div(c,a) and div(c,b) then div(c,gcd(a,b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (div c a) (div c b)</a>
 <a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="kw">then</span> div c (gcd a b)</a>
-<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>And <span class="math inline">\(\ngcd(a,b)\)</span> is unique with this property.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Suppose <span class="math inline">\(m \in \nats\)</span> satisfies the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inline">\(\ndiv(m,b)\)</span>.</li>
 <li>If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,m)\)</span>.</li>
 </ol>
 <p>Then <span class="math inline">\(m = \ngcd(a,b)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inline">\(\ndiv(m,b)\)</span>, we have <span class="math inline">\(\ndiv(m,\ngcd(a,b))\)</span>. But a similar argument shows that <span class="math inline">\(\ndiv(\ngcd(a,b),m)\)</span>. By antisymmetry we have <span class="math inline">\(m = \ngcd(a,b)\)</span> as claimed.
-</p>
+<p>Since <span class="math inline">\(\ndiv(m,a)\)</span> and <span class="math inline">\(\ndiv(m,b)\)</span>, we have <span class="math inline">\(\ndiv(m,\ngcd(a,b))\)</span>. But a similar argument shows that <span class="math inline">\(\ndiv(\ngcd(a,b),m)\)</span>. By antisymmetry we have <span class="math inline">\(m = \ngcd(a,b)\)</span> as claimed.</p>
 </div>
 </div>
 <p>Then <span class="math inline">\(\ngcd\)</span> is commutative.</p>
-<div class="result">
-<div class="corollary">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then <span class="math inline">\(\ngcd(a,b) = \ngcd(b,a)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Note that <span class="math inline">\(\ngcd(b,a)\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(\ngcd(b,a)\)</span> divides <span class="math inline">\(b\)</span>, and if <span class="math inline">\(c\)</span> is a common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> then <span class="math inline">\(c\)</span> divides <span class="math inline">\(\ngcd(b,a)\)</span>. By the uniqueness of GCD we have <span class="math inline">\(\ngcd(b,a) = \ngcd(a,b)\)</span>.
-</p>
+<p>Note that <span class="math inline">\(\ngcd(b,a)\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(\ngcd(b,a)\)</span> divides <span class="math inline">\(b\)</span>, and if <span class="math inline">\(c\)</span> is a common divisor of <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> then <span class="math inline">\(c\)</span> divides <span class="math inline">\(\ngcd(b,a)\)</span>. By the uniqueness of GCD we have <span class="math inline">\(\ngcd(b,a) = \ngcd(a,b)\)</span>.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_gcd_commutative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_gcd_commutative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;gcd(a,b) == gcd(b,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (gcd a b) (gcd b a)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And <span class="math inline">\(\ngcd\)</span> is idempotent:</p>
-<div class="result">
-<div class="corollary">
+<div class="theorem">
 <p>Let <span class="math inline">\(a \in \nats\)</span>. Then <span class="math display">\[\ngcd(a,a) = a.\]</span></p>
-</div>
 <div class="proof">
-<p>
-<span class="math inline">\(a\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(a\)</span> divides <span class="math inline">\(a\)</span>, and if <span class="math inline">\(c\)</span> divides both <span class="math inline">\(a\)</span> and <span class="math inline">\(a\)</span> then <span class="math inline">\(c\)</span> divides <span class="math inline">\(a\)</span>.
-</p>
+<p><span class="math inline">\(a\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(a\)</span> divides <span class="math inline">\(a\)</span>, and if <span class="math inline">\(c\)</span> divides both <span class="math inline">\(a\)</span> and <span class="math inline">\(a\)</span> then <span class="math inline">\(c\)</span> divides <span class="math inline">\(a\)</span>.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_gcd_idempotent ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_gcd_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;gcd(a,a) == a&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (gcd a a) a</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>And some special cases.</p>
-<div class="result">
-<div class="lemma">
+<div class="theorem">
 <p>For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ngcd(a,\zero) = a\)</span>.</li>
 <li><span class="math inline">\(\ngcd(a,\next(\zero)) = \next(\zero)\)</span>.</li>
 <li>If <span class="math inline">\(\ngcd(a,b) = \zero\)</span>, then <span class="math inline">\(a = b = \zero\)</span>.</li>
 </ol>
-</div>
 <div class="proof">
-<p>
 <ol type="1">
 <li>Note that <span class="math inline">\(a\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(a\)</span> divides <span class="math inline">\(\zero\)</span>, and if <span class="math inline">\(c\)</span> divides both <span class="math inline">\(a\)</span> and <span class="math inline">\(\zero\)</span> then <span class="math inline">\(c\)</span> divides <span class="math inline">\(a\)</span>.</li>
 <li>Note that <span class="math inline">\(\next(\zero)\)</span> divides <span class="math inline">\(a\)</span> and <span class="math inline">\(\next(\zero)\)</span> divides <span class="math inline">\(\next(\zero)\)</span>, and if <span class="math inline">\(c\)</span> divides <span class="math inline">\(\next(\zero)\)</span> then <span class="math inline">\(c = \next(\zero)\)</span>.</li>
 <li>We proceed by strong induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, note that <span class="math display">\[a = \ngcd(a,\zero) = \zero\]</span> as claimed. Now suppose we have <span class="math inline">\(n\)</span> such that the implication holds for all <span class="math inline">\(b\)</span> with <span class="math inline">\(\nleq(b,n)\)</span>, and that <span class="math inline">\(b = \next(n)\)</span>. Now <span class="math display">\[\zero = \ngcd(a,b) = \ngcd(b,\nrem(a,b)),\]</span> where <span class="math inline">\(\nleq(\nrem(a,b),b)\)</span>. By the induction hypothesis we have <span class="math inline">\(b = \zero\)</span> and <span class="math inline">\(\nrem(a,b) = \zero\)</span>, so that <span class="math display">\[a = \nplus(\ntimes(\nquo(a,b),b),\nrem(a,b)) = \zero\]</span> as claimed.</li>
 </ol>
-</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_gcd_zero ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_gcd_zero _ <span class="fu">=</span></a>
@@ -434,115 +394,87 @@ Note that <span class="math inline">\(\ngcd(b,a)\)</span> divides <span class="m
 <a class="sourceLine" id="cb8-18" data-line-number="18">  testName <span class="st">&quot;if iszero(gcd(a,b)) then and(iszero(a),iszero(b))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-19" data-line-number="19">  \a b <span class="ot">-&gt;</span> <span class="kw">if</span> isZero (gcd a b)</a>
 <a class="sourceLine" id="cb8-20" data-line-number="20">    <span class="kw">then</span> and (isZero a) (isZero b)</a>
-<a class="sourceLine" id="cb8-21" data-line-number="21">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb8-21" data-line-number="21">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\ngcd\)</span> is associative.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have <span class="math inline">\(\ngcd(\ngcd(a,b),c) = \ngcd(a,\ngcd(b,c))\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Let <span class="math inline">\(h = \ngcd(\ngcd(a,b),c)\)</span>, <span class="math inline">\(k = \ngcd(a,\ngcd(b,c))\)</span>, <span class="math inline">\(u = \ngcd(a,b)\)</span>, and <span class="math inline">\(v = \ngcd(b,c)\)</span>. First we show that <span class="math inline">\(\ndiv(h,k)\)</span>. Note that <span class="math inline">\(\ndiv(h,u)\)</span>, so that <span class="math inline">\(\ndiv(h,a)\)</span> and <span class="math inline">\(\ndiv(h,b)\)</span>. Now <span class="math inline">\(\ndiv(h,c)\)</span>, so that <span class="math inline">\(\ndiv(h,v)\)</span>. Thus <span class="math inline">\(\ndiv(h,k)\)</span>. The proof that <span class="math inline">\(\ndiv(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.
-</p>
+<p>Let <span class="math inline">\(h = \ngcd(\ngcd(a,b),c)\)</span>, <span class="math inline">\(k = \ngcd(a,\ngcd(b,c))\)</span>, <span class="math inline">\(u = \ngcd(a,b)\)</span>, and <span class="math inline">\(v = \ngcd(b,c)\)</span>. First we show that <span class="math inline">\(\ndiv(h,k)\)</span>. Note that <span class="math inline">\(\ndiv(h,u)\)</span>, so that <span class="math inline">\(\ndiv(h,a)\)</span> and <span class="math inline">\(\ndiv(h,b)\)</span>. Now <span class="math inline">\(\ndiv(h,c)\)</span>, so that <span class="math inline">\(\ndiv(h,v)\)</span>. Thus <span class="math inline">\(\ndiv(h,k)\)</span>. The proof that <span class="math inline">\(\ndiv(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_gcd_associative ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_gcd_associative _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;gcd(gcd(a,b),c) == gcd(a,gcd(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (gcd (gcd a b) c) (gcd a (gcd b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ngcd\)</span> detects <span class="math inline">\(\ndiv\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then <span class="math inline">\(\ngcd(a,b) = a\)</span> if and only if <span class="math inline">\(\ndiv(a,b)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Certainly if <span class="math inline">\(\ngcd(a,b) = a\)</span>, then <span class="math inline">\(\ndiv(a,b)\)</span>. Suppose conversely that <span class="math inline">\(\ndiv(a,b)\)</span>. We consider two cases: either <span class="math inline">\(a = \zero\)</span> or <span class="math inline">\(a = \next(t)\)</span> for some <span class="math inline">\(t\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(b = \zero\)</span>, and we have <span class="math display">\[\ngcd(a,b) = \zero = a\]</span> as claimed. Suppose now that <span class="math inline">\(a = \next(t)\)</span>. Since <span class="math inline">\(\ndiv(a,b)\)</span>, we have <span class="math display">\[b = \ntimes(q,a) = \nplus(\ntimes(q,a),\zero)\]</span> for some <span class="math inline">\(q\)</span>. Now <span class="math inline">\(\nleq(\zero,t)\)</span>, and by the uniqueness of remainders by nonzero divisors, we have <span class="math inline">\(\nrem(b,a) = \zero\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
+<p>Certainly if <span class="math inline">\(\ngcd(a,b) = a\)</span>, then <span class="math inline">\(\ndiv(a,b)\)</span>. Suppose conversely that <span class="math inline">\(\ndiv(a,b)\)</span>. We consider two cases: either <span class="math inline">\(a = \zero\)</span> or <span class="math inline">\(a = \next(t)\)</span> for some <span class="math inline">\(t\)</span>. If <span class="math inline">\(a = \zero\)</span>, then <span class="math inline">\(b = \zero\)</span>, and we have <span class="math display">\[\ngcd(a,b) = \zero = a\]</span> as claimed. Suppose now that <span class="math inline">\(a = \next(t)\)</span>. Since <span class="math inline">\(\ndiv(a,b)\)</span>, we have <span class="math display">\[b = \ntimes(q,a) = \nplus(\ntimes(q,a),\zero)\]</span> for some <span class="math inline">\(q\)</span>. Now <span class="math inline">\(\nleq(\zero,t)\)</span>, and by the uniqueness of remainders by nonzero divisors, we have <span class="math inline">\(\nrem(b,a) = \zero\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(a,b) \\
  &amp; = &amp; \ngcd(b,a) \\
  &amp; = &amp; \ngcd(a,\nrem(b,a)) \\
  &amp; = &amp; \ngcd(a,\zero) \\
  &amp; = &amp; a
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_gcd_div ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_gcd_div _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;eq(gcd(a,b),a) == div(a,b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> eq (eq (gcd a b) a) (div a b)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ngcd\)</span> distributes over <span class="math inline">\(\ntimes\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then <span class="math inline">\(\ngcd(\ntimes(a,c),\ntimes(b,c)) = \ntimes(\ngcd(a,b),c)\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\ngcd(a,b),c) \\
  &amp; = &amp; \zero \\
  &amp; = &amp; \ngcd(\zero,\zero) \\
  &amp; = &amp; \ngcd(\ntimes(a,c),\ntimes(b,c))
-\end{eqnarray*}\]</span> as claimed. Now suppose <span class="math inline">\(c \neq \zero\)</span>. First note that <span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span>, so that <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(a,c)).\]</span> Similarly, we have <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(b,c)).\]</span> Thus <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c), \ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Now note that <span class="math inline">\(\ndiv(c,\ntimes(a,c))\)</span> and <span class="math inline">\(\ndiv(c,\ntimes(b,c))\)</span>, so that <span class="math display">\[\ndiv(c,\ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Say <span class="math display">\[\ntimes(u,c) = \ngcd(\ntimes(a,c),\ntimes(b,c)).\]</span> Now <span class="math inline">\(\ndiv(\ntimes(u,c),\ntimes(a,c))\)</span>, so that <span class="math inline">\(\ndiv(u,a)\)</span>; similarly, <span class="math inline">\(\ndiv(u,b)\)</span>. Thus <span class="math inline">\(\ndiv(u,\ngcd(a,b))\)</span>, and we have <span class="math display">\[\ndiv(\ngcd(\ntimes(a,c),\ntimes(b,c)),\ntimes(\ngcd(a,b),c)).\]</span> By the antisymmetry of <span class="math inline">\(\ndiv\)</span>, we have <span class="math display">\[\ngcd(\ntimes(a,c),\ntimes(b,c) = \ntimes(\ngcd(a,b),c)\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed. Now suppose <span class="math inline">\(c \neq \zero\)</span>. First note that <span class="math inline">\(\ndiv(\ngcd(a,b),a)\)</span>, so that <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(a,c)).\]</span> Similarly, we have <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c),\ntimes(b,c)).\]</span> Thus <span class="math display">\[\ndiv(\ntimes(\ngcd(a,b),c), \ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Now note that <span class="math inline">\(\ndiv(c,\ntimes(a,c))\)</span> and <span class="math inline">\(\ndiv(c,\ntimes(b,c))\)</span>, so that <span class="math display">\[\ndiv(c,\ngcd(\ntimes(a,c),\ntimes(b,c))).\]</span> Say <span class="math display">\[\ntimes(u,c) = \ngcd(\ntimes(a,c),\ntimes(b,c)).\]</span> Now <span class="math inline">\(\ndiv(\ntimes(u,c),\ntimes(a,c))\)</span>, so that <span class="math inline">\(\ndiv(u,a)\)</span>; similarly, <span class="math inline">\(\ndiv(u,b)\)</span>. Thus <span class="math inline">\(\ndiv(u,\ngcd(a,b))\)</span>, and we have <span class="math display">\[\ndiv(\ngcd(\ntimes(a,c),\ntimes(b,c)),\ntimes(\ngcd(a,b),c)).\]</span> By the antisymmetry of <span class="math inline">\(\ndiv\)</span>, we have <span class="math display">\[\ngcd(\ntimes(a,c),\ntimes(b,c)) = \ntimes(\ngcd(a,b),c)\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_gcd_distributive_times ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_gcd_distributive_times _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;times(gcd(a,b),c) == gcd(times(a,c),times(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (times (gcd a b) c) (gcd (times a c) (times b c))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\ngcd\)</span> is compatible with <span class="math inline">\(\ndiv\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. If <span class="math inline">\(\ndiv(a,b)\)</span>, then <span class="math inline">\(\ndiv(\ngcd(a,c),\ngcd(b,c))\)</span>.</p>
-</div>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(\ngcd(a,c),\ngcd(b,c)) \\
  &amp; = &amp; \ngcd(\ngcd(a,b),\ngcd(c,c)) \\
  &amp; = &amp; \ngcd(a,c).
-\end{eqnarray*}\]</span> Thus <span class="math inline">\(\ndiv(\ngcd(a,c),\ngcd(b,c))\)</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> Thus <span class="math inline">\(\ndiv(\ngcd(a,c),\ngcd(b,c))\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_gcd_div_compatible ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">_test_gcd_div_compatible _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;if div(a,b) then div(gcd(a,c),gcd(b,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb12-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> div a b</a>
 <a class="sourceLine" id="cb12-6" data-line-number="6">    <span class="kw">then</span> div (gcd a c) (gcd b c)</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb12-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\nquo\)</span> kind of distributes over <span class="math inline">\(\ngcd\)</span>.</p>
-<div class="result">
-<div class="thm">
+<div class="theorem">
 <p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. If <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math display">\[\ngcd(\nquo(a,c),\nquo(b,c)) = \nquo(\ngcd(a,b),c).\]</span></p>
-</div>
 <div class="proof">
-<p>
-We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, then <span class="math inline">\(\nquo(a,c) = \zero\)</span> and <span class="math inline">\(\nquo(b,c) = \zero\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+<p>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span>, then <span class="math inline">\(\nquo(a,c) = \zero\)</span> and <span class="math inline">\(\nquo(b,c) = \zero\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(\nquo(a,c),\nquo(b,c)) \\
  &amp; = &amp; \ngcd(\zero,\zero) \\
  &amp; = &amp; \zero \\
@@ -551,19 +483,16 @@ We consider two cases: either <span class="math inline">\(c = \zero\)</span> or 
  &amp;   &amp; \ntimes(c,\ngcd(u,v)) \\
  &amp; = &amp; \ngcd(\ntimes(c,u),\ntimes(c,v)) \\
  &amp; = &amp; \ngcd(a,b).
-\end{eqnarray*}\]</span> By the uniqueness of quotients by nonzero divisors, <span class="math display">\[\nquo(\ngcd(a,b),c) = \ngcd(\nquo(a,c),\nquo(b,c))\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> By the uniqueness of quotients by nonzero divisors, <span class="math display">\[\nquo(\ngcd(a,b),c) = \ngcd(\nquo(a,c),\nquo(b,c))\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_gcd_div_quo ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">_test_gcd_div_quo _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;if div(c,a) and div(c,b) then gcd(quo(a,c),quo(b,c)) == quo(gcd(a,b),c)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb13-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> <span class="kw">if</span> and (div c a) (div c b)</a>
 <a class="sourceLine" id="cb13-6" data-line-number="6">    <span class="kw">then</span> eq (gcd (quo a c) (quo b c)) (quo (gcd a b) c)</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb13-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -572,7 +501,7 @@ We consider two cases: either <span class="math inline">\(c = \zero\)</span> or 
 <a class="sourceLine" id="cb14-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">_test_gcd n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">  testLabel (<span class="st">&quot;gcd: &quot;</span> <span class="fu">++</span> typeName n)</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  testLabel1 <span class="st">&quot;gcd&quot;</span> n</a>
 <a class="sourceLine" id="cb14-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb14-7" data-line-number="7">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb14-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
@@ -601,7 +530,7 @@ We consider two cases: either <span class="math inline">\(c = \zero\)</span> or 
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

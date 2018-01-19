@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Delete</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-27 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,58 +199,54 @@ Posted on 2017-05-27 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Delete</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( delete, _test_delete, main_delete</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Prefix</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Elt</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Count</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Repeat</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Sublist</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Select</span></a>
-<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Unique</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Delete</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( delete, _test_delete, main_delete</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Repeat</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Sublist</span></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Select</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32"><span class="kw">import</span> <span class="dt">Unique</span></a></code></pre></div>
 <p>Today we’ll establish a function <span class="math inline">\(\delete\)</span> that removes all copies of a given item from a list. <span class="math inline">\(\delete\)</span> is a special case of <span class="math inline">\(\filter\)</span>.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span>. Define <span class="math inline">\(\varphi : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\varphi(b,x) = \bif{\beq(a,b)}{x}{\cons(b,x)},\]</span> and define <span class="math inline">\(\delete : A \rightarrow \lists{A}^{\lists{A}}\)</span> by <span class="math display">\[\delete(a) = \foldr{\nil}{\varphi}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">delete ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">delete a <span class="fu">=</span> foldr nil phi</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi b x <span class="fu">=</span> <span class="kw">if</span> eq a b <span class="kw">then</span> x <span class="kw">else</span> cons b x</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\delete(a)\)</span> is defined as a fold, it can be characterized as the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\delete(a)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\delete(a)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \nil \\
  f(\cons(b,x)) = \bif{\beq(a,b)}{f(x)}{\cons(b,f(x))}
-\end{array}\right.\]</span>
-</p>
-</div>
+\end{array}\right.\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_delete_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_delete_nil t <span class="fu">=</span></a>
@@ -265,19 +261,13 @@ Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inli
 <a class="sourceLine" id="cb3-12" data-line-number="12">  \a b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">    (delete a (cons b x))</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">    (<span class="kw">if</span> eq a b <span class="kw">then</span> delete a x <span class="kw">else</span> cons b (delete a x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> is a filter.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\delete(a)(x) = \filter(\bnot(\beq(a,-)))(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\delete(a)(x) = \filter(\bnot(\beq(a,-)))(x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(\bnot(\beq(a,-)))(\nil) \\
  &amp; = &amp; \nil \\
  &amp; = &amp; \delete(a)(\nil)
@@ -287,84 +277,60 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bif{\bnot(\beq(a,b))}{\cons(b,\delete(a)(x))}{\delete(a)(x)} \\
  &amp; = &amp; \bif{\eq(a,b)}{\delete(a)(x)}{\cons(b,\delete(a)(x))} \\
  &amp; = &amp; \delete(a)(\cons(b,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_delete_filter ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_delete_filter _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;delete(a)(x) == filter(not(eq(a,-)))(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (delete a x) (filter (\b <span class="ot">-&gt;</span> not (eq a b)) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> is idempotent.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\delete(a)(\delete(a)(x)) = \delete(a)(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\delete(a)(\delete(a)(x)) = \delete(a)(x).\]</span></p>
 <div class="proof">
-<p>
-Note that, since <span class="math inline">\(\filter(p)\)</span> is idempotent for any predicate <span class="math inline">\(p\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>Note that, since <span class="math inline">\(\filter(p)\)</span> is idempotent for any predicate <span class="math inline">\(p\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \delete(a,\delete(a,x)) \\
  &amp; = &amp; \filter(\bnot(\beq(a,-)),\filter(\bnot(\beq(a,-)),x)) \\
  &amp; = &amp; \filter(\bnot(\beq(a,-)),x) \\
  &amp; = &amp; \delete(a,x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_delete_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_delete_idempotent _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;delete(a)(delete(a)(x)) == delete(a)(x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (delete a (delete a x)) (delete a x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> can detect <span class="math inline">\(\elt\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\beq(x,\delete(a,x)) = \bnot(\elt(a,x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\beq(x,\delete(a,x)) = \bnot(\elt(a,x)).\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(x,\delete(a,x)) \\
  &amp; = &amp; \beq(x,\filter(\bnot(\beq(a,-)),x)) \\
  &amp; = &amp; \all(\bnot(\beq(a,-)),x) \\
  &amp; = &amp; \bnot(\any(\beq(a,-),x)) \\
  &amp; = &amp; \bnot(\elt(a,x))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_delete_eq_not_elt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_delete_eq_not_elt _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;eq(x,delete(a,x)) == not(elt(a,x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (eq x (delete a x)) (not (elt a x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> commutes with itself.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\delete(a,\delete(b,x)) = \delete(b,\delete(a,x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\delete(a,\delete(b,x)) = \delete(b,\delete(a,x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \delete(a,\delete(b,\nil)) \\
  &amp; = &amp; \delete(a,\nil) \\
  &amp; = &amp; \nil \\
@@ -394,11 +360,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons(c,\delete(b,\delete(a,x))) \\
  &amp; = &amp; \delete(b,\cons(c,\delete(a,x))) \\
  &amp; = &amp; \delete(b,\delete(a,\cons(c,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_delete_commutative ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_delete_commutative _ <span class="fu">=</span></a>
@@ -406,93 +370,63 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \a b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">    (delete a (delete b x))</a>
 <a class="sourceLine" id="cb7-7" data-line-number="7">    (delete b (delete a x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> removes elements.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\all(\bnot(\beq(a,-)))(\delete(a,x)) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\all(\bnot(\beq(a,-)))(\delete(a,x)) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \all(\bnot(\beq(a,-)),\filter(\bnot(\beq(a,-)),x)) \\
  &amp; = &amp; \all(\bnot(\beq(a,-)),\delete(a,x))
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_delete_all_not_eq ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_delete_all_not_eq _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;all(not(eq(a,-)))(delete(a)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> all (\b <span class="ot">-&gt;</span> not (eq a b)) (delete a x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> yields a sublist.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. Then <span class="math display">\[\sublist(\delete(a,x),x) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. Then <span class="math display">\[\sublist(\delete(a,x),x) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-Note that <span class="math display">\[\begin{eqnarray*}
+<p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(\filter(\bnot(\beq(a,-)),x),x) \\
  &amp; = &amp; \sublist(\delete(a,x),x)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_delete_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_delete_sublist _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;sublist(delete(a)(x),x)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> sublist (delete a x) x</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> and <span class="math inline">\(\unique\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(\unique(x) = \btrue\)</span>, then <span class="math inline">\(\unique(\delete(a,x)) = \btrue\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(\unique(x) = \btrue\)</span>, then <span class="math inline">\(\unique(\delete(a,x)) = \btrue\)</span>.</p>
 <div class="proof">
-<p>
-Note that <span class="math inline">\(\sublist(\delete(a)(x),x) = \btrue\)</span>, so that <span class="math inline">\(\unique(\delete(a)(x)) = \btrue\)</span> as claimed.
-</p>
+<p>Note that <span class="math inline">\(\sublist(\delete(a)(x),x) = \btrue\)</span>, so that <span class="math inline">\(\unique(\delete(a)(x)) = \btrue\)</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_delete_unique ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_delete_unique _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;if unique(x) then unique(delete(a)(x))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> <span class="kw">if</span> unique x <span class="kw">then</span> unique (delete a x) <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> <span class="kw">if</span> unique x <span class="kw">then</span> unique (delete a x) <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> interacts with <span class="math inline">\(\elt\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\elt(a,\delete(a,x)) = \bfalse\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. Then <span class="math inline">\(\elt(a,\delete(a,x)) = \bfalse\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\delete(a,\nil)) \\
  &amp; = &amp; \elt(a,\nil) \\
  &amp; = &amp; \bfalse
@@ -503,32 +437,24 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(b \neq a\)</span>, then again using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\delete(a,\cons(b,x))) \\
- &amp; = &amp; \elt(a,\cons(b,(\delete(a,x))) \\
+ &amp; = &amp; \elt(a,\cons(b,(\delete(a,x)))) \\
  &amp; = &amp; \elt(a,\delete(a,x)) \\
  &amp; = &amp; \bfalse
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_delete_elt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">_test_delete_elt _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;elt(a,delete(a)(x)) == false&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a (delete a x)) <span class="dt">False</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a (delete a x)) false</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> preserves <span class="math inline">\(\prefix\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(\prefix(\delete(a)(x),\delete(a)(y)) = \btrue\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(\prefix(\delete(a)(x),\delete(a)(y)) = \btrue\)</span>.</p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\prefix(x,y) = \prefix(\nil,y) = \btrue\]</span> and <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\prefix(x,y) = \prefix(\nil,y) = \btrue\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\delete(a,x),\delete(a,y)) \\
  &amp; = &amp; \prefix(\delete(a,\nil),\delete(a,y)) \\
  &amp; = &amp; \prefix(\nil,\delete(a,y)) \\
@@ -544,29 +470,21 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \prefix(\cons(b,\delete(a,x)),\cons(b,\delete(a,u))) \\
  &amp; = &amp; \prefix(\delete(a,x),\delete(a,u)) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_delete_prefix ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">_test_delete_prefix _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;if prefix(x,y) then prefix(delete(a)(x),delete(a)(y))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> prefix x y <span class="kw">then</span> prefix (delete a x) (delete a y) <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> prefix x y <span class="kw">then</span> prefix (delete a x) (delete a y) <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\delete(a,\snoc(b,x)) = \bif{\beq(a,b)}{\delete(a,x)}{\snoc(b,\delete(a,x))}.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\delete(a,\snoc(b,x)) = \bif{\beq(a,b)}{\delete(a,x)}{\snoc(b,\delete(a,x))}.\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \delete(a,\snoc(b,x)) \\
  &amp; = &amp; \delete(a,\snoc(b,\nil)) \\
  &amp; = &amp; \delete(a,\cons(b,\nil)) \\
@@ -586,11 +504,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bif{\beq(a,b)}{\delete(a,\cons(c,x))}{\bif{\beq(a,c)}{\snoc(b,\delete(a,x))}{\snoc(b,\cons(c,\delete(a,x)))}} \\
  &amp; = &amp; \bif{\beq(a,b)}{\delete(a,\cons(c,x))}{\snoc(b,\bif{\beq(a,c)}{\delete(a,x)}{\cons(c,\delete(a,x))})} \\
  &amp; = &amp; \bif{\beq(a,b)}{\delete(a,\cons(c,x))}{\snoc(b,\delete(a,\cons(c,x)))} \\
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_delete_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb13-3" data-line-number="3">_test_delete_snoc _ <span class="fu">=</span></a>
@@ -598,19 +514,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb13-5" data-line-number="5">  \a b x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb13-6" data-line-number="6">    (delete a (snoc b x))</a>
 <a class="sourceLine" id="cb13-7" data-line-number="7">    (<span class="kw">if</span> eq a b <span class="kw">then</span> delete a x <span class="kw">else</span> snoc b (delete a x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\delete\)</span> commutes with <span class="math inline">\(\rev\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\delete(a,\rev(x)) = \rev(\delete(a,x)).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\delete(a,\rev(x)) = \rev(\delete(a,x)).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \delete(a,\rev(\nil)) \\
  &amp; = &amp; \delete(a,\nil) \\
  &amp; = &amp; \nil \\
@@ -622,59 +532,87 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \bif{\beq(a,b)}{\delete(a,\rev(x))}{\snoc(b,\delete(a,\rev(x)))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\rev(\delete(a,x))}{\snoc(b,\rev(\delete(a,x)))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\rev(\delete(a,x))}{\rev(\cons(b,\delete(a,x)))} \\
- &amp; = &amp; \rev(\bif{\beq(a,b)}{\delete(a,x))}{\cons(b,\delete(a,x)))}) \\
+ &amp; = &amp; \rev(\bif{\beq(a,b)}{\delete(a,x)}{\cons(b,\delete(a,x))}) \\
  &amp; = &amp; \rev(\delete(a,\cons(b,x)))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_delete_rev ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb14-3" data-line-number="3">_test_delete_rev _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">  testName <span class="st">&quot;delete(a)(rev(x)) == rev(delete(a)(x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb14-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (delete a (rev x)) (rev (delete a x))</a></code></pre></div>
-</p>
+</div>
+</div>
+<p><span class="math inline">\(\delete\)</span> distributes over <span class="math inline">\(\cat\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\delete(a)(\cat(x,y)) = \cat(\delete(a)(x),\delete(a)(y)).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \delete(a)(\cat(x,\nil)) \\
+ &amp; = &amp; \delete(a)(x) \\
+ &amp; = &amp; \cat(\delete(a)(x),\nil) \\
+ &amp; = &amp; \cat(\delete(a)(x),\delete(a)(\nil))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \delete(a)(\cat(x,\cons(b,y))) \\
+ &amp; = &amp; \delete(a)(\cat(\snoc(b,x),y)) \\
+ &amp; = &amp; \cat(\delete(a)(\snoc(b,x)),\delete(a)(y)) \\
+ &amp; = &amp; \cat(\bif{\beq(a,b)}{\delete(a)(x)}{\snoc(b,\delete(a)(x))},\delete(a)(y)) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\cat(\delete(a)(x),\delete(a)(y))}{\cat(\snoc(b,\delete(a)(x)),\delete(a)(y))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\cat(\delete(a)(x),\delete(a)(y))}{\cat(\delete(a)(x),\cons(b,\delete(a)(y)))} \\
+ &amp; = &amp; \cat(\delete(a)(x),\bif{\beq(a,b)}{\delete(a)(y)}{\cons(b,\delete(a)(y))}) \\
+ &amp; = &amp; \cat(\delete(a)(x),\delete(a)(\cons(b,y)))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_delete_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">_test_delete_cat _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  testName <span class="st">&quot;delete(a)(cat(x,y)) == cat(delete(a)(x),delete(a)(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">    (delete a (cat x y))</a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">    (cat (delete a x) (delete a y))</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_delete ::</span></a>
-<a class="sourceLine" id="cb15-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb15-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb15-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-6" data-line-number="6">_test_delete t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7">  testLabel (<span class="st">&quot;delete: &quot;</span> <span class="fu">++</span> typeName t)</a>
-<a class="sourceLine" id="cb15-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb15-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb15-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb15-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb15-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb15-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb15-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb15-15" data-line-number="15">  runTest args (_test_delete_nil t)</a>
-<a class="sourceLine" id="cb15-16" data-line-number="16">  runTest args (_test_delete_cons t)</a>
-<a class="sourceLine" id="cb15-17" data-line-number="17">  runTest args (_test_delete_filter t)</a>
-<a class="sourceLine" id="cb15-18" data-line-number="18">  runTest args (_test_delete_idempotent t)</a>
-<a class="sourceLine" id="cb15-19" data-line-number="19">  runTest args (_test_delete_eq_not_elt t)</a>
-<a class="sourceLine" id="cb15-20" data-line-number="20">  runTest args (_test_delete_commutative t)</a>
-<a class="sourceLine" id="cb15-21" data-line-number="21">  runTest args (_test_delete_all_not_eq t)</a>
-<a class="sourceLine" id="cb15-22" data-line-number="22">  runTest args (_test_delete_sublist t)</a>
-<a class="sourceLine" id="cb15-23" data-line-number="23">  runTest args (_test_delete_unique t)</a>
-<a class="sourceLine" id="cb15-24" data-line-number="24">  runTest args (_test_delete_elt t)</a>
-<a class="sourceLine" id="cb15-25" data-line-number="25">  runTest args (_test_delete_prefix t)</a>
-<a class="sourceLine" id="cb15-26" data-line-number="26">  runTest args (_test_delete_snoc t)</a>
-<a class="sourceLine" id="cb15-27" data-line-number="27">  runTest args (_test_delete_rev t)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_delete ::</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">_test_delete t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">  testLabel1 <span class="st">&quot;delete&quot;</span> t</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb16-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb16-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb16-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb16-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb16-15" data-line-number="15">  runTest args (_test_delete_nil t)</a>
+<a class="sourceLine" id="cb16-16" data-line-number="16">  runTest args (_test_delete_cons t)</a>
+<a class="sourceLine" id="cb16-17" data-line-number="17">  runTest args (_test_delete_filter t)</a>
+<a class="sourceLine" id="cb16-18" data-line-number="18">  runTest args (_test_delete_idempotent t)</a>
+<a class="sourceLine" id="cb16-19" data-line-number="19">  runTest args (_test_delete_eq_not_elt t)</a>
+<a class="sourceLine" id="cb16-20" data-line-number="20">  runTest args (_test_delete_commutative t)</a>
+<a class="sourceLine" id="cb16-21" data-line-number="21">  runTest args (_test_delete_all_not_eq t)</a>
+<a class="sourceLine" id="cb16-22" data-line-number="22">  runTest args (_test_delete_sublist t)</a>
+<a class="sourceLine" id="cb16-23" data-line-number="23">  runTest args (_test_delete_unique t)</a>
+<a class="sourceLine" id="cb16-24" data-line-number="24">  runTest args (_test_delete_elt t)</a>
+<a class="sourceLine" id="cb16-25" data-line-number="25">  runTest args (_test_delete_prefix t)</a>
+<a class="sourceLine" id="cb16-26" data-line-number="26">  runTest args (_test_delete_snoc t)</a>
+<a class="sourceLine" id="cb16-27" data-line-number="27">  runTest args (_test_delete_rev t)</a>
+<a class="sourceLine" id="cb16-28" data-line-number="28">  runTest args (_test_delete_cat t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">main_delete ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2">main_delete <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">  _test_delete (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">  _test_delete (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">main_delete ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">main_delete <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_delete (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_delete (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">

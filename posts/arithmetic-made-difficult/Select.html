@@ -31,7 +31,7 @@
 
 <div id="content">
 <h1>Select</h1>
-<!-- BEGIN BODY -->
+<!-- BEGIN CONTENT -->
 
 
 <div class="info">
@@ -101,7 +101,7 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
 \(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
 \(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[3]{\mathsf{mutrec}(#1,#2,#3)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
@@ -199,36 +199,39 @@ Posted on 2017-05-25 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">Select</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  ( select, _test_select, main_select</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Prelude</span> ()</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Choose</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DoubleBailoutFold</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Prefix</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Elt</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Count</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Repeat</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Sublist</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Select</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( select, _test_select, main_select</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Choose</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">DoubleBailoutFold</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Repeat</span></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Sublist</span></a></code></pre></div>
 <p>Today we’ll define a function, <span class="math inline">\(\select\)</span>, which takes a natural number <span class="math inline">\(n\)</span> and a list <span class="math inline">\(x\)</span> and constructs the list of all length <span class="math inline">\(n\)</span> sublists of <span class="math inline">\(x\)</span>. The signature of <span class="math inline">\(\select\)</span> should be <span class="math display">\[\nats \times \lists{A} \rightarrow \lists{\lists{A}},\]</span> which matches several of our recursion operators. After trying a few, we’ll use double bailout fold.</p>
-<div class="result">
-<div class="defn">
-<p>
+<div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\delta(n) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\nil},\]</span> <span class="math inline">\(\beta : A \times \lists{A} \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\beta(a,x,n) = \iszero(n),\]</span> <span class="math inline">\(\psi : A \times \lists{A} \times \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\psi(a,x,n) = \cons(\nil,\nil),\]</span> and <span class="math inline">\(\chi : A \times \lists{A} \times \nats \times \lists{\lists{A}} \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\chi(a,x,n,u,v) = \cat(\map(\cons(a,-))(v),u).\]</span> Now define <span class="math inline">\(\select : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\select(n,x) = \dbfoldr{\delta}{\beta}{\prev}{\psi}{\chi}(x,n).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">select ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t (t a)</a>
@@ -238,22 +241,15 @@ Posted on 2017-05-25 by nbloomf
 <a class="sourceLine" id="cb2-5" data-line-number="5">    beta _ _ n <span class="fu">=</span> isZero n</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">    psi _ _ _ <span class="fu">=</span> cons nil nil</a>
 <a class="sourceLine" id="cb2-7" data-line-number="7">    chi a _ _ u v <span class="fu">=</span> cat (map (cons a) v) u</a></code></pre></div>
-</p>
-</div>
 </div>
 <p>Since <span class="math inline">\(\select\)</span> is defined as a double bailout fold, it can be characterized as the unique solution to a system of functional equations.</p>
-<div class="result">
 <div class="corollary">
-<p>
 <p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\select\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(n \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(n,\nil) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\nil} \\
  f(n,\cons(a,x)) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\cat(\map(\cons(a,-))(f(\prev(n),x)),f(n,x))}
 \end{array}\right.\]</span></p>
-In particular, we have <span class="math display">\[\select(\zero,\cons(a,x)) = \cons(\nil,\nil)\]</span> and <span class="math display">\[\select(\next(n),\cons(a,x)) = \cat(\map(\cons(a,-))(\select(n,x)),\select(\next(n),x)).\]</span>
-</p>
-</div>
+<p>In particular, we have <span class="math display">\[\select(\zero,\cons(a,x)) = \cons(\nil,\nil)\]</span> and <span class="math display">\[\select(\next(n),\cons(a,x)) = \cat(\map(\cons(a,-))(\select(n,x)),\select(\next(n),x)).\]</span></p>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_select_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t (t a)))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_select_nil t _ <span class="fu">=</span></a>
@@ -270,19 +266,13 @@ In particular, we have <span class="math display">\[\select(\zero,\cons(a,x)) = 
 <a class="sourceLine" id="cb3-14" data-line-number="14">  \n a x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb3-15" data-line-number="15">    (select n (cons a x))</a>
 <a class="sourceLine" id="cb3-16" data-line-number="16">    (<span class="kw">if</span> isZero n <span class="kw">then</span> cons nil nil <span class="kw">else</span> cat (map (cons a) (select (prev n) x)) (select n x))</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can directly compute <span class="math inline">\(\select(\zero,-)\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\select(\zero,x) = \cons(\nil,\nil).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\select(\zero,x) = \cons(\nil,\nil).\]</span></p>
 <div class="proof">
-<p>
-If <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\begin{eqnarray*}
+<p>If <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \select(\zero,\nil) \\
  &amp; = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\nil} \\
  &amp; = &amp; \cons(\nil,\nil),
@@ -290,29 +280,21 @@ If <span class="math inline">\(x = \nil\)</span>, then <span class="math display
  &amp;   &amp; \select(\zero,\cons(a,u)) \\
  &amp; = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\cat(\map(\cons(a,-))(\select(\prev(\zero),u)),\select(\zero,u))} \\
  &amp; = &amp; \cons(\nil,\nil)
-\end{eqnarray*}\]</span> as claimed.
-</p>
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_select_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t (t a)))</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_select_zero _ n <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;select(zero,x) == cons(nil,nil)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (select (zero <span class="ot">`withTypeOf`</span> n) x) (cons nil nil)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>We can directly compute <span class="math inline">\(\select(\next(\zero),-)\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\select(\next(\zero),x) = \map(\cons(-,\nil))(x).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\select(\next(\zero),x) = \map(\cons(-,\nil))(x).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \select(\next(\zero),x) \\
  &amp; = &amp; \select(\next(\zero),\nil) \\
  &amp; = &amp; \bif{\isnil(\next(\zero))}{\cons(\nil,\nil)}{\nil} \\
@@ -330,11 +312,9 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \cons(\cons(a,\nil),\map(\cons(-,\nil))(x)) \\
  &amp; = &amp; \cons(\cons(-,\nil)(a),\map(\cons(-,\nil))(x)) \\
  &amp; = &amp; \map(\cons(-,\nil))(\cons(a,x))
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_select_one ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t (t a)))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_select_one _ n <span class="fu">=</span></a>
@@ -342,19 +322,13 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq</a>
 <a class="sourceLine" id="cb5-6" data-line-number="6">    (select ((next zero) <span class="ot">`withTypeOf`</span> n) x)</a>
 <a class="sourceLine" id="cb5-7" data-line-number="7">    (map (\a <span class="ot">-&gt;</span> cons a nil) x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\select\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span>. For all <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\length(\select(k,x)) = \nchoose(\length(x),k).\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span>. For all <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\length(\select(k,x)) = \nchoose(\length(x),k).\]</span></p>
 <div class="proof">
-<p>
-We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\select(k,x)) \\
  &amp; = &amp; \length(\select(k,\nil)) \\
  &amp; = &amp; \length(\bif{\iszero(k)}{\cons(\nil,\nil)}{\nil}) \\
@@ -380,28 +354,20 @@ We proceed by list induction on <span class="math inline">\(x\)</span>. For the 
  &amp; = &amp; \nplus(\nchoose(\length(x),\next(m)),\nchoose(\length(x),m)) \\
  &amp; = &amp; \nchoose(\next(\length(x)),\next(m)) \\
  &amp; = &amp; \nchoose(\length(\cons(a,x)),k)
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_select_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_select_length _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;length(select(k,x)) == choose(length(x),k)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> eq (length (select k x)) (choose (length x) k)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p><span class="math inline">\(\select\)</span> is compatible with <span class="math inline">\(\sublist\)</span>.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set and let <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\sublist(x,y) = \btrue\)</span>, then <span class="math inline">\(\sublist(\select(k,x),\select(k,y)) = \btrue\)</span> for all <span class="math inline">\(k \in \nats\)</span>.
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and let <span class="math inline">\(x,y \in \lists{A}\)</span>. If <span class="math inline">\(\sublist(x,y) = \btrue\)</span>, then <span class="math inline">\(\sublist(\select(k,x),\select(k,y)) = \btrue\)</span> for all <span class="math inline">\(k \in \nats\)</span>.</p>
 <div class="proof">
-<p>
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, suppose <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\select(k,x),\select(k,y)) \\
  &amp; = &amp; \sublist(\select(\zero,x),\select(\zero,y)) \\
@@ -421,7 +387,7 @@ Let <span class="math inline">\(A\)</span> be a set and let <span class="math in
  &amp;   &amp; \select(\next(k),\cons(b,y)) \\
  &amp; = &amp; \cat(\map(\cons(b,-))(\select(k,y)),\select(\next(k),y))
 \end{eqnarray*}\]</span> so that, in particular, <span class="math display">\[\sublist(\select(\next(k),y),\select(\next(k),\cons(b,y))) = \btrue.\]</span> Since <span class="math inline">\(\sublist\)</span> is transitive, we have <span class="math display">\[\sublist(\select(\next(k),x),\select(\next(k),\cons(b,y))) = \btrue\]</span> as needed.</p>
-Suppose instead that <span class="math inline">\(a = b\)</span>. Then since <span class="math display">\[\btrue = \sublist(x,\cons(b,y)) = \sublist(\cons(a,u),\cons(b,y)),\]</span> in fact we have <span class="math inline">\(\sublist(u,y) = \btrue\)</span>. Using the inductive hypothesis on <span class="math inline">\(k\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>Suppose instead that <span class="math inline">\(a = b\)</span>. Then since <span class="math display">\[\btrue = \sublist(x,\cons(b,y)) = \sublist(\cons(a,u),\cons(b,y)),\]</span> in fact we have <span class="math inline">\(\sublist(u,y) = \btrue\)</span>. Using the inductive hypothesis on <span class="math inline">\(k\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(u,y) \\
  &amp; = &amp; \sublist(\select(k,u),\select(k,y)) \\
@@ -439,31 +405,23 @@ Suppose instead that <span class="math inline">\(a = b\)</span>. Then since <spa
  &amp; = &amp; \sublist(\cat(\map(\cons(a,-))(\select(k,u)),\select(\next(k),u)),\cat(\map(\cons(a,-))(\select(k,y)),\select(\next(k),y))) \\
  &amp; = &amp; \sublist(\cat(H,P),\cat(K,Q)) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_select_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_select_sublist _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;sublist(x,y) == sublist(select(k,x),select(k,y))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \k x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6">    <span class="kw">then</span> sublist (select k x) (select k y)</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">else</span> <span class="dt">True</span></a></code></pre></div>
-</p>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p>Selections are sublists.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\all(\sublist(-,x),\select(k,x)) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\all(\sublist(-,x),\select(k,x)) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\sublist(-,x),\select(k,x)) \\
  &amp; = &amp; \all(\sublist(-,x),\select(\zero,x)) \\
  &amp; = &amp; \all(\sublist(-,x),\cons(\nil,\nil)) \\
@@ -494,29 +452,21 @@ We consider two possibilities for <span class="math inline">\(k\)</span>. If <sp
  &amp; = &amp; \band(\all(\sublist(-,\cons(a,x)),\map(\cons(a,-))(\select(m,x))),\all(\sublist(-,\cons(a,x)),\select(\next(m),x))) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_select_all_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3">_test_select_all_sublist _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;all(sublist(-,x),select(k,x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> all (\u <span class="ot">-&gt;</span> sublist u x) (select k x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <p>Selections have fixed length.</p>
-<div class="result">
-<div class="thm">
-<p>
-Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\all(\beq(k,\length(-)),\select(k,x)) = \btrue.\]</span>
-</p>
-</div>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\all(\beq(k,\length(-)),\select(k,x)) = \btrue.\]</span></p>
 <div class="proof">
-<p>
-We consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<p>We consider two possibilities for <span class="math inline">\(k\)</span>. If <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\beq(k,\length(-)),\select(k,x)) \\
  &amp; = &amp; \all(\beq(\zero,\length(-)),\select(\zero,x)) \\
  &amp; = &amp; \all(\beq(\zero,\length(-)),\cons(\nil,\nil)) \\
@@ -542,17 +492,14 @@ We consider two possibilities for <span class="math inline">\(k\)</span>. If <sp
  &amp; = &amp; \band(\all(\beq(m,\length(-)),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
  &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed.
-</p>
+\end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_select_all_length ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_select_all_length _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;all(eq(k,length(-)),select(k,x))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> all (\u <span class="ot">-&gt;</span> eq k (length u)) (select k x)</a></code></pre></div>
-</p>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -564,7 +511,7 @@ We consider two possibilities for <span class="math inline">\(k\)</span>. If <sp
 <a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
 <a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-7" data-line-number="7">_test_select t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel (<span class="st">&quot;select: &quot;</span> <span class="fu">++</span> typeName t)</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel1 <span class="st">&quot;select&quot;</span> t</a>
 <a class="sourceLine" id="cb10-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span></a>
 <a class="sourceLine" id="cb10-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
@@ -588,7 +535,7 @@ We consider two possibilities for <span class="math inline">\(k\)</span>. If <sp
 
 
 
-<!-- END BODY -->
+<!-- END CONTENT -->
 </div>
 
 <div id="footer">
