@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nbloomf.blog - Mutating Norm Recursion</title>
+<link rel="stylesheet" type="text/css" href="../../css/default.css" />
+<link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
+<link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="../../raw/gfx/icon/favicon-114.png" />
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../raw/gfx/icon/favicon-152.png" />
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+</head>
+
+<body>
+<div id="header">
+  <div id="logo">
+    <a href="../../index.html">nbloomf</a>
+  </div>
+  <div id="navigation">
+    <a href="../../index.html">Home</a>
+    <a href="../../pages/about.html">About</a>
+    <a href="../../pages/projects.html">Projects</a>
+    <a href="../../archive.html">Blog</a>
+  </div>
+</div>
+
+<div id="content">
+<h1>Mutating Norm Recursion</h1>
+<!-- BEGIN CONTENT -->
+
+
+<div class="info">
+Posted on 2018-01-19 by nbloomf
+</div>
+
+
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
+
+
+<!-- LaTeX Macros for Arithmetic Made Difficult -->
+<div class="invisible">
+<!-- basic maps -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+
+<!-- booleans -->
+\(\newcommand{\bool}{\mathbb{B}}\)
+\(\newcommand{\btrue}{\mathsf{true}}\)
+\(\newcommand{\bfalse}{\mathsf{false}}\)
+\(\newcommand{\bnot}{\mathsf{not}}\)
+\(\newcommand{\band}{\mathbin{\mathsf{and}}}\)
+\(\newcommand{\bor}{\mathbin{\mathsf{or}}}\)
+\(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
+\(\newcommand{\beq}{\mathsf{eq}}\)
+\(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- predicates -->
+\(\newcommand{\ptrue}{\mathsf{ptrue}}\)
+\(\newcommand{\pfalse}{\mathsf{pfalse}}\)
+\(\newcommand{\pnot}{\mathsf{pnot}}\)
+\(\newcommand{\pand}{\mathbin{\mathsf{pand}}}\)
+\(\newcommand{\por}{\mathbin{\mathsf{por}}}\)
+\(\newcommand{\pimpl}{\mathbin{\mathsf{pimpl}}}\)
+
+<!-- tuples -->
+\(\newcommand{\fst}{\mathsf{first}}\)
+\(\newcommand{\snd}{\mathsf{second}}\)
+\(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
+\(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
+\(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
+\(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
+\(\newcommand{\tupL}{\mathsf{tupL}}\)
+\(\newcommand{\tupR}{\mathsf{tupR}}\)
+
+<!-- disjoint unions -->
+\(\newcommand{\lft}{\mathsf{left}}\)
+\(\newcommand{\rgt}{\mathsf{right}}\)
+\(\newcommand{\either}{\mathsf{either}}\)
+\(\newcommand{\uSwap}{\mathsf{swap}_{+}}\)
+\(\newcommand{\uPair}{\mathsf{pair}_{+}}\)
+\(\newcommand{\uAssocL}{\mathsf{assocL}_{+}}\)
+\(\newcommand{\uAssocR}{\mathsf{assocR}_{+}}\)
+\(\newcommand{\isLft}{\mathsf{isLeft}}\)
+\(\newcommand{\isRgt}{\mathsf{isRight}}\)
+
+<!-- natural numbers -->
+\(\newcommand{\nats}{\mathbb{N}}\)
+\(\newcommand{\zero}{\mathsf{0}}\)
+\(\newcommand{\next}{\mathsf{next}}\)
+\(\newcommand{\unnext}{\mathsf{unnext}}\)
+\(\newcommand{\iszero}{\mathsf{isZero}}\)
+\(\newcommand{\prev}{\mathsf{prev}}\)
+
+<!-- natural number recursion -->
+\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
+\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
+\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
+\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
+\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+
+<!-- natural number arithmetic -->
+\(\newcommand{\nequal}{\mathsf{eq}}\)
+\(\newcommand{\nplus}{\mathsf{plus}}\)
+\(\newcommand{\ntimes}{\mathsf{times}}\)
+\(\newcommand{\nleq}{\mathsf{leq}}\)
+\(\newcommand{\ngeq}{\mathsf{geq}}\)
+\(\newcommand{\nminus}{\mathsf{minus}}\)
+\(\newcommand{\nmax}{\mathsf{max}}\)
+\(\newcommand{\nmin}{\mathsf{min}}\)
+\(\newcommand{\ndivalg}{\mathsf{divalg}}\)
+\(\newcommand{\nquo}{\mathsf{quo}}\)
+\(\newcommand{\nrem}{\mathsf{rem}}\)
+\(\newcommand{\ndiv}{\mathsf{div}}\)
+\(\newcommand{\ngcd}{\mathsf{gcd}}\)
+\(\newcommand{\ncoprime}{\mathsf{coprime}}\)
+\(\newcommand{\nlcm}{\mathsf{lcm}}\)
+\(\newcommand{\nmindiv}{\mathsf{mindiv}}\)
+\(\newcommand{\nisprime}{\mathsf{isPrime}}\)
+\(\newcommand{\npower}{\mathsf{power}}\)
+\(\newcommand{\nchoose}{\mathsf{choose}}\)
+
+<!-- categories -->
+\(\newcommand{\dom}{\mathsf{dom}}\)
+\(\newcommand{\cod}{\mathsf{cod}}\)
+
+<!-- lists -->
+\(\newcommand{\lists}[1]{\mathsf{List}(#1)}\)
+\(\newcommand{\nil}{\mathsf{nil}}\)
+\(\newcommand{\cons}{\mathsf{cons}}\)
+\(\newcommand{\uncons}{\mathsf{uncons}}\)
+\(\newcommand{\isnil}{\mathsf{isNil}}\)
+\(\newcommand{\tail}{\mathsf{tail}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+
+<!-- list recursion -->
+\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
+\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
+\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
+\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
+\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
+\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
+\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
+\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+
+<!-- list arithmetic -->
+\(\newcommand{\snoc}{\mathsf{snoc}}\)
+\(\newcommand{\revcat}{\mathsf{revcat}}\)
+\(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\cat}{\mathsf{cat}}\)
+\(\newcommand{\addlength}{\mathsf{addlength}}\)
+\(\newcommand{\length}{\mathsf{length}}\)
+\(\newcommand{\head}{\mathsf{head}}\)
+\(\newcommand{\at}{\mathsf{at}}\)
+\(\newcommand{\map}{\mathsf{map}}\)
+\(\newcommand{\range}{\mathsf{range}}\)
+\(\newcommand{\zip}{\mathsf{zip}}\)
+\(\newcommand{\zipPad}{\mathsf{zipPad}}\)
+\(\newcommand{\unzip}{\mathsf{unzip}}\)
+\(\newcommand{\prefix}{\mathsf{prefix}}\)
+\(\newcommand{\suffix}{\mathsf{suffix}}\)
+\(\newcommand{\lcp}{\mathsf{lcp}}\)
+\(\newcommand{\lcs}{\mathsf{lcs}}\)
+\(\newcommand{\all}{\mathsf{all}}\)
+\(\newcommand{\any}{\mathsf{any}}\)
+\(\newcommand{\tails}{\mathsf{tails}}\)
+\(\newcommand{\inits}{\mathsf{inits}}\)
+\(\newcommand{\filter}{\mathsf{filter}}\)
+\(\newcommand{\elt}{\mathsf{elt}}\)
+\(\newcommand{\addcount}{\mathsf{addcount}}\)
+\(\newcommand{\count}{\mathsf{count}}\)
+\(\newcommand{\repeat}{\mathsf{repeat}}\)
+\(\newcommand{\sublist}{\mathsf{sublist}}\)
+\(\newcommand{\infix}{\mathsf{infix}}\)
+\(\newcommand{\select}{\mathsf{select}}\)
+\(\newcommand{\unique}{\mathsf{unique}}\)
+\(\newcommand{\delete}{\mathsf{delete}}\)
+\(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
+\(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\take}{\mathsf{take}}\)
+\(\newcommand{\drop}{\mathsf{drop}}\)
+\(\newcommand{\takeBut}{\mathsf{takeBut}}\)
+\(\newcommand{\dropBut}{\mathsf{dropBut}}\)
+\(\newcommand{\takeWhile}{\mathsf{takeWhile}}\)
+\(\newcommand{\dropWhile}{\mathsf{dropWhile}}\)
+</div>
+<!-- End LaTeX Macros for Arithmetic Made Difficult -->
+
+<p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
+
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/MutatingNormRecursion.lhs">the source</a> into GHCi and play along.</p>
+
+<hr />
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">MutatingNormRecursion</span> (</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  mnormrec</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Testing</span> ()</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">MutatingRecursion</span></a></code></pre></div>
+<p>Just as mutating recursion generalizes bailout recursion at the expense of losing the tail recursive evaluation strategy, it will be handy to have a generalization of norm recursion that sacrifices tail recursion. We’ll call this <em>mutating norm recursion</em>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an inductive set, and let <span class="math inline">\(\eta : A \rightarrow \nats\)</span> be an inductive norm. Now suppose we have mappings <span class="math inline">\(\delta : A \rightarrow B\)</span> and <span class="math inline">\(\sigma : A \times B \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Theta : A \rightarrow B\)</span> such that. <span class="math display">\[\Theta(a) = \left\{\begin{array}{l}
+ \delta(a) &amp; \mathrm{if}\ \iszero(\eta(a)) \\
+ \sigma(a,\Theta(\varphi(a))) &amp; \mathrm{otherwise}
+\end{array}\right.\]</span> We denote this unique map by <span class="math inline">\(\mnormrec{\varphi}{\eta}{\delta}{\sigma}\)</span>.</p>
+<div class="proof">
+<p>We define maps <span class="math inline">\(\beta : \nats \times A \rightarrow \bool\)</span> by <span class="math display">\[\beta(n,a) = \iszero(\eta(a)),\]</span> <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\psi(n,a) = \delta(a),\]</span> <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span> by <span class="math display">\[\chi(n,a,b) = \sigma(a,b),\]</span> and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span> by <span class="math display">\[\omega(n,a) = \varphi(a).\]</span> Now we define <span class="math inline">\(\Omega : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\Omega = \mutrec{\delta}{\beta}{\psi}{\chi}{\omega}.\]</span></p>
+<p>We first need the following intermediate result: for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(k \in \nats\)</span>, we claim that <span class="math display">\[\Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) = \Omega(\eta(\varphi(a)),\varphi(a)).\]</span> To see this, we proceed by strong induction on <span class="math inline">\(\eta(\varphi(a))\)</span>. For the base case, suppose <span class="math inline">\(\eta(\varphi(a)) = \zero\)</span>; we show the equality holds by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) \\
+ &amp; = &amp; \Omega(\nplus(\zero,\zero),\varphi(a)) \\
+ &amp; = &amp; \Omega(\zero,\varphi(a)) \\
+ &amp; = &amp; \Omega(\eta(\varphi(a)),\varphi(a))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(k\)</span> when <span class="math inline">\(\eta(\varphi(a)) = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),\next(k)),\varphi(a)) \\
+ &amp; = &amp; \Omega(\next(\nplus(\eta(\varphi(a)),k)),\varphi(a)) \\
+ &amp; = &amp; \bif{\iszero(\eta(\varphi(a)))}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(a)),k),\varphi(\varphi(a))))} \\
+ &amp; = &amp; \bif{\btrue}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(a)),k),\varphi(\varphi(a))))} \\
+ &amp; = &amp; \delta(\varphi(a)) \\
+ &amp; = &amp; \bif{\btrue}{\delta(\varphi(a))}{} \\
+ &amp; = &amp; \bif{\iszero(\eta(\varphi(a)))}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(\eta(\varphi(a)),\varphi(\varphi(a))))} \\
+ &amp; = &amp; \Omega(\eta(\varphi(a)),\varphi(a))
+\end{eqnarray*}\]</span> as needed.</p>
+<p>For the strong inductive step, suppose the equality holds for all <span class="math inline">\(k\)</span> whenever <span class="math inline">\(\nleq(\eta(\varphi(a)),m)\)</span> for some <span class="math inline">\(m\)</span>, and suppose further that <span class="math inline">\(\eta(\varphi(a)) = \next(m)\)</span>. We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, of course we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) \\
+ &amp; = &amp; \Omega(\nplus(\eta(\varphi(a)),\zero),\varphi(a)) \\
+ &amp; = &amp; \Omega(\eta(\varphi(a)),\varphi(a))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(k\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),\next(k)),\varphi(a)) \\
+ &amp; = &amp; \Omega(\next(\nplus(\eta(\varphi(a)),k)),\varphi(a)) \\
+ &amp; = &amp; \bif{\iszero(\varphi(a))}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(a)),k),\varphi(\varphi(a))))} \\
+ &amp; = &amp; \sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(a)),k),\varphi(\varphi(a)))) \\
+ &amp; = &amp; Q.
+\end{eqnarray*}\]</span> Note that <span class="math inline">\(\eta(\varphi(a)) = \next(m)\)</span>, so that ((((a))),m)$, and thus <span class="math inline">\(\nplus(\eta(\varphi(\varphi(a))),u) = m\)</span> for some <span class="math inline">\(u\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \nplus(\eta(\varphi(a)),k) \\
+ &amp; = &amp; \nplus(\next(m),k) \\
+ &amp; = &amp; \nplus(m,\next(k)) \\
+ &amp; = &amp; \nplus(\nplus(\eta(\varphi(\varphi(a))),u),\next(k)) \\
+ &amp; = &amp; \nplus(\eta(\varphi(\varphi(a))),\nplus(u,\next(k))).
+\end{eqnarray*}\]</span> Using the strong induction hypothesis, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Q \\
+ &amp; = &amp; \sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(\varphi(a))),\nplus(u,\next(k))),\varphi(\varphi(a)))) \\
+ &amp; = &amp; \sigma(\varphi(a),\Omega(\eta(\varphi(\varphi(a))),\varphi(\varphi(a)))) \\
+ &amp; = &amp; \sigma(\varphi(a),\Omega(\nplus(\eta(\varphi(\varphi(a))),u),\varphi(\varphi(a)))) \\
+ &amp; = &amp; \sigma(\varphi(a),\Omega(m,\varphi(\varphi(a)))) \\
+ &amp; = &amp; \bif{\bfalse}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(m,\varphi(\varphi(a))))} \\
+ &amp; = &amp; \bif{\iszero(\eta(\varphi(a)))}{\delta(\varphi(a))}{\sigma(\varphi(a),\Omega(m,\varphi(\varphi(a))))} \\
+ &amp; = &amp; \Omega(\next(m),\varphi(a)) \\
+ &amp; = &amp; \Omega(\eta(\varphi(a)),\varphi(a))
+\end{eqnarray*}\]</span> as needed.</p>
+<p>Now we define <span class="math inline">\(\Theta : A \rightarrow B\)</span> by <span class="math display">\[\Theta(a) = \Omega(\eta(a),a).\]</span> To see that <span class="math inline">\(\Theta\)</span> has the claimed properties, note that if <span class="math inline">\(\eta(a) = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(a) \\
+ &amp; = &amp; \Omega(\eta(a),a) \\
+ &amp; = &amp; \Omega(\zero,a) \\
+ &amp; = &amp; \delta(a).
+\end{eqnarray*}\]</span> If <span class="math inline">\(\eta(a) = \next(m)\)</span>, then <span class="math inline">\(\nleq(eta(\varphi(a)),m)\)</span>, so that <span class="math inline">\(\nplus(\eta(\varphi(a)),u) = m\)</span> for some <span class="math inline">\(u\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Theta(a) \\
+ &amp; = &amp; \Omega(\eta(a),a) \\
+ &amp; = &amp; \Omega(\next(m),a) \\
+ &amp; = &amp; \bif{\iszero(\eta(a))}{\delta(a)}{\sigma(a,\Omega(m,\varphi(a)))} \\
+ &amp; = &amp; \bif{\iszero(\next(m))}{\delta(a)}{\sigma(a,\Omega(m,\varphi(a)))} \\
+ &amp; = &amp; \bif{\bfalse}{\delta(a)}{\sigma(a,\Omega(m,\varphi(a)))} \\
+ &amp; = &amp; \sigma(a,\Omega(m,\varphi(a))) \\
+ &amp; = &amp; \sigma(a,\Omega(\nplus(\eta(\varphi(a)),u),\varphi(a))) \\
+ &amp; = &amp; \sigma(a,\Omega(\eta(\varphi(a)),\varphi(a))) \\
+ &amp; = &amp; \sigma(a,\Theta(\varphi(a))
+\end{eqnarray*}\]</span> as needed.</p>
+<p>Finally we show that <span class="math inline">\(\Theta\)</span> is unique. To this end, suppose <span class="math inline">\(\Psi : A \rightarrow B\)</span> is a map such that <span class="math inline">\(\Psi(a) = \delta(a)\)</span> if <span class="math inline">\(\eta(a) = \zero\)</span> and <span class="math inline">\(\Psi(a) = \sigma(a,\Psi(\varphi(a))\)</span> otherwise. We show that <span class="math inline">\(\Psi(a) = \Theta(a)\)</span> for all <span class="math inline">\(a\)</span> by strong induction on <span class="math inline">\(\eta(a)\)</span>. For the base case <span class="math inline">\(\eta(a) = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(a) \\
+ &amp; = &amp; \delta(a) \\
+ &amp; = &amp; \Theta(a)
+\end{eqnarray*}\]</span> as needed. For the inductive step suppose the equality holds for all <span class="math inline">\(a\)</span> such that <span class="math inline">\(\nleq(\eta(a),m)\)</span> for some <span class="math inline">\(m\)</span>, and suppose further that <span class="math inline">\(\eta(a) = \next(m)\)</span>. Now <span class="math inline">\(\nleq(\eta(\varphi(a)),m)\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(a) \\
+ &amp; = &amp; \sigma(a,\Psi(\varphi(a)) \\
+ &amp; = &amp; \sigma(a,\Theta(\varphi(a)) \\
+ &amp; = &amp; \Theta(a)
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+</div>
+<h2 id="implementation">Implementation</h2>
+<p>We have a couple of ways to implement <span class="math inline">\(\mnormrec{\ast}{\ast}{\ast}{\ast}\)</span>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mnormrec,<span class="ot"> mnormrec' ::</span> (<span class="dt">Natural</span> n)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> n)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">  <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="ot">-&gt;</span> b</a></code></pre></div>
+<p>There’s the universal property:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">mnormrec phi eta delta sigma a <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="kw">case</span> unnext (eta a) <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> delta a</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">    <span class="dt">Right</span> _ <span class="ot">-&gt;</span> sigma a (mnormrec phi eta delta sigma (phi a))</a></code></pre></div>
+<p>And there’s the definition from the proof.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">mnormrec' phi eta delta sigma a <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  mutatingRec delta beta psi chi omega (eta a) a</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    beta _ a <span class="fu">=</span> isZero (eta a)</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    psi _ a <span class="fu">=</span> delta a</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    chi _ a b <span class="fu">=</span> sigma a b</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">    omega _ a <span class="fu">=</span> phi a</a></code></pre></div>
+
+
+
+<!-- END CONTENT -->
+</div>
+
+<div id="footer">
+  Site generated by
+  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+</div>
+</body>
+</html>

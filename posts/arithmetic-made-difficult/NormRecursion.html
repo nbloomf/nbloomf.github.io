@@ -105,6 +105,7 @@ Posted on 2017-12-25 by nbloomf
 \(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
 \(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
 \(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
+\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -200,16 +201,18 @@ Posted on 2017-12-25 by nbloomf
 <hr />
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">NormRecursion</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">NormRecursion</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  normRec</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a></code></pre></div>
 <p>The essence of recursion is to solve problems by combining solutions to smaller instances of the same problem. The recursion patterns we’ve identified so far take a specific and limited view of what “smaller instance” means; the instance smaller than <span class="math inline">\(\next(n)\)</span> is just <span class="math inline">\(n\)</span>. We can think of this as the recursion embodied in the induction principle, where we prove theorems about all natural numbers by assuming they hold for <span class="math inline">\(n\)</span> and showing they also hold for <span class="math inline">\(\next(n)\)</span>.</p>
 <p>We’ve seen an alternative induction principle – strong induction – which allows us to prove theorems by assuming they hold for all <span class="math inline">\(k\)</span> with <span class="math inline">\(\nleq(k,n)\)</span> and showing they hold for <span class="math inline">\(\next(n)\)</span>. Logically, strong induction is equivalent to “ordinary” induction, and so is redundant. But as we’ve seen, the stronger induction hypothesis of strong induction can make some proofs more convenient.</p>
 <p>Today we’ll establish a recursion pattern analogous to strong induction.</p>
