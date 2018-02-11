@@ -44,9 +44,19 @@ Posted on 2017-05-22 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-22 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-22 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-22 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,24 +233,25 @@ Posted on 2017-05-22 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Elt</span></a>
-<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Count</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Count</span></a></code></pre></div>
 <p>So far we’ve defined a bunch of functions that operate on lists, but still only one that can create one out of nothing, namely <span class="math inline">\(\range\)</span>. (<span class="math inline">\(\tails\)</span> and <span class="math inline">\(\inits\)</span> create lists, but only if we have one to start with.) Today we’ll nail down another list-creating utility, <span class="math inline">\(\repeat\)</span>.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set, and define <span class="math inline">\(f : A \rightarrow 1 + A \times A\)</span> by <span class="math inline">\(f(x) = \rgt((x,x))\)</span>. Now define <span class="math inline">\(\repeat : \nats \rightarrow {\lists{A}}^A\)</span> by <span class="math display">\[\repeat(n)(a) = \unfoldN(f)(n,a).\]</span></p>
@@ -236,7 +259,7 @@ Posted on 2017-05-22 by nbloomf
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">repeat<span class="ot"> ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">repeat n a <span class="fu">=</span> unfoldN f n a</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    f x <span class="fu">=</span> rgt (x,x)</a></code></pre></div>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    f x <span class="fu">=</span> rgt (tup x x)</a></code></pre></div>
 </div>
 <p>Since <span class="math inline">\(\repeat\)</span> is defined as an unfoldN, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
@@ -320,15 +343,18 @@ Posted on 2017-05-22 by nbloomf
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(m\)</span>. For the base case <span class="math inline">\(m = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \repeat(\nplus(\zero,n),a) \\
- &amp; = &amp; \repeat(n,a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+   = &amp; \repeat(n,a) \\
  &amp; = &amp; \cat(\nil,\repeat(n,a)) \\
  &amp; = &amp; \cat(\repeat(\zero,a),\repeat(n,a))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(m\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \repeat(\nplus(\next(m),n),a) \\
- &amp; = &amp; \repeat(\next(\nplus(m,n)),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+   = &amp; \repeat(\next(\nplus(m,n)),a) \\
  &amp; = &amp; \cons(a,\repeat(\nplus(m,n),a)) \\
  &amp; = &amp; \cons(a,\cat(\repeat(m,a),\repeat(n,a))) \\
- &amp; = &amp; \cat(\cons(a,\repeat(m,a)),\repeat(n,a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \cat(\cons(a,\repeat(m,a)),\repeat(n,a)) \\
  &amp; = &amp; \cat(\repeat(\next(m),a),\repeat(n,a))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -349,13 +375,15 @@ Posted on 2017-05-22 by nbloomf
 <p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \snoc(a,\repeat(\zero)(a)) \\
  &amp; = &amp; \snoc(a,\nil) \\
- &amp; = &amp; \cons(a,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \cons(a,\nil) \\
  &amp; = &amp; \cons(a,\repeat(\zero)(a)) \\
  &amp; = &amp; \repeat(\next(n))(a)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \snoc(a,\repeat(\next(n))(a)) \\
  &amp; = &amp; \snoc(a,\cons(a,\repeat(n)(a))) \\
- &amp; = &amp; \cons(a,\snoc(a,\repeat(n)(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \cons(a,\snoc(a,\repeat(n)(a))) \\
  &amp; = &amp; \cons(a,\repeat(\next(n))(a)) \\
  &amp; = &amp; \repeat(\next(\next(n)))(a)
 \end{eqnarray*}\]</span> as needed.</p>
@@ -377,12 +405,14 @@ Posted on 2017-05-22 by nbloomf
 <p>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rev(\repeat(\zero,a)) \\
  &amp; = &amp; \rev(\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \nil \\
  &amp; = &amp; \repeat(\zero,a)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rev(\repeat(\next(n),a)) \\
  &amp; = &amp; \rev(\cons(a,\repeat(n,a))) \\
- &amp; = &amp; \snoc(a,\rev(\repeat(n,a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \snoc(a,\rev(\repeat(n,a))) \\
  &amp; = &amp; \snoc(a,\repeat(n,a)) \\
  &amp; = &amp; \repeat(\next(n),a)
 \end{eqnarray*}\]</span> as needed.</p>
@@ -404,7 +434,7 @@ Posted on 2017-05-22 by nbloomf
 <a class="sourceLine" id="cb9-3" data-line-number="3">  , <span class="dt">TypeName</span> b, <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a)), <span class="dt">Equal</span> (t b)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a)), <span class="dt">Equal</span> (t b)</a>
 <a class="sourceLine" id="cb9-7" data-line-number="7">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb9-8" data-line-number="8">_test_repeat t u n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb9-9" data-line-number="9">  testLabel2 <span class="st">&quot;repeat&quot;</span> t n</a>
@@ -433,9 +463,6 @@ Posted on 2017-05-22 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

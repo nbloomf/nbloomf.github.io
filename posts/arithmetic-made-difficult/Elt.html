@@ -44,9 +44,19 @@ Posted on 2017-05-20 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,20 +233,21 @@ Posted on 2017-05-20 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Range</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Filter</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Range</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Filter</span></a></code></pre></div>
 <p>Today we’ll define a boolean function, <span class="math inline">\(\elt\)</span>, which detects whether or not a given <span class="math inline">\(a\)</span> is an item in a list. As usual we want to define <span class="math inline">\(\elt\)</span> as a fold: should we use a right fold or a left fold? Recall that the tradeoff between the two is that foldl is tail recursive, but foldr does not necessarily have to process the entire list. In this case, <span class="math inline">\(\elt(a)(x)\)</span> should be able to return early once it sees an <span class="math inline">\(a\)</span>. So lets say <span class="math display">\[\elt(a)(x) = \foldr{\varepsilon}{\varphi}(x).\]</span> Now what should <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span> be? Well, we want <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bfalse \\
  &amp; = &amp; \elt(a)(\nil) \\
@@ -234,13 +257,15 @@ Posted on 2017-05-20 by nbloomf
  &amp;   &amp; \btrue \\
  &amp; = &amp; \elt(a)(\cons(b,x)) \\
  &amp; = &amp; \foldr{\varepsilon}{\varphi}(\cons(b,x)) \\
- &amp; = &amp; \varphi(b,\foldr{\varepsilon}{\varphi}(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \varphi(b,\foldr{\varepsilon}{\varphi}(x)) \\
  &amp; = &amp; \varphi(b,\elt(a)(x))
 \end{eqnarray*}\]</span> while if <span class="math inline">\(a \neq b\)</span> we want <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(x) \\
  &amp; = &amp; \elt(a)(\cons(b,x)) \\
  &amp; = &amp; \foldr{\varepsilon}{\varphi}(\cons(b,x)) \\
- &amp; = &amp; \varphi(b,\foldr{\varepsilon}{\varphi}(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \varphi(b,\foldr{\varepsilon}{\varphi}(x)) \\
  &amp; = &amp; \varphi(b,\elt(a)(x)).
 \end{eqnarray*}\]</span> With this in mind we define <span class="math inline">\(\elt\)</span> like so.</p>
 <div class="definition">
@@ -280,8 +305,8 @@ Posted on 2017-05-20 by nbloomf
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\cons(b,\nil)) \\
- &amp; = &amp; \bif(\beq(a,b),\btrue,\elt(a,\nil)) \\
- &amp; = &amp; \bif(\beq(a,b),\btrue,\bfalse) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\nil)} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
  &amp; = &amp; \beq(a,b)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
@@ -302,21 +327,26 @@ Posted on 2017-05-20 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(x,y)) \\
  &amp; = &amp; \elt(a)(\cat(\nil,y)) \\
- &amp; = &amp; \elt(a)(y) \\
- &amp; = &amp; \bor(\bfalse,\elt(a)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \elt(a)(y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+   = &amp; \bor(\bfalse,\elt(a)(y)) \\
  &amp; = &amp; \bor(\elt(a)(\nil),\elt(a)(y)) \\
  &amp; = &amp; \bor(\elt(a)(x),\elt(a)(y))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. If <span class="math inline">\(b = a\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(\cons(b,x),y)) \\
- &amp; = &amp; \elt(a)(\cons(b,\cat(x,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \elt(a)(\cons(b,\cat(x,y))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\cat(x,y))} \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \bor(\btrue,\elt(a)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \bor(\btrue,\elt(a)(y)) \\
  &amp; = &amp; \bor(\bif{\beq(a,b)}{\btrue}{\elt(a)(x)},\elt(a)(y)) \\
  &amp; = &amp; \bor(\elt(a)(\cons(b,x)),\elt(a)(y))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(b \neq a\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(\cons(b,x),y)) \\
- &amp; = &amp; \elt(a)(\cons(b,\cat(x,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \elt(a)(\cons(b,\cat(x,y))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\cat(x,y))} \\
  &amp; = &amp; \elt(a)(\cat(x,y)) \\
  &amp; = &amp; \bor(\elt(a)(x),\elt(a)(y)) \\
@@ -338,14 +368,17 @@ Posted on 2017-05-20 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\snoc(b,\nil)) \\
- &amp; = &amp; \elt(a)(\cons(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \elt(a)(\cons(b,\nil)) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\nil)}
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(c \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\snoc(b,\cons(c,x))) \\
- &amp; = &amp; \elt(a)(\cons(c,\snoc(b,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \elt(a)(\cons(c,\snoc(b,x))) \\
  &amp; = &amp; \bif{\beq(a,c)}{\btrue}{\elt(a)(\snoc(b,x))} \\
  &amp; = &amp; \bif{\beq(a,c)}{\btrue}{\bif{\beq(a,b)}{\btrue}{\elt(a)(x)}} \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bif{\beq(a,c)}{\btrue}{\elt(a)(x)}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-commute-false}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\bif{\beq(a,c)}{\btrue}{\elt(a)(x)}} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\cons(c,x))}
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -364,11 +397,13 @@ Posted on 2017-05-20 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\rev(x)) \\
  &amp; = &amp; \elt(a)(\rev(\nil)) \\
- &amp; = &amp; \elt(a)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \elt(a)(\nil) \\
  &amp; = &amp; \elt(a)(x)
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\rev(\cons(b,x))) \\
- &amp; = &amp; \elt(a)(\snoc(b,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \elt(a)(\snoc(b,\rev(x))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\rev(x))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \elt(a)(\cons(b,x))
@@ -470,7 +505,48 @@ Posted on 2017-05-20 by nbloomf
 <a class="sourceLine" id="cb8-12" data-line-number="12">  \x y <span class="ot">-&gt;</span> eq (elt y (inits x)) (prefix y x)</a></code></pre></div>
 </div>
 </div>
-<p>If we filter <span class="math inline">\(a\)</span> out of a list, it is no longer an item there.</p>
+<p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\filter\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\elt(a,\filter(p)(x)) = \band(p(a),\elt(a,x)).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\filter(p)(\nil)) \\
+ &amp; = &amp; \elt(a,\nil) \\
+ &amp; = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \band(p(a),\bfalse) \\
+ &amp; = &amp; \band(p(a),\elt(a,\nil))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Note that if <span class="math inline">\(a = b\)</span>, then <span class="math inline">\(p(a) = p(b)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\filter(p)(\cons(b,x))) \\
+ &amp; = &amp; \elt(a,\bif{p(b)}{\cons(b,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \bif{p(b)}{\elt(a,\cons(b,\filter(p)(x)))}{\elt(a,\filter(p)(x))} \\
+ &amp; = &amp; \bif{p(b)}{\bif{\beq(a,b)}{\btrue}{\elt(a,\filter(p)(x))}}{\elt(a,\filter(p)(x))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-commute-true}
+   = &amp; \bif{\beq(a,b)}{\bif{p(b)}{\btrue}{\elt(a,\filter(p)(x))}}{\elt(a,\filter(p)(x))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\bif{p(b)}{\btrue}{\band(p(a),\elt(a,x))}}{\band(p(a),\elt(a,x))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\bif{p(a)}{\btrue}{\band(p(a),\elt(a,x))}}{\band(p(a),\elt(a,x))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\bif{p(a)}{\band(p(a),\btrue)}{\band(p(a),\elt(a,x))}}{\band(p(a),\elt(a,x))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \bif{\beq(a,b)}{\band(p(a),\bif{p(a)}{\btrue}{\elt(a,x)})}{\band(p(a),\elt(a,x))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \band(p(a),\bif{\beq(a,b)}{\bif{p(a)}{\btrue}{\elt(a,x)}}{\elt(a,x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-commute-true}
+   = &amp; \band(p(a),\bif{p(a)}{\bif{\beq(a,b)}{\btrue}{\elt(a,x)}}{\elt(a,x)}) \\
+ &amp; = &amp; \band(p(a),\bif{p(a)}{\elt(a,\cons(b,x))}{\elt(a,x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-if-right}
+   = &amp; \band(p(a),\elt(a,\cons(b,x)))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_elt_filter ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_elt_filter _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;elt(a)(filter(p,x)) == and(p(a),elt(a,x))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \p a x <span class="ot">-&gt;</span> eq (elt a (filter p x)) (and (p a) (elt a x))</a></code></pre></div>
+</div>
+</div>
+<p>As a special case, if we filter <span class="math inline">\(a\)</span> out of a list, it is no longer an item there.</p>
 <div class="theorem">
 <p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\elt(a)(\filter(\bnot(\beq(a,-)),x)) = \bfalse.\]</span></p>
 <div class="proof">
@@ -490,11 +566,11 @@ Posted on 2017-05-20 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_elt_filter_eq ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">_test_elt_filter_eq _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;elt(a)(filter(eq(a,-),x)) == false&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a (filter (not <span class="fu">.</span> eq a) x)) false</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_elt_filter_eq ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">_test_elt_filter_eq _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;elt(a)(filter(eq(a,-),x)) == false&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a (filter (not <span class="fu">.</span> eq a) x)) false</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\elt\)</span> is an <span class="math inline">\(\any\)</span>.</p>
@@ -511,7 +587,8 @@ Posted on 2017-05-20 by nbloomf
  &amp;   &amp; \elt(a)(\cons(b,x)) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \bif{\btrue}{\btrue}{\elt(a)(x)} \\
- &amp; = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \btrue \\
  &amp; = &amp; \bor(\btrue,\any(\beq(a,-),x)) \\
  &amp; = &amp; \bor(\beq(a,b),\any(\beq(a,-),x)) \\
  &amp; = &amp; \any(\beq(a,-),\cons(b,x))
@@ -519,7 +596,8 @@ Posted on 2017-05-20 by nbloomf
  &amp;   &amp; \elt(a)(\cons(b,x)) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \bif{\bfalse}{\btrue}{\elt(a)(x)} \\
- &amp; = &amp; \elt(a)(x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \elt(a)(x) \\
  &amp; = &amp; \any(\beq(a,-),x) \\
  &amp; = &amp; \bor(\bfalse,\any(\beq(a,-),x)) \\
  &amp; = &amp; \bor(\beq(a,b),\any(\beq(a,-),x)) \\
@@ -527,11 +605,11 @@ Posted on 2017-05-20 by nbloomf
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_elt_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">_test_elt_any _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;elt(a)(x) == any(eq(a,-))(x)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a x) (any (eq a) x)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_elt_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_elt_any _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;elt(a)(x) == any(eq(a,-))(x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a x) (any (eq a) x)</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\elt\)</span> can detect when two lists are distinct.</p>
@@ -541,13 +619,13 @@ Posted on 2017-05-20 by nbloomf
 <p>The contrapositive of this statement is trivial and kind of silly looking: If <span class="math inline">\(x = y\)</span>, then <span class="math inline">\(\elt(a)(x) = \elt(a)(y)\)</span>. But notice that this theorem gives us a simple way to detect when two lists are distinct from each other.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_elt_distinct ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">_test_elt_distinct _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;if elt(a)(x) /= elt(a)(y) then x /= y&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> not (eq (elt a x) (elt a y))</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">    <span class="kw">then</span> not (eq x y)</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_elt_distinct ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">_test_elt_distinct _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;if elt(a)(x) /= elt(a)(y) then x /= y&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  \a x y <span class="ot">-&gt;</span> <span class="kw">if</span> not (eq (elt a x) (elt a y))</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">    <span class="kw">then</span> not (eq x y)</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\map(f)\)</span> when <span class="math inline">\(f\)</span> is injective.</p>
@@ -585,58 +663,94 @@ Posted on 2017-05-20 by nbloomf
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_elt_range ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">_test_elt_range _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;if leq(a,c) then eq(elt(a,range(next(c),b)),false)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  \t a b c <span class="ot">-&gt;</span> <span class="kw">if</span> leq a c</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">    <span class="kw">then</span> eq (elt a ((range (next c) b) <span class="ot">`withTypeOf`</span> t)) false</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_elt_range ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">_test_elt_range _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;if leq(a,c) then eq(elt(a,range(next(c),b)),false)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  \t a b c <span class="ot">-&gt;</span> <span class="kw">if</span> leq a c</a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">    <span class="kw">then</span> eq (elt a ((range (next c) b) <span class="ot">`withTypeOf`</span> t)) false</a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\cons\)</span> on lists of lists.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(z \in \lists{\lists{A}}\)</span>, we have <span class="math display">\[\elt(\cons(a,x),\map(\cons(b,-))(z)) = \band(\beq(a,b),\elt(x,z)).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(\cons(a,x),\map(\cons(b,-))(\nil)) \\
+ &amp; = &amp; \elt(\cons(a,x),\nil) \\
+ &amp; = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \band(\beq(a,b),\bfalse) \\
+ &amp; = &amp; \band(\beq(a,b),\elt(x,\nil))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(x\)</span> for some <span class="math inline">\(z\)</span>, and let <span class="math inline">\(u \in \lists{A}\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(\cons(a,x),\map(\cons(b,-))(\cons(u,z))) \\
+ &amp; = &amp; \elt(\cons(a,x),\cons(\cons(b,u),\map(\cons(b,-))(z))) \\
+ &amp; = &amp; \bif{\beq(\cons(a,x),\cons(b,u))}{\btrue}{\elt(\cons(a,x),\map(\cons(b,-))(z))} \\
+ &amp; = &amp; \bif{\beq(\cons(a,x),\cons(b,u))}{\btrue}{\band(\beq(a,b),\elt(x,z))} \\
+ &amp; = &amp; \bif{\band(\beq(a,b),\beq(x,u))}{\btrue}{\band(\beq(a,b),\elt(x,z))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-is-if}
+   = &amp; \bor(\band(\beq(a,b),\beq(x,u)),\band(\beq(a,b),\elt(x,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-and-or-distribute}
+   = &amp; \band(\beq(a,b),\bor(\beq(x,u),\elt(x,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-is-if}
+   = &amp; \band(\beq(a,b),\bif{\beq(x,u)}{\btrue}{\elt(x,z)}) \\
+ &amp; = &amp; \band(\beq(a,b),\elt(x,\cons(u,z)))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_elt_cons_map_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t (t a) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">_test_elt_cons_map_cons _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  testName <span class="st">&quot;elt(cons(a,x),map(cons(b,-))(z)) == and(eq(a,b),elt(x,z))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  \a b x z <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">    (elt (cons a x) (map (cons b) z))</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">    (and (eq a b) (elt x z))</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_elt ::</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Natural</span> n</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">_test_elt t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">  testLabel1 <span class="st">&quot;elt&quot;</span> t</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb13-10" data-line-number="10">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb13-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb13-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb13-13" data-line-number="13">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb13-14" data-line-number="14">      }</a>
-<a class="sourceLine" id="cb13-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_elt_nil t)</a>
-<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_elt_cons t)</a>
-<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_elt_single t)</a>
-<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_elt_cat t)</a>
-<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_elt_snoc t)</a>
-<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_elt_rev t)</a>
-<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_elt_tails t)</a>
-<a class="sourceLine" id="cb13-23" data-line-number="23">  runTest args (_test_elt_inits t)</a>
-<a class="sourceLine" id="cb13-24" data-line-number="24">  runTest args (_test_elt_filter_eq t)</a>
-<a class="sourceLine" id="cb13-25" data-line-number="25">  runTest args (_test_elt_any t)</a>
-<a class="sourceLine" id="cb13-26" data-line-number="26">  runTest args (_test_elt_distinct t)</a>
-<a class="sourceLine" id="cb13-27" data-line-number="27">  runTest args (_test_elt_range t n)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_elt ::</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Natural</span> n</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  , <span class="dt">Arbitrary</span> (t (t a)), <span class="dt">Show</span> (t (t a)), <span class="dt">Equal</span> (t (t a))</a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">_test_elt t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">  testLabel1 <span class="st">&quot;elt&quot;</span> t</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb15-14" data-line-number="14">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb15-15" data-line-number="15">      }</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">  runTest args (_test_elt_nil t)</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">  runTest args (_test_elt_cons t)</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19">  runTest args (_test_elt_single t)</a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">  runTest args (_test_elt_cat t)</a>
+<a class="sourceLine" id="cb15-21" data-line-number="21">  runTest args (_test_elt_snoc t)</a>
+<a class="sourceLine" id="cb15-22" data-line-number="22">  runTest args (_test_elt_rev t)</a>
+<a class="sourceLine" id="cb15-23" data-line-number="23">  runTest args (_test_elt_tails t)</a>
+<a class="sourceLine" id="cb15-24" data-line-number="24">  runTest args (_test_elt_inits t)</a>
+<a class="sourceLine" id="cb15-25" data-line-number="25">  runTest args (_test_elt_filter t)</a>
+<a class="sourceLine" id="cb15-26" data-line-number="26">  runTest args (_test_elt_filter_eq t)</a>
+<a class="sourceLine" id="cb15-27" data-line-number="27">  runTest args (_test_elt_any t)</a>
+<a class="sourceLine" id="cb15-28" data-line-number="28">  runTest args (_test_elt_distinct t)</a>
+<a class="sourceLine" id="cb15-29" data-line-number="29">  runTest args (_test_elt_range t n)</a>
+<a class="sourceLine" id="cb15-30" data-line-number="30">  runTest args (_test_elt_cons_map_cons t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">main_elt ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">main_elt <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">main_elt ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">main_elt <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

@@ -44,9 +44,19 @@ Posted on 2014-05-07 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -216,152 +238,218 @@ Posted on 2014-05-07 by nbloomf
 <a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
 <p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec{\ast}{\ast}\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish some structural results.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(1 = \{\ast\}\)</span>, and define <span class="math inline">\(\varphi : 1 + \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi = \rgt \circ \either(\const(\zero),\next).\]</span> In this post we consider <span class="math display">\[(1 + \nats, \lft(\ast), \varphi)\]</span> as an inductive set.</p>
+<p><span id="def-unnext"></span> Let <span class="math inline">\(1 = \{\ast\}\)</span>, and define <span class="math inline">\(\varphi : 1 + \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi = \compose{\rgt}{\either(\const(\zero),\id)}.\]</span> In this post we consider <span class="math display">\[(1 + \nats, \lft(\ast), \varphi)\]</span> as an inductive set, and denote the natural recursion map <span class="math inline">\(\nats \rightarrow 1 + \nats\)</span> by <span class="math inline">\(\unnext\)</span>.</p>
 </div>
-<p>It turns out that <span class="math inline">\(1 + \nats\)</span> is isomorphic to <span class="math inline">\(\nats\)</span>, and the map that achieves this is useful.</p>
+<p>We can evaluate <span class="math inline">\(\unnext\)</span> directly.</p>
 <div class="theorem">
-<p>The natural recursion map <span class="math inline">\(\Theta : \nats \rightarrow 1 + \nats\)</span> is an isomorphism; in particular, the inverse of <span class="math inline">\(\Theta\)</span> is <span class="math display">\[\Omega = \either(\const(\zero),\next).\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\unnext\)</span>.</p>
-<div class="proof">
-<p>We need to show two results: first that <span class="math inline">\(\Omega\)</span> is an inductive set homomorphism, and second that <span class="math inline">\(\Omega\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. To the first point, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Omega(\lft(\ast)) \\
- &amp; = &amp; \either(\const(\zero),\id)(\lft(\ast)) \\
- &amp; = &amp; \const(\zero)(\ast) \\
- &amp; = &amp; \zero
-\end{eqnarray*}\]</span> and if <span class="math inline">\(x \in 1 + \nats\)</span>, we have two possibilities. If <span class="math inline">\(x = \lft(\ast)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Omega(\varphi(\lft(\ast))) \\
- &amp; = &amp; \Omega((\rgt \circ \either(\const(\zero),\next))(\lft(\ast))) \\
- &amp; = &amp; \Omega(\rgt(\either(\const(\zero),\next)(\lft(\ast)))) \\
- &amp; = &amp; \Omega(\rgt(\const(\zero)(\ast))) \\
- &amp; = &amp; \Omega(\rgt(\zero)) \\
- &amp; = &amp; \either(\const(\zero),\next)(\rgt(\zero)) \\
- &amp; = &amp; \next(\zero) \\
- &amp; = &amp; \next(\Omega(\lft(\ast)))
-\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(n)\)</span>, with <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Omega(\varphi(\rgt(n))) \\
- &amp; = &amp; \Omega((\rgt \circ \either(\const(\zero),\next))(\rgt(n))) \\
- &amp; = &amp; \Omega(\rgt(\either(\const(\zero),\next)(\rgt(n)))) \\
- &amp; = &amp; \Omega(\rgt(\next(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)(\rgt(\next(n))) \\
- &amp; = &amp; \next(\next(n)) \\
- &amp; = &amp; \next(\either(\const(\zero),\next)(\rgt(n))) \\
- &amp; = &amp; \next(\Omega(\rgt(n)))
-\end{eqnarray*}\]</span> as needed.</p>
-<p>Next to see that <span class="math inline">\(\Omega\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\((\Omega \circ \Theta)(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\Omega \circ \Theta)(n) \\
- &amp; = &amp; \Omega(\Theta(\zero)) \\
- &amp; = &amp; \either(\const(\zero),\next)(\natrec{\lft(\ast)}{\varphi}(\zero)) \\
- &amp; = &amp; \either(\const(\zero),\next)(\lft(\ast)) \\
- &amp; = &amp; \const(\zero)(\ast) \\
- &amp; = &amp; \zero \\
- &amp; = &amp; n,
-\end{eqnarray*}\]</span> and if the equality holds for <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\Omega \circ \Theta)(\next(n)) \\
- &amp; = &amp; \Omega(\Theta(\next(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)(\natrec{\lft(\ast)}{\varphi}(\next(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)(\varphi(\natrec{\lft(\ast)}{\varphi}(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)(\varphi(\Theta(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)((\rgt \circ \either(\const(\zero),\next))(\Theta(n))) \\
- &amp; = &amp; \either(\const(\zero),\next)(\rgt(\either(\const(\zero),\next)(\Theta(n)))) \\
- &amp; = &amp; \next(\either(\const(\zero),\next)(\Theta(n))) \\
- &amp; = &amp; \next(\Omega(\Theta(n))) \\
- &amp; = &amp; \next((\Omega \circ \Theta)(n)) \\
- &amp; = &amp; \next(n)
-\end{eqnarray*}\]</span> as needed. Now to see that <span class="math inline">\(\Theta \circ \Omega = \id\)</span>, we consider two possibilities. First note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\Theta \circ \Omega)(\lft(\ast)) \\
- &amp; = &amp; \Theta(\Omega(\lft(\ast))) \\
- &amp; = &amp; \Theta(\either(\const(\zero),\next)(\lft(\ast))) \\
- &amp; = &amp; \Theta(\const(\zero)(\ast)) \\
- &amp; = &amp; \Theta(\zero) \\
- &amp; = &amp; \lft(\ast).
-\end{eqnarray*}\]</span> To see that <span class="math inline">\((\Theta \circ \Omega)(\rgt(n)) = \rgt(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, we proceed by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\Theta \circ \Omega)(\rgt(n)) \\
- &amp; = &amp; \Theta(\Omega(\rgt(\zero))) \\
- &amp; = &amp; \Theta(\either(\const(\zero),\next)(\rgt(\zero))) \\
- &amp; = &amp; \Theta(\next(\zero)) \\
- &amp; = &amp; \natrec{\lft(\ast)}{\varphi}(\next(\zero)) \\
- &amp; = &amp; \varphi(\natrec{\lft(\ast)}{\varphi}(\zero)) \\
- &amp; = &amp; \varphi(\lft(\ast)) \\
- &amp; = &amp; (\rgt \circ \either(\const(\zero),\next))(\lft(\ast)) \\
- &amp; = &amp; \rgt(\either(\const(\zero),\next)(\lft(\ast))) \\
- &amp; = &amp; \rgt(\const(\zero)(\ast)) \\
- &amp; = &amp; \rgt(\zero) \\
- &amp; = &amp; \rgt(n)
-\end{eqnarray*}\]</span> as needed. For the inductive step, if the equality holds for some <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\Theta \circ \Omega)(\rgt(\next(n))) \\
- &amp; = &amp; \Theta(\Omega(\rgt(\next(n)))) \\
- &amp; = &amp; \Theta(\either(\const(\zero),\next)(\rgt(\next(n)))) \\
- &amp; = &amp; \Theta(\next(\next(n))) \\
- &amp; = &amp; \natrec{\lft(\ast)}{\varphi}(\next(\next(n))) \\
- &amp; = &amp; \varphi(\natrec{\lft(\ast)}{\varphi}(\next(n))) \\
- &amp; = &amp; \varphi(\Theta(\next(n))) \\
- &amp; = &amp; \varphi(\Theta(\either(\const(\zero),\next)(\rgt(n)))) \\
- &amp; = &amp; \varphi((\Theta \circ \Omega)(\rgt(n))) \\
- &amp; = &amp; \varphi(\rgt(n)) \\
- &amp; = &amp; (\rgt \circ \either(\const(\zero),\next))(\rgt(n)) \\
- &amp; = &amp; \rgt(\either(\const(\zero),\next)(\rgt(n))) \\
- &amp; = &amp; \rgt(\next(n))
-\end{eqnarray*}\]</span> as needed.</p>
-</div>
-</div>
-<p>From <span class="math inline">\(\unnext\)</span> we define two helper functions.</p>
-<div class="definition">
-<p>We define <span class="math inline">\(\prev : \nats \rightarrow \nats\)</span> by <span class="math display">\[\prev = \either(\const(\zero),\id) \circ \unnext\]</span> and <span class="math inline">\(\iszero : \nats \rightarrow \bool\)</span> by <span class="math display">\[\iszero = \either(\const(\btrue),\const(\bfalse)) \circ \unnext.\]</span></p>
-</div>
-<p>Now <span class="math inline">\(\unnext\)</span>, <span class="math inline">\(\prev\)</span>, and <span class="math inline">\(\iszero\)</span> have some useful properties.</p>
-<div class="theorem">
+<p><span id="thm-unnext-zero"></span><span id="thm-unnext-next"></span> If <span class="math inline">\(n \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\unnext(\zero) = \lft(\ast)\)</span>.</li>
 <li><span class="math inline">\(\unnext(\next(n)) = \rgt(n)\)</span>.</li>
-<li><span class="math inline">\(\prev(\zero) = \zero\)</span>.</li>
-<li><span class="math inline">\(\prev(\next(n)) = n\)</span>.</li>
-<li><span class="math inline">\(\iszero(\zero) = \btrue\)</span>.</li>
-<li><span class="math inline">\(\iszero(\next(n)) = \bfalse\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unnext(\zero) \\
- &amp; = &amp; \natrec{\lft(\ast)}{\varphi}(\zero) \\
- &amp; = &amp; \lft(\ast)
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
+= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+= &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as claimed.</li>
-<li>Letting <span class="math inline">\(\Omega\)</span> be the inverse of <span class="math inline">\(\unnext\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \unnext(\next(n)) \\
- &amp; = &amp; \unnext(\either(\const(\zero),\next)(\rgt(n))) \\
- &amp; = &amp; \unnext(\Omega(\rgt(n))) \\
- &amp; = &amp; (\unnext \circ \Omega)(\rgt(n)) \\
- &amp; = &amp; \rgt(n)
-\end{eqnarray*}\]</span> as claimed.</li>
+<li>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \unnext(\next(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
+= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \rgt(\either(\const(\zero),\next)(\lft(\ast))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \rgt(\const(\zero)(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \rgt(\zero)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \unnext(\next(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
+= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
+= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\unnext(\next(n))) \\
+ &amp;     \hyp{\unnext(\next(n)) = \rgt(n)}
+= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\rgt(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \rgt(\either(\const(\zero),\next)(\rgt(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \rgt(\next(n))
+\end{eqnarray*}\]</span> as needed.</li>
+</ol>
+</div>
+</div>
+<p>It turns out that <span class="math inline">\(1 + \nats\)</span> is isomorphic to <span class="math inline">\(\nats\)</span>, and the map that achieves this is useful.</p>
+<div class="theorem">
+<p><span id="thm-unnext-inverse"></span> The map <span class="math inline">\(\unnext : \nats \rightarrow 1 + \nats\)</span> is an isomorphism; in particular, the inverse of <span class="math inline">\(\unnext\)</span> is <span class="math display">\[Ω = \either(\const(\zero),\next).\]</span></p>
+<div class="proof">
+<p>We need to show two results: first that <span class="math inline">\(Ω\)</span> is an inductive set homomorphism, and second that <span class="math inline">\(Ω\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. To the first point, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Ω(\lft(\ast)) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \either(\const(\zero),\next)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+   = &amp; \const(\zero)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+   = &amp; \zero
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x \in 1 + \nats\)</span>, we have two possibilities. If <span class="math inline">\(x = \lft(\ast)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Ω(\compose{\rgt}{\either(\const(\zero),\next)}(\lft(\ast))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; Ω(\rgt(\either(\const(\zero),\next)(\lft(\ast)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+   = &amp; Ω(\rgt(\const(\zero)(\ast))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+   = &amp; Ω(\rgt(\zero)) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \either(\const(\zero),\next)(\rgt(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \next(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+   = &amp; \next(\const(\zero)(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+   = &amp; \next(\either(\const(\zero),\next)(\lft(\ast))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \next(Ω(\lft(\ast)))
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(n)\)</span>, with <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Ω(\compose{\rgt}{\either(\const(\zero),\next)}(\rgt(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; Ω(\rgt(\either(\const(\zero),\next)(\rgt(n)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; Ω(\rgt(\next(n))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \either(\const(\zero),\next)(\rgt(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \next(\next(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \next(\either(\const(\zero),\next)(\rgt(n))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \next(Ω(\rgt(n)))
+\end{eqnarray*}\]</span> as needed.</p>
+<p>Next to see that <span class="math inline">\(Ω\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\(\compose{Ω}{\unnext}(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose{Ω}{\unnext}(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; Ω(\unnext(\zero)) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \either(\const(\zero),\next)(\unnext(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
+   = &amp; \either(\const(\zero),\next)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+   = &amp; \const(\zero)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+   = &amp; \zero
+\end{eqnarray*}\]</span> and if the equality holds for <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose{Ω}{\unnext}(\next(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; Ω(\unnext(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
+   = &amp; Ω(\rgt(n)) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \either(\const(\zero),\next)(\rgt(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \next(n)
+\end{eqnarray*}\]</span> as needed. Now to see that <span class="math inline">\(\Theta \circ Ω = \id\)</span>, we consider two possibilities. First note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose{\unnext}{Ω}(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; \unnext(Ω(\lft(\ast))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \unnext(\either(\const(\zero),\next)(\lft(\ast))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+   = &amp; \unnext(\const(\zero)(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+   = &amp; \unnext(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
+   = &amp; \lft(\ast)
+\end{eqnarray*}\]</span> To see that <span class="math inline">\((\Theta \circ Ω)(\rgt(n)) = \rgt(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, we proceed by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose{\unnext}{Ω}(\rgt(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; \unnext(Ω(\rgt(\zero))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \unnext(\either(\const(\zero),\next)(\rgt(\zero))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \unnext(\next(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
+   = &amp; \rgt(\zero) \\
+\end{eqnarray*}\]</span> as needed. For the inductive step, if the equality holds for some <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose{\unnext}{Ω}(\rgt(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; \unnext(Ω(\rgt(\next(n)))) \\
+ &amp;     \let{Ω = \either(\const(\zero),\next)}
+   = &amp; \unnext(\either(\const(\zero),\next)(\rgt(\next(n)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+   = &amp; \unnext(\next(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
+   = &amp; \rgt(\next(n))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+</div>
+<p>From <span class="math inline">\(\unnext\)</span> we define two helper functions.</p>
+<div class="definition">
+<p><span id="def-prev"></span><span id="def-iszero"></span> We define <span class="math inline">\(\prev : \nats \rightarrow \nats\)</span> by <span class="math display">\[\prev = \compose{\either(\const(\zero),\id)}{\unnext}\]</span> and <span class="math inline">\(\iszero : \nats \rightarrow \bool\)</span> by <span class="math display">\[\iszero = \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}.\]</span></p>
+</div>
+<p>Now <span class="math inline">\(\prev\)</span>, and <span class="math inline">\(\iszero\)</span> have some useful properties.</p>
+<div class="theorem">
+<p>[]{/posts/arithmetic-made-difficult/Unary.html#thm-prev-zero}[]{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}[]{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-zero}[]{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-next} 1. <span class="math inline">\(\prev(\zero) = \zero\)</span>. 2. <span class="math inline">\(\prev(\next(n)) = n\)</span>. 3. <span class="math inline">\(\iszero(\zero) = \btrue\)</span>. 4. <span class="math inline">\(\iszero(\next(n)) = \bfalse\)</span>.</p>
+<div class="proof">
+<ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prev(\zero) \\
- &amp; = &amp; (\either(\const(\zero),\id) \circ \unnext)(\zero) \\
- &amp; = &amp; \either(\const(\zero),\id)(\unnext(\zero)) \\
- &amp; = &amp; \either(\const(\zero),\id)(\lft(\ast)) \\
- &amp; = &amp; \const(\zero)(\ast) \\
- &amp; = &amp; \zero
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-prev}
+= &amp; \compose{\either(\const(\zero),\id)}{\unnext}(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\zero),\id)(\unnext(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
+= &amp; \either(\const(\zero),\id)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\zero)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \zero
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prev(\next(n)) \\
- &amp; = &amp; (\either(\const(\zero),\id) \circ \unnext)(\next(n)) \\
- &amp; = &amp; \either(\const(\zero),\id)(\unnext(\next(n))) \\
- &amp; = &amp; \either(\const(\zero),\id)(\rgt(n)) \\
- &amp; = &amp; \id(n) \\
- &amp; = &amp; n
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-prev}
+= &amp; \compose{\either(\const(\zero),\id)}{\unnext}(\next(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\zero),\id)(\unnext(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
+= &amp; \either(\const(\zero),\id)(\rgt(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \id(n) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; n
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \iszero(\zero) \\
- &amp; = &amp; (\either(\const(\btrue),\const(\bfalse)) \circ \unnext)(\zero) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\zero)) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\lft(\ast)) \\
- &amp; = &amp; \const(\btrue)(\ast) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-iszero}
+= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\btrue)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \iszero(\next(n)) \\
- &amp; = &amp; (\either(\const(\btrue),\const(\bfalse)) \circ \unnext)(\next(n)) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\next(n))) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\rgt(n)) \\
- &amp; = &amp; \const(\bfalse)(n) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-iszero}
+= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}(\next(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\rgt(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \const(\bfalse)(n) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -375,20 +463,49 @@ Posted on 2014-05-07 by nbloomf
 </ol>
 <div class="proof">
 <ol type="1">
-<li>Let <span class="math inline">\(n \in \nats\)</span> and let <span class="math inline">\(\Omega\)</span> be the inverse of <span class="math inline">\(\unnext\)</span>. Consider <span class="math inline">\(\unnext(n) \in 1 + \nats\)</span>; we have either <span class="math inline">\(\unnext(n) = \lft(\ast)\)</span> or <span class="math inline">\(\unnext(n) = \rgt(m)\)</span> for some <span class="math inline">\(m \in \nats\)</span>. In the first case we have <span class="math display">\[\begin{eqnarray*}
+<li>Let <span class="math inline">\(n \in \nats\)</span>. Consider <span class="math inline">\(\unnext(n) \in 1 + \nats\)</span>; we have either <span class="math inline">\(\unnext(n) = \lft(\ast)\)</span> or <span class="math inline">\(\unnext(n) = \rgt(m)\)</span> for some <span class="math inline">\(m \in \nats\)</span>. In the first case we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; n \\
- &amp; = &amp; \Omega(\unnext(n)) \\
- &amp; = &amp; \Omega(\lft(\ast)) \\
- &amp; = &amp; \const(\zero)(\ast) \\
- &amp; = &amp; \zero,
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(n) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-inverse-left}
+= &amp; \compose{\either(\const(\zero),\next)}{\unnext}(n) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\zero),\next)(\unnext(n)) \\
+ &amp;     \hyp{\unnext(n) = \lft(\ast)}
+= &amp; \either(\const(\zero),\next)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\zero)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \zero
 \end{eqnarray*}\]</span> and in the second case we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; n \\
- &amp; = &amp; \Omega(\unnext(n)) \\
- &amp; = &amp; \Omega(\rgt(m)) \\
- &amp; = &amp; \next(m)
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(n) \\
+ &amp;     \compose{\either(\const(\zero),\next)}{\unnext}(n) \\
+= &amp; \either(\const(\zero),\next)(\unnext(n)) \\
+ &amp;     \hyp{\unnext(n) = \rgt(m)}
+= &amp; \either(\const(\zero),\next)(\rgt(m)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \next(m)
 \end{eqnarray*}\]</span> as claimed.</li>
-<li>If <span class="math inline">\(\zero = \next(n)\)</span>, we have <span class="math display">\[\btrue = \iszero(\zero) = \iszero(\next(n)) = \bfalse,\]</span> which is absurd.</li>
-<li>The “if” part is trivial. To see the “only if” part, suppose we have <span class="math inline">\(\next(n) = \next(m)\)</span>; then <span class="math display">\[n = \prev(\next(n)) = \prev(\next(m)) = m\]</span> as claimed.</li>
+<li>If <span class="math inline">\(\zero = \next(n)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-zero}
+= &amp; \iszero(\zero) \\
+ &amp;     \hyp{\next(n) = \zero}
+= &amp; \iszero(\next(n)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-next}
+= &amp; \bfalse
+\end{eqnarray*}\]</span> which is absurd.</li>
+<li>The “if” part is trivial. To see the “only if” part, suppose we have <span class="math inline">\(\next(n) = \next(m)\)</span>; then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; n \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+= &amp; \prev(\next(n)) \\
+ &amp;     \hyp{\next(n) = \next(m)}
+= &amp; \prev(\next(m)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+= &amp; m
+\end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
 </div>
@@ -501,9 +618,6 @@ false</code></pre>
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

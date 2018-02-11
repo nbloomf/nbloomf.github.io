@@ -44,9 +44,19 @@ Posted on 2017-05-26 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-26 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-26 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-26 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -219,9 +241,9 @@ Posted on 2017-05-26 by nbloomf
 <a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">ConsumingFold</span></a>
 <a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
 <a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Range</span></a>
 <a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Zip</span></a>
@@ -282,14 +304,16 @@ Posted on 2017-05-26 by nbloomf
  &amp;   &amp; \unique(\cons(a,\nil)) \\
  &amp; = &amp; \band(\bnot(\elt(a,\nil)),\unique(\nil)) \\
  &amp; = &amp; \band(\bnot(\bfalse),\btrue) \\
- &amp; = &amp; \band(\btrue,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \band(\btrue,\btrue) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\cons(a,\cons(b,\nil))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\cons(b,\nil))),\unique(\cons(b,\nil))) \\
  &amp; = &amp; \band(\bnot(\beq(a,b)),\btrue) \\
- &amp; = &amp; \bnot(\beq(a,b))
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-right}
+= &amp; \bnot(\beq(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -330,7 +354,8 @@ Posted on 2017-05-26 by nbloomf
  &amp; = &amp; \unique(\cons(a,u)) \\
  &amp; = &amp; \band(\bnot(\elt(a,u)),\unique(u)) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -384,11 +409,13 @@ Posted on 2017-05-26 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\snoc(a,\nil)) \\
- &amp; = &amp; \unique(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \unique(\cons(a,\nil)) \\
  &amp; = &amp; \band(\bnot(\elt(a,\nil)),\unique(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \unique(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \unique(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \band(\bnot(\elt(b,\snoc(a,x))),\unique(\snoc(a,x))) \\
  &amp; = &amp; \band(\bnot(\bif{\beq(b,a)}{\btrue}{\elt(b,x)}),\unique(\snoc(a,x))) \\
  &amp; = &amp; \band(\bnot(\elt(b,\cons(a,x))),\band(\bnot(\elt(a,x))),\unique(x)) \\
@@ -396,9 +423,12 @@ Posted on 2017-05-26 by nbloomf
  &amp; = &amp; \band(\bif{\beq(b,a)}{\bfalse}{\bnot(\elt(b,x))},\band(\bnot(\elt(a,x)),\unique(x))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\band(\bfalse,\band(\bnot(\elt(a,x)),\unique(x)))}{\band(\bnot(\elt(b,x)),\band(\bnot(\elt(a,x)),\unique(x)))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\bfalse}{\band(\band(\bnot(\elt(b,x)),\bnot(\elt(a,x))),\unique(x))} \\
- &amp; = &amp; \bif{\beq(a,b)}{\bfalse}{\band(\band(\bnot(\elt(a,x)),\bnot(\elt(b,x))),\unique(x))} \\
- &amp; = &amp; \bif{\beq(a,b)}{\bfalse}{\band(\bnot(\elt(a,x)),\band(\bnot(\elt(b,x)),\unique(x)))} \\
- &amp; = &amp; \bif{\beq(a,b)}{\band(\bfalse,\band(\bnot(\elt(b,x)),\unique(x)))}{\band(\bnot(\elt(a,x)),\band(\bnot(\elt(b,x)),\unique(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-commutative}
+   = &amp; \bif{\beq(a,b)}{\bfalse}{\band(\band(\bnot(\elt(a,x)),\bnot(\elt(b,x))),\unique(x))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-associative}
+   = &amp; \bif{\beq(a,b)}{\bfalse}{\band(\bnot(\elt(a,x)),\band(\bnot(\elt(b,x)),\unique(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+   = &amp; \bif{\beq(a,b)}{\band(\bfalse,\band(\bnot(\elt(b,x)),\unique(x)))}{\band(\bnot(\elt(a,x)),\band(\bnot(\elt(b,x)),\unique(x)))} \\
  &amp; = &amp; \band(\bif{\beq(a,b)}{\bfalse}{\bnot(\elt(a,x))},\band(\bnot(\elt(b,x)),\unique(x))) \\
  &amp; = &amp; \band(\bnot(\bif{\beq(a,b)}{\btrue}{\elt(a,x)}),\band(\bnot(\elt(b,x)),\unique(x))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\cons(b,x))),\band(\bnot(\elt(b,x)),\unique(x))) \\
@@ -420,11 +450,13 @@ Posted on 2017-05-26 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\rev(x)) \\
  &amp; = &amp; \unique(\rev(\nil)) \\
- &amp; = &amp; \unique(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \unique(\nil) \\
  &amp; = &amp; \unique(x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\rev(\cons(a,x))) \\
- &amp; = &amp; \unique(\snoc(a,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \unique(\snoc(a,\rev(x))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\rev(x))),\unique(\rev(x))) \\
  &amp; = &amp; \band(\bnot(\elt(a,x)),\unique(x)) \\
  &amp; = &amp; \unique(\cons(a,x))
@@ -451,9 +483,11 @@ Posted on 2017-05-26 by nbloomf
  &amp; = &amp; \unique(\cons(a,\range(\next(a),b))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\range(\next(a),b))),\unique(\range(\next(a),b))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\range(\next(a),b))),\btrue) \\
- &amp; = &amp; \bnot(\elt(a,\range(\next(a),b))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-right}
+   = &amp; \bnot(\elt(a,\range(\next(a),b))) \\
  &amp; = &amp; \bnot(\bfalse) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+   = &amp; \btrue
 \end{eqnarray*}\]</span></p>
 </div>
 <div class="test">
@@ -472,15 +506,17 @@ Posted on 2017-05-26 by nbloomf
  &amp;   &amp; \all(\unique)(\map(\cons(a,\cons(-,x)))(\nil)) \\
  &amp; = &amp; \all(\unique)(\nil) \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \bnot(\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+   = &amp; \bnot(\bfalse) \\
  &amp; = &amp; \bnot(\elt(a,\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\unique)(\map(\cons(a,\cons(-,\nil)))(\cons(b,x))) \\
  &amp; = &amp; \all(\unique)(\cons(\cons(a,\cons(b,\nil)),\map(\cons(a,\cons(-,\nil)))(x))) \\
  &amp; = &amp; \band(\unique(\cons(a,\cons(b,\nil))),\all(\unique)(\map(\cons(a,\cons(-,\nil)))(x))) \\
  &amp; = &amp; \band(\unique(\cons(a,\cons(b,\nil))),\bnot(\elt(a,x))) \\
- &amp; = &amp; \band(\bnot(\eq(a,b)),\bnot(\elt(a,x))) \\
- &amp; = &amp; \bnot(\bor(\eq(a,b),\elt(a,x))) \\
+ &amp; = &amp; \band(\bnot(\beq(a,b)),\bnot(\elt(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-demorgan-not-or}
+   = &amp; \bnot(\bor(\beq(a,b),\elt(a,x))) \\
  &amp; = &amp; \bnot(\elt(a,\cons(b,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -565,9 +601,6 @@ Posted on 2017-05-26 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

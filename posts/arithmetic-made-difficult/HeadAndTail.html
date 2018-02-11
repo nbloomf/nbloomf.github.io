@@ -44,9 +44,19 @@ Posted on 2018-01-03 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2018-01-03 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2018-01-03 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2018-01-03 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,13 +233,14 @@ Posted on 2018-01-03 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a></code></pre></div>
 <p>We define some helper functions in terms of <span class="math inline">\(\uncons\)</span>, analogous to <span class="math inline">\(\prev\)</span> and <span class="math inline">\(\iszero\)</span> on <span class="math inline">\(\nats\)</span>. These do not require recursion.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\isnil : \lists{A} \rightarrow \bool\)</span> by <span class="math display">\[\isnil = \either(\const(\btrue),\const(\bfalse)) \circ \uncons\]</span> and <span class="math inline">\(\head : \lists{A} \rightarrow 1 + A\)</span> by <span class="math display">\[\head = \uPair(\id,\fst) \circ \uncons\]</span> and <span class="math inline">\(\tail : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\tail = \either(\const(\nil),\snd) \circ \uncons.\]</span></p>
+<p><span id="def-isnil"></span><span id="def-head"></span><span id="def-tail"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\isnil : \lists{A} \rightarrow \bool\)</span> by <span class="math display">\[\isnil = \compose{\either(\const(\btrue),\const(\bfalse))}{\uncons}\]</span> and <span class="math inline">\(\head : \lists{A} \rightarrow 1 + A\)</span> by <span class="math display">\[\head = \compose{\uPair(\id,\fst)}{\uncons}\]</span> and <span class="math inline">\(\tail : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\tail = \compose{\either(\const(\nil),\snd)}{\uncons}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">isNil ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">isNil <span class="fu">=</span> (either (const true) (const false)) <span class="fu">.</span> uncons</a>
@@ -232,7 +255,7 @@ Posted on 2018-01-03 by nbloomf
 </div>
 <p>Now <span class="math inline">\(\isnil\)</span> detects <span class="math inline">\(\nil\)</span>:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
+<p><span id="thm-isnil-nil"></span><span id="thm-isnil-cons"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\isnil(\nil) = \btrue\)</span>.</li>
 <li><span class="math inline">\(\isnil(\cons(a,x)) = \bfalse\)</span>.</li>
@@ -241,17 +264,29 @@ Posted on 2018-01-03 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \isnil(\nil) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\uncons(\nil)) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\lft(\ast)) \\
- &amp; = &amp; \const(\btrue)(\ast) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-isnil}
+= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\uncons}(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\uncons(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-nil}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\btrue)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \isnil(\cons(a,x)) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\uncons(\cons(a,x))) \\
- &amp; = &amp; \either(\const(\btrue),\const(\bfalse))(\rgt((a,x))) \\
- &amp; = &amp; \const(\bfalse)((a,x)) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-isnil}
+= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\uncons}(\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\uncons(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \either(\const(\btrue),\const(\bfalse))(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \const(\bfalse)(\tup(a)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -273,7 +308,7 @@ Posted on 2018-01-03 by nbloomf
 </div>
 <p><span class="math inline">\(\head\)</span> extracts the “first” entry of a list:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
+<p><span id="thm-head-nil"></span><span id="thm-head-cons"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\head(\nil) = \lft(\ast)\)</span>.</li>
 <li><span class="math inline">\(\head(\cons(a,x)) = \rgt(a)\)</span>.</li>
@@ -282,17 +317,29 @@ Posted on 2018-01-03 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \head(\nil) \\
- &amp; = &amp; \uPair(\id,\fst)(\uncons(\nil)) \\
- &amp; = &amp; \uPair(\id,\fst)(\lft(\ast)) \\
- &amp; = &amp; \lft(\id(\ast)) \\
- &amp; = &amp; \lft(\ast)
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-head}
+= &amp; \compose{\uPair(\id,\fst)}{\uncons}(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \uPair(\id,\fst)(\uncons(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-nil}
+= &amp; \uPair(\id,\fst)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-lft}
+= &amp; \lft(\id(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \head(\cons(a,x)) \\
- &amp; = &amp; \upair(\id,\fst)(\uncons(\cons(a,x))) \\
- &amp; = &amp; \upair(\id,\fst)(\rgt((a,x))) \\
- &amp; = &amp; \rgt(\fst((a,x))) \\
- &amp; = &amp; \rgt(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-head}
+= &amp; \compose{\uPair(\id,\fst)}{\uncons}(\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \uPair(\id,\fst)(\uncons(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \uPair(\id,\fst)(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-rgt}
+= &amp; \rgt(\fst(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-fst-tup}
+= &amp; \rgt(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -314,7 +361,7 @@ Posted on 2018-01-03 by nbloomf
 </div>
 <p>And <span class="math inline">\(\tail\)</span> peels off the “first” entry of a list.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
+<p><span id="thm-tail-nil"></span><span id="thm-tail-cons"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tail(\nil) = \nil\)</span>.</li>
 <li><span class="math inline">\(\tail(\cons(a,x)) = x\)</span>.</li>
@@ -323,17 +370,29 @@ Posted on 2018-01-03 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tail(\nil) \\
- &amp; = &amp; \either(\const(\nil),\snd)(\uncons(\nil)) \\
- &amp; = &amp; \either(\const(\nil),\snd)(\lft(\ast)) \\
- &amp; = &amp; \const(\nil)(\ast) \\
- &amp; = &amp; \nil
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-tail}
+= &amp; \compose{\either(\const(\nil),\snd)}{\uncons}(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\nil),\snd)(\uncons(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-nil}
+= &amp; \either(\const(\nil),\snd)(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\nil)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \nil
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tail(\cons(a,x)) \\
- &amp; = &amp; \either(\const(\nil),\snd)(\uncons(\cons(a,x))) \\
- &amp; = &amp; \either(\const(\nil),\snd)(\rgt((a,x))) \\
- &amp; = &amp; \snd((a,x)) \\
- &amp; = &amp; x
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#def-tail}
+= &amp; \compose{\either(\const(\nil),\snd)}{\uncons}(\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\nil),\snd)(\uncons(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \either(\const(\nil),\snd)(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \snd(\tup(a)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-snd-tup}
+= &amp; x
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -400,9 +459,6 @@ Posted on 2018-01-03 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

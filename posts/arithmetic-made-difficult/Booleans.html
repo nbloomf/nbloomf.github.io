@@ -44,9 +44,19 @@ Posted on 2014-04-01 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-04-01 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,38 +233,46 @@ Posted on 2014-04-01 by nbloomf
 <p>Before we think about numbers or writing programs, let’s start by nailing down some important ideas about truth values. In math there can be a kind of other-worldness about true and false, since they live in the “metalanguage” of mathematical logic rather than the “object language” of whatever we are studying. But it will turn out to be useful to algebraify the truth values themselves.</p>
 <p>We’re going to characterize the boolean values true and false in a roundabout way. First, we define a kind of algebra.</p>
 <div class="definition">
-<p><a href="#def-doubly-pointed-set"></a> A <em>doubly-pointed set</em> is a set <span class="math inline">\(A\)</span> with two (not necessarily distinct) distinguished elements <span class="math inline">\(a_t, a_f \in A\)</span>. If <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are doubly-pointed sets with distinguished elements <span class="math inline">\(a_t, a_f \in A\)</span> and <span class="math inline">\(b_t, b_f \in B\)</span>, a map <span class="math inline">\(\theta : A \rightarrow B\)</span> is called a <em>doubly-pointed homomorphism</em> if <span class="math inline">\(\theta(a_t) = b_t\)</span> and <span class="math inline">\(\theta(a_f) = b_f\)</span>.</p>
+<p><span id="def-doubly-pointed-set"></span> A <em>doubly-pointed set</em> is a set <span class="math inline">\(A\)</span> with two (not necessarily distinct) distinguished elements <span class="math inline">\(a_t, a_f \in A\)</span>. If <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are doubly-pointed sets with distinguished elements <span class="math inline">\(a_t, a_f \in A\)</span> and <span class="math inline">\(b_t, b_f \in B\)</span>, a map <span class="math inline">\(\theta : A \rightarrow B\)</span> is called a <em>doubly-pointed homomorphism</em> if <span class="math inline">\(\theta(a_t) = b_t\)</span> and <span class="math inline">\(\theta(a_f) = b_f\)</span>.</p>
 </div>
 <p>As algebras go, doubly-pointed sets are almost as weak as they come. We can see shades of the boolean values there – “true” and “false” can be thought of as distinguished elements in a doubly-pointed set. And indeed we’ll do that. But the booleans are not just any doubly-pointed set; they are the <em>smallest</em> such set in a precise sense.</p>
 <div class="definition">
-<p><a href="#def-bool"></a> There is a special doubly-pointed set, denoted <span class="math inline">\(\bool\)</span>, with distinguished elements <span class="math inline">\(\btrue\)</span> and <span class="math inline">\(\bfalse\)</span>, with the property that if <span class="math inline">\(A\)</span> is a doubly-pointed set with distinguished elements <span class="math inline">\(a_t, a_f\)</span>, then there is a <em>unique</em> doubly-pointed homomorphism <span class="math inline">\(\Theta : \bool \rightarrow A\)</span>. We denote this <span class="math inline">\(\Theta\)</span> by <span class="math display">\[\Theta(p) = \bif{p}{a_t}{a_f}.\]</span> To be clear, we have <span class="math display">\[\bif{\btrue}{a_t}{a_f} = a_t\]</span> and <span class="math display">\[\bif{\bfalse}{a_t}{a_f} = a_f.\]</span></p>
+<p><span id="def-bool"></span> There is a special doubly-pointed set, denoted <span class="math inline">\(\bool\)</span>, with distinguished elements <span class="math inline">\(\btrue\)</span> and <span class="math inline">\(\bfalse\)</span>, with the property that if <span class="math inline">\(A\)</span> is a doubly-pointed set with distinguished elements <span class="math inline">\(a_t, a_f\)</span>, then there is a <em>unique</em> doubly-pointed homomorphism <span class="math inline">\(\Theta : \bool \rightarrow A\)</span>. We denote this <span class="math inline">\(\Theta\)</span> by <span class="math display">\[\Theta(p) = \bif{p}{a_t}{a_f}.\]</span></p>
 </div>
 <p>What makes the booleans special among doubly-pointed sets is this unique map, which looks suspiciously like the traditional “if-then-else” construct, because that’s exactly what it is.</p>
+<div class="corollary">
+<p><span id="cor-if-true"></span><span id="cor-if-false"></span> Let <span class="math inline">\((A,a_t,a_f)\)</span> be a doubly pointed set. Then we have the following.</p>
+<ol type="1">
+<li><span class="math inline">\(\bif{\btrue}{a_t}{a_f} = a_t\)</span>.</li>
+<li><span class="math inline">\(\bif{\bfalse}{a_t}{a_f} = a_f\)</span>.</li>
+</ol>
+<div class="test">
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">_test_if_true ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">_test_if_true p _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  testName <span class="st">&quot;if(true,a,b) == a&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (ifThenElse (true <span class="ot">`withTypeOf`</span> p) x y) x</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">_test_if_false ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb2-10" data-line-number="10">_test_if_false p _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-11" data-line-number="11">  testName <span class="st">&quot;if(false,a,b) == a&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">  \x y <span class="ot">-&gt;</span> eq (ifThenElse (false <span class="ot">`withTypeOf`</span> p) x y) y</a></code></pre></div>
+</div>
+</div>
 <p>This is a weird way to define <span class="math inline">\(\bool\)</span> – but there’s a really good reason for it, which we’ll get into later.</p>
 <p>I’m referring to “the” booleans as if they are uniquely determined, but of course they aren’t – any other doubly-pointed set that also maps uniquely to any other is indistinguishable from <span class="math inline">\(\bool\)</span> up to a renaming of the special elements. For this reason we’ll wrap up the important information about <span class="math inline">\(\bool\)</span> in a type class, rather than a single type.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Boolean</span> b <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">  true,<span class="ot"> false ::</span> b</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">  ifThenElse ::</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Boolean</span> b <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  true,<span class="ot"> false ::</span> b</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="ot">  ifThenElse ::</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</a></code></pre></div>
 <p>Of course the Haskell <code>Bool</code> type is an instance.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Boolean</span> <span class="dt">Bool</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  true <span class="fu">=</span> <span class="dt">True</span></a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  false <span class="fu">=</span> <span class="dt">False</span></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">  ifThenElse p x y <span class="fu">=</span> <span class="kw">if</span> p <span class="kw">then</span> x <span class="kw">else</span> y</a></code></pre></div>
-<p>We can test this instance. Remember the defining property of <span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> is that it preserves distinguished points.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_if_true ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">_test_if_true p _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;if(true,a,b) == a&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (ifThenElse (true <span class="ot">`withTypeOf`</span> p) x y) x</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="ot">_test_if_false ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">_test_if_false p _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-11" data-line-number="11">  testName <span class="st">&quot;if(false,a,b) == a&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-12" data-line-number="12">  \x y <span class="ot">-&gt;</span> eq (ifThenElse (false <span class="ot">`withTypeOf`</span> p) x y) y</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Boolean</span> <span class="dt">Bool</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  true <span class="fu">=</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  false <span class="fu">=</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  ifThenElse p x y <span class="fu">=</span> <span class="kw">if</span> p <span class="kw">then</span> x <span class="kw">else</span> y</a></code></pre></div>
 <p>It will be handy later to name these two functions from an abstract boolean set to <code>Bool</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">isTrue ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">isTrue p <span class="fu">=</span> ifThenElse p true false</a>
@@ -250,87 +280,161 @@ Posted on 2014-04-01 by nbloomf
 <a class="sourceLine" id="cb5-4" data-line-number="4"><span class="ot">isFalse ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">isFalse p <span class="fu">=</span> ifThenElse p false true</a></code></pre></div>
 <p>There are many other instances which differ only by the labels of <span class="math inline">\(\btrue\)</span> and <span class="math inline">\(\bfalse\)</span>, and depending on the context, a different concrete instance might make more sense. We could call the distinguished elements of <span class="math inline">\(\bool\)</span> “Yes/No”, “Present/Absent”, or something else, and the essence of booleanness would not change.</p>
-<p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> enjoys some other nice properties. For example, it interacts with function application.</p>
+<p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> enjoys some other nice properties. For instance, <span class="math inline">\(\bif{p}{a}{a} = \btrue\)</span>.</p>
 <div class="theorem">
-<p><a href="#thm-iffunc"></a> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> a map. For all <span class="math inline">\(p \in \bool\)</span> and <span class="math inline">\(u,v \in A\)</span>, we have <span class="math display">\[f(\bif{p}{u}{v}) = \bif{p}{f(u)}{f(v)}.\]</span></p>
+<p><span id="thm-if-same"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p \in \bool\)</span>, we have <span class="math display">\[\bif{p}{a}{a} = a.\]</span></p>
+<div class="proof">
+<p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p}{a}{a} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{\btrue}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; a
+\end{eqnarray*}\]</span> and if <span class="math inline">\(p = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p}{a}{a} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{\bfalse}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; a
+\end{eqnarray*}\]</span></p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_if_same ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">_test_if_same _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;if(p,a,a) == a&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  \p a <span class="ot">-&gt;</span> eq (ifThenElse p a a) a</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> interacts with function application.</p>
+<div class="theorem">
+<p><span id="thm-iffunc"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> a map. For all <span class="math inline">\(p \in \bool\)</span> and <span class="math inline">\(u,v \in A\)</span>, we have <span class="math display">\[f(\bif{p}{u}{v}) = \bif{p}{f(u)}{f(v)}.\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; f(\bif{p}{u}{v}) \\
- &amp; = &amp; f(\bif{\btrue}{u}{v}) \\
- &amp; = &amp; f(u) \\
- &amp; = &amp; \bif{\btrue}{f(u)}{f(v)} \\
- &amp; = &amp; \bif{p}{f(u)}{f(v)}
+ &amp;     \let{p = \btrue}
+   = &amp; f(\bif{\btrue}{u}{v}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; f(u) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{f(u)}{f(v)} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{p}{f(u)}{f(v)}
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; f(\bif{p}{u}{v}) \\
- &amp; = &amp; f(\bif{\bfalse}{u}{v}) \\
- &amp; = &amp; f(v) \\
- &amp; = &amp; \bif{\bfalse}{f(u)}{f(v)} \\
- &amp; = &amp; \bif{p}{f(u)}{f(v)}
+ &amp;     \let{p = \bfalse}
+   = &amp; f(\bif{\bfalse}{u}{v}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; f(v) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{f(u)}{f(v)} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{p}{f(u)}{f(v)}
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_if_func ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">_test_if_func _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;f(if(p,a,b)) == if(p,f(a),f(b))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">  \f p a b <span class="ot">-&gt;</span> eq (f (ifThenElse p a b)) (ifThenElse p (f a) (f b))</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_if_func ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_if_func _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;f(if(p,a,b)) == if(p,f(a),f(b))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \f p a b <span class="ot">-&gt;</span> eq (f (ifThenElse p a b)) (ifThenElse p (f a) (f b))</a></code></pre></div>
 </div>
 </div>
 <p>Nested <span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span>s commute (sort of).</p>
 <div class="theorem">
-<p><a href="#thm-ifnest"></a> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p,q \in \bool\)</span> and <span class="math inline">\(a,b,c,d \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}}.
+<p><span id="thm-ifnest"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p,q \in \bool\)</span> and <span class="math inline">\(a,b,c,d \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+  &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
+  &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}}.
 \end{eqnarray*}\]</span></p>
 <div class="proof">
 <p>We have four possibilities for <span class="math inline">\((p,q)\)</span>. If <span class="math inline">\(p = \btrue\)</span> and <span class="math inline">\(q = \btrue\)</span>, <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\btrue}{\bif{\btrue}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\btrue}{a}{b} \\
- &amp; = &amp; a \\
- &amp; = &amp; \bif{\btrue}{a}{c} \\
- &amp; = &amp; \bif{\btrue}{\bif{\btrue}{a}{c}}{\bif{p}{b}{d}} \\
- &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{\btrue}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
+ &amp;     \let{q = \btrue}
+   = &amp; \bif{\btrue}{\bif{\btrue}{a}{b}}{\bif{\btrue}{c}{d}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{a}{c} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{\bif{\btrue}{a}{c}}{\bif{\btrue}{b}{d}} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{\btrue}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{q = \btrue}
+   = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p = \btrue\)</span> and <span class="math inline">\(q = \bfalse\)</span>, <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\btrue}{\bif{\bfalse}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\bfalse}{a}{b} \\
- &amp; = &amp; b \\
- &amp; = &amp; \bif{\btrue}{b}{d} \\
- &amp; = &amp; \bif{\bfalse}{\bif{p}{a}{c}}{\bif{\btrue}{b}{d}} \\
- &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{\btrue}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
+ &amp;     \let{q = \bfalse}
+   = &amp; \bif{\btrue}{\bif{\bfalse}{a}{b}}{\bif{\bfalse}{c}{d}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\bfalse}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; b \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{b}{d} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{\bif{\btrue}{a}{c}}{\bif{\btrue}{b}{d}} \\
+ &amp;     \let{q = \bfalse}
+   = &amp; \bif{q}{\bif{\btrue}{a}{c}}{\bif{\btrue}{b}{d}} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p = \bfalse\)</span> and <span class="math inline">\(q = \btrue\)</span>, <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\bfalse}{\bif{q}{a}{b}}{\bif{\btrue}{c}{d}} \\
- &amp; = &amp; \bif{\btrue}{c}{d} \\
- &amp; = &amp; c \\
- &amp; = &amp; \bif{\bfalse}{a}{c} \\
- &amp; = &amp; \bif{\btrue}{\bif{\bfalse}{a}{c}}{\bif{p}{b}{d}} \\
- &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{\bfalse}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
+ &amp;     \let{q = \btrue}
+   = &amp; \bif{\bfalse}{\bif{\btrue}{a}{b}}{\bif{\btrue}{c}{d}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\btrue}{c}{d} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; c \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{a}{c} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{p}{a}{c} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{q = \btrue}
+   = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p = \bfalse\)</span> and <span class="math inline">\(q = \bfalse\)</span>, <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
- &amp; = &amp; \bif{\bfalse}{\bif{q}{a}{b}}{\bif{\bfalse}{c}{d}} \\
- &amp; = &amp; \bif{\bfalse}{c}{d} \\
- &amp; = &amp; d \\
- &amp; = &amp; \bif{\bfalse}{b}{d} \\
- &amp; = &amp; \bif{\bfalse}{\bif{p}{a}{c}}{\bif{\bfalse}{b}{d}} \\
- &amp; = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{\bfalse}{\bif{q}{a}{b}}{\bif{q}{c}{d}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{q}{c}{d} \\
+ &amp;     \let{q = \bfalse}
+   = &amp; \bif{\bfalse}{c}{d} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; d \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{b}{d} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{p}{b}{d} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
+ &amp;     \let{q = \bfalse}
+   = &amp; \bif{q}{\bif{p}{a}{c}}{\bif{p}{b}{d}} \\
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_if_nest ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">_test_if_nest _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;if(p,if(q,a,b),if(q,c,d)) == if(q,if(p,a,c),if(p,b,d))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  \p q a b c d <span class="ot">-&gt;</span></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">    eq</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7">      (ifThenElse p (ifThenElse q a b) (ifThenElse q c d))</a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">      (ifThenElse q (ifThenElse p a c) (ifThenElse p b d))</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_if_nest ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">_test_if_nest _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if(p,if(q,a,b),if(q,c,d)) == if(q,if(p,a,c),if(p,b,d))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  \p q a b c d <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">    eq</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">      (ifThenElse p (ifThenElse q a b) (ifThenElse q c d))</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">      (ifThenElse q (ifThenElse p a c) (ifThenElse p b d))</a></code></pre></div>
 </div>
 </div>
 <p>Nested ifs on the same boolean can be pruned.</p>
 <div class="theorem">
-<p><a href="#thm-ifprune"></a> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p \in \bool\)</span> and <span class="math inline">\(a,b,c \in A\)</span>. We have the following.</p>
+<p><span id="thm-if-prune-true"></span><span id="thm-if-prune-false"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p \in \bool\)</span> and <span class="math inline">\(a,b,c \in A\)</span>. We have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\bif{p}{\bif{p}{a}{b}}{c} = \bif{p}{a}{c}\)</span></li>
 <li><span class="math inline">\(\bif{p}{a}{\bif{p}{b}{c}} = \bif{p}{a}{c}\)</span></li>
@@ -339,141 +443,255 @@ Posted on 2014-04-01 by nbloomf
 <ol type="1">
 <li>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{p}{a}{b}}{c} \\
- &amp; = &amp; \bif{p}{\bif{\btrue}{a}{b}}{c} \\
- &amp; = &amp; \bif{p}{a}{c}
+ &amp;     \let{p = \btrue}
+= &amp; \bif{\btrue}{\bif{\btrue}{a}{b}}{c} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{\btrue}{a}{c} \\
+ &amp;     \let{p = \btrue}
+= &amp; \bif{p}{a}{c}
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(p = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{\bif{p}{a}{b}}{c} \\
- &amp; = &amp; \bif{\bfalse}{\bif{\bfalse}{a}{b}}{c} \\
- &amp; = &amp; c \\
- &amp; = &amp; \bif{\bfalse}{a}{c} \\
- &amp; = &amp; \bif{p}{a}{c}
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{\bfalse}{\bif{\bfalse}{a}{b}}{c} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; c \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{\bfalse}{a}{c} \\
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{p}{a}{c}
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{a}{\bif{p}{b}{c}} \\
- &amp; = &amp; \bif{\btrue}{a}{\bif{p}{b}{c}} \\
- &amp; = &amp; a \\
- &amp; = &amp; \bif{\btrue}{a}{c} \\
- &amp; = &amp; \bif{p}{a}{c}
+ &amp;     \let{p = \btrue}
+= &amp; \bif{\btrue}{a}{\bif{\btrue}{b}{c}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{\btrue}{a}{c} \\
+ &amp;     \let{p = \btrue}
+= &amp; \bif{p}{a}{c}
 \end{eqnarray*}\]</span> as claimed, and if <span class="math inline">\(p = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{a}{\bif{p}{b}{c}} \\
- &amp; = &amp; \bif{p}{a}{\bif{\bfalse}{b}{c}} \\
- &amp; = &amp; \bif{p}{a}{c}
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{\bfalse}{a}{\bif{\bfalse}{b}{c}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{\bfalse}{a}{c} \\
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{p}{a}{c}
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_if_prune_left ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">_test_if_prune_left _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;if(p,if(p,a,b),c) == if(p,a,c)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">  \p a b c <span class="ot">-&gt;</span> eq (ifThenElse p (ifThenElse p a b) c) (ifThenElse p a c)</a>
-<a class="sourceLine" id="cb8-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="ot">_test_if_prune_right ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb8-10" data-line-number="10">_test_if_prune_right _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb8-11" data-line-number="11">  testName <span class="st">&quot;if(p,a,if(p,b,c)) == if(p,a,c)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb8-12" data-line-number="12">  \p a b c <span class="ot">-&gt;</span> eq (ifThenElse p a (ifThenElse p b c)) (ifThenElse p a c)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_if_prune_left ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_if_prune_left _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;if(p,if(p,a,b),c) == if(p,a,c)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \p a b c <span class="ot">-&gt;</span> eq (ifThenElse p (ifThenElse p a b) c) (ifThenElse p a c)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">_test_if_prune_right ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">_test_if_prune_right _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;if(p,a,if(p,b,c)) == if(p,a,c)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">  \p a b c <span class="ot">-&gt;</span> eq (ifThenElse p a (ifThenElse p b c)) (ifThenElse p a c)</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> is sort of commutative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(p,q \in \bool\)</span> and <span class="math inline">\(a,b \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \bif{p}{a}{\bif{q}{a}{b}} \\
- &amp; = &amp; \bif{q}{a}{\bif{p}{a}{b}}.
-\end{eqnarray*}\]</span></p>
+<p><span id="thm-if-commute-true"></span><span id="thm-if-commute-false"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(p,q \in \bool\)</span> and <span class="math inline">\(a,b \in A\)</span>, we have the following.</p>
+<ol type="1">
+<li><span class="math inline">\(\bif{p}{a}{\bif{q}{a}{b}} = \bif{q}{a}{\bif{p}{a}{b}}\)</span></li>
+<li><span class="math inline">\(\bif{p}{\bif{q}{a}{b}}{b} = \bif{q}{\bif{p}{a}{b}}{b}\)</span></li>
+</ol>
 <div class="proof">
-<p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+<ol type="1">
+<li>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{a}{\bif{q}{a}{b}} \\
- &amp; = &amp; a \\
- &amp; = &amp; \bif{q}{a}{a} \\
- &amp; = &amp; \bif{q}{a}{\bif{p}{a}{c}}
-\end{eqnarray*}\]</span> as claimed. Likewise, the equality holds if <span class="math inline">\(q = \btrue\)</span>. Suppose then that <span class="math inline">\(p = q = \bfalse\)</span>; now <span class="math display">\[\begin{eqnarray*}
+ &amp;     \let{p = \btrue}
+= &amp; \bif{\btrue}{a}{\bif{q}{a}{b}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \bif{q}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{q}{a}{\bif{\btrue}{a}{c}} \\
+ &amp;     \let{p = \btrue}
+= &amp; \bif{q}{a}{\bif{p}{a}{c}}
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(q = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{q}{a}{\bif{p}{a}{b}} \\
+ &amp;     \let{q = \btrue}
+= &amp; \bif{\btrue}{a}{\bif{p}{a}{b}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \bif{p}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{p}{a}{\bif{\btrue}{a}{c}} \\
+ &amp;     \let{q = \btrue}
+= &amp; \bif{p}{a}{\bif{q}{a}{c}}
+\end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(p = q = \bfalse\)</span>; now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p}{a}{\bif{q}{a}{b}} \\
- &amp; = &amp; \bif{q}{a}{b} \\
- &amp; = &amp; b \\
- &amp; = &amp; \bif{p}{a}{b} \\
- &amp; = &amp; \bif{q}{a}{\bif{p}{a}{b}}
-\end{eqnarray*}\]</span> as claimed.</p>
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{\bfalse}{a}{\bif{q}{a}{b}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{q}{a}{b} \\
+ &amp;     \let{q = \bfalse}
+= &amp; \bif{\bfalse}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; b \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{\bfalse}{a}{b} \\
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{p}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{\bfalse}{a}{\bif{p}{a}{b}} \\
+ &amp;     \let{q = \bfalse}
+= &amp; \bif{q}{a}{\bif{p}{a}{b}}
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>If <span class="math inline">\(p = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{b} \\
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{\bfalse}{\bif{q}{a}{b}}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; b \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \bif{q}{b}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{q}{\bif{\bfalse}{a}{b}}{b} \\
+ &amp;     \let{p = \bfalse}
+= &amp; \bif{q}{\bif{p}{a}{b}}{b}
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(q = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{b} \\
+ &amp;     \let{q = \bfalse}
+= &amp; \bif{p}{\bif{\bfalse}{a}{b}}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{p}{b}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; b \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+= &amp; \bif{\bfalse}{\bif{p}{a}{b}}{b} \\
+ &amp;     \let{q = \bfalse}
+= &amp; \bif{q}{\bif{p}{a}{b}}{b}
+\end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p = q = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bif{p}{\bif{q}{a}{b}}{b} \\
+ &amp;     \let{q = \btrue}
+= &amp; \bif{p}{\bif{\btrue}{a}{b}}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{p}{a}{b} \\
+ &amp;     \let{p = \btrue}
+= &amp; \bif{\btrue}{a}{b} \\
+ &amp;     \let{q = \btrue}
+= &amp; \bif{q}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \bif{q}{\bif{\btrue}{a}{b}}{b} \\
+ &amp;     \let{p = \btrue}
+= &amp; \bif{q}{\bif{p}{a}{b}}{b}
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_if_commute_left ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">_test_if_commute_left _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;if(p,a,if(q,a,b)) == if(q,a,if(p,a,b))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">  \p q a b <span class="ot">-&gt;</span> eq</a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">    (ifThenElse p a (ifThenElse q a b))</a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">    (ifThenElse q a (ifThenElse p a b))</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_if_commute_left ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">_test_if_commute_left _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;if(p,a,if(q,a,b)) == if(q,a,if(p,a,b))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \p q a b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">    (ifThenElse p a (ifThenElse q a b))</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">    (ifThenElse q a (ifThenElse p a b))</a>
+<a class="sourceLine" id="cb10-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9"><span class="ot">_test_if_commute_right ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
+<a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">_test_if_commute_right _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">  testName <span class="st">&quot;if(p,if(q,a,b),b) == if(q,if(p,a,b),b)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">  \p q a b <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">    (ifThenElse p (ifThenElse q a b) b)</a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">    (ifThenElse q (ifThenElse p a b) b)</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> interacts with functions of two arguments.</p>
 <div class="theorem">
-<p>We have <span class="math display">\[f(\bif{p}{a}{c},\bif{p}{b}{d}) = \bif{p}{f(a,b)}{f(c,d)}.\]</span></p>
+<p><span id="thm-if-func-two"></span> We have <span class="math display">\[f(\bif{p}{a}{c},\bif{p}{b}{d}) = \bif{p}{f(a,b)}{f(c,d)}.\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; f(\bif{p}{a}{c},\bif{p}{b}{d}) \\
- &amp; = &amp; f(a,b)
-\end{eqnarray*}\]</span> and if $p = , <span class="math display">\[\begin{eqnarray*}
+ &amp;     \let{p = \btrue}
+   = &amp; f(\bif{\btrue}{a}{c},\bif{\btrue}{b}{d}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; f(a,\bif{\btrue}{b}{d}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; f(a,b)
+\end{eqnarray*}\]</span> and if <span class="math inline">\(p = \bfalse\)</span>, <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; f(\bif{p}{a}{c},\bif{p}{b}{d}) \\
- &amp; = &amp; f(c,d)
+ &amp;     \let{p = \bfalse}
+   = &amp; f(\bif{\bfalse}{a}{c},\bif{\bfalse}{b}{d}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; f(c,\bif{\bfalse}{b}{d}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; f(c,d)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_if_two_args ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">_test_if_two_args _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;f(if(p,a,c),if(p,b,x)) == if(p,f(a,b),f(c,d))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  \f p a b c d <span class="ot">-&gt;</span> eq</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">    (f (<span class="kw">if</span> p <span class="kw">then</span> a <span class="kw">else</span> c) (<span class="kw">if</span> p <span class="kw">then</span> b <span class="kw">else</span> d))</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">    (<span class="kw">if</span> p <span class="kw">then</span> f a b <span class="kw">else</span> f c d)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_if_two_args ::</span> (<span class="dt">Equal</span> a, <span class="dt">Boolean</span> b)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_if_two_args _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;f(if(p,a,c),if(p,b,x)) == if(p,f(a,b),f(c,d))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \f p a b c d <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">    (f (<span class="kw">if</span> p <span class="kw">then</span> a <span class="kw">else</span> c) (<span class="kw">if</span> p <span class="kw">then</span> b <span class="kw">else</span> d))</a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    (<span class="kw">if</span> p <span class="kw">then</span> f a b <span class="kw">else</span> f c d)</a></code></pre></div>
 </div>
 </div>
 <h2 id="equality">Equality</h2>
 <p>Now that we’ve algebraified truth values, we will also algebraify equality. Typically I think of equality (as in the <span class="math inline">\(=\)</span> symbol) as a metalanguage expression. Sure, we can define a relation that captures equality on a given set, but really equality is a “logical” thing, not a “mathematical” one. We’ll express this using a type class in Haskell like so.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Equal</span> a <span class="kw">where</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">  eq ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">class</span> <span class="dt">Equal</span> a <span class="kw">where</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">  eq ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a></code></pre></div>
 <p>(Why not use the built in <code>Eq</code> class? No good reason.) For example, here is the <code>Equal</code> instance for <code>Bool</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Equal</span> <span class="dt">Bool</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">  eq p q <span class="fu">=</span> ifThenElse p (ifThenElse q true false) (ifThenElse q false true)</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Equal</span> () <span class="kw">where</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  eq () () <span class="fu">=</span> true</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">instance</span> <span class="dt">Equal</span> <span class="dt">Bool</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  eq p q <span class="fu">=</span> ifThenElse p (ifThenElse q true false) (ifThenElse q false true)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="kw">instance</span> <span class="dt">Equal</span> () <span class="kw">where</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  eq () () <span class="fu">=</span> true</a></code></pre></div>
+<p>All our instances of <code>Equal</code> will be assumed to satisfy the following.</p>
+<div class="axiom">
+<p><span id="thm-eq-reflexive"></span><span id="thm-eq-symmetric"></span> Let <span class="math inline">\(A\)</span> be a set.</p>
+<ol type="1">
+<li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math inline">\(\beq(a,a) = \btrue\)</span>.</li>
+<li>For all <span class="math inline">\(a,b \in A\)</span>, we have <span class="math inline">\(\beq(a,b) = \beq(b,a)\)</span>.</li>
+</ol>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_boolean ::</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">  ( <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  , <span class="dt">Boolean</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">Show</span> b, <span class="dt">Equal</span> b, <span class="dt">TypeName</span> b</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  )</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">_test_boolean p x size num <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">  testLabel1 <span class="st">&quot;Boolean&quot;</span> p</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb13-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb13-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb13-12" data-line-number="12">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb13-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb13-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args (_test_if_true p x)</a>
-<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_if_false p x)</a>
-<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_if_func p x)</a>
-<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_if_nest p x)</a>
-<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_if_prune_left p x)</a>
-<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_if_prune_right p x)</a>
-<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_if_commute_left p x)</a>
-<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_if_two_args p x)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_boolean ::</span></a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  ( <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  , <span class="dt">Boolean</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">Show</span> b, <span class="dt">Equal</span> b, <span class="dt">TypeName</span> b</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  )</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">_test_boolean p x size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">  testLabel1 <span class="st">&quot;Boolean&quot;</span> p</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb14-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> num</a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">      , maxSize <span class="fu">=</span> size</a>
+<a class="sourceLine" id="cb14-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb14-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb14-15" data-line-number="15">  runTest args (_test_if_true p x)</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16">  runTest args (_test_if_false p x)</a>
+<a class="sourceLine" id="cb14-17" data-line-number="17">  runTest args (_test_if_same p x)</a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">  runTest args (_test_if_func p x)</a>
+<a class="sourceLine" id="cb14-19" data-line-number="19">  runTest args (_test_if_nest p x)</a>
+<a class="sourceLine" id="cb14-20" data-line-number="20">  runTest args (_test_if_prune_left p x)</a>
+<a class="sourceLine" id="cb14-21" data-line-number="21">  runTest args (_test_if_prune_right p x)</a>
+<a class="sourceLine" id="cb14-22" data-line-number="22">  runTest args (_test_if_commute_left p x)</a>
+<a class="sourceLine" id="cb14-23" data-line-number="23">  runTest args (_test_if_commute_right p x)</a>
+<a class="sourceLine" id="cb14-24" data-line-number="24">  runTest args (_test_if_two_args p x)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">main_boolean ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">main_boolean <span class="fu">=</span> _test_boolean (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">main_boolean ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">main_boolean <span class="fu">=</span> _test_boolean (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

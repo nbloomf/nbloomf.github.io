@@ -44,9 +44,19 @@ Posted on 2017-05-29 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-29 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-29 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-29 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,33 +233,34 @@ Posted on 2017-05-29 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Range</span></a>
-<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
-<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
-<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
-<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">Filter</span></a>
-<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Elt</span></a>
-<a class="sourceLine" id="cb1-32" data-line-number="32"><span class="kw">import</span> <span class="dt">Count</span></a>
-<a class="sourceLine" id="cb1-33" data-line-number="33"><span class="kw">import</span> <span class="dt">Repeat</span></a>
-<a class="sourceLine" id="cb1-34" data-line-number="34"><span class="kw">import</span> <span class="dt">Sublist</span></a>
-<a class="sourceLine" id="cb1-35" data-line-number="35"><span class="kw">import</span> <span class="dt">Select</span></a>
-<a class="sourceLine" id="cb1-36" data-line-number="36"><span class="kw">import</span> <span class="dt">Unique</span></a>
-<a class="sourceLine" id="cb1-37" data-line-number="37"><span class="kw">import</span> <span class="dt">Delete</span></a>
-<a class="sourceLine" id="cb1-38" data-line-number="38"><span class="kw">import</span> <span class="dt">Dedupe</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">MaxAndMin</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
+<a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">Range</span></a>
+<a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-29" data-line-number="29"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
+<a class="sourceLine" id="cb1-30" data-line-number="30"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
+<a class="sourceLine" id="cb1-31" data-line-number="31"><span class="kw">import</span> <span class="dt">Filter</span></a>
+<a class="sourceLine" id="cb1-32" data-line-number="32"><span class="kw">import</span> <span class="dt">Elt</span></a>
+<a class="sourceLine" id="cb1-33" data-line-number="33"><span class="kw">import</span> <span class="dt">Count</span></a>
+<a class="sourceLine" id="cb1-34" data-line-number="34"><span class="kw">import</span> <span class="dt">Repeat</span></a>
+<a class="sourceLine" id="cb1-35" data-line-number="35"><span class="kw">import</span> <span class="dt">Sublist</span></a>
+<a class="sourceLine" id="cb1-36" data-line-number="36"><span class="kw">import</span> <span class="dt">Select</span></a>
+<a class="sourceLine" id="cb1-37" data-line-number="37"><span class="kw">import</span> <span class="dt">Unique</span></a>
+<a class="sourceLine" id="cb1-38" data-line-number="38"><span class="kw">import</span> <span class="dt">Delete</span></a>
+<a class="sourceLine" id="cb1-39" data-line-number="39"><span class="kw">import</span> <span class="dt">Dedupe</span></a></code></pre></div>
 <p>Today we’ll define two functions, <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, that split a list at a given index. For example, <span class="math inline">\(\take(3)(x)\)</span> should return a list consisting of the first 3 items of <span class="math inline">\(x\)</span>. The biggest question to think about is what <span class="math inline">\(\take\)</span> should do if <span class="math inline">\(x\)</span> doesn’t have 3 items to take – should <span class="math inline">\(\take(3)(-)\)</span> mean take <em>exactly</em> 3 or take <em>at most</em> 3? The simplest interpretation is <em>at most</em>, since with <em>exactly</em> we’d need the return type to encode a failure case. That said, under the <em>at most</em> interpretation, the signature of <span class="math inline">\(\take\)</span> will be <span class="math display">\[\take : \nats \rightarrow {\lists{A}}^{\lists{A}}.\]</span> Usually we’d try to define such a function with a fold, but in this case <span class="math inline">\(\unfoldN{\ast}\)</span> does exactly what we want.</p>
 <p>Essentially, <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span> compute a kind of “<span class="math inline">\(\cat\)</span>-factorization” of a list based on index from the left. This is not the only useful such factorization; we will address two others in future posts.</p>
 <div class="definition">
@@ -251,7 +274,7 @@ Posted on 2017-05-29 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    f z <span class="fu">=</span> <span class="kw">case</span> uncons z <span class="kw">of</span></a>
 <a class="sourceLine" id="cb2-5" data-line-number="5">      <span class="dt">Left</span> () <span class="ot">-&gt;</span> <span class="dt">Left</span> ()</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="dt">Right</span> (a,u) <span class="ot">-&gt;</span> <span class="dt">Right</span> (u,a)</a></code></pre></div>
+<a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="dt">Right</span> (<span class="dt">Pair</span> a u) <span class="ot">-&gt;</span> <span class="dt">Right</span> (tup u a)</a></code></pre></div>
 </div>
 <p>Since <span class="math inline">\(\take\)</span> is defined as an <span class="math inline">\(\unfoldN{\ast}\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
@@ -322,7 +345,7 @@ Posted on 2017-05-29 by nbloomf
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_take_sublist ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t a))</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_take_sublist _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;prefix(take(k,x),x) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;sublist(take(k,x),x) == true&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \k x <span class="ot">-&gt;</span> sublist (take k x) x</a></code></pre></div>
 </div>
 </div>
@@ -335,7 +358,8 @@ Posted on 2017-05-29 by nbloomf
  &amp; = &amp; \length(\take(\zero,x)) \\
  &amp; = &amp; \length(\nil) \\
  &amp; = &amp; \zero \\
- &amp; = &amp; \nmin(\zero,\length(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
+   = &amp; \nmin(\zero,\length(x)) \\
  &amp; = &amp; \nmin(k,\length(x))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We now proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\take(\next(k),x)) \\
@@ -350,7 +374,8 @@ Posted on 2017-05-29 by nbloomf
  &amp; = &amp; \length(\cons(a,\take(k,x))) \\
  &amp; = &amp; \next(\length(\take(k,x))) \\
  &amp; = &amp; \next(\nmin(k,\length(x))) \\
- &amp; = &amp; \nmin(\next(k),\next(\length(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-next-min-distribute}
+   = &amp; \nmin(\next(k),\next(\length(x))) \\
  &amp; = &amp; \nmin(\next(k),\length(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -400,7 +425,7 @@ Posted on 2017-05-29 by nbloomf
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_take_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t (a,b)))</a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_take_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)))</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_take_zip _ _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;zip(take(n)(x),take(n)(y)) == take(n)(zip(x,y))&quot;</span> <span class="fu">$</span></a>
@@ -418,7 +443,8 @@ Posted on 2017-05-29 by nbloomf
  &amp; = &amp; \take(\zero,\range(a,b)) \\
  &amp; = &amp; \nil \\
  &amp; = &amp; \range(a,\zero) \\
- &amp; = &amp; \range(a,\nmin(\zero,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
+   = &amp; \range(a,\nmin(\zero,b)) \\
  &amp; = &amp; \range(a,\nmin(k,b))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> for some <span class="math inline">\(k\)</span>. We consider two possibilities for <span class="math inline">\(b\)</span>. If <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \take(\next(k),\range(a,b)) \\
@@ -435,7 +461,8 @@ Posted on 2017-05-29 by nbloomf
  &amp; = &amp; \cons(a,\take(k,\range(\next(a),m))) \\
  &amp; = &amp; \cons(a,\range(\next(a),\nmin(k,m))) \\
  &amp; = &amp; \range(a,\next(\nmin(k,m))) \\
- &amp; = &amp; \range(a,\nmin(\next(k),\next(m))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-next-min-distribute}
+   = &amp; \range(a,\nmin(\next(k),\next(m))) \\
  &amp; = &amp; \range(a,\nmin(\next(k),b))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -560,17 +587,20 @@ Posted on 2017-05-29 by nbloomf
  &amp;   &amp; \cat(\take(k,x),\drop(k,x)) \\
  &amp; = &amp; \cat(\take(\zero,x),\drop(\zero,x)) \\
  &amp; = &amp; \cat(\nil,x) \\
- &amp; = &amp; x
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; x
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\take(\next(k),x),\drop(\next(k),x)) \\
  &amp; = &amp; \cat(\take(\next(k),\nil),\drop(\next(k),\nil)) \\
  &amp; = &amp; \cat(\nil,\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \nil \\
  &amp; = &amp; x
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\take(\next(k),\cons(a,x)),\drop(\next(k),\cons(a,x))) \\
  &amp; = &amp; \cat(\cons(a,\take(k,x)),\drop(k,x)) \\
- &amp; = &amp; \cons(a,\cat(\take(k,x),\drop(k,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \cons(a,\cat(\take(k,x),\drop(k,x))) \\
  &amp; = &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -589,7 +619,7 @@ Posted on 2017-05-29 by nbloomf
 <a class="sourceLine" id="cb14-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb14-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb14-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (a,b))</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b))</a>
 <a class="sourceLine" id="cb14-7" data-line-number="7">  , <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
 <a class="sourceLine" id="cb14-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb14-9" data-line-number="9">_test_take_drop t u k maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
@@ -630,9 +660,6 @@ Posted on 2017-05-29 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

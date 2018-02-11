@@ -44,9 +44,19 @@ Posted on 2017-05-10 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-10 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-10 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-10 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -216,8 +238,8 @@ Posted on 2017-05-10 by nbloomf
 <a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
 <a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Zip</span></a>
 <a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a></code></pre></div>
 <p>Today we’ll define two boolean functions for lists called <span class="math inline">\(\all\)</span> and <span class="math inline">\(\any\)</span>. Each one takes as an argument a predicate <span class="math inline">\(A \rightarrow \bool\)</span>, and then tests whether all or any of the items in a list of type <span class="math inline">\(\lists{A}\)</span> satisfy the predicate.</p>
@@ -257,12 +279,14 @@ Posted on 2017-05-10 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\snoc(a,x)) \\
  &amp; = &amp; \all(p,\snoc(a,\nil)) \\
- &amp; = &amp; \all(p,\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \all(p,\cons(a,\nil)) \\
  &amp; = &amp; \band(p(a),\all(p,\nil)) \\
  &amp; = &amp; \band(p(a),\all(p,x))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(p\)</span> and <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Using the inductive step, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \all(p,\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \all(p,\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \band(p(b),\all(p,\snoc(a,x))) \\
  &amp; = &amp; \band(p(b),\band(p(a),\all(p,x))) \\
  &amp; = &amp; \band(p(a),\band(p(b),\all(p,x))) \\
@@ -285,14 +309,16 @@ Posted on 2017-05-10 by nbloomf
  &amp;   &amp; \all(p,x) \\
  &amp; = &amp; \all(p,\nil) \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \foldr{\btrue}{\band}(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; \foldr{\btrue}{\band}(\nil) \\
  &amp; = &amp; \foldr{\btrue}{\band}(\map(p)(\nil)) \\
  &amp; = &amp; \foldr{\btrue}{\band}(\map(p)(x))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\cons(a,x)) \\
  &amp; = &amp; \band(p(a),\all(p,x)) \\
  &amp; = &amp; \band(p(a),\foldr{\btrue}{\band}(\map(p)(x))) \\
- &amp; = &amp; \foldr{\btrue}{\band}(\cons(p(a),\map(p)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \foldr{\btrue}{\band}(\cons(p(a),\map(p)(x))) \\
  &amp; = &amp; \foldr{\btrue}{\band}(\map(p)(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -321,7 +347,8 @@ Posted on 2017-05-10 by nbloomf
  &amp;   &amp; \all(\ptrue)(\cons(a,x)) \\
  &amp; = &amp; \band(\ptrue(a),\all(\ptrue)(x)) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\pfalse)(\nil) \\
@@ -330,7 +357,8 @@ Posted on 2017-05-10 by nbloomf
  &amp;   &amp; \all(\pfalse)(\cons(a,u)) \\
  &amp; = &amp; \band(\pfalse(a),\all(\pfalse)(u)) \\
  &amp; = &amp; \band(\bfalse,\all(\pfalse)(u)) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -358,16 +386,20 @@ Posted on 2017-05-10 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p)(\cat(x,y)) \\
  &amp; = &amp; \all(p)(\cat(\nil,y)) \\
- &amp; = &amp; \all(p)(y) \\
- &amp; = &amp; \band(\btrue,\all(p)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \all(p)(y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+   = &amp; \band(\btrue,\all(p)(y)) \\
  &amp; = &amp; \band(\all(p)(\nil),\all(p)(y)) \\
  &amp; = &amp; \band(\all(p)(x),\all(p)(y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p)(\cat(\cons(a,x),y)) \\
- &amp; = &amp; \all(p)(\cons(a,\cat(x,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \all(p)(\cons(a,\cat(x,y))) \\
  &amp; = &amp; \band(p(a),\all(p)(\cat(x,y))) \\
  &amp; = &amp; \band(p(a),\band(\all(p)(x),\all(p)(y))) \\
- &amp; = &amp; \band(\band(p(a),\all(p)(x)),\all(p)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-associative}
+   = &amp; \band(\band(p(a),\all(p)(x)),\all(p)(y)) \\
  &amp; = &amp; \band(\all(p)(\cons(a,x)),\all(p)(y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -386,7 +418,8 @@ Posted on 2017-05-10 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\rev(x)) \\
  &amp; = &amp; \all(p,\rev(\nil)) \\
- &amp; = &amp; \all(p,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \all(p,\nil) \\
  &amp; = &amp; \all(p,x)
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\rev(\cons(a,x))) \\
@@ -394,7 +427,8 @@ Posted on 2017-05-10 by nbloomf
  &amp; = &amp; \all(p,\cat(\rev(x),\rev(\cons(a,\nil)))) \\
  &amp; = &amp; \band(\all(p,\rev(x)),\all(p,\rev(\cons(a,\nil)))) \\
  &amp; = &amp; \band(\all(p,x),\all(p,\cons(a,\nil))) \\
- &amp; = &amp; \band(\all(p,\cons(a,\nil)),\all(p,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-commutative}
+   = &amp; \band(\all(p,\cons(a,\nil)),\all(p,x)) \\
  &amp; = &amp; \all(p,\cat(\cons(a,\nil),x)) \\
  &amp; = &amp; \all(p,\cons(a,x))
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -414,7 +448,8 @@ Posted on 2017-05-10 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bimpl(\all(p,\nil),\all(q,\nil)) \\
  &amp; = &amp; \bimpl(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Implies.html#thm-implies-true-hyp}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math inline">\(\bimpl(p(a),q(a))\)</span>, and by the induction hypothesis <span class="math inline">\(\bimpl(\all(p,x),\all(q,x))\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bimpl(\all(p,\cons(a,x)),\all(q,\cons(a,x))) \\
  &amp; = &amp; \bimpl(\band(p(a),\all(p,x)),\band(q(a),\all(q),x)) \\
@@ -487,14 +522,16 @@ Posted on 2017-05-10 by nbloomf
  &amp;   &amp; \any(p,x) \\
  &amp; = &amp; \any(p,\nil) \\
  &amp; = &amp; \bfalse \\
- &amp; = &amp; \foldr{\bfalse}{\bor}(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; \foldr{\bfalse}{\bor}(\nil) \\
  &amp; = &amp; \foldr{\bfalse}{\bor}(\map(p)(\nil)) \\
  &amp; = &amp; \foldr{\bfalse}{\bor}(\map(p)(x))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \any(p,\cons(a,x)) \\
  &amp; = &amp; \bor(p(a),\any(x)) \\
  &amp; = &amp; \bor(p(a),\foldr{\bfalse}{\bor}(\map(p)(x))) \\
- &amp; = &amp; \foldr{\bfalse}{\bor}(\cons(p(a),\map(p)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \foldr{\bfalse}{\bor}(\cons(p(a),\map(p)(x))) \\
  &amp; = &amp; \foldr{\bfalse}{\bor}(\map(p)(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -516,10 +553,11 @@ Posted on 2017-05-10 by nbloomf
 <div class="proof">
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \bnot(\all(\not \circ p,x)) \\
- &amp; = &amp; \bnot(\all(\not \circ p,\nil)) \\
+ &amp;   &amp; \bnot(\all(\bnot \circ p,x)) \\
+ &amp; = &amp; \bnot(\all(\bnot \circ p,\nil)) \\
  &amp; = &amp; \bnot(\btrue) \\
- &amp; = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bfalse \\
  &amp; = &amp; \foldr{\bfalse}{\varphi(p)}(\nil) \\
  &amp; = &amp; \foldr{\bfalse}{\varphi(p)}(x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
@@ -565,7 +603,8 @@ Posted on 2017-05-10 by nbloomf
  &amp; = &amp; \bnot(\all(\bnot \circ \pfalse)(x)) \\
  &amp; = &amp; \bnot(\all(\ptrue)(x)) \\
  &amp; = &amp; \bnot(\btrue) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \any(\pfalse)(x) \\
@@ -575,7 +614,8 @@ Posted on 2017-05-10 by nbloomf
  &amp; = &amp; \bnot(\all(\bnot \circ \ptrue)(\cons(a,u))) \\
  &amp; = &amp; \bnot(\all(\pfalse)(\cons(a,u))) \\
  &amp; = &amp; \bnot(\bfalse) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -703,9 +743,6 @@ Posted on 2017-05-10 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

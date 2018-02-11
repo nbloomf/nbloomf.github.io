@@ -44,9 +44,19 @@ Posted on 2017-04-23 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -200,45 +222,57 @@ Posted on 2017-04-23 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>(), foldr</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude, ScopedTypeVariables #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">List</span>(<span class="fu">..</span>), <span class="dt">ConsList</span>(), foldr</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
 <a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a></code></pre></div>
 <p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec{\ast}{\ast}\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves. Here’s an example.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set, and define a functor <span class="math inline">\(F_A\)</span> by <span class="math inline">\(F_A(X) = 1 + A \times X\)</span>. We assume that <span class="math inline">\(F_A\)</span> has an initial algebra, which we will denote <span class="math inline">\(\lists{A}\)</span>. We denote the component maps of the isomorphism <span class="math display">\[\theta : 1 + A \times \lists{A} \rightarrow \lists{A}\]</span> by <span class="math inline">\(\const(\nil) : 1 \rightarrow \lists{A}\)</span> and <span class="math inline">\(\cons : A \times \lists{A} \rightarrow \lists{A}\)</span>. That is, <span class="math display">\[\Theta = \either(\const(\nil),\cons).\]</span></p>
 </div>
-<p>The names <em>nil</em> and <em>cons</em> come from the Lisp programming language, where they were first introduced. Now because the algebra map <span class="math inline">\(\nil + \cons\)</span> is an isomorphism, it has an inverse; we’ll denote this map <span class="math inline">\(\uncons : \lists{A} \rightarrow 1 + \lists{A}\)</span>.</p>
+<p>The names <em>nil</em> and <em>cons</em> come from the Lisp programming language, where they were first introduced. Now because the algebra map <span class="math inline">\(\nil + \cons\)</span> is an isomorphism, it has an inverse; we’ll denote this map <span class="math inline">\(\uncons : \lists{A} \rightarrow 1 + (A \times \lists{A})\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
+<p><span id="thm-uncons-inverse-left"></span><span id="thm-uncons-inverse-right"></span><span id="thm-uncons-nil"></span><span id="thm-uncons-cons"></span> Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\uncons(\nil) = \lft(\ast)\)</span>.</li>
-<li><span class="math inline">\(\uncons(\cons(a,x)) = \rgt((a,x))\)</span>.</li>
+<li><span class="math inline">\(\uncons(\cons(a,x)) = \rgt(\tup(a)(x))\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lft(\ast) \\
- &amp; = &amp; \id(\lft(\ast)) \\
- &amp; = &amp; (\uncons \circ \either(\const(\nil),\cons))(\lft(\ast)) \\
- &amp; = &amp; \uncons(\either(\const(\nil),\cons)(\lft(\ast))) \\
- &amp; = &amp; \uncons(\const(\nil)(\ast)) \\
- &amp; = &amp; \uncons(\nil)
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-left}
+= &amp; \compose{\uncons}{\either(\const(\nil),\uncurry(\cons))}(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \uncons(\either(\const(\nil),\uncurry(\cons))(\lft(\ast))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \uncons(\const(\nil)(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \uncons(\nil)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \rgt((a,x)) \\
- &amp; = &amp; (\uncons \circ \either(\const(\nil),\cons))(\rgt((a,x))) \\
- &amp; = &amp; \uncons(\either(\const(\nil),\cons)(\rgt((a,x)))) \\
- &amp; = &amp; \uncons(\cons(a,x))
+ &amp;   &amp; \rgt(\tup(a)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-left}
+= &amp; \compose{\uncons}{\either(\const(\nil),\uncurry(\cons))}(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \uncons(\either(\const(\nil),\uncurry(\cons))(\rgt(\tup(a)(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \uncons(\uncurry(\cons)(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#def-uncurry}
+= &amp; \uncons(\cons(a,x))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -255,27 +289,50 @@ Posted on 2017-04-23 by nbloomf
 <ol type="1">
 <li>Let <span class="math inline">\(z \in \lists{A}\)</span>. We have two possibilities for <span class="math inline">\(\uncons(z)\)</span>. If <span class="math inline">\(\uncons(z) = \lft(\ast)\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; z \\
- &amp; = &amp; (\either(\const(\nil),\cons) \circ \uncons)(z) \\
- &amp; = &amp; \either(\const(\nil),\cons)(\lft(\ast)) \\
- &amp; = &amp; \const(\nil)(\ast) \\
- &amp; = &amp; \nil,
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-right}
+= &amp; \compose{\either(\const(\nil),\uncurry(\cons))}{\uncons}(z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\nil),\uncurry(\cons))(\uncons(z)) \\
+ &amp;     \hyp{\uncons(z) = \lft(\ast)}
+= &amp; \either(\const(\nil),\uncurry(\cons))(\lft(\ast)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
+= &amp; \const(\nil)(\ast) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \nil
 \end{eqnarray*}\]</span> and if <span class="math inline">\(\uncons(z) = \rgt(a,x)\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; z \\
- &amp; = &amp; (\either(\const(\nil),\cons) \circ \uncons)(z) \\
- &amp; = &amp; \either(\const(\nil),\cons)(\rgt((a,x))) \\
- &amp; = &amp; \cons(a,x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+= &amp; \id(z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-right}
+= &amp; \compose{\either(\const(\nil),\uncurry(\cons))}{\uncons}(z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \either(\const(\nil),\uncurry(\cons))(\uncons(z)) \\
+ &amp;     \hyp{\uncons(z) = \rgt(\tup(a)(x))}
+= &amp; \either(\const(\nil),\uncurry(\cons))(\rgt(\tup(a)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
+= &amp; \uncurry(\cons)(\tup(a)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#def-uncurry}
+= &amp; \cons(a,x) \\
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(\nil = \cons(a,x)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lft(\ast) \\
- &amp; = &amp; \uncons(\nil) \\
- &amp; = &amp; \uncons(\cons(a,x)) \\
- &amp; = &amp; \rgt((a,x)),
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-nil}
+= &amp; \uncons(\nil) \\
+ &amp;     \hyp{\cons(a,x) = \nil}
+= &amp; \uncons(\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \rgt(\tup(a)(x))
 \end{eqnarray*}\]</span> which is absurd.</li>
 <li>The “if” direction is clear. To see the “only if” direction, suppose <span class="math inline">\(\cons(a,x) = \cons(b,y)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \rgt((a,x)) \\
- &amp; = &amp; \uncons(\cons(a,x)) \\
- &amp; = &amp; \uncons(\cons(b,y)) \\
- &amp; = &amp; \rgt((b,y)),
+ &amp;   &amp; \rgt(\tup(a)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \uncons(\cons(a,x)) \\
+ &amp;     \hyp{\cons(a,x) = \cons(b,y)}
+= &amp; \uncons(\cons(b,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-uncons-cons}
+= &amp; \rgt(\tup(b)(y))
 \end{eqnarray*}\]</span> so that <span class="math inline">\((a,x) = (b,y)\)</span>, and thus <span class="math inline">\(a = b\)</span> and <span class="math inline">\(x = y\)</span> as claimed.</li>
 </ol>
 </div>
@@ -292,7 +349,7 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">  cons ::</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="ot">  uncons ::</span> t a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a, t a)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="ot">  uncons ::</span> t a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a (t a))</a>
 <a class="sourceLine" id="cb2-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">  list ::</span> [a] <span class="ot">-&gt;</span> t a</a></code></pre></div>
 <p>And the concrete type:</p>
@@ -307,7 +364,7 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb3-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb3-10" data-line-number="10">  uncons m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">    <span class="dt">N</span>     <span class="ot">-&gt;</span> lft ()</a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="dt">C</span> a x <span class="ot">-&gt;</span> rgt (a,x)</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">    <span class="dt">C</span> a x <span class="ot">-&gt;</span> rgt (tup a x)</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13"></a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">  list m <span class="fu">=</span> <span class="kw">case</span> m <span class="kw">of</span></a>
 <a class="sourceLine" id="cb3-15" data-line-number="15">    []     <span class="ot">-&gt;</span> <span class="dt">N</span></a>
@@ -347,12 +404,12 @@ Posted on 2017-04-23 by nbloomf
 </div>
 <p>And finally, a more concrete description of the universal algebra from <span class="math inline">\(\lists{A}\)</span>.</p>
 <div class="axiom">
-<p>(Fold.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\((B,e,\varphi)\)</span> be an <span class="math inline">\(A\)</span>-inductive set. Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \rightarrow B\)</span> which solves the system of functional equations <span class="math display">\[\left\{ \begin{array}{l} \Theta(\nil) = e \\ \Theta(\cons(a,x)) = \varphi(a,\Theta(x)). \end{array} \right.\]</span> We denote this unique <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\foldr{e}{\varphi}\)</span>.</p>
+<p><span id="def-foldr-nil"></span><span id="def-foldr-cons"></span> (Fold.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\((B,e,\varphi)\)</span> be an <span class="math inline">\(A\)</span>-inductive set. Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \rightarrow B\)</span> which solves the system of functional equations <span class="math display">\[\left\{ \begin{array}{l} \Theta(\nil) = e \\ \Theta(\cons(a,x)) = \varphi(a,\Theta(x)). \end{array} \right.\]</span> We denote this unique <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\foldr{e}{\varphi}\)</span>.</p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">foldr<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">foldr e phi x <span class="fu">=</span> <span class="kw">case</span> uncons x <span class="kw">of</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="dt">Left</span> ()      <span class="ot">-&gt;</span> e</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">Right</span> (a,as) <span class="ot">-&gt;</span> phi a (foldr e phi as)</a></code></pre></div>
+<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="dt">Left</span> ()           <span class="ot">-&gt;</span> e</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">Right</span> (<span class="dt">Pair</span> a as) <span class="ot">-&gt;</span> phi a (foldr e phi as)</a></code></pre></div>
 </div>
 <p>Note that this definition is <em>not</em> tail recursive. This turns out not to be a huge problem in practice.</p>
 <p>It’s handy to remember that this theorem says not only that <span class="math inline">\(\foldr{\ast}{\ast}\)</span> exists, but that it is unique – in some sense foldr gives the unique solution to a system of functional equations. This gives us a strategy for showing that two programs are equivalent. If one is defined as a fold, and both programs satisfy the universal property, then they have to be equal. This is nice for showing, for instance, that a <em>slow but obviously correct</em> program is equivalent to a <em>fast but not obviously correct</em> one.</p>
@@ -374,8 +431,10 @@ Posted on 2017-04-23 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr{\nil}{\cons}(\nil) = \nil\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{\nil}{\cons}(\cons(a,x)) \\
- &amp; = &amp; \cons(a,\foldr{\nil}{\cons}(x)) \\
- &amp; = &amp; \cons(a,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \cons(a,\foldr{\nil}{\cons}(x)) \\
+ &amp;     \hyp{\foldr{\nil}{\cons}(x) = x}
+   = &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 </div>
@@ -385,9 +444,6 @@ Posted on 2017-04-23 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

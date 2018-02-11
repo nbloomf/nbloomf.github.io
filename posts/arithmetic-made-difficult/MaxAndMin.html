@@ -44,9 +44,19 @@ Posted on 2017-04-07 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-07 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-07 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-07 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -218,7 +240,7 @@ Posted on 2017-04-07 by nbloomf
 <a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
 <p>With <span class="math inline">\(\nleq\)</span> in hand we can also define max and min functions. These are less interesting since they do not have to be defined recursively.</p>
 <div class="definition">
-<p>We define <span class="math inline">\(\nmax : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmax(a,b) = \bif{\nleq(a,b)}{b}{a}\]</span> and <span class="math inline">\(\nmin : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmin(a,b) = \bif{\nleq(a,b)}{a}{b}.\]</span></p>
+<p><span id="def-max"></span><span id="def-min"></span> We define <span class="math inline">\(\nmax : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmax(a,b) = \bif{\nleq(a,b)}{b}{a}\]</span> and <span class="math inline">\(\nmin : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nmin(a,b) = \bif{\nleq(a,b)}{a}{b}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">max<span class="ot"> ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">max a b <span class="fu">=</span> <span class="kw">if</span> leq a b <span class="kw">then</span> b <span class="kw">else</span> a</a>
@@ -228,7 +250,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p>Special cases.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-max-zero-left"></span><span id="thm-max-idempotent"></span><span id="thm-min-zero-left"></span><span id="thm-min-idempotent"></span> Let <span class="math inline">\(a \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\zero,a) = a\)</span>.</li>
 <li><span class="math inline">\(\nmax(a,a) = a\)</span>.</li>
@@ -239,27 +261,37 @@ Posted on 2017-04-07 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\zero,a) \\
- &amp; = &amp; \bif{\nleq(\zero,a)}{a}{\zero} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\zero,a)}{a}{\zero} \\
  &amp; = &amp; \bif{\btrue}{a}{\zero} \\
- &amp; = &amp; a
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(a,a) \\
- &amp; = &amp; \bif{\nleq(a,a)}{a}{a} \\
- &amp; = &amp; \bif{\btrue}{a}{a} \\
- &amp; = &amp; a
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(a,a)}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-reflexive}
+= &amp; \bif{\btrue}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(\zero,a) \\
- &amp; = &amp; \bif{\nleq(\zero,a)}{\zero}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(\zero,a)}{\zero}{a} \\
  &amp; = &amp; \bif{\btrue}{\zero}{a} \\
- &amp; = &amp; \zero
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \zero
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(a,a) \\
- &amp; = &amp; \bif{\nleq(a,a)}{a}{a} \\
- &amp; = &amp; \bif{\btrue}{a}{a} \\
- &amp; = &amp; a
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(a,a)}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-reflexive}
+= &amp; \bif{\btrue}{a}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; a
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -294,7 +326,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> are commutative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-max-commutative"></span><span id="thm-min-commutative"></span> Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(a,b) = \nmax(b,a)\)</span>.</li>
 <li><span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>.</li>
@@ -303,17 +335,21 @@ Posted on 2017-04-07 by nbloomf
 <ol type="1">
 <li>If $(a,b) = , we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(a,b) \\
- &amp; = &amp; \bif{\nleq(a,b)}{b}{a} \\
- &amp; = &amp; \bif{\not(\not(\nleq(a,b)))}{b}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(a,b)}{b}{a} \\
+ &amp; = &amp; \bif{\bnot(\bnot(\nleq(a,b)))}{b}{a} \\
  &amp; = &amp; \bif{\nleq(b,a)}{a}{b} \\
- &amp; = &amp; \nmax(b,a)
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \nmax(b,a)
 \end{eqnarray*}\]</span> as claimed; similarly, if <span class="math inline">\(\nleq(b,a) = \bfalse\)</span> then <span class="math inline">\(\nmax(a,b) = \nmax(b,a)\)</span>. Suppose then that <span class="math inline">\(\nleq(a,b) = \nleq(b,a) = \btrue\)</span>. By antisymmetry we have <span class="math inline">\(a = b\)</span>, and thus <span class="math inline">\(\nmax(a,b) = \nmax(b,a)\)</span>.</li>
 <li>If $(a,b) = , we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(a,b) \\
- &amp; = &amp; \bif{\nleq(a,b)}{a}{b} \\
- &amp; = &amp; \bif{\not(\not(\nleq(a,b)))}{a}{b} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(a,b)}{a}{b} \\
+ &amp; = &amp; \bif{\bnot(\bnot(\nleq(a,b)))}{a}{b} \\
  &amp; = &amp; \bif{\nleq(b,a)}{b}{a} \\
- &amp; = &amp; \nmin(b,a)
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \nmin(b,a)
 \end{eqnarray*}\]</span> as claimed; similarly, if <span class="math inline">\(\nleq(b,a) = \bfalse\)</span> then <span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>. Suppose then that <span class="math inline">\(\nleq(a,b) = \nleq(b,a) = \btrue\)</span>. By antisymmetry we have <span class="math inline">\(a = b\)</span>, and thus <span class="math inline">\(\nmin(a,b) = \nmin(b,a)\)</span>.</li>
 </ol>
 </div>
@@ -334,7 +370,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p><span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\next\)</span> distribute over <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-next-max-distribute"></span><span id="thm-plus-max-distribute"></span><span id="thm-next-min-distribute"></span><span id="thm-plus-min-distribute"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\next(a),\next(b)) = \next(\nmax(a,b))\)</span>.</li>
 <li><span class="math inline">\(\nmax(\nplus(c,a),\nplus(c,b)) = \nplus(c,\nmax(a,b))\)</span>.</li>
@@ -345,30 +381,42 @@ Posted on 2017-04-07 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\next(a),\next(b)) \\
- &amp; = &amp; \bif{\nleq(\next(a),\next(b))}{\next(b)}{\next(a)} \\
- &amp; = &amp; \bif{\nleq(a,b)}{\next(b)}{\next(a)} \\
- &amp; = &amp; \next(\bif{\nleq(a,b)}{b}{a}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\next(a),\next(b))}{\next(b)}{\next(a)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+= &amp; \bif{\nleq(a,b)}{\next(b)}{\next(a)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \next(\bif{\nleq(a,b)}{b}{a}) \\
  &amp; = &amp; \next(\nmax(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\nplus(c,a),\nplus(c,b)) \\
- &amp; = &amp; \bif{\nleq(\nplus(c,a),\nplus(c,b))}{\nplus(c,b)}{\nplus(c,a)} \\
- &amp; = &amp; \bif{\nleq(a,b)}{\nplus(c,b)}{\nplus(c,a)} \\
- &amp; = &amp; \nplus(c,\bif{\nleq(a,b)}{b}{a}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\nplus(c,a),\nplus(c,b))}{\nplus(c,b)}{\nplus(c,a)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-plus-compatible-left}
+= &amp; \bif{\nleq(a,b)}{\nplus(c,b)}{\nplus(c,a)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \nplus(c,\bif{\nleq(a,b)}{b}{a}) \\
  &amp; = &amp; \nplus(c,\nmax(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(\next(a),\next(b)) \\
- &amp; = &amp; \bif{\nleq(\next(a),\next(b))}{\next(a)}{\next(b)} \\
- &amp; = &amp; \bif{\nleq(a,b)}{\next(a)}{\next(b)} \\
- &amp; = &amp; \next(\bif{\nleq(a,b)}{a}{b}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(\next(a),\next(b))}{\next(a)}{\next(b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+= &amp; \bif{\nleq(a,b)}{\next(a)}{\next(b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \next(\bif{\nleq(a,b)}{a}{b}) \\
  &amp; = &amp; \next(\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(\nplus(c,a),\nplus(c,b)) \\
- &amp; = &amp; \bif{\nleq(\nplus(c,a),\nplus(c,b))}{\nplus(c,a)}{\nplus(c,b)} \\
- &amp; = &amp; \bif{\nleq(a,b)}{\nplus(c,a)}{\nplus(c,b)} \\
- &amp; = &amp; \nplus(c,\bif{\nleq(a,b)}{a}{b}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(\nplus(c,a),\nplus(c,b))}{\nplus(c,a)}{\nplus(c,b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-plus-compatible-left}
+= &amp; \bif{\nleq(a,b)}{\nplus(c,a)}{\nplus(c,b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \nplus(c,\bif{\nleq(a,b)}{a}{b}) \\
  &amp; = &amp; \nplus(c,\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
@@ -404,7 +452,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-times-max-distribute"></span><span id="thm-times-min-distribute"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(\ntimes(c,a),\ntimes(c,b)) = \ntimes(c,\nmax(a,b))\)</span>.</li>
 <li><span class="math inline">\(\nmin(\ntimes(c,a),\ntimes(c,b)) = \ntimes(c,\nmin(a,b))\)</span>.</li>
@@ -415,30 +463,38 @@ Posted on 2017-04-07 by nbloomf
  &amp;   &amp; \nmax(\ntimes(c,a),\ntimes(c,b)) \\
  &amp; = &amp; \nmax(\ntimes(\zero,a),\ntimes(\zero,b)) \\
  &amp; = &amp; \nmax(\zero,\zero) \\
- &amp; = &amp; \zero \\
- &amp; = &amp; \ntimes(\zero,\nmax(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-max-zero-left}
+= &amp; \zero \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+= &amp; \ntimes(\zero,\nmax(a,b)) \\
  &amp; = &amp; \ntimes(c,\nmax(a,b))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(c = \next(d)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\ntimes(c,a),\ntimes(c,b)) \\
- &amp; = &amp; \bif{\nleq(\ntimes(c,a),\ntimes(c,b))}{\ntimes(c,b)}{\ntimes(c,a)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\ntimes(c,a),\ntimes(c,b))}{\ntimes(c,b)}{\ntimes(c,a)} \\
  &amp; = &amp; \bif{\nleq(\ntimes(\next(d),a),\ntimes(\next(d),b))}{\ntimes(c,b)}{\ntimes(c,a)} \\
  &amp; = &amp; \bif{\nleq(a,b)}{\ntimes(c,b)}{\ntimes(c,a)} \\
- &amp; = &amp; \ntimes(c,\bif{\nleq(a,b)}{b}{a}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \ntimes(c,\bif{\nleq(a,b)}{b}{a}) \\
  &amp; = &amp; \ntimes(c,\nmax(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We consider two possibilities. If <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(\ntimes(c,a),\ntimes(c,b)) \\
  &amp; = &amp; \nmin(\ntimes(\zero,a),\ntimes(\zero,b)) \\
  &amp; = &amp; \nmin(\zero,\zero) \\
- &amp; = &amp; \zero \\
- &amp; = &amp; \ntimes(\zero,\nmin(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
+= &amp; \zero \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+= &amp; \ntimes(\zero,\nmin(a,b)) \\
  &amp; = &amp; \ntimes(c,\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(c = \next(d)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmin(\ntimes(c,a),\ntimes(c,b)) \\
- &amp; = &amp; \bif{\nleq(\ntimes(c,a),\ntimes(c,b))}{\ntimes(c,a)}{\ntimes(c,b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-min}
+= &amp; \bif{\nleq(\ntimes(c,a),\ntimes(c,b))}{\ntimes(c,a)}{\ntimes(c,b)} \\
  &amp; = &amp; \bif{\nleq(\ntimes(\next(d),a),\ntimes(\next(d),b))}{\ntimes(c,a)}{\ntimes(c,b)} \\
  &amp; = &amp; \bif{\nleq(a,b)}{\ntimes(c,b)}{\ntimes(c,a)} \\
- &amp; = &amp; \ntimes(c,\bif{\nleq(a,b)}{b}{a}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \ntimes(c,\bif{\nleq(a,b)}{b}{a}) \\
  &amp; = &amp; \ntimes(c,\nmin(a,b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
@@ -460,7 +516,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> are associative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-max-associative"></span><span id="thm-min-associative"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmax(a,\nmax(b,c)) = \nmax(\nmax(a,b),c)\)</span>.</li>
 <li><span class="math inline">\(\nmin(a,\nmin(b,c)) = \nmin(\nmin(a,b),c)\)</span>.</li>
@@ -469,17 +525,24 @@ Posted on 2017-04-07 by nbloomf
 <ol type="1">
 <li>Set <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(a,\nmax(b,c)) \\
- &amp; = &amp; \bif{\nleq(a,\nmax(b,c))}{\nmax(b,c)}{a} \\
- &amp; = &amp; \bif{\nleq(a,\bif{\nleq(b,c)}{c}{b})}{\nmax(b,c)}{a} \\
- &amp; = &amp; \bif{\bif{\nleq(b,c)}{\nleq(a,c)}{\nleq(a,b)}}{\nmax(b,c)}{a} \\
- &amp; = &amp; \bif{\bif{\nleq(b,c)}{\nleq(a,c)}{\nleq(a,b)}}{\bif{\nleq(b,c)}{c}{b}}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(a,\nmax(b,c))}{\nmax(b,c)}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(a,\bif{\nleq(b,c)}{c}{b})}{\nmax(b,c)}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+= &amp; \bif{\bif{\nleq(b,c)}{\nleq(a,c)}{\nleq(a,b)}}{\nmax(b,c)}{a} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\bif{\nleq(b,c)}{\nleq(a,c)}{\nleq(a,b)}}{\bif{\nleq(b,c)}{c}{b}}{a} \\
  &amp; = &amp; Q
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\nmax(a,b),c) \\
- &amp; = &amp; \bif{\nleq(\nmax(a,b),c)}{c}{\nmax(a,b)} \\
- &amp; = &amp; \bif{\nleq(\bif{\nleq(a,b)}{b}{a},c)}{c}{\nmax(a,b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\nmax(a,b),c)}{c}{\nmax(a,b)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\nleq(\bif{\nleq(a,b)}{b}{a},c)}{c}{\nmax(a,b)} \\
  &amp; = &amp; \bif{\bif{\nleq(a,b)}{\nleq(b,c)}{\nleq(a,c)}}{c}{\nmax(a,b)} \\
- &amp; = &amp; \bif{\bif{\nleq(a,b)}{\nleq(b,c)}{\nleq(a,c)}}{c}{\bif{\nleq(a,b)}{b}{a}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#def-max}
+= &amp; \bif{\bif{\nleq(a,b)}{\nleq(b,c)}{\nleq(a,c)}}{c}{\bif{\nleq(a,b)}{b}{a}} \\
  &amp; = &amp; R.
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(\nleq(a,b) = \btrue\)</span> and <span class="math inline">\(\nleq(b,c) = \btrue\)</span>, by transitivity we have <span class="math inline">\(\nleq(a,c) = \btrue\)</span> and <span class="math display">\[Q = \bif{\nleq(a,c)}{c}{a} = c = \bif{\nleq(b,c)}{c}{b} = R.\]</span> If <span class="math inline">\(\nleq(a,b) = \btrue\)</span> and <span class="math inline">\(\nleq(b,c) = \bfalse\)</span>, we have <span class="math display">\[Q = \bif{\nleq(a,b)}{b}{a} = b = \bif{\nleq(b,c)}{c}{b} = R.\]</span> Suppose <span class="math inline">\(\nleq(a,b) = \bfalse\)</span>; then <span class="math inline">\(\nleq(b,a) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c) = \btrue\)</span>, we have <span class="math inline">\(\nleq(b,c) = \btrue\)</span> and <span class="math display">\[Q = \bif{\nleq(a,c)}{c}{a} = R,\]</span> and if <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>, then <span class="math inline">\(\nleq(c,a) = \btrue\)</span> and <span class="math display">\[Q = \bif{\bfalse}{\bif{\nleq(b,c)}{c}{b}}{a} = a = \bif{\nleq(a,c)}{c}{a} = R.\]</span></li>
 <li>Analogous to (1).</li>
@@ -543,7 +606,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p><span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> interact with <span class="math inline">\(\nplus\)</span> and <span class="math inline">\(\ntimes\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-plus-min-max"></span><span id="thm-times-min-max"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(\nmin(a,b),\nmax(a,b)) = \nplus(a,b)\)</span>.</li>
 <li><span class="math inline">\(\ntimes(\nmin(a,b),\nmax(a,b)) = \ntimes(a,b)\)</span>.</li>
@@ -568,7 +631,7 @@ Posted on 2017-04-07 by nbloomf
 </div>
 <p>And <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\nmin\)</span> distribute over each other.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span></span><span id="thm-max-min-distribute">#thm-min-max-distribute</span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nmin(a,\nmax(b,c)) = \nmax(\nmin(a,b),\nmin(a,c))\)</span>.</li>
 <li><span class="math inline">\(\nmax(a,\nmin(b,c)) = \nmin(\nmax(a,b),\nmax(a,c))\)</span>.</li>
@@ -576,11 +639,12 @@ Posted on 2017-04-07 by nbloomf
 <li><span class="math inline">\(\nmax(\nmin(b,c),a) = \nmin(\nmax(b,a),\nmax(c,a))\)</span>.</li>
 </ol>
 <div class="proof">
-<ol start="4" type="1">
+<ol type="1">
 <li>Brute force time! Suppose <span class="math inline">\(\nleq(a,b) = \btrue\)</span>. If <span class="math inline">\(\nleq(a,c) = \btrue\)</span>, then <span class="math inline">\(\nleq(a,\nmin(b,c))\)</span>, so that <span class="math inline">\(\nleq(a,\nmax(b,c))\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
  &amp; = &amp; \nmax(a,a) \\
- &amp; = &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-max-idempotent}
+= &amp; a \\
  &amp; = &amp; \nmin(a,\nmax(b,c)).
 \end{eqnarray*}\]</span> Suppose <span class="math inline">\(\nleq(a,c) = \bfalse\)</span>; then <span class="math inline">\(\nleq(c,a) = \btrue\)</span>, and by transitivity <span class="math inline">\(\nleq(c,b) = \btrue\)</span> so that <span class="math inline">\(\nmax(b,c) = b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nmax(\nmin(a,b),\nmin(a,c)) \\
@@ -636,42 +700,41 @@ Posted on 2017-04-07 by nbloomf
 <p>woo!</p>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">-- run all tests for max and min</span></a>
-<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="ot">_test_max_min ::</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">_test_max_min n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">  testLabel1 <span class="st">&quot;min &amp; max&quot;</span> n</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb11-10" data-line-number="10">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb11-11" data-line-number="11">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb11-12" data-line-number="12">      }</a>
-<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_max_zero n)</a>
-<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_max_idempotent n)</a>
-<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_min_zero n)</a>
-<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_min_idempotent n)</a>
-<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_max_commutative n)</a>
-<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_min_commutative n)</a>
-<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_max_next n)</a>
-<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_max_plus n)</a>
-<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_min_next n)</a>
-<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_min_plus n)</a>
-<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_max_times n)</a>
-<a class="sourceLine" id="cb11-25" data-line-number="25">  runTest args (_test_min_times n)</a>
-<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_max_associative n)</a>
-<a class="sourceLine" id="cb11-27" data-line-number="27">  runTest args (_test_min_associative n)</a>
-<a class="sourceLine" id="cb11-28" data-line-number="28">  runTest args (_test_max_lub n)</a>
-<a class="sourceLine" id="cb11-29" data-line-number="29">  runTest args (_test_min_glb n)</a>
-<a class="sourceLine" id="cb11-30" data-line-number="30">  runTest args (_test_max_min_leq n)</a>
-<a class="sourceLine" id="cb11-31" data-line-number="31">  runTest args (_test_max_min_plus n)</a>
-<a class="sourceLine" id="cb11-32" data-line-number="32">  runTest args (_test_max_min_times n)</a>
-<a class="sourceLine" id="cb11-33" data-line-number="33">  runTest args (_test_max_min_distributive_left n)</a>
-<a class="sourceLine" id="cb11-34" data-line-number="34">  runTest args (_test_max_min_distributive_right n)</a>
-<a class="sourceLine" id="cb11-35" data-line-number="35">  runTest args (_test_min_max_distributive_left n)</a>
-<a class="sourceLine" id="cb11-36" data-line-number="36">  runTest args (_test_min_max_distributive_right n)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_max_min ::</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">_test_max_min n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  testLabel1 <span class="st">&quot;min &amp; max&quot;</span> n</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">      }</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">  runTest args (_test_max_zero n)</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_max_idempotent n)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_min_zero n)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_min_idempotent n)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_max_commutative n)</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_min_commutative n)</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_max_next n)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_max_plus n)</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_min_next n)</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_min_plus n)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_max_times n)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_min_times n)</a>
+<a class="sourceLine" id="cb11-25" data-line-number="25">  runTest args (_test_max_associative n)</a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_min_associative n)</a>
+<a class="sourceLine" id="cb11-27" data-line-number="27">  runTest args (_test_max_lub n)</a>
+<a class="sourceLine" id="cb11-28" data-line-number="28">  runTest args (_test_min_glb n)</a>
+<a class="sourceLine" id="cb11-29" data-line-number="29">  runTest args (_test_max_min_leq n)</a>
+<a class="sourceLine" id="cb11-30" data-line-number="30">  runTest args (_test_max_min_plus n)</a>
+<a class="sourceLine" id="cb11-31" data-line-number="31">  runTest args (_test_max_min_times n)</a>
+<a class="sourceLine" id="cb11-32" data-line-number="32">  runTest args (_test_max_min_distributive_left n)</a>
+<a class="sourceLine" id="cb11-33" data-line-number="33">  runTest args (_test_max_min_distributive_right n)</a>
+<a class="sourceLine" id="cb11-34" data-line-number="34">  runTest args (_test_min_max_distributive_left n)</a>
+<a class="sourceLine" id="cb11-35" data-line-number="35">  runTest args (_test_min_max_distributive_right n)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_max_min ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_max_min <span class="fu">=</span> <span class="kw">do</span></a>
@@ -682,9 +745,6 @@ Posted on 2017-04-07 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

@@ -44,9 +44,19 @@ Posted on 2014-06-01 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-06-01 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,16 +233,18 @@ Posted on 2014-06-01 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a></code></pre></div>
 <p>So far we’ve characterized the natural numbers via a unique mapping <span class="math display">\[\natrec{\ast}{\ast} : \nats \rightarrow A,\]</span> and we defined another parameterized mapping <span class="math display">\[\simprec{\ast}{\ast} : \nats \times A \rightarrow B.\]</span> From now on, when we want to define a mapping with one of these signatures, these prepackaged recursive maps may come in handy. What’s more, we can use the universal properties of these maps to define them in terms of <em>desired behavior</em>.</p>
 <p>Natural number addition has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define addition in terms of <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. To do this, we need to find mappings <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> and <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> that make <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> act like addition. For example, we want <span class="math inline">\(\next\)</span> to act like <span class="math inline">\(+1\)</span>, and <span class="math display">\[n = \zero + n = \simprec{\varphi}{\mu}(\zero,n) = \varphi(n),\]</span> and</p>
 <p><span class="math display">\[\begin{eqnarray*}
 (m+n)+1
- &amp; = &amp; (m+1)+n \\
- &amp; = &amp; \simprec{\varphi}{\mu}(\next(m),n) \\
- &amp; = &amp; \mu(m,n,\simprec{\varphi}{\mu}(m,n)) \\
- &amp; = &amp; \mu(m,n,m+n).
+  &amp; = &amp; (m+1)+n \\
+  &amp; = &amp; \simprec{\varphi}{\mu}(\next(m),n) \\
+  &amp;     \href{/posts/arithmetic-made-difficult/SimpleRecursion.html#def-simprec-next}
+    = &amp; \mu(m,n,\simprec{\varphi}{\mu}(m,n)) \\
+  &amp; = &amp; \mu(m,n,m+n).
 \end{eqnarray*}\]</span></p>
 <p>With this in mind, we define a binary operation <span class="math inline">\(\nplus\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
 <div class="definition">
@@ -232,7 +256,10 @@ Posted on 2014-06-01 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\nplus\)</span> is defined in terms of simple recursion, it is the unique solution to a set of functional equations.</p>
 <div class="corollary">
-<p><span class="math inline">\(\nplus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{ \begin{array}{l} f(\zero,b) = b \\ f(\next(a),b) = \next(f(a,b)). \end{array} \right.\]</span></p>
+<p><span id="cor-plus-up"></span><span id="cor-plus-up-zero"></span><span id="cor-plus-up-next"></span> <span class="math inline">\(\nplus\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
+ f(\zero,b) = b \\
+ f(\next(a),b) = \next(f(a,b)).
+\end{array}\right.\]</span></p>
 <div class="test">
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_plus_zero_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
@@ -250,23 +277,28 @@ Posted on 2014-06-01 by nbloomf
 </div>
 <p>Next we establish a version of the universal property of <span class="math inline">\(\nplus\)</span> with the arguments reversed.</p>
 <div class="theorem">
-<p>The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
+<p><span id="thm-plus-zero-right"></span><span id="thm-plus-next-right"></span> The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(a,\zero) = a\)</span>.</li>
 <li><span class="math inline">\(\nplus(a,\next(b)) = \next(\nplus(a,b))\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
-<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the universal property of <span class="math inline">\(\nplus\)</span>. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
+<li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math inline">\(\nplus(\zero,\zero) = \zero\)</span> by the universal property of <span class="math inline">\(\nplus\)</span>. For the inductive step, suppose we have <span class="math inline">\(\nplus(a,\zero) = a\)</span> for some <span class="math inline">\(a \in \nats\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\next(a),\zero) \\
- &amp; = &amp; \next(\nplus(a,\zero)) \\
- &amp; = &amp; \next(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \next(\nplus(a,\zero)) \\
+ &amp;     \hyp{\nplus(a,\zero) = a}
+= &amp; \next(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\zero,\next(b)) = \next(b).\]</span> For the inductive step, suppose we have <span class="math inline">\(\next(\nplus(a,b)) = \nplus(a,\next(b))\)</span> for all <span class="math inline">\(b\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\next(a),\next(b)) \\
- &amp; = &amp; \next(\nplus(a,\next(b))) \\
- &amp; = &amp; \next(\next(\nplus(a,b))) \\
- &amp; = &amp; \next(\nplus(\next(a),b))
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \next(\nplus(a,\next(b))) \\
+ &amp;     \hyp{\next(\nplus(a,b)) = \nplus(a,\next(b))}
+= &amp; \next(\next(\nplus(a,b))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \next(\nplus(\next(a),b))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -287,7 +319,7 @@ Posted on 2014-06-01 by nbloomf
 </div>
 <p><span class="math inline">\(\nplus\)</span> is associative and commutative.</p>
 <div class="theorem">
-<p>The following hold for all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>.</p>
+<p><span id="thm-plus-associative"></span><span id="thm-plus-commutative"></span> The following hold for all natural numbers <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\nplus(\nplus(a,b),c) = \nplus(a,\nplus(b,c))\)</span>.</li>
 <li><span class="math inline">\(\nplus(a,b) = \nplus(b,a)\)</span>.</li>
@@ -296,16 +328,23 @@ Posted on 2014-06-01 by nbloomf
 <ol type="1">
 <li>We will show this by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\nplus(\zero,b),c) = \nplus(b,c) = \nplus(\zero,\nplus(b,c)).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\nplus(\next(a),b),c) \\
- &amp; = &amp; \nplus(\next(\nplus(a,b)),c) \\
- &amp; = &amp; \next(\nplus(\nplus(a,b),c)) \\
- &amp; = &amp; \next(\nplus(a,\nplus(b,c))) \\
- &amp; = &amp; \nplus(\next(a),\nplus(b,c))
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \nplus(\next(\nplus(a,b)),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \next(\nplus(\nplus(a,b),c)) \\
+ &amp;     \hyp{\nplus(a,\nplus(b,c)) = \nplus(\nplus(a,b),c)}
+= &amp; \next(\nplus(a,\nplus(b,c))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \nplus(\next(a),\nplus(b,c))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\nplus(\zero,b) = b = \nplus(b,\zero).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\next(a),b) \\
- &amp; = &amp; \next(\nplus(a,b)) \\
- &amp; = &amp; \next(\nplus(b,a)) \\
- &amp; = &amp; \nplus(b,\next(a))
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+= &amp; \next(\nplus(a,b)) \\
+ &amp;     \hyp{\nplus(a,b) = \nplus(b,a)}
+= &amp; \next(\nplus(b,a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \nplus(b,\next(a))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -389,9 +428,6 @@ Posted on 2014-06-01 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

@@ -44,9 +44,19 @@ Posted on 2018-01-07 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2018-01-07 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2018-01-07 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2018-01-07 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -213,7 +235,7 @@ Posted on 2018-01-07 by nbloomf
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
 <p>In the last post we defined the algebra of boolean values, true and false. Today we’ll look at <em>predicates</em> – functions from some set <span class="math inline">\(A\)</span> to <span class="math inline">\(\bool\)</span>. It turns out the algebra on <span class="math inline">\(\bool\)</span> can be lifted to predicates, and is useful enough to collect some definitions and properties in one place.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. A <em>predicate</em> on <span class="math inline">\(A\)</span> is just a function <span class="math inline">\(p : A \rightarrow \bool\)</span>. We define two special predicates, <span class="math inline">\(\ptrue = \const(\btrue)\)</span> and <span class="math inline">\(\pfalse = \const(\bfalse)\)</span>.</p>
+<p><span id="def-ptrue"></span><span id="def-pfalse"></span> Let <span class="math inline">\(A\)</span> be a set. A <em>predicate</em> on <span class="math inline">\(A\)</span> is just a function <span class="math inline">\(p : A \rightarrow \bool\)</span>. We define two special predicates, <span class="math inline">\(\ptrue = \const(\btrue)\)</span> and <span class="math inline">\(\pfalse = \const(\bfalse)\)</span>.</p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">ptrue ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">ptrue _ <span class="fu">=</span> true</a>
@@ -223,20 +245,23 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>First, the basic logic operators lift.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pnot : \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\pnot(p)(a) = \bnot(p(a)).\]</span></p>
+<p><span id="def-pnot"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pnot : \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\pnot(p)(a) = \bnot(p(a)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">pnot ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">pnot p a <span class="fu">=</span> not (p a)</a></code></pre></div>
 </div>
 <p><span class="math inline">\(\pnot\)</span> is an involution.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(p : A \rightarrow \bool\)</span>, we have <span class="math display">\[\pnot(\pnot(p)) = p.\]</span></p>
+<p><span id="thm-pnot-involution"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(p : A \rightarrow \bool\)</span>, we have <span class="math display">\[\pnot(\pnot(p)) = p.\]</span></p>
 <div class="proof">
 <p>Let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pnot(\pnot(p))(a) \\
- &amp; = &amp; \bnot(\pnot(p)(a)) \\
- &amp; = &amp; \bnot(\bnot(p(a))) \\
- &amp; = &amp; p(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+   = &amp; \bnot(\pnot(p)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+   = &amp; \bnot(\bnot(p(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-involution}
+   = &amp; p(a)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -249,46 +274,74 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>Special cases.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
+<p><span id="thm-pnot-ptrue"></span><span id="thm-pnot-pfalse"></span><span id="thm-compose-bnot-ptrue"></span><span id="thm-compose-bnot-pfalse"></span> Let <span class="math inline">\(A\)</span> be a set. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\pnot(\ptrue) = \pfalse\)</span>.</li>
 <li><span class="math inline">\(\pnot(\pfalse) = \ptrue\)</span>.</li>
-<li><span class="math inline">\(\bnot \circ \ptrue = \pfalse\)</span>.</li>
-<li><span class="math inline">\(\bnot \circ \pfalse = \ptrue\)</span>.</li>
+<li><span class="math inline">\(\compose{\bnot}{\ptrue} = \pfalse\)</span>.</li>
+<li><span class="math inline">\(\compose{\bnot}{\pfalse} = \ptrue\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pnot(\ptrue)(a) \\
- &amp; = &amp; \bnot(\ptrue(a)) \\
- &amp; = &amp; \bnot(\const(\btrue)(a)) \\
- &amp; = &amp; \bnot(\btrue) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \const(\bfalse)(a) \\
- &amp; = &amp; \pfalse(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bnot(\ptrue(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \bnot(\const(\btrue)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bnot(\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\bfalse)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \pfalse(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pnot(\pfalse)(a) \\
- &amp; = &amp; \bnot(\pfalse(a)) \\
- &amp; = &amp; \bnot(\const(\bfalse)(a)) \\
- &amp; = &amp; \bnot(\bfalse) \\
- &amp; = &amp; \btrue \\
- &amp; = &amp; \const(\btrue)(a) \\
- &amp; = &amp; \ptrue(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bnot(\pfalse(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \bnot(\const(\bfalse)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bnot(\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\btrue)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \ptrue(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\bnot \circ \ptrue)(a) \\
- &amp; = &amp; \bnot(\ptrue(a)) \\
- &amp; = &amp; \bnot(\btrue) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \pfalse(a)
+ &amp;   &amp; \compose{\bnot}{\ptrue}(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \bnot(\ptrue(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \bnot(\const(\btrue)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bnot(\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\bfalse)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \pfalse(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; (\bnot \circ \pfalse)(a) \\
- &amp; = &amp; \bnot(\pfalse(a)) \\
- &amp; = &amp; \bnot(\bfalse) \\
- &amp; = &amp; \btrue \\
- &amp; = &amp; \ptrue(a)
+ &amp;   &amp; \compose{\bnot}{\pfalse}(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \bnot(\pfalse(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \bnot(\const(\bfalse)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bnot(\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\btrue)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \ptrue(a)
 \end{eqnarray*}\]</span></li>
 </ol>
 </div>
@@ -323,14 +376,14 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>Next, <span class="math inline">\(\pand\)</span>.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pand : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\pand(p,q)(a) = \band(p(a),q(a)).\]</span></p>
+<p><span id="def-pand"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pand : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\pand(p,q)(a) = \band(p(a),q(a)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">pand ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">pand p q a <span class="fu">=</span> and (p a) (q a)</a></code></pre></div>
 </div>
 <p>The usual properties of <span class="math inline">\(\band\)</span> lift to <span class="math inline">\(\pand\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all p,q,r ^A$.</p>
+<p><span id="thm-pand-pfalse-left"></span><span id="thm-pand-pfalse-right"></span><span id="thm-pand-ptrue-left"></span><span id="thm-pand-ptrue-right"></span><span id="thm-pand-idempotent"></span><span id="thm-pand-commutative"></span><span id="thm-pand-associative"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all p,q,r ^A$.</p>
 <ol type="1">
 <li><span class="math inline">\(\pand(\pfalse,p) = \pand(p,\pfalse) = \pfalse\)</span>.</li>
 <li><span class="math inline">\(\pand(\ptrue,p) = \pand(p,\ptrue) = p\)</span>.</li>
@@ -342,35 +395,58 @@ Posted on 2018-01-07 by nbloomf
 <ol type="1">
 <li>For all <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(\pfalse,p)(a) \\
- &amp; = &amp; \band(\pfalse(a),p(a)) \\
- &amp; = &amp; \band(\bfalse,p(a)) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \pfalse(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(\pfalse(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \band(\const(\bfalse)(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \band(\bfalse,p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+= &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\bfalse)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \pfalse(a)
 \end{eqnarray*}\]</span> as needed; similarly for the other equality.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(\ptrue,p)(a) \\
- &amp; = &amp; \band(\ptrue(a),p(a)) \\
- &amp; = &amp; \band(\btrue,p(a)) \\
- &amp; = &amp; p(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(\ptrue(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \band(\const(\btrue)(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \band(\btrue,p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+= &amp; p(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(p,p)(a) \\
- &amp; = &amp; \band(p(a),p(a)) \\
- &amp; = &amp; p(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(p(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-idempotent}
+= &amp; p(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(p,q)(a) \\
- &amp; = &amp; \band(p(a),q(a)) \\
- &amp; = &amp; \band(q(a),p(a)) \\
- &amp; = &amp; \pand(q,p)(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(p(a),q(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-commutative}
+= &amp; \band(q(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \pand(q,p)(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(\pand(p,q),r)(a) \\
- &amp; = &amp; \band(\pand(p,q)(a),r(a)) \\
- &amp; = &amp; \band(\band(p(a),q(a)),r(a)) \\
- &amp; = &amp; \band(p(a),\band(q(a),r(a))) \\
- &amp; = &amp; \band(p(a),\pand(q,r)(a)) \\
- &amp; = &amp; \pand(p,\band(q,r))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(\pand(p,q)(a),r(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(\band(p(a),q(a)),r(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-associative}
+= &amp; \band(p(a),\band(q(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(p(a),\pand(q,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \pand(p,\pand(q,r))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -412,14 +488,14 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>Then <span class="math inline">\(\por\)</span>.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\por : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\por(p,q)(a) = \bor(p(a),q(a)).\]</span></p>
+<p><span id="def-por"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\por : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\por(p,q)(a) = \bor(p(a),q(a)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">por ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">por p q a <span class="fu">=</span> or (p a) (q a)</a></code></pre></div>
 </div>
 <p>The usual properties of <span class="math inline">\(\bor\)</span> lift to <span class="math inline">\(\por\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(p,q,r \in \bool^A\)</span>.</p>
+<p><span id="thm-por-ptrue-left"></span><span id="thm-por-ptrue-right"></span><span id="thm-por-pfalse-left"></span><span id="thm-por-pfalse-right"></span><span id="thm-por-idempotent"></span><span id="thm-por-commutative"></span><span id="thm-por-associative"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(p,q,r \in \bool^A\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\por(\ptrue,p) = \por(p,\ptrue) = \ptrue\)</span>.</li>
 <li><span class="math inline">\(\por(\pfalse,p) = \por(p,\pfalse) = p\)</span>.</li>
@@ -431,35 +507,58 @@ Posted on 2018-01-07 by nbloomf
 <ol type="1">
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(\ptrue,p)(a) \\
- &amp; = &amp; \bor(\ptrue(a),p(a)) \\
- &amp; = &amp; \bor(\btrue,p(a)) \\
- &amp; = &amp; \btrue \\
- &amp; = &amp; \ptrue(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(\ptrue(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \bor(\const(\btrue)(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bor(\btrue,p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+= &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \const(\btrue)(a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
+= &amp; \ptrue(a)
 \end{eqnarray*}\]</span> as needed; the other equality is similar.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(\pfalse,p)(a) \\
- &amp; = &amp; \bor(\pfalse(a),p(a)) \\
- &amp; = &amp; \bor(\bfalse,p(a)) \\
- &amp; = &amp; p(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(\pfalse(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
+= &amp; \bor(\const(\bfalse)(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
+= &amp; \bor(\bfalse,p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+= &amp; p(a)
 \end{eqnarray*}\]</span> as needed; the other equality is similar.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(p,p)(a) \\
- &amp; = &amp; \bor(p(a),p(a)) \\
- &amp; = &amp; p(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(p(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-idempotent}
+= &amp; p(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(p,q)(a) \\
- &amp; = &amp; \bor(p(a),q(a)) \\
- &amp; = &amp; \bor(q(a),p(a)) \\
- &amp; = &amp; \por(q,p)(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(p(a),q(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-commutative}
+= &amp; \bor(q(a),p(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \por(q,p)(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(\por(p,q),r)(a) \\
- &amp; = &amp; \bor(\por(p,q)(a),r(a)) \\
- &amp; = &amp; \bor(\bor(p(a),q(a)),r(a)) \\
- &amp; = &amp; \bor(p(a),\bor(q(a),r(a))) \\
- &amp; = &amp; \bor(p(a),\por(q,r)(a)) \\
- &amp; = &amp; \por(p,\por(q,r))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(\por(p,q)(a),r(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(\bor(p(a),q(a)),r(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-associative}
+= &amp; \bor(p(a),\bor(q(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(p(a),\por(q,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \por(p,\por(q,r))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -501,7 +600,7 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>And <span class="math inline">\(\pnot\)</span>, <span class="math inline">\(\pand\)</span>, and <span class="math inline">\(\por\)</span> interact.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(p,q,r \in \bool^A\)</span>.</p>
+<p><span id="thm-demorgan-pnot-pand"></span><span id="thm-demorgan-pnot-por"></span><span id="thm-pand-por-distribute"></span><span id="thm-por-pand-distribute"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(p,q,r \in \bool^A\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\pnot(\pand(p,q)) = \por(\pnot(p),\pnot(q))\)</span>.</li>
 <li><span class="math inline">\(\pnot(\por(p,q)) = \pand(\pnot(p),\pnot(q))\)</span>.</li>
@@ -512,35 +611,63 @@ Posted on 2018-01-07 by nbloomf
 <ol type="1">
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pnot(\pand(p,q))(a) \\
- &amp; = &amp; \bnot(\pand(p,q)(a)) \\
- &amp; = &amp; \bnot(\band(p(a),q(a))) \\
- &amp; = &amp; \bor(\bnot(p(a)),\bnot(q(a))) \\
- &amp; = &amp; \bor(\pnot(p)(a),\pnot(q)(a)) \\
- &amp; = &amp; \por(\pnot(p),\pnot(q))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bnot(\pand(p,q)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \bnot(\band(p(a),q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-demorgan-not-and}
+= &amp; \bor(\bnot(p(a)),\bnot(q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bor(\pnot(p)(a),\bnot(q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bor(\pnot(p)(a),\pnot(q)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \por(\pnot(p),\pnot(q))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pnot(\por(p,q))(a) \\
- &amp; = &amp; \bnot(\por(p,q)(a)) \\
- &amp; = &amp; \bnot(\bor(p(a),q(a))) \\
- &amp; = &amp; \band(\bnot(p(a)),\bnot(q(a))) \\
- &amp; = &amp; \band(\pnot(p)(a),\pnot(q)(a)) \\
- &amp; = &amp; \pand(\pnot(p),\pnot(q))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \bnot(\por(p,q)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bnot(\bor(p(a),q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-demorgan-not-or}
+= &amp; \band(\bnot(p(a)),\bnot(q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \band(\pnot(p)(a),\bnot(q(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pnot}
+= &amp; \band(\pnot(p)(a),\pnot(q)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \pand(\pnot(p),\pnot(q))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \pand(p,\por(q,r))(a) \\
- &amp; = &amp; \band(p(a),\por(q,r)(a)) \\
- &amp; = &amp; \band(p(a),\bor(q(a),r(a))) \\
- &amp; = &amp; \bor(\band(p(a),q(a)),\band(p(a),r(a))) \\
- &amp; = &amp; \bor(\pand(p,q)(a),\pand(p,r)(a)) \\
- &amp; = &amp; \por(\pand(p,q),\pand(p,r))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \band(p(a),\por(q,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \band(p(a),\bor(q(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-and-or-distribute}
+= &amp; \bor(\band(p(a),q(a)),\band(p(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \bor(\pand(p,q)(a),\band(p(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \bor(\pand(p,q)(a),\pand(p,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \por(\pand(p,q),\pand(p,r))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>For all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \por(p,\pand(q,r))(a) \\
- &amp; = &amp; \bor(p(a),\pand(q,r)(a)) \\
- &amp; = &amp; \bor(p(a),\band(q(a),r(a))) \\
- &amp; = &amp; \band(\bor(p(a),q(a)),\bor(p(a),r(a))) \\
- &amp; = &amp; \band(\por(p,q)(a),\por(p,r)(a)) \\
- &amp; = &amp; \pand(\por(p,q),\por(p,r))(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \bor(p(a),\pand(q,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \bor(p(a),\band(q(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-and-distribute}
+= &amp; \band(\bor(p(a),q(a)),\bor(p(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \band(\por(p,q)(a),\bor(p(a),r(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-por}
+= &amp; \band(\por(p,q)(a),\por(p,r)(a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pand}
+= &amp; \pand(\por(p,q),\por(p,r))(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -575,7 +702,7 @@ Posted on 2018-01-07 by nbloomf
 </div>
 <p>Implication lifts to predicates.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pimpl : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math inline">\(\pimpl(p,q) = \btrue\)</span> if <span class="math inline">\(\pimpl(p(a),q(a)) = \btrue\)</span> for all <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(\bfalse\)</span> otherwise.</p>
+<p><span id="def-pimpl"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\pimpl : \bool^A \times \bool^A \rightarrow \bool^A\)</span> by <span class="math display">\[\pimpl(p,q)(a) = \bimpl(p(a),q(a)).\]</span></p>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
@@ -623,9 +750,6 @@ Posted on 2018-01-07 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

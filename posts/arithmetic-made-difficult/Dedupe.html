@@ -44,9 +44,19 @@ Posted on 2017-05-28 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-28 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-28 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-28 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -217,9 +239,9 @@ Posted on 2017-05-28 by nbloomf
 <a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
 <a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
 <a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
 <a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
@@ -314,7 +336,8 @@ Posted on 2017-05-28 by nbloomf
  &amp; = &amp; \unique(\cons(a,\delete(a,\dedupeL(x)))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\delete(a,\dedupeL(x)))),\unique(\delete(a,\dedupeL(x)))) \\
  &amp; = &amp; \band(\btrue,\unique(\delete(a,\dedupeL(x)))) \\
- &amp; = &amp; \unique(\delete(a,\dedupeL(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+   = &amp; \unique(\delete(a,\dedupeL(x))) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -361,22 +384,26 @@ Posted on 2017-05-28 by nbloomf
  &amp;   &amp; \beq(x,\dedupeL(x)) \\
  &amp; = &amp; \beq(\nil,\dedupeL(\nil)) \\
  &amp; = &amp; \beq(\nil,\nil) \\
- &amp; = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+   = &amp; \btrue \\
  &amp; = &amp; \unique(\nil) \\
  &amp; = &amp; \unique(x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),\dedupeL(\cons(a,x))) \\
  &amp; = &amp; \beq(\cons(a,x),\cons(a,\delete(a,\dedupeL(x)))) \\
  &amp; = &amp; \band(\beq(a,a),\beq(x,\delete(a,\dedupeL(x)))) \\
- &amp; = &amp; \band(\btrue,\beq(x,\delete(a,\dedupeL(x)))) \\
- &amp; = &amp; \beq(x,\delete(a,\dedupeL(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+   = &amp; \band(\btrue,\beq(x,\delete(a,\dedupeL(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+   = &amp; \beq(x,\delete(a,\dedupeL(x))) \\
  &amp; = &amp; \beq(x,\dedupeL(\delete(a,x))) \\
  &amp; = &amp; Q.
 \end{eqnarray*}\]</span> We now consider two possibilities. If <span class="math inline">\(\elt(a,x) = \bfalse\)</span>, then <span class="math display">\[\beq(x,\delete(a,x)) = \bnot(\elt(a,x)) = \btrue,\]</span> and using the inductive hypothesis on <span class="math inline">\(x\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Q \\
  &amp; = &amp; \beq(x,\dedupeL(x)) \\
  &amp; = &amp; \unique(x) \\
- &amp; = &amp; \band(\btrue,\unique(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+   = &amp; \band(\btrue,\unique(x)) \\
  &amp; = &amp; \band(\bnot(\elt(a,x)),\unique(x)) \\
  &amp; = &amp; \unique(\cons(a,x))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(\elt(a,x) = \btrue\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
@@ -386,7 +413,8 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> so that <span class="math inline">\(\beq(x,\dedupeL(\delete(a,x))) = \bfalse\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Q \\
  &amp; = &amp; \bfalse \\
- &amp; = &amp; \band(\bfalse,\unique(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+   = &amp; \band(\bfalse,\unique(x)) \\
  &amp; = &amp; \band(\bnot(\elt(a,x)),\unique(x)) \\
  &amp; = &amp; \unique(\cons(a,x))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -419,25 +447,30 @@ Posted on 2017-05-28 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dedupeL(\snoc(a,\nil)) \\
- &amp; = &amp; \dedupeL(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \dedupeL(\cons(a,\nil)) \\
  &amp; = &amp; \cons(a,\nil) \\
- &amp; = &amp; \bif{\bfalse}{\nil}{\cons(a,\nil)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{\nil}{\cons(a,\nil)} \\
  &amp; = &amp; \bif{\elt(a,\nil)}{\nil}{\cons(a,\nil)} \\
  &amp; = &amp; \bif{\elt(a,\nil)}{\dedupeL(\nil)}{\snoc(a,\nil)}
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dedupeL(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \dedupeL(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \dedupeL(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \cons(b,\delete(b)(\dedupeL(\snoc(a,x)))) \\
  &amp; = &amp; \cons(b,\delete(b)(\bif{\elt(a,x)}{\dedupeL(x)}{\snoc(a,\dedupeL(x))})) \\
  &amp; = &amp; \bif{\elt(a,x)}{\cons(b,\delete(b)(\dedupeL(x)))}{\cons(b,\delete(b)(\snoc(a,\dedupeL(x))))} \\
  &amp; = &amp; \bif{\elt(a,x)}{\dedupeL(\cons(b,x))}{\cons(b,\delete(b)(\snoc(a,\dedupeL(x))))} \\
  &amp; = &amp; \bif{\elt(a,x)}{\dedupeL(\cons(b,x))}{\cons(b,\bif{\beq(a,b)}{\delete(b)(\dedupeL(x))}{\snoc(a,\delete(b)(\dedupeL(x)))})} \\
- &amp; = &amp; \bif{\elt(a,x)}{\dedupeL(\cons(b,x))}{\bif{\beq(a,b)}{\cons(b,\delete(b)(\dedupeL(x)))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \bif{\elt(a,x)}{\dedupeL(\cons(b,x))}{\bif{\beq(a,b)}{\cons(b,\delete(b)(\dedupeL(x)))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))}} \\
  &amp; = &amp; \bif{\elt(a,x)}{\dedupeL(\cons(b,x))}{\bif{\beq(a,b)}{\dedupeL(\cons(b,x))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))}} \\
- &amp; = &amp; \bif{\bor(\beq(a,b),\elt(a,x))}{\dedupe(\cons(b,x))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))} \\
- &amp; = &amp; \bif{\elt(a,\cons(b,x))}{\dedupe(\cons(b,x))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))} \\
- &amp; = &amp; \bif{\elt(a,\cons(b,x))}{\dedupe(\cons(b,x))}{\snoc(a,\cons(b,\delete(b)(\dedupeL(x))))} \\
- &amp; = &amp; \bif{\elt(a,\cons(b,x))}{\dedupe(\cons(b,x))}{\snoc(a,\dedupeL(\cons(b,x)))}
+ &amp; = &amp; \bif{\bor(\beq(a,b),\elt(a,x))}{\dedupeL(\cons(b,x))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))} \\
+ &amp; = &amp; \bif{\elt(a,\cons(b,x))}{\dedupeL(\cons(b,x))}{\cons(b,\snoc(a,\delete(b)(\dedupeL(x))))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \bif{\elt(a,\cons(b,x))}{\dedupeL(\cons(b,x))}{\snoc(a,\cons(b,\delete(b)(\dedupeL(x))))} \\
+ &amp; = &amp; \bif{\elt(a,\cons(b,x))}{\dedupeL(\cons(b,x))}{\snoc(a,\dedupeL(\cons(b,x)))}
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -450,12 +483,85 @@ Posted on 2017-05-28 by nbloomf
 <a class="sourceLine" id="cb9-7" data-line-number="7">    (<span class="kw">if</span> elt a x <span class="kw">then</span> dedupeL x <span class="kw">else</span> snoc a (dedupeL x))</a></code></pre></div>
 </div>
 </div>
+<p><span class="math inline">\(\dedupeL\)</span> interacts with <span class="math inline">\(\elt\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\elt(a,\dedupeL(x)) = \elt(a,x).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\dedupeL(\nil)) \\
+ &amp; = &amp; \elt(a,\nil)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \elt(a,\dedupeL(\cons(b,x))) \\
+ &amp; = &amp; \elt(a,\cons(b,\delete(b)(\dedupeL(x)))) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\delete(b)(\dedupeL(x)))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bif{\beq(a,b)}{\bfalse}{\elt(a,\dedupeL(x))}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-prune-false}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\dedupeL(x))} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \elt(a,\cons(b,x))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_dedupeL_elt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">_test_dedupeL_elt _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;elt(a,dedupeL(x)) == elt(a,x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq (elt a (dedupeL x)) (elt a x)</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\dedupeL\)</span> commutes with <span class="math inline">\(\filter\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\dedupeL(\filter(p)(x)) = \filter(p)(\dedupeL(x)).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \dedupeL(\filter(p)(\nil)) \\
+ &amp; = &amp; \dedupeL(\nil) \\
+ &amp; = &amp; \nil \\
+ &amp; = &amp; \filter(p)(\nil) \\
+ &amp; = &amp; \filter(p)(\dedupeL(\nil))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equation holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider the two possibilities for <span class="math inline">\(p(a)\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \filter(p)(\dedupeL(\cons(a,x))) \\
+ &amp; = &amp; \filter(p)(\cons(a,\delete(a)(\dedupeL(x)))) \\
+ &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp; = &amp; \bif{\btrue}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \cons(a,\filter(p)(\delete(a)(\dedupeL(x)))) \\
+ &amp; = &amp; \cons(a,\delete(a)(\filter(a)(\dedupeL(x)))) \\
+ &amp; = &amp; \cons(a,\delete(a)(\dedupeL(\filter(p)(x)))) \\
+ &amp; = &amp; \dedupeL(\cons(a,\filter(p)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \dedupeL(\bif{\btrue}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp; = &amp; \dedupeL(\filter(p)(\cons(a,x)))
+\end{eqnarray*}\]</span> as needed. If <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \filter(p)(\dedupeL(\cons(a,x))) \\
+ &amp; = &amp; \filter(p)(\cons(a,\delete(a)(\dedupeL(x)))) \\
+ &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp; = &amp; \bif{\bfalse}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \filter(p)(\delete(a)(\dedupeL(x))) \\
+ &amp; = &amp; \delete(a)(\filter(p)(\dedupeL(x))) \\
+ &amp; = &amp; \filter(p)(\dedupeL(x)) \\
+ &amp; = &amp; \dedupeL(\filter(p)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \dedupeL(\bif{\bfalse}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp; = &amp; \dedupeL(\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp; = &amp; \dedupeL(\filter(p)(\cons(a,x)))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_dedupeL_filter ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_dedupeL_filter _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;dedupeL(filter(p)(x)) == filter(p)(dedupeL(x))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> eq (dedupeL (filter p x)) (filter p (dedupeL x))</a></code></pre></div>
+</div>
+</div>
 <p>We define <span class="math inline">\(\dedupeR\)</span> in terms of <span class="math inline">\(\dedupeL\)</span>.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\dedupeL : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\dedupeL(x) = \rev(\dedupeR(\rev(x))).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">dedupeR ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">dedupeR <span class="fu">=</span> rev <span class="fu">.</span> dedupeL <span class="fu">.</span> rev</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">dedupeR ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">dedupeR <span class="fu">=</span> rev <span class="fu">.</span> dedupeL <span class="fu">.</span> rev</a></code></pre></div>
 </div>
 <p>The defining equations for <span class="math inline">\(\dedupeL\)</span> have equivalents for <span class="math inline">\(\dedupeR\)</span>.</p>
 <div class="theorem">
@@ -469,34 +575,37 @@ Posted on 2017-05-28 by nbloomf
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dedupeR(\nil) \\
  &amp; = &amp; \rev(\dedupeL(\rev(\nil))) \\
- &amp; = &amp; \rev(\dedupeL(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+= &amp; \rev(\dedupeL(\nil)) \\
  &amp; = &amp; \rev(\nil) \\
- &amp; = &amp; \nil
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+= &amp; \nil
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dedupeR(\snoc(a,x)) \\
  &amp; = &amp; \rev(\dedupeL(\rev(\snoc(a,x)))) \\
  &amp; = &amp; \rev(\dedupeL(\cons(a,\rev(x)))) \\
  &amp; = &amp; \rev(\cons(a,\delete(a,\dedupeL(\rev(x))))) \\
- &amp; = &amp; \snoc(a,\rev(\delete(a,\dedupeL(\rev(x))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \snoc(a,\rev(\delete(a,\dedupeL(\rev(x))))) \\
  &amp; = &amp; \snoc(a,\delete(a,\rev(\dedupeL(\rev(x))))) \\
  &amp; = &amp; \snoc(a,\delete(a,\dedupeR(x)))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_dedupeR_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">_test_dedupeR_nil t <span class="fu">=</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  testName <span class="st">&quot;dedupeR(nil) == nil&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  eq (dedupeR nil) (nil <span class="ot">`withTypeOf`</span> t)</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="ot">_test_dedupeR_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb11-10" data-line-number="10">_test_dedupeR_snoc _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb11-11" data-line-number="11">  testName <span class="st">&quot;dedupeR(snoc(a,x)) == snoc(a,delete(a)(dedupeR(x)))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb11-12" data-line-number="12">  \a x <span class="ot">-&gt;</span> eq (dedupeR (snoc a x)) (snoc a (delete a (dedupeR x)))</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_dedupeR_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">_test_dedupeR_nil t <span class="fu">=</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;dedupeR(nil) == nil&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  eq (dedupeR nil) (nil <span class="ot">`withTypeOf`</span> t)</a>
+<a class="sourceLine" id="cb13-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb13-8" data-line-number="8"><span class="ot">_test_dedupeR_snoc ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">_test_dedupeR_snoc _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">  testName <span class="st">&quot;dedupeR(snoc(a,x)) == snoc(a,delete(a)(dedupeR(x)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb13-12" data-line-number="12">  \a x <span class="ot">-&gt;</span> eq (dedupeR (snoc a x)) (snoc a (delete a (dedupeR x)))</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\dedupeR\)</span>s are unique.</p>
@@ -511,11 +620,11 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_dedupeR_unique ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">_test_dedupeR_unique _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;unique(dedupeR(x)) == true&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (unique (dedupeR x)) true</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_dedupeR_unique ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">_test_dedupeR_unique _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  testName <span class="st">&quot;unique(dedupeR(x)) == true&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (unique (dedupeR x)) true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\dedupeR\)</span> is idempotent.</p>
@@ -531,56 +640,55 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_dedupeR_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">_test_dedupeR_idempotent _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;dedupeR(dedupeR(x)) == dedupeR(x)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (dedupeR (dedupeR x)) (dedupeR x)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_dedupeR_idempotent ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">_test_dedupeR_idempotent _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  testName <span class="st">&quot;dedupeR(dedupeR(x)) == dedupeR(x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (dedupeR (dedupeR x)) (dedupeR x)</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_dedupe ::</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">_test_dedupe t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">  testLabel1 <span class="st">&quot;dedupeL &amp; dedupeR&quot;</span> t</a>
-<a class="sourceLine" id="cb14-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb14-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb14-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb14-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb14-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb14-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb14-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb14-15" data-line-number="15">  runTest args (_test_dedupeL_nil t)</a>
-<a class="sourceLine" id="cb14-16" data-line-number="16">  runTest args (_test_dedupeL_cons t)</a>
-<a class="sourceLine" id="cb14-17" data-line-number="17">  runTest args (_test_dedupeL_delete t)</a>
-<a class="sourceLine" id="cb14-18" data-line-number="18">  runTest args (_test_dedupeL_unique t)</a>
-<a class="sourceLine" id="cb14-19" data-line-number="19">  runTest args (_test_dedupeL_prefix t)</a>
-<a class="sourceLine" id="cb14-20" data-line-number="20">  runTest args (_test_dedupeL_eq_unique t)</a>
-<a class="sourceLine" id="cb14-21" data-line-number="21">  runTest args (_test_dedupeL_idempotent t)</a>
-<a class="sourceLine" id="cb14-22" data-line-number="22">  runTest args (_test_dedupeL_snoc t)</a>
-<a class="sourceLine" id="cb14-23" data-line-number="23"></a>
-<a class="sourceLine" id="cb14-24" data-line-number="24">  runTest args (_test_dedupeR_nil t)</a>
-<a class="sourceLine" id="cb14-25" data-line-number="25">  runTest args (_test_dedupeR_snoc t)</a>
-<a class="sourceLine" id="cb14-26" data-line-number="26">  runTest args (_test_dedupeR_unique t)</a>
-<a class="sourceLine" id="cb14-27" data-line-number="27">  runTest args (_test_dedupeR_idempotent t)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_dedupe ::</span></a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">_test_dedupe t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">  testLabel1 <span class="st">&quot;dedupeL &amp; dedupeR&quot;</span> t</a>
+<a class="sourceLine" id="cb16-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb16-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb16-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb16-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb16-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb16-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb16-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb16-15" data-line-number="15">  runTest args (_test_dedupeL_nil t)</a>
+<a class="sourceLine" id="cb16-16" data-line-number="16">  runTest args (_test_dedupeL_cons t)</a>
+<a class="sourceLine" id="cb16-17" data-line-number="17">  runTest args (_test_dedupeL_delete t)</a>
+<a class="sourceLine" id="cb16-18" data-line-number="18">  runTest args (_test_dedupeL_unique t)</a>
+<a class="sourceLine" id="cb16-19" data-line-number="19">  runTest args (_test_dedupeL_prefix t)</a>
+<a class="sourceLine" id="cb16-20" data-line-number="20">  runTest args (_test_dedupeL_eq_unique t)</a>
+<a class="sourceLine" id="cb16-21" data-line-number="21">  runTest args (_test_dedupeL_idempotent t)</a>
+<a class="sourceLine" id="cb16-22" data-line-number="22">  runTest args (_test_dedupeL_snoc t)</a>
+<a class="sourceLine" id="cb16-23" data-line-number="23">  runTest args (_test_dedupeL_elt t)</a>
+<a class="sourceLine" id="cb16-24" data-line-number="24">  runTest args (_test_dedupeL_filter t)</a>
+<a class="sourceLine" id="cb16-25" data-line-number="25"></a>
+<a class="sourceLine" id="cb16-26" data-line-number="26">  runTest args (_test_dedupeR_nil t)</a>
+<a class="sourceLine" id="cb16-27" data-line-number="27">  runTest args (_test_dedupeR_snoc t)</a>
+<a class="sourceLine" id="cb16-28" data-line-number="28">  runTest args (_test_dedupeR_unique t)</a>
+<a class="sourceLine" id="cb16-29" data-line-number="29">  runTest args (_test_dedupeR_idempotent t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">main_dedupe ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2">main_dedupe <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">50</span> <span class="dv">500</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">main_dedupe ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">main_dedupe <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">50</span> <span class="dv">500</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
 
 
 
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

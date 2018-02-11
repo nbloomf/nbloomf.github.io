@@ -44,9 +44,19 @@ Posted on 2018-01-05 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2018-01-05 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2018-01-05 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2018-01-05 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -220,14 +242,14 @@ Posted on 2018-01-05 by nbloomf
 <p>The <span class="math inline">\(\cons\)</span> function attaches a new item to the “beginning” of a list; we want an analogous function that attaches items to the “end”.</p>
 <p>First let’s tackle adding items to the end of a list; traditionally this operator is called <span class="math inline">\(\snoc\)</span> as a bad pun on “reverse <span class="math inline">\(\cons\)</span>”. Now the signature of <span class="math inline">\(\snoc\)</span> should be something like <span class="math display">\[\snoc : A \times \lists{A} \rightarrow \lists{A},\]</span> and <span class="math inline">\(\foldr{e}{\varphi}\)</span> can be used to build a map <span class="math inline">\(\lists{A} \rightarrow \lists{A}\)</span>, provided <span class="math inline">\(e\)</span> is in <span class="math inline">\(\lists{A}\)</span> and <span class="math inline">\(\varphi : A \times \lists{A} \rightarrow \lists{A}\)</span>. Considering the behavior we want <span class="math inline">\(\snoc\)</span> to have, we define the following.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We now define a map <span class="math inline">\(\snoc : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\snoc(a,x) = \foldr{\cons(a,\nil)}{\cons}(x).\]</span></p>
+<p><span id="def-snoc"></span> Let <span class="math inline">\(A\)</span> be a set. We now define a map <span class="math inline">\(\snoc : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\snoc(a,x) = \foldr{\cons(a,\nil)}{\cons}(x).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">snoc ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">snoc a <span class="fu">=</span> foldr (cons a nil) cons</a></code></pre></div>
 </div>
 <p>Because <span class="math inline">\(\snoc\)</span> is defined directly as a fold, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\snoc\)</span> is the unique function <span class="math inline">\(f : A \times \lists{A} \rightarrow \lists{A}\)</span> with the property that for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\left\{ \begin{array}{ll}
+<p><span id="cor-snoc-nil"></span><span id="cor-snoc-cons"></span> Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\snoc\)</span> is the unique function <span class="math inline">\(f : A \times \lists{A} \rightarrow \lists{A}\)</span> with the property that for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\left\{ \begin{array}{ll}
  f(a,\nil) = \cons(a,\nil) \\
  f(a,\cons(b,x)) = \cons(b,f(a,x)).
 \end{array} \right.\]</span></p>
@@ -254,16 +276,23 @@ Posted on 2018-01-05 by nbloomf
 <div class="proof">
 <p>We proceed by list induction. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{e}{\varphi}(\snoc(a,\nil)) \\
- &amp; = &amp; \foldr{e}{\varphi}(\cons(a,\nil)) \\
- &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(\nil)) \\
- &amp; = &amp; \varphi(a,e) \\
- &amp; = &amp; \foldr{\varphi(a,e)}{\varphi}(\nil)
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \foldr{e}{\varphi}(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \varphi(a,\foldr{e}{\varphi}(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; \varphi(a,e) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; \foldr{\varphi(a,e)}{\varphi}(\nil)
 \end{eqnarray*}\]</span> as claimed. Suppose now that the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{e}{\varphi}(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \foldr{e}{\varphi}(\cons(b,\snoc(a,x))) \\
- &amp; = &amp; \varphi(b,\foldr{e}{\varphi}(\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \foldr{e}{\varphi}(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \varphi(b,\foldr{e}{\varphi}(\snoc(a,x))) \\
  &amp; = &amp; \varphi(b,\foldr{\varphi(a,e)}{\varphi}(x)) \\
- &amp; = &amp; \foldr{\varphi(a,e)}{\varphi}(\cons(b,x))
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \foldr{\varphi(a,e)}{\varphi}(\cons(b,x))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
@@ -273,14 +302,16 @@ Posted on 2018-01-05 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, the conclusion holds trivially. For the inductive step, suppose the conclusion holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math inline">\(\cons(a,x) \neq \nil\)</span>. We have two cases for <span class="math inline">\(x\)</span>; if <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\cons(a,x) = \cons(a,\nil) = \snoc(a,\nil)\]</span> as needed. Suppose instead that <span class="math inline">\(x \neq \nil\)</span>; by the inductive hypothesis we have <span class="math inline">\(x = \snoc(b,w)\)</span> for some <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(w \in \lists{A}\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cons(a,x) \\
- &amp; = &amp; \cons(a,\snoc(b,w)) \\
- &amp; = &amp; \snoc(b,\cons(a,w))
+ &amp;     \hyp{x = \snoc(b,w)}
+   = &amp; \cons(a,\snoc(b,w)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \snoc(b,\cons(a,w))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 </div>
 <p>Also, <span class="math inline">\(\snoc\)</span> interacts with <span class="math inline">\(\beq\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\beq(\snoc(a,x),\snoc(b,y)) = \band(\beq(a,b),\beq(x,y)).\]</span></p>
+<p><span id="thm-snoc-eq"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\beq(\snoc(a,x),\snoc(b,y)) = \band(\beq(a,b),\beq(x,y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case, set <span class="math inline">\(x = \nil\)</span>. We consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\snoc(a,x),\snoc(b,y)) \\
@@ -294,8 +325,10 @@ Posted on 2018-01-05 by nbloomf
  &amp; = &amp; \beq(\cons(a,\nil),\cons(c,\snoc(b,u))) \\
  &amp; = &amp; \band(\beq(a,c),\beq(\nil,\snoc(b,u))) \\
  &amp; = &amp; \band(\beq(a,c),\bfalse) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \band(\beq(a,b),\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \band(\beq(a,b),\bfalse) \\
  &amp; = &amp; \band(\beq(a,b),\beq(\nil,\cons(c,u))) \\
  &amp; = &amp; \band(\beq(a,b),\beq(x,y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(d \in A\)</span>. We again consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -304,8 +337,10 @@ Posted on 2018-01-05 by nbloomf
  &amp; = &amp; \beq(\cons(d,\snoc(a,x)),\cons(b,\nil)) \\
  &amp; = &amp; \band(\beq(d,b),\beq(\snoc(a,x),\nil)) \\
  &amp; = &amp; \band(\beq(d,b),\bfalse) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \band(\beq(a,b),\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
+   = &amp; \band(\beq(a,b),\bfalse) \\
  &amp; = &amp; \band(\beq(a,b),\beq(\cons(d,x),\nil)) \\
  &amp; = &amp; \band(\beq(a,b),\beq(\cons(d,x),y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(y = \cons(c,u)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
@@ -313,7 +348,8 @@ Posted on 2018-01-05 by nbloomf
  &amp; = &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,\cons(c,u))) \\
  &amp; = &amp; \beq(\cons(d,\snoc(a,x)),\cons(c,\snoc(b,u))) \\
  &amp; = &amp; \band(\beq(d,c),\beq(\snoc(a,x),\snoc(b,u))) \\
- &amp; = &amp; \band(\beq(d,c),\band(\beq(a,b),\beq(x,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-snoc-eq}
+   = &amp; \band(\beq(d,c),\band(\beq(a,b),\beq(x,u))) \\
  &amp; = &amp; \band(\beq(a,b),\band(\beq(d,c),\beq(x,u))) \\
  &amp; = &amp; \band(\beq(a,b),\band(\cons(d,x),\cons(c,u))) \\
  &amp; = &amp; \band(\beq(a,b),\band(\cons(d,x),y))
@@ -331,20 +367,28 @@ Posted on 2018-01-05 by nbloomf
 </div>
 <p>Now <span class="math inline">\(\foldl{\ast}\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
 <div class="theorem">
-<p>We have <span class="math display">\[\foldl{\varphi}(e,\snoc(a,x)) = \varphi(\foldl{\varphi}(e,x),a).\]</span></p>
+<p><span id="thm-snoc-foldl"></span> We have <span class="math display">\[\foldl{\varphi}(e,\snoc(a,x)) = \varphi(\foldl{\varphi}(e,x),a).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldl{\varphi}(e,\snoc(a,\nil)) \\
- &amp; = &amp; \foldl{\varphi}(e,\cons(a,\nil)) \\
- &amp; = &amp; \foldl{\varphi}(\varphi(e,a),\nil) \\
- &amp; = &amp; \varphi(e,a) \\
- &amp; = &amp; \varphi(\foldl{\varphi}(e,\nil),a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \foldl{\varphi}(e,\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+   = &amp; \foldl{\varphi}(\varphi(e,a),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
+   = &amp; \varphi(e,a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
+   = &amp; \varphi(\foldl{\varphi}(e,\nil),a)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(e\)</span> and <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldl{\varphi}(e,\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \foldl{\varphi}(e,\cons(b,\snoc(a,x))) \\
- &amp; = &amp; \foldl{\varphi}(\varphi(e,b),\snoc(a,x)) \\
- &amp; = &amp; \varphi(\foldl{\varphi}(\varphi(e,b),x),a) \\
- &amp; = &amp; \varphi(\foldl{\varphi}(e,\cons(b,x)),a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \foldl{\varphi}(e,\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+   = &amp; \foldl{\varphi}(\varphi(e,b),\snoc(a,x)) \\
+ &amp;     \hyp{\foldl{\varphi}(c,\snoc(a,x)) = \varphi(\foldl{\varphi}(c,x),a)}
+   = &amp; \varphi(\foldl{\varphi}(\varphi(e,b),x),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+   = &amp; \varphi(\foldl{\varphi}(e,\cons(b,x)),a)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -359,16 +403,20 @@ Posted on 2018-01-05 by nbloomf
 </div>
 <p>And <span class="math inline">\(\snoc\)</span> is not <span class="math inline">\(\nil\)</span>.</p>
 <div class="theorem">
-<p>We have <span class="math display">\[\isnil(\snoc(a,x)) = \bfalse.\]</span></p>
+<p><span id="thm-isnil-snoc"></span> We have <span class="math display">\[\isnil(\snoc(a,x)) = \bfalse.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \isnil(\snoc(a,\nil)) \\
- &amp; = &amp; \isnil(\cons(a,\nil)) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \isnil(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>; we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \isnil(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \isnil(\cons(b,\snoc(a,x))) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \isnil(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -390,32 +438,43 @@ Posted on 2018-01-05 by nbloomf
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldl{\psi}(e,\cons(a,\nil)) \\
- &amp; = &amp; \foldl{\psi}(\psi(e,a),\nil) \\
- &amp; = &amp; \psi(e,a) \\
- &amp; = &amp; \psi(\foldl{\psi}(e,\nil),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+= &amp; \foldl{\psi}(\psi(e,a),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
+= &amp; \psi(e,a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
+= &amp; \psi(\foldl{\psi}(e,\nil),a) \\
  &amp; = &amp; \foldl{\psi}(e,\snoc(a,\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(e\)</span> and <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldl{\psi}(e,\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \foldl{\psi}(e,\cons(b,\snoc(a,x))) \\
- &amp; = &amp; \foldl{\psi}(\psi(e,b),\snoc(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \foldl{\psi}(e,\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+= &amp; \foldl{\psi}(\psi(e,b),\snoc(a,x)) \\
  &amp; = &amp; \foldl{\psi}(\psi(e,b),\cons(a,x)) \\
- &amp; = &amp; \foldl{\psi}(\psi(\psi(e,b),a),x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+= &amp; \foldl{\psi}(\psi(\psi(e,b),a),x) \\
  &amp; = &amp; \foldl{\psi}(\varphi(a,\varphi(b,e)),x) \\
  &amp; = &amp; \foldl{\psi}(\varphi(b,\varphi(a,e)),x) \\
  &amp; = &amp; \foldl{\psi}(\psi(\psi(e,a),b),x) \\
- &amp; = &amp; \foldl{\psi}(\psi(e,a),\cons(b,x)) \\
- &amp; = &amp; \foldl{\psi}(e,\cons(a,\cons(b,x)))
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+= &amp; \foldl{\psi}(\psi(e,a),\cons(b,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
+= &amp; \foldl{\psi}(e,\cons(a,\cons(b,x)))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{e}{\varphi}(\nil) \\
- &amp; = &amp; e \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+= &amp; e \\
  &amp; = &amp; \foldl{\psi}(e,\nil)
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(x = \cons(a,\nil)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldr{e}{\varphi}(\cons(a,x)) \\
- &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+= &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
  &amp; = &amp; \varphi(a,\foldl{\psi}(e,x)) \\
  &amp; = &amp; \psi(\foldl{\psi}(e,x),a) \\
- &amp; = &amp; \foldl{\psi}(e,\snoc(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-snoc-foldl}
+= &amp; \foldl{\psi}(e,\snoc(a,x)) \\
  &amp; = &amp; \foldl{\psi}(e,\cons(a,x))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
@@ -453,9 +512,6 @@ Posted on 2018-01-05 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

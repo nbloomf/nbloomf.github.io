@@ -44,9 +44,19 @@ Posted on 2017-04-29 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-29 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-29 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-29 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,15 +233,16 @@ Posted on 2017-04-29 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">At</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">At</span></a></code></pre></div>
 <p>Today we’ll explore one of the most useful functions on <span class="math inline">\(\lists{A}\)</span>: <span class="math inline">\(\map\)</span>. What <span class="math inline">\(\map\)</span> does is take a function <span class="math inline">\(A \rightarrow B\)</span> and a <span class="math inline">\(\lists{A}\)</span>, and apply the function “itemwise” to get a <span class="math inline">\(\lists{B}\)</span>.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Define <span class="math inline">\(\varphi : B^A \rightarrow A \times \lists{B} \rightarrow \lists{B}\)</span> by <span class="math display">\[\varphi(f)(a,x) = \cons(f(a),x).\]</span> We then define <span class="math inline">\(\map : B^A \rightarrow \lists{A} \rightarrow \lists{B}\)</span> by <span class="math display">\[\map(f) = \foldr{\nil}{\varphi(f)}.\]</span></p>
@@ -312,14 +335,18 @@ A @&gt;{f}&gt;&gt; B\\
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\tail(\nil)) \\
- &amp; = &amp; \map(f)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-tail-nil}
+   = &amp; \map(f)(\nil) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \tail(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-tail-nil}
+   = &amp; \tail(\nil) \\
  &amp; = &amp; \tail(\map(f)(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\tail(\cons(a,x))) \\
- &amp; = &amp; \map(f)(x) \\
- &amp; = &amp; \tail(\cons(f(a),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-tail-cons}
+   = &amp; \map(f)(x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-tail-cons}
+   = &amp; \tail(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \tail(\map(f)(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -338,16 +365,20 @@ A @&gt;{f}&gt;&gt; B\\
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\cat(x,y)) \\
  &amp; = &amp; \map(f)(\cat(\nil,y)) \\
- &amp; = &amp; \map(f)(y) \\
- &amp; = &amp; \cat(\nil,\map(f)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \map(f)(y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \cat(\nil,\map(f)(y)) \\
  &amp; = &amp; \cat(\map(f)(\nil),\map(f)(y)) \\
  &amp; = &amp; \cat(\map(f)(x),\map(f)(y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\cat(\cons(a,x),y)) \\
- &amp; = &amp; \map(f)(\cons(a,\cat(x,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \map(f)(\cons(a,\cat(x,y))) \\
  &amp; = &amp; \cons(f(a),\map(f)(\cat(x,y))) \\
  &amp; = &amp; \cons(f(a),\cat(\map(f)(x),\map(f)(y))) \\
- &amp; = &amp; \cat(\cons(f(a),\map(f)(x)),\map(f)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \cat(\cons(f(a),\map(f)(x)),\map(f)(y)) \\
  &amp; = &amp; \cat(\map(f)(\cons(a,x)),\map(f)(y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -365,17 +396,21 @@ A @&gt;{f}&gt;&gt; B\\
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\snoc(a,\nil)) \\
- &amp; = &amp; \map(f)(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \map(f)(\cons(a,\nil)) \\
  &amp; = &amp; \cons(f(a),\map(f)(\nil)) \\
  &amp; = &amp; \cons(f(a),\nil) \\
- &amp; = &amp; \snoc(f(a),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \snoc(f(a),\nil) \\
  &amp; = &amp; \snoc(f(a),\map(f)(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(f\)</span> and <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \map(f)(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \map(f)(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \cons(f(b),\map(f)(\snoc(a,x))) \\
  &amp; = &amp; \cons(f(b),\snoc(f(a),\map(f)(x))) \\
- &amp; = &amp; \snoc(f(a),\cons(f(b),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \snoc(f(a),\cons(f(b),\map(f)(x))) \\
  &amp; = &amp; \snoc(f(a),\map(f)(\cons(b,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -394,17 +429,21 @@ A @&gt;{f}&gt;&gt; B\\
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\rev(x)) \\
  &amp; = &amp; \map(f)(\rev(\nil)) \\
- &amp; = &amp; \map(f)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \map(f)(\nil) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \rev(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \rev(\nil) \\
  &amp; = &amp; \rev(\map(f)(\nil)) \\
  &amp; = &amp; \rev(\map(f)(x)) \\
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equation holds for some <span class="math inline">\(x \in \lists{A}\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\rev(\cons(a,x))) \\
- &amp; = &amp; \map(f)(\snoc(a,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \map(f)(\snoc(a,\rev(x))) \\
  &amp; = &amp; \snoc(f(a),\map(f)(\rev(x))) \\
  &amp; = &amp; \snoc(f(a),\rev(\map(f)(x))) \\
- &amp; = &amp; \rev(\cons(f(a),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \rev(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \rev(\map(f)(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -418,27 +457,29 @@ A @&gt;{f}&gt;&gt; B\\
 </div>
 <p><span class="math inline">\(\map(f)\)</span> interacts with <span class="math inline">\(\at\)</span>:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\at(\map(f)(x),k) = \upair(\id,f)(\at(x,k)).\]</span></p>
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with a map <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then we have <span class="math display">\[\at(\map(f)(x),k) = \uPair(\id,f)(\at(x,k)).\]</span></p>
 <div class="proof">
 <p>There are two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\map(f)(\nil),k) \\
  &amp; = &amp; \at(\nil,k) \\
  &amp; = &amp; \lft(\ast) \\
- &amp; = &amp; \lft(\id(\ast)) \\
- &amp; = &amp; \upair(\id,f)(\lft(\ast)) \\
- &amp; = &amp; \upair(\id,f)(\at(\nil,k))
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
+   = &amp; \lft(\id(\ast)) \\
+ &amp; = &amp; \uPair(\id,f)(\lft(\ast)) \\
+ &amp; = &amp; \uPair(\id,f)(\at(\nil,k))
 \end{eqnarray*}\]</span> as claimed. Suppose instead that <span class="math inline">\(x = \cons(a,y)\)</span>. We now proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\map(f)(\cons(a,y)),\zero) \\
  &amp; = &amp; \at(\cons(f(a),\map(f)(y)),\zero) \\
  &amp; = &amp; \rgt(f(a)) \\
- &amp; = &amp; \upair(\id,f)(\rgt(a)) \\
- &amp; = &amp; \upair(\id,f)(\at(\cons(a,y),\zero))
+ &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-rgt}
+   = &amp; \uPair(\id,f)(\rgt(a)) \\
+ &amp; = &amp; \uPair(\id,f)(\at(\cons(a,y),\zero))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(y\)</span> for some <span class="math inline">\(k\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\map(f)(\cons(a,y)),\next(k)) \\
  &amp; = &amp; \at(\cons(f(a),\map(f)(y)),\next(k)) \\
  &amp; = &amp; \at(\map(f)(y),k) \\
- &amp; = &amp; \upair(\id,f)(\at(y,k)) \\
- &amp; = &amp; \upair(\id,f)(\at(\cons(a,y),\next(k)))
+ &amp; = &amp; \uPair(\id,f)(\at(y,k)) \\
+ &amp; = &amp; \uPair(\id,f)(\at(\cons(a,y),\next(k)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -474,46 +515,68 @@ A @&gt;{f}&gt;&gt; B\\
 <a class="sourceLine" id="cb11-5" data-line-number="5">  \f x <span class="ot">-&gt;</span> eq (length (map f x)) ((length x) <span class="ot">`withTypeOf`</span> k)</a></code></pre></div>
 </div>
 </div>
+<p><span class="math inline">\(\map\)</span> preserves <span class="math inline">\(\isnil\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\isnil(\map(f)(x)) = \isnil(x).\]</span></p>
+<div class="proof">
+<p>We have two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isnil(\map(f)(\nil)) \\
+ &amp; = &amp; \isnil(\nil)
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \cons(a,u)\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \isnil(\map(f)(\cons(a,u))) \\
+ &amp; = &amp; \isnil(\cons(f(a),\map(f)(u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \isnil(\cons(a,u))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_map_isnil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">_test_map_isnil _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  testName <span class="st">&quot;isnil(map(f)(x)) == isnil(x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  \f x <span class="ot">-&gt;</span> eq (isNil (map f x)) (isNil x)</a></code></pre></div>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">_test_map ::</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">_test_map t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">  testLabel1 <span class="st">&quot;map&quot;</span> t</a>
-<a class="sourceLine" id="cb12-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb12-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb12-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb12-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb12-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb12-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb12-15" data-line-number="15">  runTest args (_test_map_nil t)</a>
-<a class="sourceLine" id="cb12-16" data-line-number="16">  runTest args (_test_map_cons t)</a>
-<a class="sourceLine" id="cb12-17" data-line-number="17">  runTest args (_test_map_id t)</a>
-<a class="sourceLine" id="cb12-18" data-line-number="18">  runTest args (_test_map_compose t)</a>
-<a class="sourceLine" id="cb12-19" data-line-number="19">  runTest args (_test_map_tail t)</a>
-<a class="sourceLine" id="cb12-20" data-line-number="20">  runTest args (_test_map_cat t)</a>
-<a class="sourceLine" id="cb12-21" data-line-number="21">  runTest args (_test_map_snoc t)</a>
-<a class="sourceLine" id="cb12-22" data-line-number="22">  runTest args (_test_map_rev t)</a>
-<a class="sourceLine" id="cb12-23" data-line-number="23">  runTest args (_test_map_at t n)</a>
-<a class="sourceLine" id="cb12-24" data-line-number="24">  runTest args (_test_map_length t n)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_map ::</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n, <span class="dt">Natural</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">_test_map t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">  testLabel1 <span class="st">&quot;map&quot;</span> t</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb13-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb13-13" data-line-number="13">      }</a>
+<a class="sourceLine" id="cb13-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args (_test_map_nil t)</a>
+<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_map_cons t)</a>
+<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_map_id t)</a>
+<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_map_compose t)</a>
+<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_map_tail t)</a>
+<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_map_cat t)</a>
+<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_map_snoc t)</a>
+<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_map_rev t)</a>
+<a class="sourceLine" id="cb13-23" data-line-number="23">  runTest args (_test_map_at t n)</a>
+<a class="sourceLine" id="cb13-24" data-line-number="24">  runTest args (_test_map_length t n)</a>
+<a class="sourceLine" id="cb13-25" data-line-number="25">  runTest args (_test_map_isnil t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_map ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">main_map <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_map (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_map (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">main_map ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">main_map <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">  _test_map (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  _test_map (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

@@ -44,9 +44,19 @@ Posted on 2017-04-08 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-08 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -221,7 +243,7 @@ Posted on 2017-04-08 by nbloomf
 <p>I like this result for several reasons. It ties together the three basic operations on <span class="math inline">\(\nats\)</span> – <span class="math inline">\(\next\)</span>, <span class="math inline">\(\nplus\)</span>, and <span class="math inline">\(\ntimes\)</span> – in a satisfying way, and it has two conclusions, one an equality and the other an inequality. It also has some really powerful applications. Notably, we’ll use the division algorithm to compute greatest common divisors and to compute fixed-radix representations of numbers.</p>
 <p>The task at hand is to find a constructive, or more precisely, simple recursive, definition for the division algorithm. This function takes a pair of natural numbers <span class="math inline">\((a,b)\)</span> and returns a pair of natural numbers <span class="math inline">\((q,r)\)</span>, so its signature should be something like <span class="math display">\[\nats \times \nats \rightarrow \nats \times \nats.\]</span> Remember that the signature of <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> is <span class="math display">\[\nats \times A \rightarrow B,\]</span> where <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Letting <span class="math inline">\(A = \nats\)</span> and <span class="math inline">\(B = \nats \times \nats\)</span>, we’re looking for <span class="math display">\[\varphi : \nats \rightarrow \nats \times \nats\]</span> and <span class="math display">\[\mu : \nats \times \nats \times (\nats \times \nats) \rightarrow \nats \times \nats\]</span> so that <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span> acts like the division algorithm. But how does the division algorithm act?</p>
 <p>For starters, we have <span class="math display">\[\Theta(\zero,b) = \varphi(b) = (q,r)\]</span> where <span class="math display">\[\zero = \nplus(\ntimes(q,b),r).\]</span> So <span class="math inline">\(r = q = \zero\)</span>; evidently then <span class="math inline">\(\varphi(x) = (\zero,\zero)\)</span> for all <span class="math inline">\(x\)</span>.</p>
-<p>Suppose now that <span class="math inline">\(\Theta(a,b) = (q,r)\)</span>. Can we describe <span class="math inline">\(\Theta(\next(a),b)\)</span> in terms of <span class="math inline">\(q\)</span> and <span class="math inline">\(r\)</span>? (Presumably yes.) Switching to more familiar notation for a moment, we have <span class="math display">\[a = qb+r,\]</span> so that <span class="math display">\[a+1 = qb+r+1.\]</span> So <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> satisfy the equality constraint, but possibly not the inequality constraint. If <span class="math inline">\(r+1 &lt; b\)</span>, then <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. But what if <span class="math inline">\(r+1 \geq b\)</span>? Well, this failure is too general; since <span class="math inline">\(r &lt; b\)</span>, the worst that can happen is <span class="math inline">\(r+1 = b\)</span>. But in this case we can “increment” <span class="math inline">\(q\)</span> and “reset” <span class="math inline">\(r\)</span> to <span class="math inline">\(\zero\)</span>; that is, <span class="math inline">\(q+1\)</span> and <span class="math inline">\(\zero\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. So in <span class="math display">\[\Theta(\next(a),b) = \mu(a,b,(q,r))\]</span> (where <span class="math inline">\((q,r) = \Theta(a,b)\)</span>), we want <span class="math inline">\(\mu(a,b,(q,r)) = (q+1,\zero)\)</span> if <span class="math inline">\(r+1 = b\)</span> and <span class="math inline">\((q,r+1)\)</span> otherwise.</p>
+<p>Suppose now that <span class="math inline">\(\Theta(a,b) = (q,r)\)</span>. Can we describe <span class="math inline">\(\Theta(\next(a),b)\)</span> in terms of <span class="math inline">\(q\)</span> and <span class="math inline">\(r\)</span>? (Presumably yes.) Switching to more familiar notation for a moment, we have <span class="math display">\[a = qb+r,\]</span> so that <span class="math display">\[a+1 = qb+r+1.\]</span> So <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> satisfy the equality constraint, but possibly not the inequality constraint. If <span class="math inline">\(r+1 &lt; b\)</span>, then <span class="math inline">\(q\)</span> and <span class="math inline">\(r+1\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. But what if <span class="math inline">\(r+1\)</span> is greater than or equal to <span class="math inline">\(b\)</span>? Well, this failure is too general; since <span class="math inline">\(r &lt; b\)</span>, the worst that can happen is <span class="math inline">\(r+1 = b\)</span>. But in this case we can “increment” <span class="math inline">\(q\)</span> and “reset” <span class="math inline">\(r\)</span> to <span class="math inline">\(\zero\)</span>; that is, <span class="math inline">\(q+1\)</span> and <span class="math inline">\(\zero\)</span> are quotient and remainder for <span class="math inline">\(a+1\)</span> and <span class="math inline">\(b\)</span>. So in <span class="math display">\[\Theta(\next(a),b) = \mu(a,b,(q,r))\]</span> (where <span class="math inline">\((q,r) = \Theta(a,b)\)</span>), we want <span class="math inline">\(\mu(a,b,(q,r)) = (q+1,\zero)\)</span> if <span class="math inline">\(r+1 = b\)</span> and <span class="math inline">\((q,r+1)\)</span> otherwise.</p>
 <p>Let’s try it.</p>
 <div class="definition">
 <p>Define <span class="math inline">\(\varphi : \nats \rightarrow \nats \times \nats\)</span> by <span class="math inline">\(\varphi(x) = (\zero,\zero)\)</span>, and define <span class="math inline">\(\mu : \nats \times \nats \times (\nats \times \nats) \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\mu(a,b,(q,r)) = \left\{\begin{array}{ll}
@@ -229,13 +251,13 @@ Posted on 2017-04-08 by nbloomf
  (q,\next(r)) &amp; \mathrm{otherwise}.
 \end{array}\right.\]</span> Then define <span class="math inline">\(\ndivalg : \nats \times \nats \rightarrow \nats \times \nats\)</span> by <span class="math display">\[\ndivalg = \simprec{\varphi}{\mu}.\]</span> We also define helpers <span class="math inline">\(\nquo, \nrem : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nquo(a,b) = \fst(\ndivalg(a,b))\]</span> and <span class="math display">\[\nrem(a,b) = \snd(\ndivalg(a,b)).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">divalg ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> (n,n)</a>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">divalg ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Pair</span> n n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">divalg <span class="fu">=</span> simpleRec phi mu</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">    phi _ <span class="fu">=</span> (zero, zero)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">    mu _ b (q,r) <span class="fu">=</span> <span class="kw">if</span> eq b (next r)</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="kw">then</span> (next q, zero)</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">      <span class="kw">else</span> (q, next r)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    phi _ <span class="fu">=</span> tup zero zero</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    mu _ b (<span class="dt">Pair</span> q r) <span class="fu">=</span> <span class="kw">if</span> eq b (next r)</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">      <span class="kw">then</span> tup (next q) zero</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7">      <span class="kw">else</span> tup q (next r)</a>
 <a class="sourceLine" id="cb2-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb2-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb2-10" data-line-number="10"><span class="ot">quo ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
@@ -256,24 +278,24 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_divalg_zero_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;divalg(0,a) = (0,0)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (divalg zero a) (zero, zero)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (divalg zero a) (tup zero zero)</a>
 <a class="sourceLine" id="cb3-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb3-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb3-8" data-line-number="8"><span class="ot">_test_divalg_next_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-9" data-line-number="9">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-10" data-line-number="10">_test_divalg_next_left _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-11" data-line-number="11">  testName <span class="st">&quot;divalg(next(a),b) == if(eq(b,next(r)),(next(q),0),(q,next(r)))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (q,r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (<span class="dt">Pair</span> q r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
 <a class="sourceLine" id="cb3-13" data-line-number="13">    eq</a>
 <a class="sourceLine" id="cb3-14" data-line-number="14">      (divalg (next a) b)</a>
-<a class="sourceLine" id="cb3-15" data-line-number="15">      (<span class="kw">if</span> (eq b (next r)) <span class="kw">then</span> (next q, zero) <span class="kw">else</span> (q, next r))</a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">      (<span class="kw">if</span> (eq b (next r)) <span class="kw">then</span> (tup (next q) zero) <span class="kw">else</span> (tup q (next r)))</a>
 <a class="sourceLine" id="cb3-16" data-line-number="16"></a>
 <a class="sourceLine" id="cb3-17" data-line-number="17"></a>
 <a class="sourceLine" id="cb3-18" data-line-number="18"><span class="ot">_test_divalg_quo ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb3-19" data-line-number="19">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-20" data-line-number="20">_test_divalg_quo _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-21" data-line-number="21">  testName <span class="st">&quot;quo(a,b) = q where (q,_) = divalg(a,b)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-22" data-line-number="22">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (q,_) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-22" data-line-number="22">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (<span class="dt">Pair</span> q _) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
 <a class="sourceLine" id="cb3-23" data-line-number="23">  eq q (quo a b)</a>
 <a class="sourceLine" id="cb3-24" data-line-number="24"></a>
 <a class="sourceLine" id="cb3-25" data-line-number="25"></a>
@@ -281,7 +303,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb3-27" data-line-number="27">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-28" data-line-number="28">_test_divalg_rem _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-29" data-line-number="29">  testName <span class="st">&quot;rem(a,b) = r where (_,r) = divalg(a,b)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb3-30" data-line-number="30">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
+<a class="sourceLine" id="cb3-30" data-line-number="30">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (<span class="dt">Pair</span> _ r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
 <a class="sourceLine" id="cb3-31" data-line-number="31">  eq r (rem a b)</a></code></pre></div>
 </div>
 </div>
@@ -319,7 +341,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_divalg_equality _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;a == plus(times(q,b),r) where (q,r) = divalg(a,b)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (q,r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (<span class="dt">Pair</span> q r) <span class="fu">=</span> divalg a b <span class="kw">in</span></a>
 <a class="sourceLine" id="cb4-6" data-line-number="6">  eq a (plus (times q b) r)</a>
 <a class="sourceLine" id="cb4-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb4-8" data-line-number="8"></a>
@@ -327,7 +349,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb4-10" data-line-number="10">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">_test_divalg_inequality _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">  testName <span class="st">&quot;leq(r,b) where (_,r) = divalg(a,next(b))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-13" data-line-number="13">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (_,r) <span class="fu">=</span> divalg a (next b) <span class="kw">in</span></a>
+<a class="sourceLine" id="cb4-13" data-line-number="13">  \a b <span class="ot">-&gt;</span> <span class="kw">let</span> (<span class="dt">Pair</span> _ r) <span class="fu">=</span> divalg a (next b) <span class="kw">in</span></a>
 <a class="sourceLine" id="cb4-14" data-line-number="14">  leq r b</a></code></pre></div>
 </div>
 </div>
@@ -351,8 +373,10 @@ Posted on 2017-04-08 by nbloomf
  &amp;   &amp; \nplus(\ntimes(q_1,\next(b)),\next(b)) \\
  &amp; = &amp; \ntimes(\next(q_1),\next(b)) \\
  &amp; = &amp; \nplus(\ntimes(\zero,\next(b)),k) \\
- &amp; = &amp; \nplus(\zero,k) \\
- &amp; = &amp; k.
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+   = &amp; \nplus(\zero,k) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+   = &amp; k
 \end{eqnarray*}\]</span> Thus <span class="math inline">\(\nleq(\next(b),k)\)</span>. But now we have <span class="math inline">\(\nleq(\next(b),b)\)</span> by transitivity, a contradiction. Thus the hypothesis of <span class="math inline">\(P(\next(q_1),\zero,b,k)\)</span> is false, and we have <span class="math inline">\(\zero \in N(\next(q_1))\)</span> vacuously.</p>
 <p>For the inductive step, suppose we have <span class="math inline">\(q_2 \in N(\next(q_1))\)</span>, and suppose the hypothesis of <span class="math inline">\(P(\next(q_1),\next(q_2),b,k)\)</span>; that is, that <span class="math display">\[\ntimes(\next(q_1),\next(b)) = \nplus(\ntimes(\next(q_2),\next(b)),k).\]</span> Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\ntimes(q_1,\next(b)),\next(b)) \\
@@ -369,7 +393,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_divalg_unique _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;if and(eq(a,plus(times(q,next(b)),r)),leq(r,b)) then (q,r) = divalg(a,b)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \a b q r <span class="ot">-&gt;</span> <span class="kw">if</span> and (eq a (plus (times q (next b)) r)) (leq r b)</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="kw">then</span> eq (q,r) (divalg a (next b))</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">    <span class="kw">then</span> eq (<span class="dt">Pair</span> q r) (divalg a (next b))</a>
 <a class="sourceLine" id="cb5-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
@@ -396,7 +420,8 @@ Posted on 2017-04-08 by nbloomf
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nplus(\ntimes(\next(\zero),a),\zero) \\
  &amp; = &amp; \nplus(\next(a),\zero) \\
- &amp; = &amp; \next(a).
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-zero-right}
+= &amp; \next(a)
 \end{eqnarray*}\]</span> Since <span class="math inline">\(\next(a) \neq \zero\)</span>, by the uniqueness of the division algorithm, we have <span class="math inline">\(\ndivalg(\next(a),\next(a)) = (\next(\zero),\zero)\)</span> as claimed.</li>
 </ol>
 </div>
@@ -405,14 +430,14 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_divalg_zero_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;divalg(a,0) = (0,a)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (divalg a zero) (zero, a)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (divalg a zero) (tup zero a)</a>
 <a class="sourceLine" id="cb6-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb6-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8"><span class="ot">_test_divalg_one_right ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
 <a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-10" data-line-number="10">_test_divalg_one_right _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-11" data-line-number="11">  testName <span class="st">&quot;divalg(a,next(0)) = (a,0)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-12" data-line-number="12">  \a <span class="ot">-&gt;</span> eq (divalg a (next zero)) (a, zero)</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">  \a <span class="ot">-&gt;</span> eq (divalg a (next zero)) (tup a zero)</a>
 <a class="sourceLine" id="cb6-13" data-line-number="13"></a>
 <a class="sourceLine" id="cb6-14" data-line-number="14"></a>
 <a class="sourceLine" id="cb6-15" data-line-number="15"><span class="ot">_test_divalg_leq ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
@@ -420,7 +445,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb6-17" data-line-number="17">_test_divalg_leq _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-18" data-line-number="18">  testName <span class="st">&quot;if leq(a,b) then divalg(a,next(b)) = (0,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-19" data-line-number="19">  \a b <span class="ot">-&gt;</span> <span class="kw">if</span> leq a b</a>
-<a class="sourceLine" id="cb6-20" data-line-number="20">    <span class="kw">then</span> eq (divalg a (next b)) (zero, a)</a>
+<a class="sourceLine" id="cb6-20" data-line-number="20">    <span class="kw">then</span> eq (divalg a (next b)) (tup zero a)</a>
 <a class="sourceLine" id="cb6-21" data-line-number="21">    <span class="kw">else</span> true</a>
 <a class="sourceLine" id="cb6-22" data-line-number="22"></a>
 <a class="sourceLine" id="cb6-23" data-line-number="23"></a>
@@ -428,7 +453,7 @@ Posted on 2017-04-08 by nbloomf
 <a class="sourceLine" id="cb6-25" data-line-number="25">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-26" data-line-number="26">_test_divalg_self_next _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-27" data-line-number="27">  testName <span class="st">&quot;divalg(next(a),next(a)) == (next(0),0)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-28" data-line-number="28">  \a <span class="ot">-&gt;</span> eq (divalg (next a) (next a)) (next zero, zero)</a></code></pre></div>
+<a class="sourceLine" id="cb6-28" data-line-number="28">  \a <span class="ot">-&gt;</span> eq (divalg (next a) (next a)) (tup (next zero) zero)</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\nquo\)</span> interacts with <span class="math inline">\(\ntimes\)</span>.</p>
@@ -481,9 +506,6 @@ Posted on 2017-04-08 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

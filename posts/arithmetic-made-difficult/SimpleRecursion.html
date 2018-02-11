@@ -44,9 +44,19 @@ Posted on 2014-05-07 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -200,89 +222,95 @@ Posted on 2014-05-07 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE BangPatterns #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">SimpleRecursion</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ( simpleRec, _test_simplerec, main_simplerec</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude, BangPatterns #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">SimpleRecursion</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( simpleRec, _test_simplerec, main_simplerec</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>So far we’ve defined the natural numbers as an iterative set with a special <em>universal property</em>, which was encapsulated in the existence of a simple recursion operator <span class="math inline">\(\natrec{\ast}{\ast}\)</span>. Anything we will wish to do with the natural numbers can be done using this operator alone. However, in practice, it will be handy to define synonyms for some more complicated recursive functions; the first of these is <em>simple recursion with a parameter</em>.</p>
 <div class="theorem">
-<p>Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then there is a unique function <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero, a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(n), a) = \mu(n, a, \Theta(n, a)).\]</span></p>
-<p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\simprec{\varphi}{\mu}\)</span>.</p>
+<p><span id="def-simprec-zero"></span><span id="def-simprec-next"></span> Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then there is a unique function <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[Θ(\zero,a) = \varphi(a)\]</span> and <span class="math display">\[Θ(\next(n),a) = \mu(n,a,Θ(n,a)).\]</span></p>
+<p>This function <span class="math inline">\(Θ\)</span> will be denoted <span class="math inline">\(\simprec{\varphi}{\mu}\)</span>.</p>
 <div class="proof">
-<p>First we establish existence. Define a mapping <span class="math inline">\(t : \nats \times {}^AB \rightarrow \nats \times {}^AB\)</span> by <span class="math display">\[t(n,h) = (\next(n), \lambda x : \mu(n, x, h(x))).\]</span> Note that we are using the <span class="math inline">\(\lambda\)</span> notation to define an anonymous function <span class="math inline">\(A \rightarrow B\)</span> on the right hand side; specifically, <span class="math inline">\(\lambda x : \mu(n, x, h(x))\)</span> is the function <span class="math inline">\(q : A \rightarrow B\)</span> such that <span class="math inline">\(q(x) = \mu(n,x,h(x))\)</span>.</p>
-<p>Now we define <span class="math inline">\(\Theta\)</span> as follows: <span class="math display">\[\Theta(n,a) = (\snd \circ \natrec{(\zero, \varphi)}{t})(n)(a).\]</span></p>
-<p>(<span class="math inline">\(\snd\)</span> is the map which selects the second entry of a pair.)</p>
-<p>Note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\zero,a) \\
- &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\zero)(a) \\
- &amp; = &amp; (\snd(\natrec{(\zero, \varphi)}{t})(\zero))(a) \\
- &amp; = &amp; (\snd(\zero, \varphi))(a) \\
- &amp; = &amp; \varphi(a).
-\end{eqnarray*}\]</span></p>
-<p>To show the second property of <span class="math inline">\(\Theta\)</span>, we will show by induction that the following (compound) statement holds for all <span class="math inline">\(n \in \nats\)</span>:</p>
-<ol type="1">
-<li><span class="math inline">\(\natrec{(\zero,\varphi)}{t}(n) = (n, \lambda x : \Theta(n,x))\)</span> and</li>
-<li><span class="math inline">\(\Theta(\next(n), a) = \mu(n, a, \Theta(n, a))\)</span> for all <span class="math inline">\(a \in A\)</span>.</li>
-</ol>
-<p>For the base case, note that</p>
-<p><span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \natrec{(\zero, \varphi)}{t}(\zero) \\
- &amp; = &amp; (\zero, \varphi) \\
- &amp; = &amp; (\zero, \lambda x : \varphi(x)) \\
- &amp; = &amp; (\zero, \lambda x : \Theta(\zero, x))
-\end{eqnarray*}\]</span></p>
-<p>and that for all <span class="math inline">\(a \in A\)</span>,</p>
-<p><span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next\ \zero, a) \\
- &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next\ \zero)(a) \\
- &amp; = &amp; (\snd (\natrec{(\zero, \varphi)}{t}(\next\ \zero)))(a) \\
- &amp; = &amp; (\snd (t(\natrec{(\zero, \varphi)}{t}(\zero))))(a) \\
- &amp; = &amp; (\snd (t(\zero, \varphi)))(a) \\
- &amp; = &amp; (\snd (\next\ \zero, \lambda x : \mu(\zero, x, \varphi(x))))(a) \\
- &amp; = &amp; (\lambda x : \mu(\zero, x, \varphi(x)))(a) \\
- &amp; = &amp; \mu(\zero, a, \varphi(a)) \\
- &amp; = &amp; \mu(\zero, a, \Theta(\zero, a)).
-\end{eqnarray*}\]</span></p>
-<p>Now for the inductive step, suppose the statement holds for <span class="math inline">\(n \in \nats\)</span>. Then we have</p>
-<p><span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \natrec{(\zero, \varphi)}{t}(\next\ n) \\
- &amp; = &amp; t(\natrec{(\zero, \varphi)}{t}(n)) \\
- &amp; = &amp; t(n, \lambda x : \Theta(n,x)) \\
- &amp; = &amp; (\next(n), \lambda y : \mu(n, y, \Theta(n,y))) \\
- &amp; = &amp; (\next(n), \lambda x : \Theta(\next\ n, x)).
-\end{eqnarray*}\]</span></p>
-<p>(Note that we used both parts of the induction hypothesis here.) Also note that</p>
-<p><span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(\next\ n), a) \\
- &amp; = &amp; (\snd \circ \natrec{(\zero, \varphi)}{t})(\next(\next\ n))(a) \\
- &amp; = &amp; \snd(\natrec{(\zero, \varphi)}{t}(\next(\next\ n)))(a) \\
- &amp; = &amp; \snd(t(\natrec{(\zero, \varphi)}{t}(\next\ n)))(a) \\
- &amp; = &amp; (\snd (t (\next\ n, \lambda x : \Theta(\next\ n, x))))(a) \\
- &amp; = &amp; (\snd (\next(\next\ n), \lambda y : \mu(\next\ n, y, \Theta(\next\ n, y))))(a) \\
- &amp; = &amp; (\lambda y : \mu(\next\ n, y, \Theta(\next\ n, y)))(a) \\
- &amp; = &amp; \mu(\next\ n, a, \Theta(\next\ n, a))
-\end{eqnarray*}\]</span></p>
-<p>So <span class="math inline">\(\Theta\)</span> has the claimed properties by induction. To see that <span class="math inline">\(\Theta\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>. Then we have <span class="math display">\[\Psi(\zero, a) = \varphi(a) = \Theta(\zero, a)\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = \Theta(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have</p>
-<p><span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Psi(\next\ n, a) \\
- &amp; = &amp; \mu(n, a, \Psi(n, a)) \\
- &amp; = &amp; \mu(n, a, \Theta(n, a)) \\
- &amp; = &amp; \Theta(\next\ n, a)
-\end{eqnarray*}\]</span></p>
-<p>for all <span class="math inline">\(a \in A\)</span>. Thus <span class="math inline">\(\Psi = \Theta\)</span> as needed.</p>
+<p>First we establish existence. Define <span class="math inline">\(\varepsilon : A \rightarrow \nats \times B\)</span> by <span class="math inline">\(\varepsilon(a) = \tup(\zero)(\varphi(a))\)</span>, and define <span class="math inline">\(\chi : A \rightarrow \nats \times B \rightarrow \nats \times B\)</span> by <span class="math display">\[\chi(a)(\tup(n)(b)) = \tup(\next(n))(\mu(n,a,b)).\]</span> Thinking of <span class="math inline">\((\nats \times B, \varepsilon(a), \chi(a))\)</span> as an inductive set, we define <span class="math inline">\(Ω : \nats \times A \rightarrow \nats \times B\)</span> by <span class="math display">\[Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)\]</span> and <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> by <span class="math inline">\(Θ(n,a) = \snd(Ω(n,a))\)</span>.</p>
+<p>Now note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Θ(\zero,a) \\
+ &amp;     \let{Θ(n,a) = \snd(\natrec{\varepsilon(a)}{\chi(a)}(n))}
+   = &amp; \snd(\natrec{\varepsilon(a)}{\chi(a)}(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+   = &amp; \snd(\varepsilon(a)) \\
+ &amp;     \hyp{\varepsilon(a) = \tup(\zero)(\varphi(a))}
+   = &amp; \snd(\tup(\zero)(\varphi(a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-snd-tup}
+   = &amp; \varphi(a)
+\end{eqnarray*}\]</span> as claimed.</p>
+<p>Next we show that <span class="math display">\[Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))\]</span> for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(n \in \nats\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Ω(\next(\zero),a) \\
+ &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
+   = &amp; \natrec{\varepsilon(a)}{\chi(a)}(\next(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+   = &amp; \chi(a)(\natrec{\varepsilon(a)}{\chi(a)}(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+   = &amp; \chi(a)(\varepsilon(a)) \\
+ &amp;     \hyp{\varepsilon(a) = \tup(\zero)(\varphi(a))}
+   = &amp; \chi(a)(\tup(\zero)(\varphi(a))) \\
+ &amp;     \hyp{\chi(a)(\tup(n)(b)) = \tup(\next(n))(\mu(n,a,b))}
+   = &amp; \tup(\next(\zero))(\mu(\zero,a,\varphi(a))) \\
+ &amp;     \hyp{Θ(\zero,a) = \varphi(a)}
+   = &amp; \tup(\next(\zero))(\mu(\zero,a,Θ(\zero,a)))
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Ω(\next(\next(n)),a) \\
+ &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
+   = &amp; \natrec{\varepsilon(a)}{\chi(a)}(\next(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+   = &amp; \chi(a)(\natrec{\varepsilon(a)}{\chi(a)}(\next(n))) \\
+ &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
+   = &amp; \chi(a)(Ω(\next(n),a)) \\
+ &amp;     \hyp{Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))}
+   = &amp; \chi(a)(\tup(\next(n))(\mu(n,a,Θ(n,a)))) \\
+ &amp;     \hyp{\chi(a)(\tup(n)(b)) = \tup(\next(n))(\mu(n,a,b))}
+   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,\mu(n,a,Θ(n,a)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-snd-tup}
+   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,\snd(\tup(\next(n))(\mu(n,a,Θ(n,a)))))) \\
+ &amp;     \hyp{Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))}
+   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,\snd(Ω(\next(n),a)))) \\
+ &amp;     \hyp{Θ(n,a) = \snd(Ω(n,a))}
+   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,Θ(\next(n),a))) \\
+\end{eqnarray*}\]</span> as needed. Thus for all <span class="math inline">\(a\)</span> and <span class="math inline">\(n\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Θ(\next(n),a) \\
+ &amp;     \hyp{Θ(n,a) = \snd(Ω(n,a))}
+   = &amp; \snd(Ω(\next(n),a)) \\
+ &amp;     \hyp{Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))}
+   = &amp; \snd(\tup(\next(n))(\mu(n,a,Θ(n,a)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-snd-tup}
+   = &amp; \mu(n,a,Θ(n,a))
+\end{eqnarray*}\]</span> as claimed.</p>
+<p>To see that <span class="math inline">\(Θ\)</span> is unique, we again use induction. Suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(Θ\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\zero,a) \\
+ &amp;     \hyp{\Psi(\zero,a) = \varphi(a)}
+   = &amp; \varphi(a) \\
+ &amp;     \hyp{Θ(\zero,a) = \varphi(a)}
+   = &amp; Θ(\zero,a)
+\end{eqnarray*}\]</span> for all <span class="math inline">\(a \in A\)</span>, and if <span class="math inline">\(n \in \nats\)</span> such that <span class="math inline">\(\Psi(n, a) = Θ(n, a)\)</span> for all <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \Psi(\next(n),a) \\
+ &amp;     \hyp{\Psi(\next(n),a) = \mu(n,a,\Psi(n,a))}
+   = &amp; \mu(n,a,\Psi(n,a)) \\
+ &amp;     \hyp{\Psi(n,a) = Θ(n,a)}
+   = &amp; \mu(n,a,Θ(n,a)) \\
+ &amp;     \hyp{Θ(\next(n),a) = \mu(n,a,Θ(n,a))}
+   = &amp; Θ(\next(n),a)
+\end{eqnarray*}\]</span> as needed. Thus <span class="math inline">\(\Psi = Θ\)</span>.</p>
 </div>
 </div>
-<p>That proof may look complicated, but structurally it’s very simple. We defined <span class="math inline">\(\Theta\)</span> and showed it has the claimed properties with induction, then we showed it is unique by induction.</p>
+<p>That proof may look complicated, but structurally it’s very simple. We defined <span class="math inline">\(Θ\)</span> and showed it has the claimed properties with induction, then we showed it is unique by induction.</p>
 <h2 id="implementation">Implementation</h2>
 <p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\simprec{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">simpleRec'', simpleRec',<span class="ot"> simpleRec ::</span> (<span class="dt">Natural</span> n)</a>
@@ -296,9 +324,10 @@ Posted on 2014-05-07 by nbloomf
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="dt">Left</span> () <span class="ot">-&gt;</span> phi a</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">Right</span> k <span class="ot">-&gt;</span> mu k a <span class="fu">$</span> simpleRec'' phi mu k a</a></code></pre></div>
 <p>There’s the definition from the proof:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">simpleRec' phi mu n a <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">let</span> t (m,h) <span class="fu">=</span> (next m, \x <span class="ot">-&gt;</span> mu m x (h x))</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">in</span> snd (naturalRec (zero,phi) t n) <span class="fu">$</span> a</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">simpleRec' phi mu n a <span class="fu">=</span> snd (naturalRec (epsilon a) (chi a) n)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    epsilon a <span class="fu">=</span> tup zero (phi a)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    chi a (<span class="dt">Pair</span> n b) <span class="fu">=</span> tup (next n) (mu n a b)</a></code></pre></div>
 <p>And the tail recursive strategy:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">simpleRec phi mu n a <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="kw">let</span></a>
@@ -410,9 +439,6 @@ phi' a = mu Z a (phi a)</code></pre>
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

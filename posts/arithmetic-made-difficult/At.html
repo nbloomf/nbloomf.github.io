@@ -44,9 +44,19 @@ Posted on 2017-04-28 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -268,8 +290,10 @@ Posted on 2017-04-28 by nbloomf
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),\next(k)) \\
  &amp; = &amp; \bif{\isnil(\cons(a,x))}{\lft(\ast)}{\at(\tail(\cons(a,x)),k)} \\
- &amp; = &amp; \bif{\bfalse}{\lft(\ast)}{\at(\tail(\cons(a,x)),k)} \\
- &amp; = &amp; \at(\tail(\cons(a,x)),k) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bif{\bfalse}{\lft(\ast)}{\at(\tail(\cons(a,x)),k)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \at(\tail(\cons(a,x)),k) \\
  &amp; = &amp; \at(x,k)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
@@ -297,13 +321,16 @@ Posted on 2017-04-28 by nbloomf
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(k = \next(m)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\nil,\next(m)) \\
  &amp; = &amp; \bif{\isnil(\nil)}{\lft(\ast)}{\at(\tail(\nil),m)} \\
- &amp; = &amp; \bif{\btrue}{\lft(\ast)}{\at(\tail(\nil),m)} \\
- &amp; = &amp; \lft(\ast)
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-nil}
+= &amp; \bif{\btrue}{\lft(\ast)}{\at(\tail(\nil),m)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),\zero) \\
  &amp; = &amp; \head(\cons(a,x)) \\
- &amp; = &amp; \rgt(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+= &amp; \rgt(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,\cons(b,x)),\next(\zero)) \\
@@ -353,7 +380,8 @@ Posted on 2017-04-28 by nbloomf
  &amp;   &amp; \at(\cons(a,\nil),\length(\nil)) \\
  &amp; = &amp; \at(\cons(a,\nil),\zero) \\
  &amp; = &amp; \rgt(a) \\
- &amp; = &amp; \head(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+= &amp; \head(\cons(a,\nil)) \\
  &amp; = &amp; \head(\rev(\cons(a,\nil)))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,\cons(b,x)),\length(\cons(b,x))) \\
@@ -361,7 +389,8 @@ Posted on 2017-04-28 by nbloomf
  &amp; = &amp; \at(\cons(b,x),length(x)) \\
  &amp; = &amp; \head(\rev(\cons(b,x))) \\
  &amp; = &amp; \head(\snoc(a,\rev(\cons(b,x)))) \\
- &amp; = &amp; \head(\rev(\cons(a,\cons(b,x))))
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \head(\rev(\cons(a,\cons(b,x))))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\nil,\length(\nil)) \\
@@ -406,12 +435,14 @@ Posted on 2017-04-28 by nbloomf
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, note that <span class="math inline">\(\nleq(k,\length(x))\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\snoc(a,\cons(b,x)),\zero) \\
- &amp; = &amp; \at(\cons(b,\snoc(a,x)),\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \at(\cons(b,\snoc(a,x)),\zero) \\
  &amp; = &amp; \rgt(b) \\
  &amp; = &amp; \at(\cons(b,x),\zero)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(x\)</span>, <span class="math inline">\(a\)</span>, and <span class="math inline">\(b\)</span> for some <span class="math inline">\(k\)</span>, and suppose further that <span class="math inline">\(\nleq(\next(k),\length(x))\)</span>. In particular, we must have <span class="math inline">\(x = \cons(c,u)\)</span> for some <span class="math inline">\(c \in A\)</span> and <span class="math inline">\(u \in \lists{A}\)</span>, and <span class="math inline">\(\nleq(k,\length(u))\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\snoc(a,\cons(b,x)),\next(k)) \\
- &amp; = &amp; \at(\cons(b,\snoc(a,x)),\next(k)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \at(\cons(b,\snoc(a,x)),\next(k)) \\
  &amp; = &amp; \at(\snoc(a,x),k) \\
  &amp; = &amp; \at(\snoc(a,\cons(c,u)),k) \\
  &amp; = &amp; \at(\cons(c,u),k) \\
@@ -459,7 +490,8 @@ Posted on 2017-04-28 by nbloomf
  &amp; = &amp; \rgt(a) \\
  &amp; = &amp; \at(\snoc(a,\rev(x)),\length(\rev(x))) \\
  &amp; = &amp; \at(\snoc(a,\rev(x)),\length(x)) \\
- &amp; = &amp; \at(\rev(\cons(a,x)),\length(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \at(\rev(\cons(a,x)),\length(x)) \\
  &amp; = &amp; \at(\rev(\cons(a,x)),v)
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(u = \next(w)\)</span>, then we have <span class="math inline">\(\next(\nplus(w,v)) = \length(x)\)</span>. In particular, we have <span class="math inline">\(x \neq \nil\)</span> and thus <span class="math inline">\(\rev(x) \neq \nil\)</span>; say <span class="math inline">\(\rev(x) = \cons(c,y)\)</span>. Now <span class="math inline">\(\nleq(v,\length(y))\)</span>, and moreover <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),u) \\
@@ -469,7 +501,8 @@ Posted on 2017-04-28 by nbloomf
  &amp; = &amp; \at(\cons(c,y),v) \\
  &amp; = &amp; \at(\snoc(a,\cons(c,y)),v) \\
  &amp; = &amp; \at(\snoc(a,\rev(x)),v) \\
- &amp; = &amp; \at(\rev(\cons(a,x)),v)
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \at(\rev(\cons(a,x)),v)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -508,7 +541,8 @@ Posted on 2017-04-28 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span>, <span class="math inline">\(y\)</span>, and <span class="math inline">\(k\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Note that <span class="math inline">\(\snoc(b,x) = \cons(c,u)\)</span> for some <span class="math inline">\(c\)</span> and u$, where <span class="math inline">\(\length(x) = \next(\length(u))\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cat(\cons(a,x),\cons(b,y)),\nplus(\next(\length(x)),k)) \\
  &amp; = &amp; \at(\cat(\snoc(b,\cons(a,x)),y),\next(\nplus(\length(x),k))) \\
- &amp; = &amp; \at(\cat(\cons(a,\snoc(b,x)),y),\next(\nplus(\length(x),k))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \at(\cat(\cons(a,\snoc(b,x)),y),\next(\nplus(\length(x),k))) \\
  &amp; = &amp; \at(\cons(a,\cat(\snoc(b,x)),y),\next(\nplus(\length(x),k))) \\
  &amp; = &amp; \at(\cat(\snoc(b,x),y),\nplus(\length(u),k)) \\
  &amp; = &amp; \at(\cat(\snoc(b,x),y),\nplus(\next(\length(u)),k)) \\
@@ -665,9 +699,6 @@ Posted on 2017-04-28 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

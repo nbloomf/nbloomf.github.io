@@ -44,9 +44,19 @@ Posted on 2017-04-15 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-04-15 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-04-15 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-04-15 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,10 +233,11 @@ Posted on 2017-04-15 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DoubleNaturalRecursion</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DoubleNaturalRecursion</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">LessThanOrEqualTo</span></a></code></pre></div>
 <p>Today we’ll define the binomial coefficient operator, <span class="math inline">\(\nchoose\)</span>.</p>
 <div class="definition">
 <p>Define <span class="math inline">\(\delta : \nats \rightarrow \nats\)</span> by <span class="math display">\[\delta(k) = \bif{\iszero(k)}{\next(\zero)}{\zero},\]</span> <span class="math inline">\(\psi : \nats \rightarrow \nats\)</span> by <span class="math display">\[\psi(m) = \next(\zero),\]</span> and <span class="math inline">\(\chi : \nats \times \nats \times \nats\)</span> by <span class="math display">\[\chi(t,a,b) = \nplus(a,b).\]</span> Now define <span class="math inline">\(\nchoose : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nchoose = \dnatrec{\delta}{\psi}{\chi}.\]</span></p>
@@ -271,13 +294,15 @@ Posted on 2017-04-15 by nbloomf
  &amp;   &amp; \btrue \\
  &amp; = &amp; \nleq(\next(\next(n)),k) \\
  &amp; = &amp; \nleq(\next(\next(n)),\next(m)) \\
- &amp; = &amp; \nleq(\next(n),m).
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+   = &amp; \nleq(\next(n),m)
 \end{eqnarray*}\]</span> Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nchoose(\next(\next(n)),k) \\
  &amp; = &amp; \nchoose(\next(\next(n)),\next(m)) \\
  &amp; = &amp; \nplus(\nchoose(\next(n),m),\nchoose(\next(n),\next(m))) \\
  &amp; = &amp; \nplus(\zero,\zero) \\
- &amp; = &amp; \zero
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+   = &amp; \zero
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -317,7 +342,8 @@ Posted on 2017-04-15 by nbloomf
  &amp;   &amp; \nchoose(\next(n),\next(n)) \\
  &amp; = &amp; \nplus(\nchoose(n,n),\nchoose(n,\next(n))) \\
  &amp; = &amp; \nplus(\next(\zero),\zero) \\
- &amp; = &amp; \next(\zero)
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-zero-right}
+= &amp; \next(\zero)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -356,19 +382,22 @@ Posted on 2017-04-15 by nbloomf
  &amp;   &amp; \next(n) \\
  &amp; = &amp; \nplus(k,m) \\
  &amp; = &amp; \nplus(\next(v),m) \\
- &amp; = &amp; \next(\nplus(v,m))
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+   = &amp; \next(\nplus(v,m))
 \end{eqnarray*}\]</span> so that <span class="math inline">\(n = \nplus(v,m)\)</span>, and similarly <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \next(n) \\
  &amp; = &amp; \nplus(k,m) \\
  &amp; = &amp; \nplus(k,\next(u)) \\
- &amp; = &amp; \next(\nplus(k,u))
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+   = &amp; \next(\nplus(k,u))
 \end{eqnarray*}\]</span> so that <span class="math inline">\(n = \nplus(k,u)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nchoose(\next(n),k) \\
  &amp; = &amp; \nchoose(\next(n),\next(v)) \\
  &amp; = &amp; \nplus(\nchoose(n,v),\nchoose(n,\next(v))) \\
  &amp; = &amp; \nplus(\nchoose(n,m),\nchoose(n,k)) \\
  &amp; = &amp; \nplus(\nchoose(n,\next(u)),\nchoose(n,u)) \\
- &amp; = &amp; \nplus(\nchoose(n,u),\nchoose(n,\next(u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
+   = &amp; \nplus(\nchoose(n,u),\nchoose(n,\next(u))) \\
  &amp; = &amp; \nplus(\next(n),\next(u)) \\
  &amp; = &amp; \nplus(\next(n),m)
 \end{eqnarray*}\]</span> as needed.</p>
@@ -412,9 +441,6 @@ Posted on 2017-04-15 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

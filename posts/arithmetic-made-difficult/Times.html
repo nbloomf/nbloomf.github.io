@@ -44,9 +44,19 @@ Posted on 2017-03-31 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -228,7 +250,7 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\ntimes\)</span> is defined in terms of simple recursion, it is the unique solution to a set of functional equations.</p>
 <div class="corollary">
-<p><span class="math inline">\(\ntimes\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-times-up"></span><span id="cor-times-up-zero"></span><span id="cor-times-up-next"></span> <span class="math inline">\(\ntimes\)</span> is the unique map <span class="math inline">\(f : \nats \times \nats \rightarrow \nats\)</span> with the property that for all <span class="math inline">\(a,b \in \nats\)</span>, we have <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,b) = \zero \\
  f(\next(a),b) = \nplus(f(a,b),b).
 \end{array}\right.\]</span></p>
@@ -249,7 +271,7 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p>Next we establish a version of the universal property of <span class="math inline">\(\ntimes\)</span> with the arguments reversed.</p>
 <div class="theorem">
-<p>The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
+<p><span id="thm-times-zero-right"></span><span id="thm-times-next-right"></span> The following hold for all natural numbers <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(a,\zero) = \zero\)</span>.</li>
 <li><span class="math inline">\(\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)\)</span>.</li>
@@ -258,25 +280,39 @@ Posted on 2017-03-31 by nbloomf
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\ntimes(\zero,\zero) = \zero\)</span>. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\zero) = \zero\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\zero) \\
- &amp; = &amp; \nplus(\ntimes(a,\zero),\zero) \\
- &amp; = &amp; \nplus(\zero,\zero) \\
- &amp; = &amp; \zero
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\zero),\zero) \\
+ &amp;     \hyp{\ntimes(a,\zero) = \zero}
+= &amp; \nplus(\zero,\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+= &amp; \zero
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\zero,\next(b)) \\
- &amp; = &amp; \zero \\
- &amp; = &amp; \nplus(\zero,\zero) \\
- &amp; = &amp; \nplus(\ntimes(\zero,b),\zero)
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+= &amp; \zero \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+= &amp; \nplus(\zero,\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+= &amp; \nplus(\ntimes(\zero,b),\zero)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(b)) \\
- &amp; = &amp; \nplus(\ntimes(a,\next(b)),\next(b)) \\
- &amp; = &amp; \next(\nplus(\ntimes(a,\next(b)),b)) \\
- &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,b),a),b)) \\
- &amp; = &amp; \next(\nplus(\ntimes(a,b),\nplus(a,b))) \\
- &amp; = &amp; \next(\nplus(\ntimes(a,b),\nplus(b,a))) \\
- &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,b),b),a)) \\
- &amp; = &amp; \next(\nplus(\ntimes(\next(a),b),a)) \\
- &amp; = &amp; \nplus(\ntimes(\next(a),b),\next(a))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\next(b)),\next(b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \next(\nplus(\ntimes(a,\next(b)),b)) \\
+ &amp;     \hyp{\ntimes(a,\next(b)) = \nplus(\ntimes(a,b),a)}
+= &amp; \next(\nplus(\nplus(\ntimes(a,b),a),b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \next(\nplus(\ntimes(a,b),\nplus(a,b))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
+= &amp; \next(\nplus(\ntimes(a,b),\nplus(b,a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \next(\nplus(\nplus(\ntimes(a,b),b),a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \next(\nplus(\ntimes(\next(a),b),a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \nplus(\ntimes(\next(a),b),\next(a))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -297,7 +333,7 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p><span class="math inline">\(\next(\zero)\)</span> is neutral under <span class="math inline">\(\ntimes\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \nats\)</span>, we have</p>
+<p><span id="thm-times-one-left"></span><span id="thm-times-one-right"></span> For all <span class="math inline">\(a \in \nats\)</span>, we have</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(\next(\zero),a) = a\)</span>.</li>
 <li><span class="math inline">\(\ntimes(a,\next(\zero)) = a\)</span>.</li>
@@ -306,16 +342,23 @@ Posted on 2017-03-31 by nbloomf
 <ol type="1">
 <li>Note first that for all <span class="math inline">\(a\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(\zero),a) \\
- &amp; = &amp; \nplus(\ntimes(\zero,a),a) \\
- &amp; = &amp; \nplus(\zero,a) \\
- &amp; = &amp; a.
-\end{eqnarray*}\]</span></li>
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(\zero,a),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+= &amp; \nplus(\zero,a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+= &amp; a
+\end{eqnarray*}\]</span> as claimed.</li>
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math inline">\(\ntimes(\zero,\next(\zero)) = \zero\)</span>. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\next(\zero)) = a\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(\zero)) \\
- &amp; = &amp; \nplus(\ntimes(a,\next(\zero)),\next(\zero)) \\
- &amp; = &amp; \nplus(a,\next(\zero)) \\
- &amp; = &amp; \next(\nplus(a,\zero)) \\
- &amp; = &amp; \next(a)
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\next(\zero)),\next(\zero)) \\
+ &amp;     \hyp{\ntimes(a,\next(\zero)) = a}
+= &amp; \nplus(a,\next(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \next(\nplus(a,\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-zero-right}
+= &amp; \next(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -336,13 +379,16 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p><span class="math inline">\(\ntimes\)</span> is commutative.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span>.</p>
+<p><span id="thm-times-commutative"></span> For all <span class="math inline">\(a,b \in \nats\)</span> we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span>.</p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, note that <span class="math display">\[\ntimes(\zero,b) = \zero = \ntimes(b,\zero)\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,b) = \ntimes(b,a)\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),b) \\
- &amp; = &amp; \nplus(\ntimes(a,b),b) \\
- &amp; = &amp; \nplus(\ntimes(b,a),b) \\
- &amp; = &amp; \ntimes(b,\next(a))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+   = &amp; \nplus(\ntimes(a,b),b) \\
+ &amp;     \hyp{\ntimes(a,b) = \ntimes(b,a)}
+   = &amp; \nplus(\ntimes(b,a),b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-next-right}
+   = &amp; \ntimes(b,\next(a))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -355,7 +401,7 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nplus\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b,c, \in \nats\)</span>, we have the following.</p>
+<p><span id="thm-times-plus-distribute-left"></span><span id="thm-times-plus-distribute-right"></span> For all <span class="math inline">\(a,b,c, \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span>.</li>
 <li><span class="math inline">\(\ntimes(\nplus(a,b),c) = \nplus(\ntimes(a,c),\ntimes(b,c))\)</span>.</li>
@@ -364,20 +410,35 @@ Posted on 2017-03-31 by nbloomf
 <ol type="1">
 <li>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\ntimes(\zero,\nplus(b,c)) = \zero = \nplus(\zero,\zero) = \nplus(\ntimes(\zero,b),\ntimes(\zero,c))\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))\)</span> for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\nplus(b,c)) \\
- &amp; = &amp; \nplus(\ntimes(a,\nplus(b,c)),\nplus(b,c)) \\
- &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\ntimes(a,c)),\nplus(b,c)) \\
- &amp; = &amp; \nplus(\nplus(\nplus(\nplus(\ntimes(a,b),\ntimes(a,c))),b),c) \\
- &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\nplus(\ntimes(a,c),b)),c) \\
- &amp; = &amp; \nplus(\nplus(\ntimes(a,b),\nplus(b,\ntimes(a,c))),c) \\
- &amp; = &amp; \nplus(\nplus(\nplus(\ntimes(a,b),b),\ntimes(a,c)),c) \\
- &amp; = &amp; \nplus(\nplus(\ntimes(a,b),b),\nplus(\ntimes(a,c),c)) \\
- &amp; = &amp; \nplus(\ntimes(\next(a),b),\ntimes(\next(a),c))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\nplus(b,c)),\nplus(b,c)) \\
+ &amp;     \hyp{\ntimes(a,\nplus(b,c)) = \nplus(\ntimes(a,b),\ntimes(a,c))}
+= &amp; \nplus(\nplus(\ntimes(a,b),\ntimes(a,c)),\nplus(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \nplus(\nplus(\nplus(\ntimes(a,b),\ntimes(a,c)),b),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \nplus(\nplus(\ntimes(a,b),\nplus(\ntimes(a,c),b)),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
+= &amp; \nplus(\nplus(\ntimes(a,b),\nplus(b,\ntimes(a,c))),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \nplus(\nplus(\nplus(\ntimes(a,b),b),\ntimes(a,c)),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \nplus(\nplus(\ntimes(a,b),b),\nplus(\ntimes(a,c),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(\next(a),b),\nplus(\ntimes(a,c),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(\next(a),b),\ntimes(\next(a),c))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\nplus(a,b),c) \\
- &amp; = &amp; \ntimes(c,\nplus(a,b)) \\
- &amp; = &amp; \nplus(\ntimes(c,a),\ntimes(c,b)) \\
- &amp; = &amp; \nplus(\ntimes(a,c),\ntimes(b,c))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
+= &amp; \ntimes(c,\nplus(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-plus-distribute-left}
+= &amp; \nplus(\ntimes(c,a),\ntimes(c,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
+= &amp; \nplus(\ntimes(a,c),\ntimes(c,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
+= &amp; \nplus(\ntimes(a,c),\ntimes(b,c))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -398,19 +459,26 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p><span class="math inline">\(\ntimes\)</span> is associative,</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\ntimes(\ntimes(a,b),c) = \ntimes(a,\ntimes(b,c)).\]</span></p>
+<p><span id="thm-times-associative"></span> For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have <span class="math display">\[\ntimes(\ntimes(a,b),c) = \ntimes(a,\ntimes(b,c)).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\zero,\ntimes(b,c)) \\
- &amp; = &amp; \zero \\
- &amp; = &amp; \ntimes(\zero,c) \\
- &amp; = &amp; \ntimes(\ntimes(\zero,b),c)
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+   = &amp; \zero \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+   = &amp; \ntimes(\zero,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
+   = &amp; \ntimes(\ntimes(\zero,b),c)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose we have <span class="math inline">\(\ntimes(a,\ntimes(b,c)) = \ntimes(\ntimes(a,b),c)\)</span> for all <span class="math inline">\(b\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(a\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\ntimes(\next(a),b),c) \\
- &amp; = &amp; \ntimes(\nplus(\ntimes(a,b),b),c) \\
- &amp; = &amp; \nplus(\ntimes(\ntimes(a,b),c),\ntimes(b,c)) \\
- &amp; = &amp; \nplus(\ntimes(a,\ntimes(b,c)),\ntimes(b,c)) \\
- &amp; = &amp; \ntimes(\next(a),\ntimes(b,c))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+   = &amp; \ntimes(\nplus(\ntimes(a,b),b),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-plus-distribute-right}
+   = &amp; \nplus(\ntimes(\ntimes(a,b),c),\ntimes(b,c)) \\
+ &amp;     \hyp{\ntimes(a,\ntimes(b,c)) = \ntimes(\ntimes(a,b),c)}
+   = &amp; \nplus(\ntimes(a,\ntimes(b,c)),\ntimes(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+   = &amp; \ntimes(\next(a),\ntimes(b,c))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -421,7 +489,7 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb8-5" data-line-number="5">  \a b c <span class="ot">-&gt;</span> eq (f (f a b) c) (f a (f b c))</a></code></pre></div>
 </div>
 </div>
-<p>Finally, <span class="math inline">\(\ntimes\)</span> is <em>almost</em> cancellative.</p>
+<p><span class="math inline">\(\ntimes\)</span> is <em>almost</em> cancellative.</p>
 <div class="theorem">
 <p>For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have the following.</p>
 <ol type="1">
@@ -432,13 +500,16 @@ Posted on 2017-03-31 by nbloomf
 <ol type="1">
 <li>This proof will be a little different: we will use induction twice; first on <span class="math inline">\(b\)</span>, and then on <span class="math inline">\(c\)</span>. To this end, let <span class="math display">\[B = \{ b \in \nats \mid \forall c, \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}\]</span> and given <span class="math inline">\(b \in \nats\)</span> let <span class="math display">\[C(b) = \{ c \in \nats \mid \forall a,\ \mathrm{if}\ \ntimes(\next(a),b) = \ntimes(\next(a),c)\ \mathrm{then}\ b = c \}.\]</span> We wish to show that <span class="math inline">\(B = \nats\)</span> by induction. For the base case, we need to show that <span class="math inline">\(b = \zero \in B\)</span>; for this it suffices to show that <span class="math inline">\(C(\zero) = \nats\)</span>, which we do by induction. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math inline">\(b = c\)</span> regardless of <span class="math inline">\(a\)</span>. For the inductive step suppose we have <span class="math inline">\(c \in C(\zero)\)</span> for some <span class="math inline">\(c\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(c)) \\
- &amp; = &amp; \nplus(\ntimes(a,\next(c)),\next(c)) \\
- &amp; = &amp; \next(\nplus(\ntimes(a,\next(c)),c))
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\next(c)),\next(c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \next(\nplus(\ntimes(a,\next(c)),c))
 \end{eqnarray*}\]</span> while <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),\zero) = \zero;\]</span> in particular, the statement <span class="math display">\[\ntimes(\next(a),\next(c)) = \ntimes(\next(a),b)\]</span> is false, so that <span class="math inline">\(\next(c) \in C(\zero)\)</span> <em>vacuously</em>. So we have <span class="math inline">\(C(\zero) = \nats\)</span>, and thus <span class="math inline">\(\zero \in B\)</span>. For the inductive step, suppose we have <span class="math inline">\(b \in B\)</span>; we wish to show that <span class="math inline">\(\next(b) \in B\)</span>, or equivalently that <span class="math inline">\(C(\next(b)) = \nats\)</span>. We proceed by induction on <span class="math inline">\(c\)</span> again. The base case <span class="math inline">\(c = \zero\)</span> holds vacuously. For the inductive step, suppose we have <span class="math inline">\(c \in C(\next(b))\)</span>. Now suppose further that <span class="math display">\[\ntimes(\next(a),\next(b)) = \ntimes(\next(a),\next(c)).\]</span> Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ntimes(\next(a),\next(b)) \\
  &amp; = &amp; \nplus(\ntimes(a,\next(c),\next(c))) \\
  &amp; = &amp; \next(\nplus(\ntimes(\next(c),a),c)) \\
- &amp; = &amp; \next(\nplus(\nplus(\ntimes(c,a),a),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \next(\nplus(\nplus(\ntimes(c,a),a),c)) \\
  &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)).
 \end{eqnarray*}\]</span> The analogous statement holds for <span class="math inline">\(b\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
   \next(\nplus(\nplus(\ntimes(a,b),b),a)) &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)) \\
@@ -469,44 +540,62 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb9-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
+<p>As a special case, <span class="math inline">\(\ntimes(\next(\next(\zero)),-)\)</span> is equivalent to a <span class="math inline">\(\nplus\)</span>.</p>
+<div class="theorem">
+<p><span id="thm-times-two"></span> For all <span class="math inline">\(a \in \nats\)</span> we have <span class="math display">\[\ntimes(\next(\next(\zero)),a) = \nplus(a,a).\]</span></p>
+<div class="proof">
+<p>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \ntimes(\next(\next(\zero)),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+   = &amp; \nplus(\ntimes(\next(\zero),a),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-one-left}
+   = &amp; \nplus(a,a)
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_times_two_left ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">_test_times_two_left _ f <span class="fu">=</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;times(next(next(zero)),a) == plus(a,a)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  \a <span class="ot">-&gt;</span> eq (plus a a) (f (next (next zero)) a)</a></code></pre></div>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">_test_times n f maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  testLabel1 <span class="st">&quot;times&quot;</span> n</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb10-8" data-line-number="8">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb10-9" data-line-number="9">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb10-10" data-line-number="10">      }</a>
-<a class="sourceLine" id="cb10-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">  runTest args (_test_times_zero_left n f)</a>
-<a class="sourceLine" id="cb10-13" data-line-number="13">  runTest args (_test_times_next_left n f)</a>
-<a class="sourceLine" id="cb10-14" data-line-number="14">  runTest args (_test_times_zero_right n f)</a>
-<a class="sourceLine" id="cb10-15" data-line-number="15">  runTest args (_test_times_next_right n f)</a>
-<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args (_test_times_one_left n f)</a>
-<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args (_test_times_one_right n f)</a>
-<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_times_commutative n f)</a>
-<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_times_distributive_left n f)</a>
-<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_times_distributive_right n f)</a>
-<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args (_test_times_associative n f)</a>
-<a class="sourceLine" id="cb10-22" data-line-number="22">  runTest args (_test_times_cancellative_left n f)</a>
-<a class="sourceLine" id="cb10-23" data-line-number="23">  runTest args (_test_times_cancellative_right n f)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_times n f maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  testLabel1 <span class="st">&quot;times&quot;</span> n</a>
+<a class="sourceLine" id="cb11-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb11-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">      { maxSuccess <span class="fu">=</span> numCases</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">      , maxSize    <span class="fu">=</span> maxSize</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">      }</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  runTest args (_test_times_zero_left n f)</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">  runTest args (_test_times_next_left n f)</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_times_zero_right n f)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_times_next_right n f)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_times_one_left n f)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_times_one_right n f)</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_times_commutative n f)</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_times_distributive_left n f)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_times_distributive_right n f)</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_times_associative n f)</a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_times_cancellative_left n f)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_times_cancellative_right n f)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_times_two_left n f)</a></code></pre></div>
 <p>I used a much smaller number of test cases this time, because these run much more slowly than the tests for <code>plus</code>. The culprit is <code>_test_times_associative</code>. What’s happening is that multiplication of <code>Nat</code>s is inherently slow; it’s implemented as iterated addition, which itself is iterated <code>N</code>.</p>
 <p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_times ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">main_times <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_times (<span class="ot">zero ::</span> <span class="dt">Unary</span>) times <span class="dv">40</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_times ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">main_times <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_times (<span class="ot">zero ::</span> <span class="dt">Unary</span>) times <span class="dv">40</span> <span class="dv">100</span></a></code></pre></div>
 
 
 
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

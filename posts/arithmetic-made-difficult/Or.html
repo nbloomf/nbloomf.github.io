@@ -44,9 +44,19 @@ Posted on 2018-01-17 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2018-01-17 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2018-01-17 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2018-01-17 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,14 +233,14 @@ Posted on 2018-01-17 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a></code></pre></div>
 <p>Finally, <span class="math inline">\(\bor\)</span>.</p>
 <div class="definition">
-<p>We define <span class="math inline">\(\bor : \bool \times \bool \rightarrow \bool\)</span> by <span class="math display">\[\bor(p,q) = \bif{p}{\btrue}{\bif{q}{\btrue}{\ptrue}}.\]</span></p>
+<p><span id="def-or"></span> We define <span class="math inline">\(\bor : \bool \times \bool \rightarrow \bool\)</span> by <span class="math display">\[\bor(p,q) = \bif{p}{\btrue}{\bif{q}{\btrue}{\bfalse}}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">or<span class="ot"> ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">or p q <span class="fu">=</span> ifThenElse p true (ifThenElse q true false)</a></code></pre></div>
 </div>
 <p>We can compute <span class="math inline">\(\bor\)</span> explicitly.</p>
 <div class="theorem">
-<p><a name="def-or"></a> We have <span class="math display">\[\begin{eqnarray*}
+<p><span id="thm-or-eval"></span><span id="thm-or-eval-true-true"></span><span id="thm-or-eval-true-false"></span><span id="thm-or-eval-false-true"></span><span id="thm-or-eval-false-false"></span> We have <span class="math display">\[\begin{eqnarray*}
 \bor(\btrue,\btrue)   &amp; = &amp; \btrue \\
 \bor(\btrue,\bfalse)  &amp; = &amp; \btrue \\
 \bor(\bfalse,\btrue)  &amp; = &amp; \btrue \\
@@ -227,22 +249,32 @@ Posted on 2018-01-17 by nbloomf
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\btrue,\btrue) \\
- &amp; = &amp; \bif{\btrue}{\btrue}{\bif{\btrue}{\btrue}{\bfalse}} \\
- &amp; = &amp; \btrue,
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#def-or}
+   = &amp; \bif{\btrue}{\btrue}{\bif{\btrue}{\btrue}{\bfalse}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\btrue,\bfalse) \\
- &amp; = &amp; \bif{\btrue}{\btrue}{\bif{\bfalse}{\btrue}{\bfalse}} \\
- &amp; = &amp; \btrue,
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#def-or}
+   = &amp; \bif{\btrue}{\btrue}{\bif{\bfalse}{\btrue}{\bfalse}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\bfalse,\btrue) \\
- &amp; = &amp; \bif{\bfalse}{\btrue}{\bif{\btrue}{\btrue}{\bfalse}} \\
- &amp; = &amp; \bif{\bfalse}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue,
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#def-or}
+   = &amp; \bif{\bfalse}{\btrue}{\bif{\btrue}{\btrue}{\bfalse}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\bfalse}{\btrue}{\btrue} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> and that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\bfalse,\bfalse) \\
- &amp; = &amp; \bif{\bfalse}{\btrue}{\bif{\bfalse}{\btrue}{\bfalse}} \\
- &amp; = &amp; \bif{\bfalse}{\btrue}{\bfalse} \\
- &amp; = &amp; \bfalse,
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#def-or}
+   = &amp; \bif{\bfalse}{\btrue}{\bif{\bfalse}{\btrue}{\bfalse}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{\btrue}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -276,9 +308,19 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\btrue\)</span> absorbs under <span class="math inline">\(\bor\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math display">\[\bor(\btrue,a) = \bor(a,\btrue) = \btrue.\]</span></p>
+<p><span id="thm-or-true"></span><span id="thm-or-true-left"></span><span id="thm-or-true-right"></span> For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math display">\[\bor(\btrue,a) = \bor(a,\btrue) = \btrue.\]</span></p>
 <div class="proof">
-<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\bor(\btrue,\btrue) = \btrue,\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\bor(\btrue,\bfalse) = \btrue = \bor(\bfalse,\btrue)\]</span> as claimed.</p>
+<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\btrue,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-true-true}
+   = &amp; \btrue
+\end{eqnarray*}\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\btrue,\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-true-false}
+   = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-false-true}
+   = &amp; \bor(\bfalse,\btrue)
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_or_true ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
@@ -290,9 +332,19 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bfalse\)</span> is neutral under <span class="math inline">\(\bor\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math display">\[\bor(\bfalse,a) = \bor(a,\bfalse) = a.\]</span></p>
+<p><span id="thm-or-false"></span><span id="thm-or-false-left"></span><span id="thm-or-false-right"></span> For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math display">\[\bor(\bfalse,a) = \bor(a,\bfalse) = a.\]</span></p>
 <div class="proof">
-<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\bor(\bfalse,\btrue) = \btrue = \bor(\btrue,\bfalse),\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\bor(\bfalse,\bfalse) = \bfalse\]</span> as claimed.</p>
+<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\bfalse,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-false-true}
+   = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-true-false}
+   = &amp; \bor(\btrue,\bfalse)
+\end{eqnarray*}\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\bfalse,\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-false-false}
+   = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_or_false ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
@@ -304,9 +356,19 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bor\)</span> interacts with <span class="math inline">\(\bnot\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math inline">\(\bor(p,\bnot(p)) = \btrue\)</span>.</p>
+<p><span id="thm-or-not"></span> For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math inline">\(\bor(p,\bnot(p)) = \btrue\)</span>.</p>
 <div class="proof">
-<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\bor(\btrue,\bnot(\btrue)) = \btrue,\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\bor(\bfalse,\bnot(\bfalse)) = \bor(\bfalse,\btrue) = \btrue\]</span> as claimed.</p>
+<p>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\btrue,\bnot(\btrue)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \btrue
+\end{eqnarray*}\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\bfalse,\bnot(\bfalse)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+   = &amp; \bor(\bfalse,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-false-true}
+   = &amp; \btrue
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_or_not ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
@@ -318,9 +380,17 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bor\)</span> is idempotent.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math inline">\(\bor(a,a) = a\)</span>.</p>
+<p><span id="thm-or-idempotent"></span> For all <span class="math inline">\(a \in \bool\)</span>, we have <span class="math inline">\(\bor(a,a) = a\)</span>.</p>
 <div class="proof">
-<p>If <span class="math inline">\(a = \btrue\)</span> we have <span class="math display">\[\bor(\btrue,\btrue) = \btrue,\]</span> and if <span class="math inline">\(a = \bfalse\)</span> then <span class="math display">\[\bor(\bfalse,\bfalse) = \bfalse\]</span> as claimed.</p>
+<p>If <span class="math inline">\(a = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\btrue,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-true-true}
+   = &amp; \btrue
+\end{eqnarray*}\]</span> and if <span class="math inline">\(a = \bfalse\)</span> then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\bfalse,\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-eval-false-false}
+   = &amp; \bfalse
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_or_idempotent ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
@@ -332,9 +402,21 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bor\)</span> is commutative.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b \in \bool\)</span>, we have <span class="math inline">\(\bor(a,b) = \bor(b,a)\)</span>.</p>
+<p><span id="thm-or-commutative"></span> For all <span class="math inline">\(a,b \in \bool\)</span>, we have <span class="math inline">\(\bor(a,b) = \bor(b,a)\)</span>.</p>
 <div class="proof">
-<p>If <span class="math inline">\(a = \btrue\)</span> we have <span class="math display">\[\bor(\btrue,b) = \btrue = \bor(b,\btrue),\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\bor(\bfalse,b) = b = \bor(b,\bfalse)\]</span> as claimed.</p>
+<p>If <span class="math inline">\(a = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\btrue,b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-right}
+   = &amp; \bor(b,\btrue)
+\end{eqnarray*}\]</span> and if <span class="math inline">\(a = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \bor(\bfalse,b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+   = &amp; b \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-right}
+   = &amp; \bor(b,\bfalse)
+\end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_or_commutative ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
@@ -346,19 +428,26 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bor\)</span> is associative.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b,c \in \bool\)</span>, we have <span class="math display">\[\bor(\bor(a,b),c) = \bor(a,\bor(b,c)).\]</span></p>
+<p><span id="thm-or-associative"></span> For all <span class="math inline">\(a,b,c \in \bool\)</span>, we have <span class="math display">\[\bor(\bor(a,b),c) = \bor(a,\bor(b,c)).\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(a = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\bor(a,b),c) \\
- &amp; = &amp; \bor(\bor(\btrue,b),c) \\
- &amp; = &amp; \bor(\btrue,c) \\
- &amp; = &amp; \btrue \\
- &amp; = &amp; \bor(\btrue,\bor(b,c))
+ &amp;     \let{a = \btrue}
+   = &amp; \bor(\bor(\btrue,b),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \bor(\btrue,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+   = &amp; \bor(\btrue,\bor(b,c))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(\bor(a,b),c) \\
- &amp; = &amp; \bor(\bor(\bfalse,b),c) \\
- &amp; = &amp; \bor(b,c) \\
- &amp; = &amp; \bor(\bfalse,\bor(b,c))
+ &amp;     \let{a = \bfalse}
+   = &amp; \bor(\bor(\bfalse,b),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+   = &amp; \bor(b,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+   = &amp; \bor(\bfalse,\bor(b,c))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -371,7 +460,7 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p>DeMorgan’s laws hold for <span class="math inline">\(\bor\)</span>, <span class="math inline">\(\band\)</span>, and <span class="math inline">\(\bnot\)</span>.</p>
 <div class="theorem">
-<p>The following hold for all <span class="math inline">\(a,b,c \in \bool\)</span>.</p>
+<p><span id="thm-demorgan"></span><span id="thm-demorgan-not-and"></span><span id="thm-demorgan-not-or"></span> The following hold for all <span class="math inline">\(a,b,c \in \bool\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\bnot(\band(a,b)) = \bor(\bnot(a),\bnot(b))\)</span>.</li>
 <li><span class="math inline">\(\bnot(\bor(a,b)) = \band(\bnot(a),\bnot(b))\)</span>.</li>
@@ -380,35 +469,52 @@ Posted on 2018-01-17 by nbloomf
 <ol type="1">
 <li>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bnot(\band(a,b)) \\
- &amp; = &amp; \bnot(\band(\btrue,b)) \\
- &amp; = &amp; \bnot(b) \\
+ &amp;     \let{a = \btrue}
+= &amp; \bnot(\band(\btrue,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+= &amp; \bnot(b) \\
  &amp; = &amp; \bor(\bfalse,\bnot(b)) \\
- &amp; = &amp; \bor(\bnot(\btrue),\bnot(b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bor(\bnot(\btrue),\bnot(b)) \\
  &amp; = &amp; \bor(\bnot(a),\bnot(b))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bnot(\band(a,b)) \\
- &amp; = &amp; \bnot(\band(\bfalse,b)) \\
- &amp; = &amp; \bnot(\bfalse) \\
- &amp; = &amp; \btrue \\
+ &amp;     \let{a = \bfalse}
+= &amp; \bnot(\band(\bfalse,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+= &amp; \bnot(\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \btrue \\
  &amp; = &amp; \bor(\btrue,\bnot(b)) \\
- &amp; = &amp; \bor(\bnot(\bfalse),\bnot(b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \bor(\bnot(\bfalse),\bnot(b)) \\
  &amp; = &amp; \bor(\bnot(a),\bnot(b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bnot(\bor(a,b)) \\
- &amp; = &amp; \bnot(\bor(\btrue,b)) \\
- &amp; = &amp; \bnot(\btrue) \\
- &amp; = &amp; \bfalse \\
+ &amp;     \let{a = \btrue}
+= &amp; \bnot(\bor(\btrue,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+= &amp; \bnot(\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bfalse \\
  &amp; = &amp; \band(\bfalse,\bnot(b)) \\
- &amp; = &amp; \band(\bnot(\btrue),\bnot(b)) \\
- &amp; = &amp; \band(\bnot(a),\bnot(b))
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \band(\bnot(\btrue),\bnot(b)) \\
+ &amp;     \let{a = \btrue}
+= &amp; \band(\bnot(a),\bnot(b))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(b = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bnot(\bor(a,b)) \\
- &amp; = &amp; \bnot(\bor(\bfalse,b)) \\
- &amp; = &amp; \bnot(b) \\
- &amp; = &amp; \band(\btrue,\bnot(b)) \\
- &amp; = &amp; \band(\bnot(\bfalse),\bnot(b)) \\
- &amp; = &amp; \band(\bnot(a),\bnot(b))
+ &amp;     \let{a = \bfalse}
+= &amp; \bnot(\bor(\bfalse,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+= &amp; \bnot(b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+= &amp; \band(\btrue,\bnot(b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \band(\bnot(\bfalse),\bnot(b)) \\
+ &amp;     \let{a = \bfalse}
+= &amp; \band(\bnot(a),\bnot(b))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -429,7 +535,7 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\band\)</span> and <span class="math inline">\(\bor\)</span> distribute over each other.</p>
 <div class="theorem">
-<p>The following hold for all <span class="math inline">\(a,b,c \in \bool\)</span>.</p>
+<p><span id="thm-and-or-distribute"></span><span id="thm-or-and-distribute"></span> The following hold for all <span class="math inline">\(a,b,c \in \bool\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\band(a,\bor(b,c)) = \bor(\band(a,b),\band(a,c))\)</span>.</li>
 <li><span class="math inline">\(\bor(a,\band(b,c)) = \band(\bor(a,b),\bor(a,c))\)</span>.</li>
@@ -438,31 +544,44 @@ Posted on 2018-01-17 by nbloomf
 <ol type="1">
 <li>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \band(a,\bor(b,c)) \\
- &amp; = &amp; \band(\btrue,\bor(b,c)) \\
- &amp; = &amp; \bor(b,c) \\
+ &amp;     \let{a = \btrue}
+= &amp; \band(\btrue,\bor(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
+= &amp; \bor(b,c) \\
  &amp; = &amp; \bor(\band(\btrue,b),\band(\btrue,c)) \\
- &amp; = &amp; \bor(\band(a,b),\band(a,c))
+ &amp;     \let{a = \btrue}
+= &amp; \bor(\band(a,b),\band(a,c))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \band(a,\bor(b,c)) \\
- &amp; = &amp; \band(\bfalse,\bor(b,c)) \\
- &amp; = &amp; \bfalse \\
+ &amp;     \let{a = \bfalse}
+= &amp; \band(\bfalse,\bor(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-left}
+= &amp; \bfalse \\
  &amp; = &amp; \bor(\bfalse,\bfalse) \\
  &amp; = &amp; \bor(\band(\bfalse,b),\band(\bfalse,c)) \\
- &amp; = &amp; \bor(\band(a,b),\band(a,c))
+ &amp;     \let{a = \bfalse}
+= &amp; \bor(\band(a,b),\band(a,c))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(a = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(a,\band(b,c)) \\
- &amp; = &amp; \bor(\btrue,\band(b,c)) \\
- &amp; = &amp; \btrue \\
- &amp; = &amp; \band(\btrue,\btrue) \\
+ &amp;     \let{a = \btrue}
+= &amp; \bor(\btrue,\band(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+= &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+= &amp; \band(\btrue,\btrue) \\
  &amp; = &amp; \band(\bor(\btrue,b),\bor(\btrue,c)) \\
- &amp; = &amp; \band(\bor(a,b),\bor(a,c))
+ &amp;     \let{a = \btrue}
+= &amp; \band(\bor(a,b),\bor(a,c))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bor(a,\band(b,c)) \\
- &amp; = &amp; \bor(\bfalse,\band(b,c)) \\
- &amp; = &amp; \band(b,c) \\
+ &amp;     \let{a = \bfalse}
+= &amp; \bor(\bfalse,\band(b,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
+= &amp; \band(b,c) \\
  &amp; = &amp; \band(\bor(\bfalse,b),\bor(\bfalse,c)) \\
- &amp; = &amp; \band(\bor(a,b),\bor(a,c))
+ &amp;     \let{a = \bfalse}
+= &amp; \band(\bor(a,b),\bor(a,c))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -483,15 +602,17 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> on booleans is equivalent to an or.</p>
 <div class="theorem">
-<p><span class="math display">\[\bif{p}{\btrue}{q} = \bor(p,q).\]</span></p>
+<p><span id="thm-or-is-if"></span> If <span class="math inline">\(p,q \in \bool\)</span>, we have <span class="math display">\[\bif{p}{\btrue}{q} = \bor(p,q).\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{\btrue}{\btrue}{q} \\
- &amp; = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \btrue \\
  &amp; = &amp; \bor(\btrue,q),
 \end{eqnarray*}\]</span> and if $p = we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{\bfalse}{\btrue}{q} \\
- &amp; = &amp; q \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; q \\
  &amp; = &amp; \bor(\bfalse,q)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -505,19 +626,28 @@ Posted on 2018-01-17 by nbloomf
 </div>
 <p><span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span> interacts with <span class="math inline">\(\bor\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span>, and let <span class="math inline">\(p,q \in \bool\)</span>. Then we have <span class="math display">\[\bif{p}{a}{\bif{q}{a}{b}} = \bif{\bor(p,q)}{a}{b}.\]</span></p>
+<p><span id="thm-or-if-hyp"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span>, and let <span class="math inline">\(p,q \in \bool\)</span>. Then we have <span class="math display">\[\bif{p}{a}{\bif{q}{a}{b}} = \bif{\bor(p,q)}{a}{b}.\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(p = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{\bor(p,q)}{a}{b} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{\bor(\btrue,q)}{a}{b} \\
  &amp; = &amp; \bif{\btrue}{a}{b} \\
- &amp; = &amp; a
- &amp; = &amp; \bif{\btrue}{a}{\bif{q}{a}{b}} \\
- &amp; = &amp; \bif{p}{a}{\bif{q}{a}{b}}
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; a
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \bif{\btrue}{a}{\bif{q}{a}{b}} \\
+ &amp;     \let{p = \btrue}
+   = &amp; \bif{p}{a}{\bif{q}{a}{b}}
 \end{eqnarray*}\]</span> as needed, and if <span class="math inline">\(p = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{\bor(p,q)}{a}{b} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{\bor(\bfalse,q)}{a}{b} \\
  &amp; = &amp; \bif{q}{a}{b} \\
- &amp; = &amp; \bif{\bfalse}{a}{\bif{q}{a}{b}} \\
- &amp; = &amp; \bif{p}{a}{\bif{q}{a}{b}}
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
+   = &amp; \bif{\bfalse}{a}{\bif{q}{a}{b}} \\
+ &amp;     \let{p = \bfalse}
+   = &amp; \bif{p}{a}{\bif{q}{a}{b}}
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -574,9 +704,6 @@ Posted on 2018-01-17 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

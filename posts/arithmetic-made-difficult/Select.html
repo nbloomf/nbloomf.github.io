@@ -44,9 +44,19 @@ Posted on 2017-05-25 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -218,9 +240,9 @@ Posted on 2017-05-25 by nbloomf
 <a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
 <a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">DoubleBailoutFold</span></a>
 <a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
 <a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Zip</span></a>
 <a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
@@ -333,7 +355,8 @@ Posted on 2017-05-25 by nbloomf
  &amp;   &amp; \length(\select(k,x)) \\
  &amp; = &amp; \length(\select(k,\nil)) \\
  &amp; = &amp; \length(\bif{\iszero(k)}{\cons(\nil,\nil)}{\nil}) \\
- &amp; = &amp; \bif{\iszero(k)}{\length(\cons(\nil,\nil))}{\length(\nil)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \bif{\iszero(k)}{\length(\cons(\nil,\nil))}{\length(\nil)} \\
  &amp; = &amp; \bif{\iszero(k)}{\next(\zero)}{\zero} \\
  &amp; = &amp; \nchoose(\zero,k) \\
  &amp; = &amp; \nchoose(\length(\nil),k) \\
@@ -352,7 +375,8 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \nplus(\length(\map(\cons(a,-))(\select(m,x))),\length(\select(\next(m),x))) \\
  &amp; = &amp; \nplus(\length(\select(m,x)),\length(\select(\next(m),x))) \\
  &amp; = &amp; \nplus(\nchoose(\length(x),m),\nchoose(\length(x),\next(m))) \\
- &amp; = &amp; \nplus(\nchoose(\length(x),\next(m)),\nchoose(\length(x),m)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
+   = &amp; \nplus(\nchoose(\length(x),\next(m)),\nchoose(\length(x),m)) \\
  &amp; = &amp; \nchoose(\next(\length(x)),\next(m)) \\
  &amp; = &amp; \nchoose(\length(\cons(a,x)),k)
 \end{eqnarray*}\]</span> as needed.</p>
@@ -428,7 +452,8 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \all(\sublist(-,x),\cons(\nil,\nil)) \\
  &amp; = &amp; \band(\sublist(\nil,x),\all(\sublist(-,x),\nil)) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed. Suppose instead that <span class="math inline">\(k = \next(m)\)</span>; we proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\sublist(-,x),\select(k,x)) \\
  &amp; = &amp; \all(\sublist(-,\nil),\select(\next(m),\nil)) \\
@@ -452,7 +477,8 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \all(\sublist(-,\cons(a,x)),\cat(\map(\cons(a,-))(\select(m,x)),\select(\next(m),x))) \\
  &amp; = &amp; \band(\all(\sublist(-,\cons(a,x)),\map(\cons(a,-))(\select(m,x))),\all(\sublist(-,\cons(a,x)),\select(\next(m),x))) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -473,8 +499,10 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \all(\beq(\zero,\length(-)),\cons(\nil,\nil)) \\
  &amp; = &amp; \band(\beq(\zero,\length(\nil)),\all(\beq(\zero,\length(-)),\nil)) \\
  &amp; = &amp; \band(\beq(\zero,\zero),\btrue) \\
- &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+   = &amp; \band(\btrue,\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed. Suppose instead that <span class="math inline">\(k = \next(m)\)</span>. We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\beq(k,\length(-)),\select(k,x)) \\
  &amp; = &amp; \all(\beq(k,\length(-)),\select(\next(m),\nil)) \\
@@ -492,7 +520,8 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \band(\all(\beq(\next(m),\next(\length(-))),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\all(\beq(m,\length(-)),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -539,9 +568,6 @@ Posted on 2017-05-25 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

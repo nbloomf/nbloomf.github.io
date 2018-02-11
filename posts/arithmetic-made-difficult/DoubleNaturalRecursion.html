@@ -44,9 +44,19 @@ Posted on 2018-01-01 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -214,43 +236,63 @@ Posted on 2018-01-01 by nbloomf
 <a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>Today we’ll implement a slight generalization of natural recursion that allows recursion on two arguments.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(\Theta : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[\Theta(\zero,k) = \delta(k),\]</span> <span class="math display">\[\Theta(\next(n),\zero) = \psi(\Theta(n,\zero)),\]</span> and <span class="math display">\[\Theta(\next(n),\next(k)) = \chi(k,\Theta(n,k),\Theta(n,\next(k))).\]</span> We denote this map by <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}.\)</span>$</p>
+<p>[]{@#thm-dnatrec-zero-nat}<span id="thm-dnatrec-next-zero"></span><span id="thm-dnatrec-next-next"></span> Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[Θ(\zero,k) = \delta(k),\]</span> <span class="math display">\[Θ(\next(n),\zero) = \psi(Θ(n,\zero)),\]</span> and <span class="math display">\[Θ(\next(n),\next(k)) = \chi(k,Θ(n,k),Θ(n,\next(k))).\]</span> We denote this map by <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}.\)</span>$</p>
 <div class="proof">
-<p>Define <span class="math inline">\(\varphi : A^\nats \rightarrow A^\nats\)</span> casewise by <span class="math display">\[\begin{eqnarray*}
- \varphi(g)(\zero) &amp; = &amp; \psi(g(\zero)) \\
- \varphi(g)(\next(k)) &amp; = &amp; \chi(k,g(k),g(\next(k))).
-\end{eqnarray*}\]</span> We then define <span class="math inline">\(\Theta : \nats \times \nats \rightarrow A\)</span> by <span class="math display">\[\Theta(n,k) = \natrec{\delta}{\varphi}(n)(k).\]</span></p>
-<p>First we show that <span class="math inline">\(\Theta\)</span> satisfies the claimed equations. To this end, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\zero,k) \\
- &amp; = &amp; \natrec{\delta}{\varphi}(\zero)(k) \\
- &amp; = &amp; \delta(k),
+<p>Define <span class="math inline">\(φ : A^\nats \rightarrow A^\nats\)</span> casewise by <span class="math display">\[\begin{eqnarray*}
+ φ(g)(\zero) &amp; = &amp; \psi(g(\zero)) \\
+ φ(g)(\next(k)) &amp; = &amp; \chi(k,g(k),g(\next(k))).
+\end{eqnarray*}\]</span> We then define <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> by <span class="math display">\[Θ(n,k) = \natrec{\delta}{φ}(n)(k).\]</span></p>
+<p>First we show that <span class="math inline">\(Θ\)</span> satisfies the claimed equations. To this end, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Θ(\zero,k) \\
+ &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \natrec{\delta}{φ}(\zero)(k) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+   = &amp; \delta(k)
 \end{eqnarray*}\]</span> that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(n),\zero) \\
- &amp; = &amp; \natrec{\delta}{\varphi}(\next(n))(\zero) \\
- &amp; = &amp; \varphi(\natrec{\delta}{\varphi}(n))(\zero) \\
- &amp; = &amp; \psi(\natrec{\delta}{\varphi}(n)(\zero)) \\
- &amp; = &amp; \psi(\Theta(n,\zero)),
+ &amp;   &amp; Θ(\next(n),\zero) \\
+ &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \natrec{\delta}{φ}(\next(n))(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+   = &amp; φ(\natrec{\delta}{φ}(n))(\zero) \\
+ &amp;     \hyp{φ(g)(\zero) = \psi(g(\zero))}
+   = &amp; \psi(\natrec{\delta}{φ}(n)(\zero)) \\
+ &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \psi(Θ(n,\zero))
 \end{eqnarray*}\]</span> and that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(n),\next(k)) \\
- &amp; = &amp; \natrec{\delta}{\varphi}(\next(n))(\next(k)) \\
- &amp; = &amp; \varphi(\natrec{\delta}{\varphi}(n))(\next(k)) \\
- &amp; = &amp; \chi(k,\natrec{\delta}{\varphi}(n)(k),\natrec{\delta}{\varphi}(n)(\next(k))) \\
- &amp; = &amp; \chi(k,\Theta(n,k),\Theta(n,\next(k)))
+ &amp;   &amp; Θ(\next(n),\next(k)) \\
+ &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \natrec{\delta}{φ}(\next(n))(\next(k)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+   = &amp; φ(\natrec{\delta}{φ}(n))(\next(k)) \\
+ &amp;     \hyp{φ(g)(\next(k)) = \chi(k,g(k),g(\next(k)))}
+   = &amp; \chi(k,\natrec{\delta}{φ}(n)(k),\natrec{\delta}{φ}(n)(\next(k))) \\
+ &amp;     \hyp{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \chi(k,Θ(n,k),\natrec{\delta}{φ}(n)(\next(k))) \\
+ &amp;     \hyp{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \chi(k,Θ(n,k),Θ(n,\next(k)))
 \end{eqnarray*}\]</span> as claimed.</p>
-<p>Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A\)</span> also satisfies these equations. We show that <span class="math inline">\(\Psi = \Theta\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span> for all <span class="math inline">\(k\)</span> we have <span class="math display">\[\begin{eqnarray*}
+<p>Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A\)</span> also satisfies these equations. We show that <span class="math inline">\(\Psi = Θ\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span> for all <span class="math inline">\(k\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\zero,k) \\
- &amp; = &amp; \delta(k) \\
- &amp; = &amp; \Theta(\zero,k)
-\end{eqnarray*}\]</span> as needed. For the inductive step, suppose <span class="math inline">\(\Psi(n,k) = \Theta(n,k)\)</span> for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(n\)</span>. Now let <span class="math inline">\(k \in \nats\)</span>. We have two possibilities; if <span class="math inline">\(k = \zero\)</span>, then <span class="math display">\[\begin{eqnarray*}
+ &amp;     \hyp{\Psi(\zero,k) = \delta(k)}
+   = &amp; \delta(k) \\
+ &amp;     \hyp{Θ(\zero,k) = \delta(k)}
+   = &amp; Θ(\zero,k)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose <span class="math inline">\(\Psi(n,k) = Θ(n,k)\)</span> for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(n\)</span>. Now let <span class="math inline">\(k \in \nats\)</span>. We have two possibilities; if <span class="math inline">\(k = \zero\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\next(n),\zero) \\
- &amp; = &amp; \psi(\Psi(n,\zero)) \\
- &amp; = &amp; \psi(\Theta(n,\zero)) \\
- &amp; = &amp; \Theta(\next(n),\zero),
+ &amp;     \hyp{\Psi(\next(n),\zero) = \psi(\Psi(n,\zero))}
+   = &amp; \psi(\Psi(n,\zero)) \\
+ &amp;     \hyp{Θ(n,\zero) = \Psi(n,\zero)}
+   = &amp; \psi(Θ(n,\zero)) \\
+ &amp;     \hyp{Θ(\next(n),\zero) = \psi(Θ(n,\zero))}
+   = &amp; Θ(\next(n),\zero)
 \end{eqnarray*}\]</span> and if <span class="math inline">\(k = \next(m)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Psi(\next(n),\next(m)) \\
- &amp; = &amp; \chi(k,\Psi(n,m),\Psi(n,\next(m))) \\
- &amp; = &amp; \chi(k,\Theta(n,m),\Theta(n,\next(m))) \\
- &amp; = &amp; \Theta(\next(n),\next(m))
+ &amp;     \hyp{\Psi(\next(n),\next(m)) = \chi(\next(m),\Psi(n,m),\Psi(n,\next(m)))}
+   = &amp; \chi(\next(m),\Psi(n,m),\Psi(n,\next(m))) \\
+ &amp;     \let{Θ(n,m) = \Psi(n,m)}
+   = &amp; \chi(\next(m),Θ(n,m),Θ(n,\next(m))) \\
+ &amp;     \hyp{Θ(\next(n),\next(m)) = \chi(\next(m),Θ(n,m),Θ(n,\next(m)))}
+   = &amp; Θ(\next(n),\next(m))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
@@ -289,9 +331,6 @@ Posted on 2018-01-01 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

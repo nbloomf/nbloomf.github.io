@@ -44,9 +44,19 @@ Posted on 2014-05-23 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -215,8 +237,9 @@ Posted on 2014-05-23 by nbloomf
 <a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
 <p>We have assumed the existence of a set <span class="math inline">\(\nats\)</span> such that there is a unique inductive set homomorphism from <span class="math inline">\(\nats\)</span> to any other inductive set. But it turns out that this set is not <em>unique</em> with this property; any other inductive set which is <em>isomorphic</em> to <span class="math inline">\(\nats\)</span> enjoys it as well. In fact we’ve already seen one such set, namely <span class="math inline">\(1 + \nats\)</span>.</p>
 <p>Here’s a handwavy proof. Let <span class="math inline">\((A,\varphi,e)\)</span> be an inductive set, and suppose the unique map <span class="math inline">\(\theta : \nats \rightarrow A\)</span> is bijective. Then there is a unique inductive set homomorphism <span class="math inline">\(\omega : A \rightarrow \nats\)</span>; namely, <span class="math inline">\(\omega = \theta^{-1}\)</span>. Now any homomorphism from <span class="math inline">\(A\)</span> factors through the (unique) map <span class="math inline">\(\omega\)</span>.</p>
 <p>From a mathematical point of view, isomorphic objects are interchangeable. But as we’ll eventually see, from a <em>computational</em> point of view, isomorphic objects can behave very differently. For this reason we will think of the properties of <span class="math inline">\(\nats\)</span> as a kind of interface, and write our programs against that. Specifically, every element of a <span class="math inline">\(\nats\)</span>-like set is either the zero or the successor of some other element, and <span class="math inline">\(\unnext\)</span> discriminates between the two.</p>
@@ -332,9 +355,6 @@ Posted on 2014-05-23 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

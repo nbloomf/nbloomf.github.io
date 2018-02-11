@@ -44,9 +44,19 @@ Posted on 2017-05-03 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-03 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,15 +233,16 @@ Posted on 2017-05-03 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">BailoutRecursion</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a></code></pre></div>
 <p>So far we’ve developed a few functions that operate on lists. But we don’t have a convenient programmatic way to <em>construct</em> lists out of nothing – we’ll remedy this today with a function called <span class="math inline">\(\unfoldN{\ast}\)</span>. From the name, it sounds like unfold should be the “opposite” (or <em>dual</em>) of a fold. But the full story is a little more complicated than this; the true opposite to fold doesn’t operate on lists at all, but on <em>streams</em> (which we’ll get to later). Roughly speaking, <span class="math inline">\(\lists{A}\)</span> is an initial algebra, elements of <span class="math inline">\(\lists{A}\)</span> are required to be “finite”, and <span class="math inline">\(\foldr{\ast}{\ast}\)</span> condenses a <span class="math inline">\(\lists{A}\)</span> element to a single item. Streams, in contrast, are required to be “infinite” and collectively form a <em>terminal algebra</em> and their universal map expands a single item to an infinite structure. All that is to say that the <span class="math inline">\(\unfoldN{\ast}\)</span> function we define here is <em>not</em> the real dual of <span class="math inline">\(\foldr{\ast}{\ast}\)</span> – which partly explains why it is so complicated looking.</p>
 <p>So what will <span class="math inline">\(\unfoldN{\ast}\)</span> do? Roughly speaking, we’d like to be able to build up interesting lists of arbitrary size using a small amount of initial data. For example, here is a version of the signature for Haskell’s standard <code>unfoldr</code> function.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">unfoldr ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (a,b)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [b]</a></code></pre></div>
@@ -279,44 +302,44 @@ Posted on 2017-05-03 by nbloomf
 <p>We can implement <span class="math inline">\(\tacunfoldN{f}\)</span> using the definition from the proof, or by pattern matching using the universal property.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1">tacunfoldN', tacunfoldN</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,b)) <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a b)) <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b</a>
 <a class="sourceLine" id="cb3-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">tacunfoldN' f x n a <span class="fu">=</span> bailoutRec phi beta psi omega n (a,x)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">tacunfoldN' f x n a <span class="fu">=</span> bailoutRec phi beta psi omega n (tup a x)</a>
 <a class="sourceLine" id="cb3-6" data-line-number="6">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-7" data-line-number="7">    phi (a,x) <span class="fu">=</span> x</a>
-<a class="sourceLine" id="cb3-8" data-line-number="8">    beta n (a,x) <span class="fu">=</span> isLft (f a)</a>
-<a class="sourceLine" id="cb3-9" data-line-number="9">    psi n (a,x) <span class="fu">=</span> x</a>
-<a class="sourceLine" id="cb3-10" data-line-number="10">    omega n (a,x) <span class="fu">=</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
-<a class="sourceLine" id="cb3-11" data-line-number="11">      <span class="dt">Left</span> () <span class="ot">-&gt;</span> (a,x)</a>
-<a class="sourceLine" id="cb3-12" data-line-number="12">      <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> (c, snoc b x)</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">    phi (<span class="dt">Pair</span> a x) <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">    beta n (<span class="dt">Pair</span> a x) <span class="fu">=</span> isLft (f a)</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">    psi n (<span class="dt">Pair</span> a x) <span class="fu">=</span> x</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">    omega n (<span class="dt">Pair</span> a x) <span class="fu">=</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">      <span class="dt">Left</span> () <span class="ot">-&gt;</span> tup a x</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">      <span class="dt">Right</span> (<span class="dt">Pair</span> c b) <span class="ot">-&gt;</span> tup c (snoc b x)</a>
 <a class="sourceLine" id="cb3-13" data-line-number="13"></a>
 <a class="sourceLine" id="cb3-14" data-line-number="14"></a>
 <a class="sourceLine" id="cb3-15" data-line-number="15">tacunfoldN f x n a <span class="fu">=</span> <span class="kw">case</span> unnext n <span class="kw">of</span></a>
 <a class="sourceLine" id="cb3-16" data-line-number="16">  <span class="dt">Left</span> () <span class="ot">-&gt;</span> x</a>
 <a class="sourceLine" id="cb3-17" data-line-number="17">  <span class="dt">Right</span> k <span class="ot">-&gt;</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
 <a class="sourceLine" id="cb3-18" data-line-number="18">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> x</a>
-<a class="sourceLine" id="cb3-19" data-line-number="19">    <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> tacunfoldN f (snoc b x) k c</a></code></pre></div>
+<a class="sourceLine" id="cb3-19" data-line-number="19">    <span class="dt">Right</span> (<span class="dt">Pair</span> c b) <span class="ot">-&gt;</span> tacunfoldN f (snoc b x) k c</a></code></pre></div>
 <p>We should test that these two implementations agree.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_tacunfoldN_equiv ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">_test_tacunfoldN_equiv _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(x,n,a) == tacunfoldN'(x,n,a)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb4-5" data-line-number="5">  \f x n a <span class="ot">-&gt;</span> eq (tacunfoldN f x n a) (tacunfoldN' f x n a)</a></code></pre></div>
 <p>And while we’re at it, test that <span class="math inline">\(\tacunfoldN{f}\)</span> does satisfy the universal property.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_tacunfoldN_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">_test_tacunfoldN_zero _ k <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(x,zero,a) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-5" data-line-number="5">  \f x a <span class="ot">-&gt;</span> eq (tacunfoldN f x (zero <span class="ot">`withTypeOf`</span> k) a) x</a>
 <a class="sourceLine" id="cb5-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb5-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb5-8" data-line-number="8"><span class="ot">_test_tacunfoldN_next ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb5-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-10" data-line-number="10">_test_tacunfoldN_next _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-11" data-line-number="11">  testName <span class="st">&quot;tacunfoldN(x,next(n),a) == if(isLft(f(a)),x,tacunfoldN(snoc(b,x),n,c))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-12" data-line-number="12">  \f x n a <span class="ot">-&gt;</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
-<a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="dt">Left</span> () <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) x</a>
-<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) (tacunfoldN f (snoc b x) n c)</a></code></pre></div>
+<a class="sourceLine" id="cb5-13" data-line-number="13">    <span class="dt">Left</span> ()          <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) x</a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="dt">Right</span> (<span class="dt">Pair</span> c b) <span class="ot">-&gt;</span> eq (tacunfoldN f x (next n) a) (tacunfoldN f (snoc b x) n c)</a></code></pre></div>
 <p><span class="math inline">\(\tacunfoldN{f}\)</span> interacts with <span class="math inline">\(\cons\)</span>.</p>
 <div class="theorem">
 <p>We have <span class="math display">\[\tacunfoldN{f}(\cons(b,x),n,a) = \cons(b,\tacunfoldN{f}(x,n,a)).\]</span></p>
@@ -332,14 +355,15 @@ Posted on 2017-05-03 by nbloomf
 \end{eqnarray*}\]</span> as needed, while if <span class="math inline">\(f(a) = \rgt((c,d))\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tacunfoldN{f}(\cons(b,x),\next(n),a) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(d,\cons(b,x)),n,c) \\
- &amp; = &amp; \tacunfoldN{f}(\cons(b,\snoc(d,x)),n,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \tacunfoldN{f}(\cons(b,\snoc(d,x)),n,c) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(\snoc(d,x),n,c)) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(x,\next(n),a))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_tacunfoldN_cons ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">_test_tacunfoldN_cons _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(cons(b,x),n,a) == cons(b,tacunfoldN(x,n,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  \f x b n a <span class="ot">-&gt;</span> eq (tacunfoldN f (cons b x) n a) (cons b (tacunfoldN f x n a))</a></code></pre></div>
@@ -367,7 +391,7 @@ Posted on 2017-05-03 by nbloomf
 </div>
 <div class="test">
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_tacunfoldN_cat ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">_test_tacunfoldN_cat _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;tacunfoldN(cat(x,y),n,a) == cat(x,tacunfoldN(y,n,a))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  \f x y n a <span class="ot">-&gt;</span> eq (tacunfoldN f (cat x y) n a) (cat x (tacunfoldN f y n a))</a></code></pre></div>
@@ -379,7 +403,7 @@ Posted on 2017-05-03 by nbloomf
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">unfoldN</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,b)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a b)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t b</a>
 <a class="sourceLine" id="cb8-4" data-line-number="4">unfoldN f <span class="fu">=</span> tacunfoldN f nil</a></code></pre></div>
 </div>
 <p>And <span class="math inline">\(\unfoldN{\ast}\)</span> can be characterized as the unique solution of a system of functional equations.</p>
@@ -405,7 +429,8 @@ Posted on 2017-05-03 by nbloomf
  &amp; = &amp; \tacunfoldN{f}(\nil,\next(\zero),a) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(b,\nil),\zero,c) \\
  &amp; = &amp; \snoc(b,\nil) \\
- &amp; = &amp; \cons(b,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \cons(b,\nil) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(\nil,\zero,a)) \\
  &amp; = &amp; \cons(b,\unfoldN{f}(\zero,a))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(n\)</span>. Let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(f(a) = \lft(\ast)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -416,7 +441,8 @@ Posted on 2017-05-03 by nbloomf
  &amp;   &amp; \unfoldN{f}(\next(n),a) \\
  &amp; = &amp; \tacunfoldN{f}(\nil,\next(n),a) \\
  &amp; = &amp; \tacunfoldN{f}(\snoc(b,\nil),n,c) \\
- &amp; = &amp; \tacunfoldN{f}(\cons(b,\nil),n,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \tacunfoldN{f}(\cons(b,\nil),n,c) \\
  &amp; = &amp; \cons(b,\tacunfoldN{f}(\nil,n,c)) \\
  &amp; = &amp; \cons(b,\unfoldN{f}(n,c))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -437,19 +463,19 @@ Posted on 2017-05-03 by nbloomf
 </div>
 <div class="test">
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_unfoldN_zero ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-3" data-line-number="3">_test_unfoldN_zero t k <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;unfoldN(zero,a) == nil&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \f a <span class="ot">-&gt;</span> eq (unfoldN f (zero <span class="ot">`withTypeOf`</span> k) a) (nil <span class="ot">`withTypeOf`</span> t)</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb9-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">_test_unfoldN_next ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Natural</span> n)</a>
-<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (a,a)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a a)) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-10" data-line-number="10">_test_unfoldN_next t _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;unfoldN(next(n),a) == if(isLft(f(a)),nil,cons(b,unfoldN(n,c)))&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-12" data-line-number="12">  \f n a <span class="ot">-&gt;</span> <span class="kw">case</span> f a <span class="kw">of</span></a>
-<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="dt">Left</span> ()     <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) (nil <span class="ot">`withTypeOf`</span> t)</a>
-<a class="sourceLine" id="cb9-14" data-line-number="14">    <span class="dt">Right</span> (c,b) <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) ((cons b (unfoldN f n c)) <span class="ot">`withTypeOf`</span> t)</a></code></pre></div>
+<a class="sourceLine" id="cb9-13" data-line-number="13">    <span class="dt">Left</span> ()          <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) (nil <span class="ot">`withTypeOf`</span> t)</a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">    <span class="dt">Right</span> (<span class="dt">Pair</span> c b) <span class="ot">-&gt;</span> eq (unfoldN f (next n) a) ((cons b (unfoldN f n c)) <span class="ot">`withTypeOf`</span> t)</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -487,9 +513,6 @@ Posted on 2017-05-03 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

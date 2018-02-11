@@ -44,9 +44,19 @@ Posted on 2017-05-12 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,19 +233,20 @@ Posted on 2017-05-12 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">ConsumingFold</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">LongestCommonPrefix</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">ConsumingFold</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">LongestCommonPrefix</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">AllAndAny</span></a></code></pre></div>
 <p>Today we’ll construct the lists of all suffixes (<span class="math inline">\(\tails\)</span>) and prefixes (<span class="math inline">\(\inits\)</span>) of a list. Starting with <span class="math inline">\(\tails\)</span>: this function should have a signature like <span class="math display">\[\lists{A} \rightarrow \lists{\lists{A}}.\]</span></p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\gamma = \cons(\nil,\nil)\)</span>, and define <span class="math inline">\(\sigma : A \times \lists{A} \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\sigma(a,x,z) = \cons(\cons(a,x),z).\]</span> Now define <span class="math inline">\(\tails : \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\tails = \cfoldr{\gamma}{\sigma}.\]</span></p>
@@ -359,14 +382,17 @@ Posted on 2017-05-12 by nbloomf
  &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\cons(\nil,\nil))) \\
  &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\map(\snoc(a,-))(\nil))) \\
  &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\nil)) \\
- &amp; = &amp; \cons(\snoc(a,\nil),\snoc(\nil,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \cons(\snoc(a,\nil),\snoc(\nil,\nil)) \\
  &amp; = &amp; \cons(\cons(a,\nil),\cons(\nil,\nil)) \\
  &amp; = &amp; \tails(\cons(a,\nil)) \\
- &amp; = &amp; \tails(\snoc(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \tails(\snoc(a,\nil)) \\
  &amp; = &amp; \tails(\snoc(a,x))
 \end{eqnarray*}\]</span> as claimed. Suppose now that the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tails(\snoc(a,\cons(b,x))) \\
- &amp; = &amp; \tails(\cons(b,\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \tails(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\tails(\snoc(a,x))) \\
  &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\snoc(\nil,\map(\snoc(a,-))(\tails(x)))) \\
  &amp; = &amp; \snoc(\nil,\cons(\cons(b,\snoc(a,x)),\map(\snoc(a,-))(\tails(x)))) \\
@@ -392,7 +418,8 @@ Posted on 2017-05-12 by nbloomf
  &amp; = &amp; \all(\suffix(-,\nil),\cons(\nil,\nil)) \\
  &amp; = &amp; \band(\suffix(\nil,\nil),\all(\suffix(-,\nil),\nil)) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Note that if <span class="math inline">\(\suffix(u,x) = \btrue\)</span> then <span class="math inline">\(\suffix(u,\cons(a,x)) = \btrue\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \all(\suffix(-,x),\tails(x)) \\
@@ -446,7 +473,8 @@ Posted on 2017-05-12 by nbloomf
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \inits(\cons(a,x)) \\
  &amp; = &amp; \rev(\map(\rev)(\tails(\rev(\cons(a,x))))) \\
- &amp; = &amp; \rev(\map(\rev)(\tails(\snoc(a,\rev(x))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+   = &amp; \rev(\map(\rev)(\tails(\snoc(a,\rev(x))))) \\
  &amp; = &amp; \rev(\map(\rev)(\snoc(\nil,\map(\snoc(a,-))(\tails(\rev(a)))))) \\
  &amp; = &amp; \rev(\snoc(\rev(\nil),\map(\rev)(\map(\snoc(a,-))(\tails(\rev(a)))))) \\
  &amp; = &amp; \rev(\snoc(\nil,\map(\rev)(\map(\snoc(a,-))(\tails(\rev(a)))))) \\
@@ -591,7 +619,7 @@ Posted on 2017-05-12 by nbloomf
 <a class="sourceLine" id="cb16-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a)), <span class="dt">Equal</span> (t (t a))</a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a)), <span class="dt">Equal</span> (t (t a))</a>
 <a class="sourceLine" id="cb16-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb16-7" data-line-number="7">_test_tails_inits t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb16-8" data-line-number="8">  testLabel2 <span class="st">&quot;tails &amp; inits&quot;</span> t n</a>
@@ -629,9 +657,6 @@ Posted on 2017-05-12 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

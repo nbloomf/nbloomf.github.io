@@ -44,9 +44,19 @@ Posted on 2017-05-24 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-24 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-24 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-24 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -219,9 +241,9 @@ Posted on 2017-05-24 by nbloomf
 <a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">BailoutFold</span></a>
 <a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
 <a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">AllAndAny</span></a>
 <a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">TailsAndInits</span></a>
@@ -272,13 +294,16 @@ Posted on 2017-05-24 by nbloomf
 <p>We consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(x,\nil) \\
  &amp; = &amp; \isnil(x) \\
- &amp; = &amp; \bor(\isnil(x),\isnil(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-idempotent}
+   = &amp; \bor(\isnil(x),\isnil(x)) \\
  &amp; = &amp; \bor(\prefix(x,\nil),\infix(x,\nil)) \\
- &amp; = &amp; \bor(\prefix(x,\nil),\infix(x,\tail(\nil)))
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-tail-nil}
+   = &amp; \bor(\prefix(x,\nil),\infix(x,\tail(\nil)))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(y = \cons(b,u)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(x,\cons(b,u)) \\
  &amp; = &amp; \bif{\prefix(x,\cons(b,u))}{\btrue}{\infix(x,u)} \\
- &amp; = &amp; \bor(\prefix(x,\cons(b,u)),\infix(x,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-is-if}
+   = &amp; \bor(\prefix(x,\cons(b,u)),\infix(x,u)) \\
  &amp; = &amp; \bor(\prefix(x,y),\infix(x,\tail(y)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -322,24 +347,30 @@ Posted on 2017-05-24 by nbloomf
 <li>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(x,\cat(y,x)) \\
  &amp; = &amp; \infix(x,\cat(\nil,x)) \\
- &amp; = &amp; \infix(x,x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+= &amp; \infix(x,x) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(y\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(x,\cat(\cons(b,y),x)) \\
- &amp; = &amp; \infix(x,\cons(b,\cat(y,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \infix(x,\cons(b,\cat(y,x))) \\
  &amp; = &amp; \bor(\prefix(x,\cons(b,\cat(y,x))),\infix(x,\cat(y,x))) \\
  &amp; = &amp; \bor(\prefix(x,\cons(b,\cat(y,x))),\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-right}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\infix(x,\cat(x,y)) = \infix(\nil,\cat(x,y)) = \btrue\]</span> as claimed. Suppose then that <span class="math inline">\(x = \cons(a,u)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(x,\cat(x,y)) \\
  &amp; = &amp; \infix(x,\cat(\cons(a,u),y)) \\
- &amp; = &amp; \infix(x,\cons(a,\cat(u,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \infix(x,\cons(a,\cat(u,y))) \\
  &amp; = &amp; \bor(\prefix(x,\cons(a,\cat(u,y))),\infix(x,\cat(u,y))) \\
- &amp; = &amp; \bor(\prefix(x,\cat(\cons(a,u),y)),\infix(x,\cat(u,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \bor(\prefix(x,\cat(\cons(a,u),y)),\infix(x,\cat(u,y))) \\
  &amp; = &amp; \bor(\prefix(x,\cat(x,y)),\infix(x,\cat(u,y))) \\
  &amp; = &amp; \bor(\btrue,\infix(x,\cat(u,y))) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -394,7 +425,8 @@ Posted on 2017-05-24 by nbloomf
  &amp;   &amp; \infix(x,\cons(a,y)) \\
  &amp; = &amp; \bor(\prefix(x,\cons(a,y)),\infix(x,y)) \\
  &amp; = &amp; \bor(\prefix(x,\cons(a,y)),\btrue) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-right}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -416,7 +448,8 @@ Posted on 2017-05-24 by nbloomf
 \end{eqnarray*}\]</span> We have two possibilities. First suppose <span class="math inline">\(\prefix(x,\cons(b,y)) = \btrue\)</span>. Then <span class="math inline">\(\prefix(x,\snoc(a,\cons(a,y))) = \btrue\)</span>, and so <span class="math inline">\(\infix(x,\snoc(a,\cons(b,y)))\)</span> as needed. Suppose instead that <span class="math inline">\(\infix(x,y) = \btrue\)</span>. By the inductive hypothesis we have <span class="math display">\[\infix(x,\snoc(a,y)) = \btrue,\]</span> and by the previous result we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \infix(x,\cons(b,\snoc(a,y))) \\
- &amp; = &amp; \infix(x,\snoc(a,\cons(b,y)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \infix(x,\snoc(a,\cons(b,y)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -448,7 +481,8 @@ Posted on 2017-05-24 by nbloomf
  &amp; = &amp; \infix(x,y) \\
  &amp; = &amp; \infix(x,\cat(z,y)) \\
  &amp; = &amp; \infix(x,\cons(a,\cat(z,y))) \\
- &amp; = &amp; \infix(x,\cat(\cons(a,z),y))
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \infix(x,\cat(\cons(a,z),y))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -489,7 +523,8 @@ Posted on 2017-05-24 by nbloomf
 \end{eqnarray*}\]</span> We have two possibilities. If <span class="math inline">\(\prefix(x,\cons(a,y)) = \btrue\)</span>, then <span class="math inline">\(\cons(a,y) = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>; now <span class="math display">\[\cons(a,y) = \cat(\nil,\cat(x,z))\]</span> as needed. Suppose instead that <span class="math inline">\(\infix(x,y) = \btrue\)</span>. By the inductive hypothesis we have <span class="math inline">\(y = \cat(u,\cat(x,v))\)</span> for some <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>, so that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cons(a,y) \\
  &amp; = &amp; \cons(a,\cat(u,\cat(x,v))) \\
- &amp; = &amp; \cat(\cons(a,u),\cat(x,v))
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \cat(\cons(a,u),\cat(x,v))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -527,7 +562,8 @@ Posted on 2017-05-24 by nbloomf
 <p><span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \infix(\snoc(a,x),\nil) \\
  &amp; = &amp; \isnil(\snoc(a,x)) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-isnil-snoc}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -576,7 +612,8 @@ Posted on 2017-05-24 by nbloomf
  &amp; = &amp; \cat(h,\cat(y,k)) \\
  &amp; = &amp; \cat(\nil,\cat(y,\nil)) \\
  &amp; = &amp; \cat(\nil,y) \\
- &amp; = &amp; y
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; y
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -735,9 +772,6 @@ Posted on 2017-05-24 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

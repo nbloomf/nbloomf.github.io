@@ -44,9 +44,19 @@ Posted on 2017-12-16 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-12-16 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-12-16 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-12-16 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -222,9 +244,9 @@ Posted on 2017-12-16 by nbloomf
 <a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">ConsumingFold</span></a>
 <a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
 <a class="sourceLine" id="cb1-27" data-line-number="27"><span class="kw">import</span> <span class="dt">Zip</span></a>
 <a class="sourceLine" id="cb1-28" data-line-number="28"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
@@ -245,14 +267,16 @@ Posted on 2017-12-16 by nbloomf
  &amp;   &amp; \nil \\
  &amp; = &amp; \takeWhile(p)(\nil) \\
  &amp; = &amp; \foldr{e}{\varphi}(\nil) \\
- &amp; = &amp; e
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; e
 \end{eqnarray*}\]</span></p>
 <p>and</p>
 <p><span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil} \\
  &amp; = &amp; \takeWhile(p)(\cons(a,x)) \\
  &amp; = &amp; \foldr{e}{\varphi}(\cons(a,x)) \\
- &amp; = &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \varphi(a,\foldr{e}{\varphi}(x)) \\
  &amp; = &amp; \varphi(a,\takeWhile(p,x))
 \end{eqnarray*}\]</span></p>
 <p>With this in mind, we define <span class="math inline">\(\takeWhile\)</span> like so.</p>
@@ -304,7 +328,8 @@ Posted on 2017-12-16 by nbloomf
  &amp; = &amp; \bif{p(a)}{\prefix(\cons(a,\takeWhile(p,x)),\cons(a,x))}{\prefix(\nil,\cons(a,x))} \\
  &amp; = &amp; \bif{p(a)}{\prefix(\takeWhile(p,x),x)}{\btrue} \\
  &amp; = &amp; \bif{p(a)}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -374,13 +399,16 @@ Posted on 2017-12-16 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \takeWhile(p,\takeWhile(q,\cons(a,x))) \\
  &amp; = &amp; \takeWhile(p,\bif{q(a)}{\cons(a,\takeWhile(q,x))}{\nil}) \\
- &amp; = &amp; \bif{q(a)}{\takeWhile(p,\cons(a,\takeWhile(q,x)))}{\takeWhile(p,\nil)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \bif{q(a)}{\takeWhile(p,\cons(a,\takeWhile(q,x)))}{\takeWhile(p,\nil)} \\
  &amp; = &amp; \bif{q(a)}{\bif{p(a)}{\cons(a,\takeWhile(p,\takeWhile(q,x)))}{\nil}}{\nil} \\
  &amp; = &amp; \bif{q(a)}{\bif{p(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\bif{p(a)}{\nil}{\nil}} \\
- &amp; = &amp; \bif{p(a)}{\bif{q(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\bif{q(a)}{\nil}{\nil}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-ifnest}
+   = &amp; \bif{p(a)}{\bif{q(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\bif{q(a)}{\nil}{\nil}} \\
  &amp; = &amp; \bif{p(a)}{\bif{q(a)}{\cons(a,\takeWhile(q,\takeWhile(p,x)))}{\nil}}{\nil} \\
  &amp; = &amp; \bif{p(a)}{\takeWhile(q,\cons(a,\takeWhile(p,x)))}{\takeWhile(q,\nil)} \\
- &amp; = &amp; \takeWhile(q,\bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
+   = &amp; \takeWhile(q,\bif{p(a)}{\cons(a,\takeWhile(p,x))}{\nil}) \\
  &amp; = &amp; \takeWhile(q,\takeWhile(p,\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -398,10 +426,12 @@ Posted on 2017-12-16 by nbloomf
  &amp;   &amp; \nil \\
  &amp; = &amp; \dropWhile(p,\nil) \\
  &amp; = &amp; \foldr{e}{\varphi}(\nil)(\nil) \\
- &amp; = &amp; e(\nil)
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
+   = &amp; e(\nil)
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \varphi(a,\foldr{e}{\varphi}(x))(\cons(a,x)) \\
- &amp; = &amp; \foldr{e}{\varphi}(\cons(a,x))(\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
+   = &amp; \foldr{e}{\varphi}(\cons(a,x))(\cons(a,x)) \\
  &amp; = &amp; \dropWhile(p,\cons(a,x)) \\
  &amp; = &amp; \bif{p(a)}{\dropWhile(p,x)}{\cons(a,x)}
 \end{eqnarray*}\]</span></p>
@@ -450,7 +480,8 @@ Posted on 2017-12-16 by nbloomf
  &amp; = &amp; \suffix(\bif{p(a)}{\dropWhile(p)(x)}{\cons(a,x)},\cons(a,x)) \\
  &amp; = &amp; \bif{p(a)}{\suffix(\dropWhile(p)(x),\cons(a,x))}{\suffix(\cons(a,x),\cons(a,x))} \\
  &amp; = &amp; \bif{p(a)}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -468,14 +499,16 @@ Posted on 2017-12-16 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\takeWhile(p)(\nil),\dropWhile(p)(\nil)) \\
  &amp; = &amp; \cat(\nil,\nil) \\
- &amp; = &amp; \nil
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \nil
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\takeWhile(p)(\cons(a,x)),\dropWhile(p)(\cons(a,x))) \\
  &amp; = &amp; \cat(\bif{p(a)}{\cons(a,\takeWhile(p)(x))}{\nil},\bif{p(a)}{\dropWhile(x)}{\cons(a,x)}) \\
  &amp; = &amp; \bif{p(a)}{\cat(\cons(a,\takeWhile(p)(x)),\dropWhile(p)(x))}{\cat(\nil,\cons(a,x))} \\
  &amp; = &amp; \bif{p(a)}{\cons(a,\cat(\takeWhile(p)(x)),\dropWhile(p)(x))}{\cons(a,x)} \\
  &amp; = &amp; \bif{p(a)}{\cons(a,x)}{\cons(a,x)} \\
- &amp; = &amp; \cons(a,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+   = &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -526,9 +559,6 @@ Posted on 2017-12-16 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

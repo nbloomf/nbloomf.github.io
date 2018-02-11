@@ -44,9 +44,19 @@ Posted on 2014-05-22 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2014-05-22 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -216,30 +238,50 @@ Posted on 2014-05-22 by nbloomf
 <p>Note that both simple recursion and bailout recursion produce functions with type <span class="math display">\[\nats \times A \rightarrow B;\]</span> we can call that <span class="math inline">\(A\)</span> argument the <em>parameter</em>. Now simple and bailout recursion use the parameter in different ways. Simple recursion is only allowed to change <span class="math inline">\(A\)</span> “outside” the recursive call, while bailout recursion can only change <span class="math inline">\(A\)</span> “inside” the recursive call. These restrictions were necessary so that simple and bailout recursion would have tail-recursive implementations. But there are times when we will want a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span> that can change its <span class="math inline">\(A\)</span> parameter both inside and outside the recursion.</p>
 <p>For this situation we introduce yet another recursion operator on <span class="math inline">\(\nats\)</span>, which we’ll call <em>mutating recursion</em>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have mappings <span class="math inline">\(\varepsilon : A \rightarrow B\)</span>, <span class="math inline">\(\beta : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span>, and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that <span class="math display">\[\Theta(\zero,a) = \varepsilon(a)\]</span> and <span class="math display">\[\Theta(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Theta(n,\omega(n,a)))}.\]</span> We denote this <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\mutrec{\varepsilon}{\beta}{\psi}{\chi}{\omega}\)</span>.</p>
+<p><span id="thm-mutrec-zero"></span><span id="thm-mutrec-next"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Suppose we have mappings <span class="math inline">\(\varepsilon : A \rightarrow B\)</span>, <span class="math inline">\(\beta : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span>, <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span>, and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> such that <span class="math display">\[Θ(\zero,a) = \varepsilon(a)\]</span> and <span class="math display">\[Θ(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,Θ(n,\omega(n,a)))}.\]</span> We denote this <span class="math inline">\(Θ\)</span> by <span class="math inline">\(\mutrec{\varepsilon}{\beta}{\psi}{\chi}{\omega}\)</span>.</p>
 <div class="proof">
-<p>Define <span class="math inline">\(\delta \in B^{A \times \nats}\)</span> by <span class="math display">\[\delta(a,n) = \varepsilon(a)\]</span> and <span class="math inline">\(\sigma : B^{A \times \nats} \rightarrow B^{A \times \nats}\)</span> by <span class="math display">\[\sigma(g)(a,n) = \bif{\beta(\prev(n),a)}{\psi(\prev(n),a)}{\chi(\prev(n),a,g(\omega(\prev(n),a)),\prev(n))}.\]</span> Now <span class="math inline">\((B^{A \times \nats},\delta,\sigma)\)</span> is an iterative set. We now define <span class="math display">\[\Theta(n,a) = \natrec{\delta}{\sigma}(n)(a,n).\]</span></p>
-<p>To see that <span class="math inline">\(\Theta\)</span> has the claimed properties, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\zero,a) \\
- &amp; = &amp; \natrec{\delta}{\sigma}(\zero)(a,\zero) \\
- &amp; = &amp; \delta(a,\zero) \\
- &amp; = &amp; \varepsilon(a)
+<p>Define <span class="math inline">\(δ \in B^{A \times \nats}\)</span> by <span class="math display">\[δ(a,n) = \varepsilon(a)\]</span> and <span class="math inline">\(σ : B^{A \times \nats} \rightarrow B^{A \times \nats}\)</span> by <span class="math display">\[σ(g)(a,n) = \bif{\beta(\prev(n),a)}{\psi(\prev(n),a)}{\chi(\prev(n),a,g(\omega(\prev(n),a)),\prev(n))}.\]</span> Now <span class="math inline">\((B^{A \times \nats},δ,σ)\)</span> is an iterative set. We now define <span class="math display">\[Θ(n,a) = \natrec{δ}{σ}(n)(\tup(a)(n)).\]</span></p>
+<p>To see that <span class="math inline">\(Θ\)</span> has the claimed properties, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Θ(\zero,a) \\
+ &amp;     \let{Θ(n,a) = \natrec{δ}{σ}(n)(\tup(a)(n))}
+   = &amp; \natrec{δ}{σ}(\zero)(\tup(a)(\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
+   = &amp; δ(\tup(a)(\zero)) \\
+ &amp;     \let{δ(\tup(a)(n)) = \varepsilon(a)}
+   = &amp; \varepsilon(a)
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(n),a) \\
- &amp; = &amp; \natrec{\delta}{\sigma}(\next(n))(a,\next(n)) \\
- &amp; = &amp; \sigma(\natrec{\delta}{\sigma}(n))(a,\next(n)) \\
- &amp; = &amp; \bif{\beta(\prev(\next(n)),a)}{\psi(\prev(\next(n)),a)}{\chi(\prev(\next(n)),a,\natrec{\delta}{\sigma}(n)(\omega(\prev(\next(n)),a),\prev(\next(n))))} \\
- &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\natrec{\delta}{\sigma}(n)(\omega(n,a),n))}
+ &amp;   &amp; Θ(\next(n),a) \\
+ &amp;     \let{Θ(n,a) = \natrec{δ}{σ}(n)(\tup(a)(n))}
+   = &amp; \natrec{δ}{σ}(\next(n))(\tup(a)(\next(n))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
+   = &amp; σ(\natrec{δ}{σ}(n))(\tup(a)(\next(n))) \\
+ &amp;     \let{σ(g)(\tup(a)(n)) = \bif{\beta(\prev(n),a)}{\psi(\prev(n),a)}{\chi(\prev(n),a,g(\omega(\prev(n),a),\prev(n)))}}
+   = &amp; \bif{\beta(\prev(\next(n)),a)}{\psi(\prev(\next(n)),a)}{\chi(\prev(\next(n)),a,\natrec{δ}{σ}(n)(\omega(\prev(\next(n)),a),\prev(\next(n))))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+   = &amp; \bif{\beta(n,a)}{\psi(\prev(\next(n)),a)}{\chi(\prev(\next(n)),a,\natrec{δ}{σ}(n)(\omega(\prev(\next(n)),a),\prev(\next(n))))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+   = &amp; \bif{\beta(n,a)}{\psi(\prev(\next(n)),a)}{\chi(n,a,\natrec{δ}{σ}(n)(\omega(\prev(\next(n)),a),\prev(\next(n))))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+   = &amp; \bif{\beta(n,a)}{\psi(\prev(\next(n)),a)}{\chi(n,a,\natrec{δ}{σ}(n)(\omega(n,a),\prev(\next(n))))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+   = &amp; \bif{\beta(n,a)}{\psi(\prev(\next(n)),a)}{\chi(n,a,\natrec{δ}{σ}(n)(\omega(n,a),n))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
+   = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\natrec{δ}{σ}(n)(\omega(n,a),n))}
 \end{eqnarray*}\]</span> as claimed.</p>
-<p>Now we show that <span class="math inline">\(\Theta\)</span> is unique with this property. To that end, suppose <span class="math inline">\(\Psi\)</span> does as well; we show that <span class="math inline">\(\Theta(n,a) = \Psi(n,a)\)</span> for all <span class="math inline">\(n\)</span> by induction. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\zero,a) \\
- &amp; = &amp; \varepsilon(a) \\
- &amp; = &amp; \Psi(\zero,a).
+<p>Now we show that <span class="math inline">\(Θ\)</span> is unique with this property. To that end, suppose <span class="math inline">\(\Psi\)</span> does as well; we show that <span class="math inline">\(Θ(n,a) = \Psi(n,a)\)</span> for all <span class="math inline">\(n\)</span> by induction. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; Θ(\zero,a) \\
+ &amp;     \hyp{Θ(\zero,a) = \varepsilon(a)}
+   = &amp; \varepsilon(a) \\
+ &amp;     \hyp{\Psi(\zero,a) = \varepsilon(a)}
+   = &amp; \Psi(\zero,a)
 \end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(n\)</span>. Now <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \Theta(\next(n),a) \\
- &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Theta(n,\omega(n,a)))} \\
- &amp; = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Psi(n,\omega(n,a)))} \\
- &amp; = &amp; \Psi(\next(n),a)
+ &amp;   &amp; Θ(\next(n),a) \\
+ &amp;     \hyp{Θ(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,Θ(n,\omega(n,a)))}}
+   = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,Θ(n,\omega(n,a)))} \\
+ &amp;     \hyp{Θ(n,a) = \Psi(n,a)}
+   = &amp; \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Psi(n,\omega(n,a)))} \\
+ &amp;     \hyp{\Psi(\next(n),a) = \bif{\beta(n,a)}{\psi(n,a)}{\chi(n,a,\Psi(n,\omega(n,a)))}}
+   = &amp; \Psi(\next(n),a)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 </div>
@@ -325,9 +367,6 @@ Posted on 2014-05-22 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

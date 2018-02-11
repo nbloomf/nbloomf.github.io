@@ -44,9 +44,19 @@ Posted on 2017-05-23 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-23 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-23 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-23 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -220,9 +242,9 @@ Posted on 2017-05-23 by nbloomf
 <a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
 <a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Snoc</span></a>
 <a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Map</span></a>
 <a class="sourceLine" id="cb1-24" data-line-number="24"><span class="kw">import</span> <span class="dt">UnfoldN</span></a>
 <a class="sourceLine" id="cb1-25" data-line-number="25"><span class="kw">import</span> <span class="dt">Zip</span></a>
 <a class="sourceLine" id="cb1-26" data-line-number="26"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a>
@@ -306,11 +328,13 @@ Posted on 2017-05-23 by nbloomf
 <ol type="1">
 <li>There are two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\nil,\snoc(b,\nil)) \\
- &amp; = &amp; \sublist(\nil,\cons(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+= &amp; \sublist(\nil,\cons(b,\nil)) \\
  &amp; = &amp; \btrue,
 \end{eqnarray*}\]</span> and if <span class="math inline">\(y = \cons(c,u)\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\nil,\snoc(b,\cons(c,u))) \\
- &amp; = &amp; \sublist(\nil,\cons(c,\snoc(b,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \sublist(\nil,\cons(c,\snoc(b,u))) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. We show that <span class="math inline">\(\sublist(\snoc(a,\nil),\snoc(a,y)) = \btrue\)</span> by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\sublist(\snoc(a,\nil),\snoc(a,\nil)) = \btrue\]</span> by reflexivity. For the inductive step (on <span class="math inline">\(y\)</span>), suppose the equality holds for some <span class="math inline">\(y\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
@@ -319,19 +343,22 @@ Posted on 2017-05-23 by nbloomf
  &amp; = &amp; \bif{\beq(a,b)}{\sublist(\nil,\snoc(a,y))}{\sublist(\cons(a,\nil),\snoc(a,y))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\sublist(\snoc(a,\nil),\snoc(a,y))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step (on <span class="math inline">\(x\)</span>), suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(c \in A\)</span>. We need to show that <span class="math display">\[\sublist(\cons(c,x),y) = \sublist(\snoc(a,\cons(c,x)),\snoc(a,y))\]</span> for all <span class="math inline">\(y\)</span>; we again proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\cons(c,x),y) \\
  &amp; = &amp; \sublist(\cons(c,x),\nil) \\
  &amp; = &amp; \isnil(\cons(c,x)) \\
- &amp; = &amp; \bfalse,
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> and likewise <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\snoc(a,\cons(c,x)),\snoc(a,y)) \\
  &amp; = &amp; \sublist(\snoc(a,\cons(c,x)),\snoc(a,\nil)) \\
  &amp; = &amp; \sublist(\cons(c,\snoc(a,x)),\cons(a,\nil)) \\
  &amp; = &amp; \bif{\beq(c,a)}{\sublist(\snoc(a,x),\nil)}{\sublist(\cons(c,\snoc(a,x)),\nil)} \\
  &amp; = &amp; \bif{\beq(c,a)}{\bfalse}{\bfalse} \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as needed. For the inductive step (on <span class="math inline">\(y\)</span>), suppose we have <span class="math display">\[\sublist(\cons(c,x),y) = \sublist(\snoc(a,\cons(c,x)),\snoc(a,y))\]</span> for some <span class="math inline">\(y\)</span>, and let <span class="math inline">\(b \in A\)</span>. Using both the outer and nested inductive hypotheses we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\snoc(a,\cons(c,x)),\snoc(a,\cons(b,y))) \\
  &amp; = &amp; \sublist(\cons(c,\snoc(a,x)),\cons(b,\snoc(a,y))) \\
@@ -415,7 +442,8 @@ Posted on 2017-05-23 by nbloomf
  &amp;   &amp; \sublist(\cons(c,x),\cons(b,y)) \\
  &amp; = &amp; \bif{\beq(c,b)}{\sublist(x,y)}{\sublist(\cons(c,x),y)} \\
  &amp; = &amp; \bif{\beq(c,b)}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 <p>Next we claim that (2) holds with <span class="math inline">\(x\)</span> replaced by <span class="math inline">\(\cons(c,x)\)</span>. That is, for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(y \in \lists{A}\)</span>, if <span class="math inline">\(\sublist(\cons(a,\cons(c,x)),y) = \btrue\)</span> then <span class="math inline">\(\sublist(\cons(c,x),y) = \btrue\)</span>. We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\cons(a,\cons(c,x)),y) \\
@@ -436,7 +464,8 @@ Posted on 2017-05-23 by nbloomf
  &amp;   &amp; \sublist(\cons(c,x),\cons(d,y)) \\
  &amp; = &amp; \bif{\beq(c,d)}{\sublist(x,y)}{\sublist(\cons(c,x),y)} \\
  &amp; = &amp; \bif{\beq(c,d)}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -470,7 +499,8 @@ Posted on 2017-05-23 by nbloomf
 \end{eqnarray*}\]</span> we have <span class="math inline">\(x = \nil\)</span>, so that <span class="math inline">\(\length(x) = \zero\)</span>. Thus <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nleq(\length(x),\length(y)) \\
  &amp; = &amp; \nleq(\zero,\zero) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-reflexive}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span>, and let <span class="math inline">\(b \in A\)</span>. We consider two cases for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(x,\cons(b,y)) \\
  &amp; = &amp; \sublist(\nil,\cons(b,y)) \\
@@ -487,7 +517,8 @@ Posted on 2017-05-23 by nbloomf
 \end{eqnarray*}\]</span> By the induction hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \nleq(\length(u),\length(y)) \\
- &amp; = &amp; \nleq(\next(\length(u)),\next(\length(y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+   = &amp; \nleq(\next(\length(u)),\next(\length(y))) \\
  &amp; = &amp; \nleq(\length(\cons(a,u)),\length(\cons(b,y))) \\
  &amp; = &amp; \nleq(\length(x),\length(\cons(b,y)))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(a \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -526,7 +557,8 @@ Posted on 2017-05-23 by nbloomf
  &amp;   &amp; \sublist(\cons(a,x),y) \\
  &amp; = &amp; \sublist(\cons(a,x),\nil) \\
  &amp; = &amp; \isnil(\cons(a,x)) \\
- &amp; = &amp; \bfalse.
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> Thus the implication holds vacuously. Suppose instead that <span class="math inline">\(y = \cons(b,v)\)</span>, and suppose further that <span class="math inline">\(\sublist(\cons(a,x),\cons(b,v))\)</span> and <span class="math inline">\(\sublist(\cons(b,v),\cons(a,x))\)</span> are both <span class="math inline">\(\btrue\)</span>. If <span class="math inline">\(a \neq b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(\cons(b,v),\cons(a,x)) \\
@@ -617,21 +649,24 @@ Posted on 2017-05-23 by nbloomf
  &amp;   &amp; \sublist(\snoc(a,x),y) \\
  &amp; = &amp; \sublist(\snoc(a,x),\nil) \\
  &amp; = &amp; \isnil(\snoc(a,x)) \\
- &amp; = &amp; \bfalse.
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-isnil-snoc}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> We will now show that <span class="math inline">\(\sublist(\snoc(a,x),\snoc(b,\nil)) = \bfalse\)</span> by considering two cases for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\snoc(a,x),\snoc(b,\nil)) \\
  &amp; = &amp; \sublist(\snoc(a,\nil),\snoc(b,\nil)) \\
  &amp; = &amp; \sublist(\cons(a,\nil),\cons(b,\nil)) \\
  &amp; = &amp; \sublist(\cons(a,\nil),\nil) \\
  &amp; = &amp; \isnil(\cons(a,\nil)) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(x = \cons(c,u)\)</span> and <span class="math inline">\(\sublist(\snoc(a,x),\snoc(b,\nil)) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \nleq(\length(\snoc(a,x)),\length(\snoc(b,\nil))) \\
  &amp; = &amp; \nleq(\next(\length(x)),\next(\length(\nil))) \\
  &amp; = &amp; \nleq(\next(\length(\cons(c,u))),\next(\zero)) \\
  &amp; = &amp; \nleq(\next(\next(\length(u))),\next(\zero)) \\
- &amp; = &amp; \bfalse,
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-next-one}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> a contradiction.</p>
 <p>Now for the inductive step, suppose the equality holds for some <span class="math inline">\(y\)</span>. That is, for all <span class="math inline">\(a \neq b\)</span> and all <span class="math inline">\(x\)</span> we have <span class="math display">\[\sublist(\snoc(a,x),\snoc(b,y)) = \sublist(\snoc(a,x),y).\]</span> Let <span class="math inline">\(d \in A\)</span>. We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\snoc(a,x),\snoc(b,\cons(d,y))) \\
@@ -642,7 +677,8 @@ Posted on 2017-05-23 by nbloomf
  &amp; = &amp; \bif{\beq(a,d)}{\btrue}{\sublist(\snoc(a,\nil),y)} \\
  &amp; = &amp; \bif{\beq(a,d)}{\sublist(\nil,y)}{\sublist(\cons(a,\nil),y)} \\
  &amp; = &amp; \sublist(\cons(a,\nil),\cons(d,y)) \\
- &amp; = &amp; \sublist(\snoc(a,\nil),\cons(d,y))
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \sublist(\snoc(a,\nil),\cons(d,y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(x = \cons(c,u)\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\snoc(a,x),\snoc(b,\cons(d,y))) \\
  &amp; = &amp; \sublist(\snoc(a,\cons(c,u)),\snoc(b,\cons(d,y))) \\
@@ -650,9 +686,11 @@ Posted on 2017-05-23 by nbloomf
  &amp; = &amp; \bif{\beq(c,d)}{\sublist(\snoc(a,u),\snoc(b,y))}{\sublist(\cons(c,\snoc(a,u)),\snoc(b,y))} \\
  &amp; = &amp; \bif{\beq(c,d)}{\sublist(\snoc(a,u),y)}{\sublist(\snoc(a,\cons(c,u)),\snoc(b,y))} \\
  &amp; = &amp; \bif{\beq(c,d)}{\sublist(\snoc(a,u),y)}{\sublist(\snoc(a,\cons(c,u)),y)} \\
- &amp; = &amp; \bif{\beq(c,d)}{\sublist(\snoc(a,u),y)}{\sublist(\cons(c,\snoc(a,u)),y)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \bif{\beq(c,d)}{\sublist(\snoc(a,u),y)}{\sublist(\cons(c,\snoc(a,u)),y)} \\
  &amp; = &amp; \sublist(\cons(c,\snoc(a,u)),\cons(d,y)) \\
- &amp; = &amp; \sublist(\snoc(a,\cons(c,u)),\cons(d,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \sublist(\snoc(a,\cons(c,u)),\cons(d,y)) \\
  &amp; = &amp; \sublist(\snoc(a,x),\cons(d,y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -676,14 +714,16 @@ Posted on 2017-05-23 by nbloomf
  &amp; = &amp; \isnil(x) \\
  &amp; = &amp; \isnil(\rev(x)) \\
  &amp; = &amp; \sublist(\rev(x),\nil) \\
- &amp; = &amp; \sublist(\rev(x),\rev(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \sublist(\rev(x),\rev(\nil)) \\
  &amp; = &amp; \sublist(\rev(x),\rev(y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span> and let <span class="math inline">\(b \in A\)</span>. We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(x,\cons(b,y)) \\
  &amp; = &amp; \sublist(\nil,\cons(b,y)) \\
  &amp; = &amp; \btrue \\
  &amp; = &amp; \sublist(\nil,\rev(\cons(b,y))) \\
- &amp; = &amp; \sublist(\rev(\nil),\rev(\cons(b,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \sublist(\rev(\nil),\rev(\cons(b,y))) \\
  &amp; = &amp; \sublist(\rev(x),\rev(\cons(b,y)))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(x = \cons(a,w)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp; = &amp; \sublist(\rev(x),\rev(\cons(b,y))) \\
@@ -764,14 +804,16 @@ Posted on 2017-05-23 by nbloomf
 <li>We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, suppose <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. Then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(x,\cat(z,y)) \\
  &amp; = &amp; \sublist(x,\cat(\nil,y)) \\
- &amp; = &amp; \sublist(x,y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+= &amp; \sublist(x,y) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for some <span class="math inline">\(z\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(x,y) \\
  &amp; = &amp; \sublist(x,\cat(z,y)) \\
  &amp; = &amp; \sublist(x,\cons(a,\cat(z,y))) \\
- &amp; = &amp; \sublist(x,\cat(\cons(a,z),y))
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \sublist(x,\cat(\cons(a,z),y))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Suppose <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
@@ -785,11 +827,13 @@ Posted on 2017-05-23 by nbloomf
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(\cat(z,x),y) \\
  &amp; = &amp; \sublist(\cat(\nil,x),y) \\
- &amp; = &amp; \sublist(x,y)
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+= &amp; \sublist(x,y)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> for some <span class="math inline">\(z\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\sublist(\cat(\cons(a,z),x),y) = \btrue\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(\cat(\cons(a,z),x),y) \\
- &amp; = &amp; \sublist(\cons(a,\cat(z,x)),y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+= &amp; \sublist(\cons(a,\cat(z,x)),y) \\
  &amp; = &amp; \sublist(\cat(z,x),y) \\
  &amp; = &amp; \sublist(x,y)
 \end{eqnarray*}\]</span> as needed.</li>
@@ -840,48 +884,30 @@ Posted on 2017-05-23 by nbloomf
 <a class="sourceLine" id="cb15-34" data-line-number="34">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
-<p><span class="math inline">\(\sublist\)</span> interacts with <span class="math inline">\(\map\)</span>.</p>
+<p><span class="math inline">\(\sublist\)</span> interacts with <span class="math inline">\(\map(f)\)</span> when <span class="math inline">\(f\)</span> is injective.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(f : A \rightarrow B\)</span> injective. If <span class="math inline">\(\sublist(x,y) = \btrue\)</span>, then <span class="math inline">\(\sublist(\map(f)(x),\map(f)(y)) = \btrue\)</span>.</p>
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span> injective. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\sublist(\map(f)(x),\map(f)(y)) = \sublist(x,y).\]</span></p>
 <div class="proof">
-<p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, suppose <span class="math inline">\(\sublist(x,y) = \btrue\)</span>. Then in fact <span class="math inline">\(x = \nil\)</span>. In this case we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \sublist(\map(f)(x),\map(f)(y)) \\
- &amp; = &amp; \sublist(\map(f)(\nil),\map(f)(\nil)) \\
- &amp; = &amp; \sublist(\nil,\nil) \\
- &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span> and let <span class="math inline">\(b \in A\)</span>. Suppose further that <span class="math inline">\(\sublist(x,\cons(a,y)) = \btrue\)</span>. We have two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \sublist(\map(f)(x),\map(f)(\cons(a,y))) \\
- &amp; = &amp; \sublist(\map(f)(\nil),\map(f)(\cons(a,y))) \\
- &amp; = &amp; \sublist(\nil,\map(f)(\cons(a,y))) \\
- &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(x = \cons(a,u)\)</span>. Note that if <span class="math inline">\(f(a) = f(b)\)</span> then <span class="math inline">\(a = b\)</span> (since <span class="math inline">\(f\)</span> is injective) and we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \btrue \\
- &amp; = &amp; \sublist(x,\cons(b,y)) \\
- &amp; = &amp; \sublist(\cons(a,u),\cons(b,y)) \\
- &amp; = &amp; \sublist(u,y),
-\end{eqnarray*}\]</span> and if <span class="math inline">\(f(a) \neq f(b)\)</span>, then <span class="math inline">\(a \neq b\)</span> (since <span class="math inline">\(f\)</span> is injective), and we have <span class="math display">\[\begin{eqnarray*}
+<p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \sublist(\map(f)(x),\map(f)(\nil)) \\
+ &amp; = &amp; \sublist(\map(f)(x),\nil) \\
+ &amp; = &amp; \isnil(\map(f)(x)) \\
+ &amp; = &amp; \isnil(x) \\
+ &amp; = &amp; \sublist(x,\nil)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equation holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span>, and let <span class="math inline">\(b \in A\)</span>. We have two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \sublist(\map(f)(\nil),\map(f)(\cons(b,y))) \\
+ &amp; = &amp; \sublist(\nil,\map(f)(\cons(b,y))) \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \sublist(x,\cons(b,y)) \\
- &amp; = &amp; \sublist(\cons(a,u),\cons(b,y)) \\
- &amp; = &amp; \sublist(\cons(a,u),y) \\
- &amp; = &amp; \sublist(x,y).
-\end{eqnarray*}\]</span> In either case, using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \sublist(\map(f)(x),\map(f)(\cons(b,y))) \\
- &amp; = &amp; \sublist(\map(f)(\cons(a,u)),\map(f)(\cons(b,y))) \\
- &amp; = &amp; \sublist(\cons(f(a),\map(f)(u)),\cons(f(b),\map(f)(y))) \\
+ &amp; = &amp; \sublist(\nil,\cons(b,y))
+\end{eqnarray*}\]</span> as claimed. Suppose instead that <span class="math inline">\(x = \cons(a,u)\)</span>. Note that since <span class="math inline">\(f\)</span> is injective we have <span class="math inline">\(\beq(f(a),f(b)) = \beq(a,b)\)</span>; then we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \sublist(\map(f)(\cons(a,u)),\map(f)(\cons(b,y))) \\
+ &amp; = &amp; \sublist(\cons(f(a),\map(f)(u)),\cons(f(b))(\map(f)(y))) \\
  &amp; = &amp; \bif{\beq(f(a),f(b))}{\sublist(\map(f)(u),\map(f)(y))}{\sublist(\cons(f(a),\map(f)(u)),\map(f)(y))} \\
- &amp; = &amp; \bif{\beq(f(a),f(b))}{\sublist(\map(f)(u),\map(f)(y))}{\sublist(\map(f)(\cons(a,u)),\map(f)(y))} \\
- &amp; = &amp; \bif{\beq(f(a),f(b))}{\sublist(\map(f)(u),\map(f)(y))}{\sublist(\map(f)(x),\map(f)(y))} \\
- &amp; = &amp; \bif{\beq(f(a),f(b))}{\btrue}{\btrue} \\
- &amp; = &amp; \btrue
+ &amp; = &amp; \bif{\beq(f(a),f(b))}{\sublist(u,y)}{\sublist(\map(f)(\cons(a,u)),\map(f)(y))} \\
+ &amp; = &amp; \bif{\beq(f(a),f(b))}{\sublist(u,y)}{\sublist(\cons(a,u),y)} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\sublist(u,y)}{\sublist(\cons(a,u),y)} \\
+ &amp; = &amp; \sublist(\cons(a,u),\cons(b,y))
 \end{eqnarray*}\]</span> as needed.</p>
-</div>
-<div class="test">
-<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_sublist_map ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">_test_sublist_map _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">  testName <span class="st">&quot;if sublist(x,y) then sublist(map(f)(x),map(f)(y))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">  \f x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y <span class="kw">then</span> sublist (map f x) (map f y) <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\sublist\)</span> interacts with <span class="math inline">\(\filter\)</span>.</p>
@@ -907,11 +933,11 @@ Posted on 2017-05-23 by nbloomf
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">_test_sublist_filter ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb17-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb17-3" data-line-number="3">_test_sublist_filter _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">  testName <span class="st">&quot;sublist(filter(p)(x),x)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb17-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> sublist (filter p x) x</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">_test_sublist_filter ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">_test_sublist_filter _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  testName <span class="st">&quot;sublist(filter(p)(x),x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  \p x <span class="ot">-&gt;</span> sublist (filter p x) x</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\sublist\)</span> interacts conditionally with <span class="math inline">\(\any\)</span> and <span class="math inline">\(\all\)</span>.</p>
@@ -930,40 +956,44 @@ Posted on 2017-05-23 by nbloomf
  &amp; = &amp; \bif{\beq(a,b)}{\sublist(u,y)}{\sublist(\cons(a,u),y)} \\
  &amp; = &amp; \bif{\beq(a,b)}{\all(p,u)}{\all(p,\cons(a,u))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\all(p,\cons(a,u))}{\all(p,\cons(a,u))} \\
- &amp; = &amp; \all(p,\cons(a,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
+= &amp; \all(p,\cons(a,u)) \\
  &amp; = &amp; \all(p,x)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We prove this implication by contraposition. Suppose <span class="math inline">\(\any(p,y) = \bfalse\)</span>; then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
- &amp; = &amp; \bnot(\bfalse) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-false}
+= &amp; \bnot(\bfalse) \\
  &amp; = &amp; \bnot(\any(p,y)) \\
  &amp; = &amp; \all(\bnot \circ p, y).
 \end{eqnarray*}\]</span> Using (1), we thus have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bfalse \\
- &amp; = &amp; \bnot(\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-true}
+= &amp; \bnot(\btrue) \\
  &amp; = &amp; \bnot(\all(\bnot \circ p,x)) \\
  &amp; = &amp; \bnot(\bnot(\any(p,x))) \\
- &amp; = &amp; \any(p,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/Not.html#thm-not-involution}
+= &amp; \any(p,x)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">_test_sublist_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb18-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb18-3" data-line-number="3">_test_sublist_all _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb18-4" data-line-number="4">  testName <span class="st">&quot;if sublist(x,y) then if all(p)(y) then all(p)(x)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">  \p x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="kw">then</span> <span class="kw">if</span> all p y <span class="kw">then</span> all p x <span class="kw">else</span> true</a>
-<a class="sourceLine" id="cb18-7" data-line-number="7">    <span class="kw">else</span> true</a>
-<a class="sourceLine" id="cb18-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb18-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb18-10" data-line-number="10"><span class="ot">_test_sublist_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb18-11" data-line-number="11">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb18-12" data-line-number="12">_test_sublist_any _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb18-13" data-line-number="13">  testName <span class="st">&quot;if sublist(x,y) then if any(p)(x) then any(p)(y)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb18-14" data-line-number="14">  \p x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
-<a class="sourceLine" id="cb18-15" data-line-number="15">    <span class="kw">then</span> <span class="kw">if</span> any p x <span class="kw">then</span> any p y <span class="kw">else</span> true</a>
-<a class="sourceLine" id="cb18-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">_test_sublist_all ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb17-3" data-line-number="3">_test_sublist_all _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  testName <span class="st">&quot;if sublist(x,y) then if all(p)(y) then all(p)(x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb17-5" data-line-number="5">  \p x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
+<a class="sourceLine" id="cb17-6" data-line-number="6">    <span class="kw">then</span> <span class="kw">if</span> all p y <span class="kw">then</span> all p x <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb17-7" data-line-number="7">    <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb17-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb17-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb17-10" data-line-number="10"><span class="ot">_test_sublist_any ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb17-11" data-line-number="11">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb17-12" data-line-number="12">_test_sublist_any _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb17-13" data-line-number="13">  testName <span class="st">&quot;if sublist(x,y) then if any(p)(x) then any(p)(y)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb17-14" data-line-number="14">  \p x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
+<a class="sourceLine" id="cb17-15" data-line-number="15">    <span class="kw">then</span> <span class="kw">if</span> any p x <span class="kw">then</span> any p y <span class="kw">else</span> true</a>
+<a class="sourceLine" id="cb17-16" data-line-number="16">    <span class="kw">else</span> true</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\sublist\)</span> is destroyed by <span class="math inline">\(\cons\)</span>.</p>
@@ -973,13 +1003,40 @@ Posted on 2017-05-23 by nbloomf
 <p>Suppose to the contrary that <span class="math inline">\(\sublist(\cons(a,y),x) = \btrue\)</span>. By transitivity we have <span class="math inline">\(\sublist(\cons(a,y),y)\)</span>, and we also have <span class="math inline">\(\sublist(y,\cons(a,y))\)</span>, so by antisymmetry we have <span class="math inline">\(y = \cons(a,y)\)</span> – a contradiction.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">_test_sublist_cons_not ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
-<a class="sourceLine" id="cb19-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb19-3" data-line-number="3">_test_sublist_cons_not _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb19-4" data-line-number="4">  testName <span class="st">&quot;if sublist(x,y) then eq(sublist(cons(a,y),x),false)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb19-5" data-line-number="5">  \p a x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
-<a class="sourceLine" id="cb19-6" data-line-number="6">    <span class="kw">then</span> eq (sublist (cons a y) x) false</a>
-<a class="sourceLine" id="cb19-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="ot">_test_sublist_cons_not ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">_test_sublist_cons_not _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb18-4" data-line-number="4">  testName <span class="st">&quot;if sublist(x,y) then eq(sublist(cons(a,y),x),false)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  \p a x y <span class="ot">-&gt;</span> <span class="kw">if</span> sublist x y</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">    <span class="kw">then</span> eq (sublist (cons a y) x) false</a>
+<a class="sourceLine" id="cb18-7" data-line-number="7">    <span class="kw">else</span> true</a></code></pre></div>
+</div>
+</div>
+<p><span class="math inline">\(\sublist\)</span> on singleton lists is equivalent to <span class="math inline">\(\elt\)</span>.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\sublist(\cons(a,\nil),x) = \elt(a,x).\]</span></p>
+<div class="proof">
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \sublist(\cons(a,\nil),\nil) \\
+ &amp; = &amp; \isnil(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-isnil-cons}
+   = &amp; \bfalse \\
+ &amp; = &amp; \elt(a,\nil)
+\end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \sublist(\cons(a,\nil),\cons(b,x)) \\
+ &amp; = &amp; \bif{\beq(a,b)}{\sublist(\nil,x)}{\sublist(\cons(a,\nil),x)} \\
+ &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
+ &amp; = &amp; \elt(a,\cons(b,x))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">_test_sublist_singleton_elt ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t a))</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3">_test_sublist_singleton_elt _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">  testName <span class="st">&quot;sublist(cons(a,nil),x) == elt(a,x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  \a x <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">    (sublist (cons a nil) x)</a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">    (elt a x)</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
@@ -987,7 +1044,7 @@ Posted on 2017-05-23 by nbloomf
 <div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">_test_sublist ::</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
 <a class="sourceLine" id="cb20-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb20-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
 <a class="sourceLine" id="cb20-5" data-line-number="5">  , <span class="dt">Natural</span> n</a>
 <a class="sourceLine" id="cb20-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb20-7" data-line-number="7">_test_sublist t n maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
@@ -1021,11 +1078,11 @@ Posted on 2017-05-23 by nbloomf
 <a class="sourceLine" id="cb20-35" data-line-number="35">  runTest args (_test_sublist_right_cat_right t)</a>
 <a class="sourceLine" id="cb20-36" data-line-number="36">  runTest args (_test_sublist_left_cat_left t)</a>
 <a class="sourceLine" id="cb20-37" data-line-number="37">  runTest args (_test_sublist_right_cat_left t)</a>
-<a class="sourceLine" id="cb20-38" data-line-number="38">  runTest args (_test_sublist_map t)</a>
-<a class="sourceLine" id="cb20-39" data-line-number="39">  runTest args (_test_sublist_filter t)</a>
-<a class="sourceLine" id="cb20-40" data-line-number="40">  runTest args (_test_sublist_all t)</a>
-<a class="sourceLine" id="cb20-41" data-line-number="41">  runTest args (_test_sublist_any t)</a>
-<a class="sourceLine" id="cb20-42" data-line-number="42">  runTest args (_test_sublist_cons_not t)</a></code></pre></div>
+<a class="sourceLine" id="cb20-38" data-line-number="38">  runTest args (_test_sublist_filter t)</a>
+<a class="sourceLine" id="cb20-39" data-line-number="39">  runTest args (_test_sublist_all t)</a>
+<a class="sourceLine" id="cb20-40" data-line-number="40">  runTest args (_test_sublist_any t)</a>
+<a class="sourceLine" id="cb20-41" data-line-number="41">  runTest args (_test_sublist_cons_not t)</a>
+<a class="sourceLine" id="cb20-42" data-line-number="42">  runTest args (_test_sublist_singleton_elt t)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">main_sublist ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb21-2" data-line-number="2">main_sublist <span class="fu">=</span> <span class="kw">do</span></a>
@@ -1037,9 +1094,6 @@ Posted on 2017-05-23 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

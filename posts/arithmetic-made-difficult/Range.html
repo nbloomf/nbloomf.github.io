@@ -44,9 +44,19 @@ Posted on 2017-05-05 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-05 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,24 +233,25 @@ Posted on 2017-05-05 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Length</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">At</span></a>
-<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">UnfoldN</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Plus</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Length</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">At</span></a>
+<a class="sourceLine" id="cb1-22" data-line-number="22"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">UnfoldN</span></a></code></pre></div>
 <p>For our first application of <span class="math inline">\(\unfoldN{\ast}\)</span> we’ll define a function, <span class="math inline">\(\range\)</span>, that constructs lists of natural numbers. There are a few ways to do this. We could take an argument <span class="math inline">\(n\)</span> and construct the list of natural numbers from <span class="math inline">\(\zero\)</span> to <span class="math inline">\(n\)</span>, but this is too specialized. We could instead take <em>two</em> arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span> and construct the list of natural numbers from <span class="math inline">\(a\)</span> to <span class="math inline">\(b\)</span>, but we’ll have to check whether or not the arguments are in order. A third option – and the one we’ll take – is to take two arguments <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, and construct the list of the first <span class="math inline">\(b\)</span> natural numbers starting from <span class="math inline">\(a\)</span>.</p>
 <div class="definition">
 <p>Define <span class="math inline">\(f : \nats \rightarrow \ast + \nats \times \nats\)</span> by <span class="math display">\[f(k) = (\next(k),k).\]</span> We then define <span class="math inline">\(\range : \nats \times \nats \rightarrow \lists{\nats}\)</span> by <span class="math display">\[\range(a,b) = \unfoldN(f,b,a).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">range<span class="ot"> ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> t n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">range a b <span class="fu">=</span> unfoldN f b a</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span> f k <span class="fu">=</span> rgt (next k, k)</a></code></pre></div>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span> f k <span class="fu">=</span> rgt (tup (next k) k)</a></code></pre></div>
 </div>
 <p>Since <span class="math inline">\(\range\)</span> is an <span class="math inline">\(\unfoldN{\ast}\)</span>, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
@@ -304,14 +327,16 @@ Posted on 2017-05-05 by nbloomf
  &amp;   &amp; \range(a,\next(b)) \\
  &amp; = &amp; \range(a,\next(\zero)) \\
  &amp; = &amp; \cons(a,\nil) \\
- &amp; = &amp; \snoc(a,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \snoc(a,\nil) \\
  &amp; = &amp; \snoc(\nplus(a,\zero),\range(a,\zero)) \\
  &amp; = &amp; \snoc(\nplus(a,b),\range(a,b)) \\
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(b\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\next(\next(b))) \\
  &amp; = &amp; \cons(a,\range(\next(a),\next(b))) \\
  &amp; = &amp; \cons(a,\snoc(\nplus(\next(a),b),\range(\next(a),b))) \\
- &amp; = &amp; \snoc(\nplus(\next(a),b),\cons(a,\range(\next(a),b))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \snoc(\nplus(\next(a),b),\cons(a,\range(\next(a),b))) \\
  &amp; = &amp; \snoc(\nplus(a,\next(b)),\range(a,\next(b)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -332,16 +357,19 @@ Posted on 2017-05-05 by nbloomf
 <p>We proceed by induction on <span class="math inline">\(c\)</span>. For the base case <span class="math inline">\(c = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\nplus(b,c)) \\
  &amp; = &amp; \range(a,\nplus(b,\zero)) \\
- &amp; = &amp; \range(a,b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-zero-right}
+   = &amp; \range(a,b) \\
  &amp; = &amp; \cat(\range(a,b),\nil) \\
  &amp; = &amp; \cat(\range(a,b),\range(\nplus(a,b),\zero)) \\
  &amp; = &amp; \cat(\range(a,b),\range(\nplus(a,b),c))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(c\)</span>. Using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(a,\nplus(b,\next(c))) \\
- &amp; = &amp; \range(a,\next(\nplus(b,c))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+   = &amp; \range(a,\next(\nplus(b,c))) \\
  &amp; = &amp; \snoc(\nplus(a,\nplus(b,c)),\range(a,\nplus(b,c))) \\
  &amp; = &amp; \snoc(\nplus(a,\nplus(b,c)),\cat(\range(a,b),\range(\nplus(a,b),c))) \\
- &amp; = &amp; \snoc(\nplus(\nplus(a,b),c),\cat(\range(a,b),\range(\nplus(a,b),c))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+   = &amp; \snoc(\nplus(\nplus(a,b),c),\cat(\range(a,b),\range(\nplus(a,b),c))) \\
  &amp; = &amp; \cat(\range(a,b),\snoc(\nplus(\nplus(a,b),c),\range(\nplus(a,b),c))) \\
  &amp; = &amp; \cat(\range(a,b),\range(\nplus(a,b),\next(c)))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -392,13 +420,15 @@ Posted on 2017-05-05 by nbloomf
 <p>We proceed by induction on <span class="math inline">\(a\)</span>. For the base case <span class="math inline">\(a = \zero\)</span> note that <span class="math inline">\(\nplus(a,-) = \id\)</span>, since for all <span class="math inline">\(b \in \nats\)</span> we have <span class="math display">\[\nplus(\zero,-)(b) = \nplus(\zero,b) = b.\]</span> Thus <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(\nplus(a,b),c) \\
  &amp; = &amp; \range(\nplus(\zero,b),c) \\
- &amp; = &amp; \range(b,c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-zero}
+   = &amp; \range(b,c) \\
  &amp; = &amp; \map(\id)(\range(b,c)) \\
  &amp; = &amp; \map(\nplus(\zero,-))(\range(b,c)) \\
  &amp; = &amp; \map(\nplus(a,-))(\range(b,c))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the result holds for some <span class="math inline">\(a\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \range(\nplus(\next(a),b),c) \\
- &amp; = &amp; \range(\next(\nplus(a,b)),c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#cor-plus-up-next}
+   = &amp; \range(\next(\nplus(a,b)),c) \\
  &amp; = &amp; \map(\next)(\range(\nplus(a,b),c)) \\
  &amp; = &amp; \map(\next)(\map(\nplus(a,-))(\range(b,c))) \\
  &amp; = &amp; (\map(\next) \circ \map(\nplus(a,-)))(\range(b,c)) \\
@@ -449,9 +479,6 @@ Posted on 2017-05-05 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>

@@ -44,9 +44,19 @@ Posted on 2017-05-09 by nbloomf
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
 <div class="invisible">
-<!-- basic maps -->
-\(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\const}{\mathsf{const}}\)
+<!-- proof structure -->
+\(\newcommand{\hyp}[2]{\stackrel{\tiny\text{hyp}}{#2}}\)
+\(\newcommand{\let}[2]{\stackrel{\tiny\text{let}}{#2}}\)
+\(\newcommand{\a}{a}\)
+\(\newcommand{\b}{b}\)
+\(\newcommand{\c}{c}\)
+\(\newcommand{\p}{p}\)
+\(\newcommand{\q}{q}\)
+\(\newcommand{\r}{r}\)
+\(\newcommand{\s}{s}\)
+\(\newcommand{\x}{x}\)
+\(\newcommand{\y}{y}\)
+\(\newcommand{\z}{z}\)
 
 <!-- booleans -->
 \(\newcommand{\bool}{\mathbb{B}}\)
@@ -58,6 +68,12 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\bimpl}{\mathbin{\mathsf{impl}}}\)
 \(\newcommand{\beq}{\mathsf{eq}}\)
 \(\newcommand{\bif}[3]{\mathsf{if}\left(#1,#2,#3\right)}\)
+
+<!-- functions -->
+\(\newcommand{\id}{\mathsf{id}}\)
+\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\flip}{\mathsf{flip}}\)
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -71,12 +87,15 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\fst}{\mathsf{first}}\)
 \(\newcommand{\snd}{\mathsf{second}}\)
 \(\newcommand{\dup}{\mathsf{dup}}\)
+\(\newcommand{\tup}{\mathsf{tup}}\)
 \(\newcommand{\tSwap}{\mathsf{swap}_{\times}}\)
 \(\newcommand{\tPair}{\mathsf{pair}_{\times}}\)
 \(\newcommand{\tAssocL}{\mathsf{assocL}_{\times}}\)
 \(\newcommand{\tAssocR}{\mathsf{assocR}_{\times}}\)
 \(\newcommand{\tupL}{\mathsf{tupL}}\)
 \(\newcommand{\tupR}{\mathsf{tupR}}\)
+\(\newcommand{\uncurry}{\mathsf{uncurry}}\)
+\(\newcommand{\curry}{\mathsf{curry}}\)
 
 <!-- disjoint unions -->
 \(\newcommand{\lft}{\mathsf{left}}\)
@@ -185,6 +204,9 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\delete}{\mathsf{delete}}\)
 \(\newcommand{\dedupeL}{\mathsf{dedupeL}}\)
 \(\newcommand{\dedupeR}{\mathsf{dedupeR}}\)
+\(\newcommand{\common}{\mathsf{common}}\)
+\(\newcommand{\disjoint}{\mathsf{disjoint}}\)
+\(\newcommand{\sublists}{\mathsf{sublists}}\)
 \(\newcommand{\take}{\mathsf{take}}\)
 \(\newcommand{\drop}{\mathsf{drop}}\)
 \(\newcommand{\takeBut}{\mathsf{takeBut}}\)
@@ -211,15 +233,16 @@ Posted on 2017-05-09 by nbloomf
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
 <a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Snoc</span></a>
-<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Cat</span></a>
-<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Map</span></a>
-<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Zip</span></a>
-<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">DoubleFold</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Snoc</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Reverse</span></a>
+<a class="sourceLine" id="cb1-18" data-line-number="18"><span class="kw">import</span> <span class="dt">Cat</span></a>
+<a class="sourceLine" id="cb1-19" data-line-number="19"><span class="kw">import</span> <span class="dt">Map</span></a>
+<a class="sourceLine" id="cb1-20" data-line-number="20"><span class="kw">import</span> <span class="dt">Zip</span></a>
+<a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">PrefixAndSuffix</span></a></code></pre></div>
 <p>Today we’ll compute the <em>longest common prefix</em> of two lists (and while we’re at it, the <em>longest common suffix</em>). Given two lists <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>, their longest common prefix is the longest list which is a prefix of both, just like it says on the tin. We’ll denote this function <span class="math inline">\(\lcp\)</span>, and we want it to have a signature like <span class="math display">\[\lists{A} \times \lists{A} \rightarrow \lists{A}.\]</span> Double fold was made for situations like this.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \lists{A} \rightarrow \lists{A}\)</span> by <span class="math inline">\(\delta(y) = \nil\)</span>, <span class="math inline">\(\psi : A \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\psi(a,x) = \nil,\]</span> and <span class="math inline">\(\chi : A \times A \times \lists{A} \times \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\chi(a,b,y,z,w) = \bif{\beq(a,b)}{cons(a,z)}{\nil}.\]</span> Now define <span class="math inline">\(\lcp : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcp = \dfoldr{\delta}{\psi}{\chi}.\]</span></p>
@@ -419,12 +442,14 @@ Posted on 2017-05-09 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\lcp(y,z)) \\
  &amp; = &amp; \cat(\nil,\lcp(y,z)) \\
- &amp; = &amp; \lcp(y,z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
+   = &amp; \lcp(y,z) \\
  &amp; = &amp; \lcp(\cat(\nil,y),\cat(\nil,z)) \\
  &amp; = &amp; \lcp(\cat(x,y),\cat(x,z))
 \end{eqnarray*}\]</span> as needed. Suppose now that the equality holds for all <span class="math inline">\(y\)</span> and <span class="math inline">\(z\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\cons(a,x),\lcp(y,z)) \\
- &amp; = &amp; \cons(a,\cat(x,\lcp(y,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
+   = &amp; \cons(a,\cat(x,\lcp(y,z))) \\
  &amp; = &amp; \cons(a,\lcp(\cat(x,y),\cat(x,z))) \\
  &amp; = &amp; \lcp(\cons(a,\cat(x,y)),\cons(a,\cat(x,z))) \\
  &amp; = &amp; \lcp(\cat(\cons(a,x),y),\cat(\cons(a,x),z))
@@ -528,7 +553,7 @@ Posted on 2017-05-09 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_lcp_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t (a,a)))</a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_lcp_zip ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a)))</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3">_test_lcp_zip _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  testName <span class="st">&quot;zip(lcp(x,y),lcp(u,v)) == lcp(zip(x,u),zip(y,v))&quot;</span> <span class="fu">$</span></a>
@@ -822,7 +847,7 @@ Posted on 2017-05-09 by nbloomf
 <div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">_test_lcp ::</span></a>
 <a class="sourceLine" id="cb20-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a</a>
 <a class="sourceLine" id="cb20-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
-<a class="sourceLine" id="cb20-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (a,a))</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
 <a class="sourceLine" id="cb20-5" data-line-number="5">  , <span class="dt">Arbitrary</span> (t (t a)), <span class="dt">Show</span> (t (t a)), <span class="dt">Equal</span> (t (t a))</a>
 <a class="sourceLine" id="cb20-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb20-7" data-line-number="7">_test_lcp t maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
@@ -868,9 +893,6 @@ Posted on 2017-05-09 by nbloomf
 <!-- END CONTENT -->
 </div>
 
-<div id="footer">
-  Site generated by
-  <a href="http://jaspervdj.be/hakyll">Hakyll</a>
-</div>
+<div id="footer"></div>
 </body>
 </html>
