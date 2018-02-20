@@ -71,9 +71,19 @@ Posted on 2018-01-01 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -224,51 +234,48 @@ Posted on 2018-01-01 by nbloomf
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DoubleNaturalRecursion</span> (</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  dnaturalRec</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  dnaturalRec, _test_dnaturalRec, main_dnaturalRec</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
 <p>Today we’ll implement a slight generalization of natural recursion that allows recursion on two arguments.</p>
 <div class="theorem">
-<p>[]{@#thm-dnatrec-zero-nat}<span id="thm-dnatrec-next-zero"></span><span id="thm-dnatrec-next-next"></span> Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[Θ(\zero,k) = \delta(k),\]</span> <span class="math display">\[Θ(\next(n),\zero) = \psi(Θ(n,\zero)),\]</span> and <span class="math display">\[Θ(\next(n),\next(k)) = \chi(k,Θ(n,k),Θ(n,\next(k))).\]</span> We denote this map by <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}.\)</span>$</p>
+<p>[]{@#thm-dnatrec-zero-nat}<span id="thm-dnatrec-next-zero"></span><span id="thm-dnatrec-next-next"></span> Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then there is a unique map <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> such that <span class="math display">\[Θ(\zero,k) = \delta(k),\]</span> <span class="math display">\[Θ(\next(n),\zero) = \psi(Θ(n,\zero)),\]</span> and <span class="math display">\[Θ(\next(n),\next(k)) = \chi(k,Θ(n,k),Θ(n,\next(k))).\]</span> We denote this map by <span class="math inline">\(\dnatrec(\delta)(\psi)(\chi).\)</span>$</p>
 <div class="proof">
 <p>Define <span class="math inline">\(φ : A^\nats \rightarrow A^\nats\)</span> casewise by <span class="math display">\[\begin{eqnarray*}
  φ(g)(\zero) &amp; = &amp; \psi(g(\zero)) \\
  φ(g)(\next(k)) &amp; = &amp; \chi(k,g(k),g(\next(k))).
-\end{eqnarray*}\]</span> We then define <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> by <span class="math display">\[Θ(n,k) = \natrec{\delta}{φ}(n)(k).\]</span></p>
+\end{eqnarray*}\]</span> We then define <span class="math inline">\(Θ : \nats \times \nats \rightarrow A\)</span> by <span class="math display">\[Θ(n,k) = \natrec(\delta)(φ)(n)(k).\]</span></p>
 <p>First we show that <span class="math inline">\(Θ\)</span> satisfies the claimed equations. To this end, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\zero,k) \\
- &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
-   = &amp; \natrec{\delta}{φ}(\zero)(k) \\
+ &amp;     \let{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
+   = &amp; \natrec(\delta)(φ)(\zero)(k) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
    = &amp; \delta(k)
 \end{eqnarray*}\]</span> that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\next(n),\zero) \\
- &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
-   = &amp; \natrec{\delta}{φ}(\next(n))(\zero) \\
+ &amp;     \let{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
+   = &amp; \natrec(\delta)(φ)(\next(n))(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-   = &amp; φ(\natrec{\delta}{φ}(n))(\zero) \\
+   = &amp; φ(\natrec(\delta)(φ)(n))(\zero) \\
  &amp;     \hyp{φ(g)(\zero) = \psi(g(\zero))}
-   = &amp; \psi(\natrec{\delta}{φ}(n)(\zero)) \\
- &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \psi(\natrec(\delta)(φ)(n)(\zero)) \\
+ &amp;     \let{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
    = &amp; \psi(Θ(n,\zero))
 \end{eqnarray*}\]</span> and that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\next(n),\next(k)) \\
- &amp;     \let{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
-   = &amp; \natrec{\delta}{φ}(\next(n))(\next(k)) \\
+ &amp;     \let{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
+   = &amp; \natrec(\delta)(φ)(\next(n))(\next(k)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-   = &amp; φ(\natrec{\delta}{φ}(n))(\next(k)) \\
+   = &amp; φ(\natrec(\delta)(φ)(n))(\next(k)) \\
  &amp;     \hyp{φ(g)(\next(k)) = \chi(k,g(k),g(\next(k)))}
-   = &amp; \chi(k,\natrec{\delta}{φ}(n)(k),\natrec{\delta}{φ}(n)(\next(k))) \\
- &amp;     \hyp{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
-   = &amp; \chi(k,Θ(n,k),\natrec{\delta}{φ}(n)(\next(k))) \\
- &amp;     \hyp{Θ(n,k) = \natrec{\delta}{φ}(n)(k)}
+   = &amp; \chi(k,\natrec(\delta)(φ)(n)(k),\natrec(\delta)(φ)(n)(\next(k))) \\
+ &amp;     \hyp{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
+   = &amp; \chi(k,Θ(n,k),\natrec(\delta)(φ)(n)(\next(k))) \\
+ &amp;     \hyp{Θ(n,k) = \natrec(\delta)(φ)(n)(k)}
    = &amp; \chi(k,Θ(n,k),Θ(n,\next(k)))
 \end{eqnarray*}\]</span> as claimed.</p>
 <p>Next suppose <span class="math inline">\(\Psi : \nats \times \nats \rightarrow A\)</span> also satisfies these equations. We show that <span class="math inline">\(\Psi = Θ\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span> for all <span class="math inline">\(k\)</span> we have <span class="math display">\[\begin{eqnarray*}
@@ -297,7 +304,7 @@ Posted on 2018-01-01 by nbloomf
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
-<p>There’s a couple of ways to implement <span class="math inline">\(\dnatrec{\ast}{\ast}{\ast}\)</span>.</p>
+<p>There’s a couple of ways to implement <span class="math inline">\(\dnatrec\)</span>.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">dnaturalRec,<span class="ot"> dnaturalRec' ::</span> (<span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (n <span class="ot">-&gt;</span> a)</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a)</a>
@@ -317,14 +324,43 @@ Posted on 2018-01-01 by nbloomf
 <a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Right</span> t <span class="ot">-&gt;</span> chi t</a>
 <a class="sourceLine" id="cb4-6" data-line-number="6">      (dnaturalRec delta psi chi m t)</a>
 <a class="sourceLine" id="cb4-7" data-line-number="7">      (dnaturalRec delta psi chi m (next t))</a></code></pre></div>
+<p>While we’re here, we should test that these two implementations aren’t not equivalent.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">_test_dnaturalRec_equiv</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((n <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">_test_dnaturalRec_equiv _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  testName <span class="st">&quot;dnaturalRec == dnaturalRec'&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">  \delta psi chi n k <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    (dnaturalRec delta psi chi n k)</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">    (dnaturalRec' delta psi chi n k)</a></code></pre></div>
 <p>The “uniqueness” part of double natural recursion is also handy. To be a little more explicit, it says the following.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, and <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then <span class="math inline">\(\dnatrec{\delta}{\psi}{\chi}\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow A\)</span> to the following system of functional equations for all <span class="math inline">\(n,k \in \nats\)</span>: <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(\delta : \nats \rightarrow A\)</span>, and <span class="math inline">\(\psi : A \rightarrow A\)</span>, and <span class="math inline">\(\chi : \nats \times A \times A \rightarrow A\)</span>. Then <span class="math inline">\(\dnatrec(\delta)(\psi)(\chi)\)</span> is the unique solution <span class="math inline">\(f : \nats \times \nats \rightarrow A\)</span> to the following system of functional equations for all <span class="math inline">\(n,k \in \nats\)</span>: <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,k) = \delta(k) \\
  f(\next(n),\zero) = \psi(f(n,\zero)) \\
  f(\next(n),\next(k)) = \chi(k,f(n,k),f(n,\next(k)))
 \end{array}\right.\]</span></p>
 </div>
+<h2 id="testing">Testing</h2>
+<p>Suite:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_dnaturalRec ::</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">CoArbitrary</span> n, <span class="dt">Natural</span> n</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">TypeName</span> a</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">_test_dnaturalRec n a size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel2 <span class="st">&quot;dnaturalRec&quot;</span> n a</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">  runTest args (_test_dnaturalRec_equiv n a)</a></code></pre></div>
+<p>Main:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main_dnaturalRec ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">main_dnaturalRec <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">10</span> <span class="dv">50</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">10</span> <span class="dv">50</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">10</span> <span class="dv">50</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">10</span> <span class="dv">50</span></a></code></pre></div>
 
 
 

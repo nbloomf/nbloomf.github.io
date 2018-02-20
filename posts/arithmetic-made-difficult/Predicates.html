@@ -71,9 +71,19 @@ Posted on 2018-01-07 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-07 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-07 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -231,8 +241,7 @@ Posted on 2018-01-07 by nbloomf
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
 <a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a></code></pre></div>
 <p>In the last post we defined the algebra of boolean values, true and false. Today we’ll look at <em>predicates</em> – functions from some set <span class="math inline">\(A\)</span> to <span class="math inline">\(\bool\)</span>. It turns out the algebra on <span class="math inline">\(\bool\)</span> can be lifted to predicates, and is useful enough to collect some definitions and properties in one place.</p>
 <div class="definition">
 <p><span id="def-ptrue"></span><span id="def-pfalse"></span> Let <span class="math inline">\(A\)</span> be a set. A <em>predicate</em> on <span class="math inline">\(A\)</span> is just a function <span class="math inline">\(p : A \rightarrow \bool\)</span>. We define two special predicates, <span class="math inline">\(\ptrue = \const(\btrue)\)</span> and <span class="math inline">\(\pfalse = \const(\bfalse)\)</span>.</p>
@@ -278,8 +287,8 @@ Posted on 2018-01-07 by nbloomf
 <ol type="1">
 <li><span class="math inline">\(\pnot(\ptrue) = \pfalse\)</span>.</li>
 <li><span class="math inline">\(\pnot(\pfalse) = \ptrue\)</span>.</li>
-<li><span class="math inline">\(\compose{\bnot}{\ptrue} = \pfalse\)</span>.</li>
-<li><span class="math inline">\(\compose{\bnot}{\pfalse} = \ptrue\)</span>.</li>
+<li><span class="math inline">\(\compose(\bnot)(\ptrue) = \pfalse\)</span>.</li>
+<li><span class="math inline">\(\compose(\bnot)(\pfalse) = \ptrue\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
@@ -314,7 +323,7 @@ Posted on 2018-01-07 by nbloomf
 = &amp; \ptrue(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\bnot}{\ptrue}(a) \\
+ &amp;   &amp; \compose(\bnot)(\ptrue)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \bnot(\ptrue(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-ptrue}
@@ -329,7 +338,7 @@ Posted on 2018-01-07 by nbloomf
 = &amp; \pfalse(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\bnot}{\pfalse}(a) \\
+ &amp;   &amp; \compose(\bnot)(\pfalse)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \bnot(\pfalse(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Predicates.html#def-pfalse}
@@ -565,21 +574,21 @@ Posted on 2018-01-07 by nbloomf
 <div class="test">
 <div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_por_ptrue ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">_test_por_ptrue _ b <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_por_ptrue _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;por(ptrue,p) == ptrue&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-5" data-line-number="5">  \p a <span class="ot">-&gt;</span> eq ((por ptrue p) a) (ptrue a)</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb9-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb9-8" data-line-number="8"><span class="ot">_test_por_pfalse ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb9-9" data-line-number="9">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">_test_por_pfalse _ b <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">_test_por_pfalse _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-11" data-line-number="11">  testName <span class="st">&quot;por(pfalse,p) == p&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-12" data-line-number="12">  \p a <span class="ot">-&gt;</span> eq ((por pfalse p) a) (p a)</a>
 <a class="sourceLine" id="cb9-13" data-line-number="13"></a>
 <a class="sourceLine" id="cb9-14" data-line-number="14"></a>
 <a class="sourceLine" id="cb9-15" data-line-number="15"><span class="ot">_test_por_idempotent ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb9-16" data-line-number="16">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> <span class="dt">Bool</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-17" data-line-number="17">_test_por_idempotent _ b <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">_test_por_idempotent _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-18" data-line-number="18">  testName <span class="st">&quot;por(p,p) == p&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-19" data-line-number="19">  \p a <span class="ot">-&gt;</span> eq ((por p p) a) (p a)</a>
 <a class="sourceLine" id="cb9-20" data-line-number="20"></a>
@@ -710,37 +719,33 @@ Posted on 2018-01-07 by nbloomf
 <a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">TypeName</span> a</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">  , <span class="dt">TypeName</span> b, <span class="dt">Boolean</span> b, <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> b</a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  ) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">_test_predicate x p size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">_test_predicate x p size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb11-6" data-line-number="6">  testLabel1 <span class="st">&quot;predicate&quot;</span> x</a>
 <a class="sourceLine" id="cb11-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb11-10" data-line-number="10">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb11-11" data-line-number="11">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb11-12" data-line-number="12">      }</a>
-<a class="sourceLine" id="cb11-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_pnot_involutive x p)</a>
-<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_pnot_ptrue x p)</a>
-<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_pnot_pfalse x p)</a>
-<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_not_ptrue x p)</a>
-<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_not_pfalse x p)</a>
-<a class="sourceLine" id="cb11-19" data-line-number="19"></a>
-<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_pand_pfalse x)</a>
-<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_pand_ptrue x)</a>
-<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_pand_idempotent x)</a>
-<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_pand_commutative x)</a>
-<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_pand_associative x)</a>
-<a class="sourceLine" id="cb11-25" data-line-number="25"></a>
-<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_por_ptrue x p)</a>
-<a class="sourceLine" id="cb11-27" data-line-number="27">  runTest args (_test_por_pfalse x p)</a>
-<a class="sourceLine" id="cb11-28" data-line-number="28">  runTest args (_test_por_idempotent x p)</a>
-<a class="sourceLine" id="cb11-29" data-line-number="29">  runTest args (_test_por_commutative x)</a>
-<a class="sourceLine" id="cb11-30" data-line-number="30">  runTest args (_test_por_associative x)</a>
-<a class="sourceLine" id="cb11-31" data-line-number="31"></a>
-<a class="sourceLine" id="cb11-32" data-line-number="32">  runTest args (_test_pnot_pand x)</a>
-<a class="sourceLine" id="cb11-33" data-line-number="33">  runTest args (_test_pnot_por x)</a>
-<a class="sourceLine" id="cb11-34" data-line-number="34">  runTest args (_test_pand_por x)</a>
-<a class="sourceLine" id="cb11-35" data-line-number="35">  runTest args (_test_por_pand x)</a></code></pre></div>
+<a class="sourceLine" id="cb11-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  runTest args (_test_pnot_involutive x p)</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">  runTest args (_test_pnot_ptrue x p)</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  runTest args (_test_pnot_pfalse x p)</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">  runTest args (_test_not_ptrue x p)</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_not_pfalse x p)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_pand_pfalse x)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_pand_ptrue x)</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_pand_idempotent x)</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_pand_commutative x)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_pand_associative x)</a>
+<a class="sourceLine" id="cb11-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_por_ptrue x p)</a>
+<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_por_pfalse x p)</a>
+<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_por_idempotent x p)</a>
+<a class="sourceLine" id="cb11-25" data-line-number="25">  runTest args (_test_por_commutative x)</a>
+<a class="sourceLine" id="cb11-26" data-line-number="26">  runTest args (_test_por_associative x)</a>
+<a class="sourceLine" id="cb11-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb11-28" data-line-number="28">  runTest args (_test_pnot_pand x)</a>
+<a class="sourceLine" id="cb11-29" data-line-number="29">  runTest args (_test_pnot_por x)</a>
+<a class="sourceLine" id="cb11-30" data-line-number="30">  runTest args (_test_pand_por x)</a>
+<a class="sourceLine" id="cb11-31" data-line-number="31">  runTest args (_test_por_pand x)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_predicate ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_predicate <span class="fu">=</span> _test_predicate (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>

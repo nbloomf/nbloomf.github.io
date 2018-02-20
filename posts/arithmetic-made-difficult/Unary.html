@@ -71,9 +71,19 @@ Posted on 2014-05-07 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -222,23 +232,18 @@ Posted on 2014-05-07 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE BangPatterns #-}</span></a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">module</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4">  ( <span class="dt">Unary</span>(<span class="dt">Z</span>,<span class="dt">N</span>), mkUnary, natRec</a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">Integer</span>, (-), (&lt;=))</a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Modifiers</span> (<span class="dt">NonNegative</span>(..))</a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Implies</span></a></code></pre></div>
-<p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec{\ast}{\ast}\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish some structural results.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude, BangPatterns #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">Unary</span>(<span class="dt">Z</span>,<span class="dt">N</span>), mkUnary, natRec, natRec'</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">Integer</span>, (-), (&lt;=))</a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Test.QuickCheck.Modifiers</span> (<span class="dt">NonNegative</span>(..))</a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
+<p>A nice consequence of wrapping up recursion in the <span class="math inline">\(\natrec\)</span> function is that it allows us to write programs, independent of any implementation, and prove things about them. We’ll see lots of examples of this, but first we need to establish some structural results.</p>
 <div class="definition">
-<p><span id="def-unnext"></span> Let <span class="math inline">\(1 = \{\ast\}\)</span>, and define <span class="math inline">\(\varphi : 1 + \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi = \compose{\rgt}{\either(\const(\zero),\id)}.\]</span> In this post we consider <span class="math display">\[(1 + \nats, \lft(\ast), \varphi)\]</span> as an inductive set, and denote the natural recursion map <span class="math inline">\(\nats \rightarrow 1 + \nats\)</span> by <span class="math inline">\(\unnext\)</span>.</p>
+<p><span id="def-unnext"></span> Let <span class="math inline">\(1 = \{\ast\}\)</span>, and define <span class="math inline">\(\varphi : 1 + \nats \rightarrow 1 + \nats\)</span> by <span class="math display">\[\varphi = \compose(\rgt)(\either(\const(\zero),\id)).\]</span> In this post we consider <span class="math display">\[(1 + \nats, \lft(\ast), \varphi)\]</span> as an inductive set, and denote the natural recursion map <span class="math inline">\(\nats \rightarrow 1 + \nats\)</span> by <span class="math inline">\(\unnext\)</span>.</p>
 </div>
 <p>We can evaluate <span class="math inline">\(\unnext\)</span> directly.</p>
 <div class="theorem">
@@ -252,18 +257,18 @@ Posted on 2014-05-07 by nbloomf
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unnext(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
-= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\zero) \\
+= &amp; \natrec(\lft(\ast))(\compose(\rgt)(\either(\const(\zero),\next)))(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
 = &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We proceed by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unnext(\next(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
-= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(\zero)) \\
+= &amp; \natrec(\lft(\ast))(\compose(\rgt)(\either(\const(\zero),\next)))(\next(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\zero)) \\
+= &amp; \compose(\rgt)(\either(\const(\zero),\next))(\natrec(\lft(\ast))(\compose(\rgt)(\either(\const(\zero),\next)))(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
-= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\lft(\ast)) \\
+= &amp; \compose(\rgt)(\either(\const(\zero),\next))(\lft(\ast)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \rgt(\either(\const(\zero),\next)(\lft(\ast))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
@@ -273,13 +278,13 @@ Posted on 2014-05-07 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unnext(\next(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
-= &amp; \natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(\next(n))) \\
+= &amp; \natrec(\lft(\ast))(\compose(\rgt)(\either(\const(\zero),\next)))(\next(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\natrec{\lft(\ast)}{\compose{\rgt}{\either(\const(\zero),\next)}}(\next(n))) \\
+= &amp; \compose(\rgt)(\either(\const(\zero),\next))(\natrec(\lft(\ast))(\compose(\rgt)(\either(\const(\zero),\next)))(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-unnext}
-= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\unnext(\next(n))) \\
+= &amp; \compose(\rgt)(\either(\const(\zero),\next))(\unnext(\next(n))) \\
  &amp;     \hyp{\unnext(\next(n)) = \rgt(n)}
-= &amp; \compose{\rgt}{\either(\const(\zero),\next)}(\rgt(n)) \\
+= &amp; \compose(\rgt)(\either(\const(\zero),\next))(\rgt(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \rgt(\either(\const(\zero),\next)(\rgt(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
@@ -301,7 +306,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
    = &amp; \zero
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x \in 1 + \nats\)</span>, we have two possibilities. If <span class="math inline">\(x = \lft(\ast)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; Ω(\compose{\rgt}{\either(\const(\zero),\next)}(\lft(\ast))) \\
+ &amp;   &amp; Ω(\compose(\rgt)(\either(\const(\zero),\next))(\lft(\ast))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; Ω(\rgt(\either(\const(\zero),\next)(\lft(\ast)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
@@ -319,7 +324,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \let{Ω = \either(\const(\zero),\next)}
    = &amp; \next(Ω(\lft(\ast)))
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(n)\)</span>, with <span class="math inline">\(n \in \nats\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; Ω(\compose{\rgt}{\either(\const(\zero),\next)}(\rgt(n))) \\
+ &amp;   &amp; Ω(\compose(\rgt)(\either(\const(\zero),\next))(\rgt(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; Ω(\rgt(\either(\const(\zero),\next)(\rgt(n)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
@@ -333,8 +338,8 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \let{Ω = \either(\const(\zero),\next)}
    = &amp; \next(Ω(\rgt(n)))
 \end{eqnarray*}\]</span> as needed.</p>
-<p>Next to see that <span class="math inline">\(Ω\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\(\compose{Ω}{\unnext}(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{Ω}{\unnext}(\zero) \\
+<p>Next to see that <span class="math inline">\(Ω\)</span> and <span class="math inline">\(\Theta\)</span> are mutual inverses. First we show that <span class="math inline">\(\compose(Ω)(\unnext)(n) = \id(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, proceeding by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose(Ω)(\unnext)(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; Ω(\unnext(\zero)) \\
  &amp;     \let{Ω = \either(\const(\zero),\next)}
@@ -346,7 +351,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
    = &amp; \zero
 \end{eqnarray*}\]</span> and if the equality holds for <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{Ω}{\unnext}(\next(n)) \\
+ &amp;   &amp; \compose(Ω)(\unnext)(\next(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; Ω(\unnext(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
@@ -356,7 +361,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
    = &amp; \next(n)
 \end{eqnarray*}\]</span> as needed. Now to see that <span class="math inline">\(\Theta \circ Ω = \id\)</span>, we consider two possibilities. First note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\unnext}{Ω}(\lft(\ast)) \\
+ &amp;   &amp; \compose(\unnext)(Ω)(\lft(\ast)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \unnext(Ω(\lft(\ast))) \\
  &amp;     \let{Ω = \either(\const(\zero),\next)}
@@ -368,7 +373,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
    = &amp; \lft(\ast)
 \end{eqnarray*}\]</span> To see that <span class="math inline">\((\Theta \circ Ω)(\rgt(n)) = \rgt(n)\)</span> for all <span class="math inline">\(n \in \nats\)</span>, we proceed by induction. For the base case <span class="math inline">\(n = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\unnext}{Ω}(\rgt(\zero)) \\
+ &amp;   &amp; \compose(\unnext)(Ω)(\rgt(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \unnext(Ω(\rgt(\zero))) \\
  &amp;     \let{Ω = \either(\const(\zero),\next)}
@@ -376,9 +381,9 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
    = &amp; \unnext(\next(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
-   = &amp; \rgt(\zero) \\
+   = &amp; \rgt(\zero)
 \end{eqnarray*}\]</span> as needed. For the inductive step, if the equality holds for some <span class="math inline">\(n\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\unnext}{Ω}(\rgt(\next(n))) \\
+ &amp;   &amp; \compose(\unnext)(Ω)(\rgt(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \unnext(Ω(\rgt(\next(n)))) \\
  &amp;     \let{Ω = \either(\const(\zero),\next)}
@@ -392,17 +397,17 @@ Posted on 2014-05-07 by nbloomf
 </div>
 <p>From <span class="math inline">\(\unnext\)</span> we define two helper functions.</p>
 <div class="definition">
-<p><span id="def-prev"></span><span id="def-iszero"></span> We define <span class="math inline">\(\prev : \nats \rightarrow \nats\)</span> by <span class="math display">\[\prev = \compose{\either(\const(\zero),\id)}{\unnext}\]</span> and <span class="math inline">\(\iszero : \nats \rightarrow \bool\)</span> by <span class="math display">\[\iszero = \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}.\]</span></p>
+<p><span id="def-prev"></span><span id="def-iszero"></span> We define <span class="math inline">\(\prev : \nats \rightarrow \nats\)</span> by <span class="math display">\[\prev = \compose(\either(\const(\zero),\id))(\unnext)\]</span> and <span class="math inline">\(\iszero : \nats \rightarrow \bool\)</span> by <span class="math display">\[\iszero = \compose(\either(\const(\btrue),\const(\bfalse)))(\unnext).\]</span></p>
 </div>
 <p>Now <span class="math inline">\(\prev\)</span>, and <span class="math inline">\(\iszero\)</span> have some useful properties.</p>
 <div class="theorem">
-<p>[]{/posts/arithmetic-made-difficult/Unary.html#thm-prev-zero}[]{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}[]{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-zero}[]{/posts/arithmetic-made-difficult/Unary.html#thm-iszero-next} 1. <span class="math inline">\(\prev(\zero) = \zero\)</span>. 2. <span class="math inline">\(\prev(\next(n)) = n\)</span>. 3. <span class="math inline">\(\iszero(\zero) = \btrue\)</span>. 4. <span class="math inline">\(\iszero(\next(n)) = \bfalse\)</span>.</p>
+<p><span id="thm-prev-zero"></span><span id="thm-prev-next"></span><span id="thm-iszero-zero"></span><span id="thm-iszero-next"></span> 1. <span class="math inline">\(\prev(\zero) = \zero\)</span>. 2. <span class="math inline">\(\prev(\next(n)) = n\)</span>. 3. <span class="math inline">\(\iszero(\zero) = \btrue\)</span>. 4. <span class="math inline">\(\iszero(\next(n)) = \bfalse\)</span>.</p>
 <div class="proof">
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prev(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-prev}
-= &amp; \compose{\either(\const(\zero),\id)}{\unnext}(\zero) \\
+= &amp; \compose(\either(\const(\zero),\id))(\unnext)(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\zero),\id)(\unnext(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
@@ -415,7 +420,7 @@ Posted on 2014-05-07 by nbloomf
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prev(\next(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-prev}
-= &amp; \compose{\either(\const(\zero),\id)}{\unnext}(\next(n)) \\
+= &amp; \compose(\either(\const(\zero),\id))(\unnext)(\next(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\zero),\id)(\unnext(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
@@ -428,7 +433,7 @@ Posted on 2014-05-07 by nbloomf
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \iszero(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-iszero}
-= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}(\zero) \\
+= &amp; \compose(\either(\const(\btrue),\const(\bfalse)))(\unnext)(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-zero}
@@ -441,7 +446,7 @@ Posted on 2014-05-07 by nbloomf
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \iszero(\next(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#def-iszero}
-= &amp; \compose{\either(\const(\btrue),\const(\bfalse))}{\unnext}(\next(n)) \\
+= &amp; \compose(\either(\const(\btrue),\const(\bfalse)))(\unnext)(\next(n)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\btrue),\const(\bfalse))(\unnext(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-next}
@@ -468,7 +473,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(n) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-unnext-inverse-left}
-= &amp; \compose{\either(\const(\zero),\next)}{\unnext}(n) \\
+= &amp; \compose(\either(\const(\zero),\next))(\unnext)(n) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\zero),\next)(\unnext(n)) \\
  &amp;     \hyp{\unnext(n) = \lft(\ast)}
@@ -481,7 +486,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;   &amp; n \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(n) \\
- &amp;     \compose{\either(\const(\zero),\next)}{\unnext}(n) \\
+ &amp;     \compose(\either(\const(\zero),\next))(\unnext)(n)
 = &amp; \either(\const(\zero),\next)(\unnext(n)) \\
  &amp;     \hyp{\unnext(n) = \rgt(m)}
 = &amp; \either(\const(\zero),\next)(\rgt(m)) \\
@@ -532,7 +537,7 @@ Posted on 2014-05-07 by nbloomf
 <a class="sourceLine" id="cb3-4" data-line-number="4">  <span class="kw">else</span> <span class="dt">N</span> (mkUnary (k<span class="fu">-</span><span class="dv">1</span>))</a></code></pre></div>
 <p>So calling <code>mkUnary 7</code> in <code>ghci</code>, for instance, prints</p>
 <pre><code>NNNNNNNZ</code></pre>
-<p>And we can also give a straightforward implementation of <span class="math inline">\(\natrec{\ast}{\ast}\)</span>.</p>
+<p>And we can also give a straightforward implementation of <span class="math inline">\(\natrec(\ast)(\ast)\)</span>.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">natRec' ::</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">Unary</span> <span class="ot">-&gt;</span> a</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">natRec' e _    <span class="dt">Z</span>    <span class="fu">=</span> e</a>
 <a class="sourceLine" id="cb5-3" data-line-number="3">natRec' e phi (<span class="dt">N</span> n) <span class="fu">=</span> phi (natRec' e phi n)</a></code></pre></div>
@@ -570,7 +575,7 @@ false</code></pre>
 == tau e''' Z
 == e'''</code></pre>
 <p>It deconstructs its natural number argument and evaluates <code>phi</code> strictly at each step. (That is what the bang pattern and <code>$!</code> are for.) At least I think that’s what it does; my simple testing shows that <code>natRec'</code> easily falls down while <code>natRec</code> does not. But profiling Haskell seems like a bit of dark art to me still. I am open to being wrong here.</p>
-<p>We can see that <code>natRec</code> has better performance than <code>natRec'</code>, but there is a hitch. <code>natRec'</code> is obviously an implementation of <span class="math inline">\(\natrec{\ast}{\ast}\)</span>. But it is <strong>not</strong> obvious that <code>natRec</code> and <code>natRec'</code> are the same function! This is where the universal property of natural recursion comes in: if we can show that both functions satisfy the universal property, then <em>they must be the same</em>. And we can do this using induction.</p>
+<p>We can see that <code>natRec</code> has better performance than <code>natRec'</code>, but there is a hitch. <code>natRec'</code> is obviously an implementation of <span class="math inline">\(\natrec(\ast)(\ast)\)</span>. But it is <strong>not</strong> obvious that <code>natRec</code> and <code>natRec'</code> are the same function! This is where the universal property of natural recursion comes in: if we can show that both functions satisfy the universal property, then <em>they must be the same</em>. And we can do this using induction.</p>
 <p>First, we claim that for all <code>n :: Nat</code>,</p>
 <pre><code>natRec' (phi e) phi n == phi $ natRec' e phi n</code></pre>
 <p>Using induction, it suffices to note that</p>
@@ -608,8 +613,8 @@ false</code></pre>
 <a class="sourceLine" id="cb16-7" data-line-number="7">  shrink (<span class="dt">N</span> k) <span class="fu">=</span> [k]</a>
 <a class="sourceLine" id="cb16-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb16-9" data-line-number="9"><span class="kw">instance</span> <span class="dt">CoArbitrary</span> <span class="dt">Unary</span> <span class="kw">where</span></a>
-<a class="sourceLine" id="cb16-10" data-line-number="10">  coarbitrary <span class="dt">Z</span> <span class="fu">=</span> variant <span class="dv">0</span></a>
-<a class="sourceLine" id="cb16-11" data-line-number="11">  coarbitrary (<span class="dt">N</span> x) <span class="fu">=</span> variant <span class="dv">1</span> <span class="fu">.</span> coarbitrary x</a></code></pre></div>
+<a class="sourceLine" id="cb16-10" data-line-number="10">  coarbitrary <span class="dt">Z</span> <span class="fu">=</span> variant (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb16-11" data-line-number="11">  coarbitrary (<span class="dt">N</span> x) <span class="fu">=</span> variant (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Integer</span>) <span class="fu">.</span> coarbitrary x</a></code></pre></div>
 <p>We can try out this instance with the following command.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="fu">$&gt;</span> generate (<span class="ot">arbitrary ::</span> <span class="dt">Gen</span> <span class="dt">Unary</span>)</a></code></pre></div>
 

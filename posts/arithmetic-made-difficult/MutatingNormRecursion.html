@@ -71,9 +71,19 @@ Posted on 2018-01-19 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-19 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-19 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -222,23 +232,25 @@ Posted on 2018-01-19 by nbloomf
 
 <hr />
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">module</span> <span class="dt">MutatingNormRecursion</span> (</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">  mnormrec</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">MutatingRecursion</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">MutatingNormRecursion</span> (</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  mnormrec</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
+<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">MutatingRecursion</span></a></code></pre></div>
 <p>Just as mutating recursion generalizes bailout recursion at the expense of losing the tail recursive evaluation strategy, it will be handy to have a generalization of norm recursion that sacrifices tail recursion. We’ll call this <em>mutating norm recursion</em>.</p>
 <div class="theorem">
 <p>Let <span class="math inline">\((A,\varepsilon,\varphi)\)</span> be an inductive set, and let <span class="math inline">\(\eta : A \rightarrow \nats\)</span> be an inductive norm. Now suppose we have mappings <span class="math inline">\(\delta : A \rightarrow B\)</span> and <span class="math inline">\(\sigma : A \times B \rightarrow B\)</span>. Then there is a unique map <span class="math inline">\(\Theta : A \rightarrow B\)</span> such that. <span class="math display">\[\Theta(a) = \left\{\begin{array}{l}
  \delta(a) &amp; \mathrm{if}\ \iszero(\eta(a)) \\
  \sigma(a,\Theta(\varphi(a))) &amp; \mathrm{otherwise}
-\end{array}\right.\]</span> We denote this unique map by <span class="math inline">\(\mnormrec{\varphi}{\eta}{\delta}{\sigma}\)</span>.</p>
+\end{array}\right.\]</span> We denote this unique map by <span class="math inline">\(\mnormrec(\varphi)(\eta)(\delta)(\sigma)\)</span>.</p>
 <div class="proof">
-<p>We define maps <span class="math inline">\(\beta : \nats \times A \rightarrow \bool\)</span> by <span class="math display">\[\beta(n,a) = \iszero(\eta(a)),\]</span> <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\psi(n,a) = \delta(a),\]</span> <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span> by <span class="math display">\[\chi(n,a,b) = \sigma(a,b),\]</span> and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span> by <span class="math display">\[\omega(n,a) = \varphi(a).\]</span> Now we define <span class="math inline">\(\Omega : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\Omega = \mutrec{\delta}{\beta}{\psi}{\chi}{\omega}.\]</span></p>
+<p>We define maps <span class="math inline">\(\beta : \nats \times A \rightarrow \bool\)</span> by <span class="math display">\[\beta(n,a) = \iszero(\eta(a)),\]</span> <span class="math inline">\(\psi : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\psi(n,a) = \delta(a),\]</span> <span class="math inline">\(\chi : \nats \times A \times B \rightarrow B\)</span> by <span class="math display">\[\chi(n,a,b) = \sigma(a,b),\]</span> and <span class="math inline">\(\omega : \nats \times A \rightarrow A\)</span> by <span class="math display">\[\omega(n,a) = \varphi(a).\]</span> Now we define <span class="math inline">\(\Omega : \nats \times A \rightarrow B\)</span> by <span class="math display">\[\Omega = \mutrec(\delta)(\beta)(\psi)(\chi)(\omega).\]</span></p>
 <p>We first need the following intermediate result: for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(k \in \nats\)</span>, we claim that <span class="math display">\[\Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) = \Omega(\eta(\varphi(a)),\varphi(a)).\]</span> To see this, we proceed by strong induction on <span class="math inline">\(\eta(\varphi(a))\)</span>. For the base case, suppose <span class="math inline">\(\eta(\varphi(a)) = \zero\)</span>; we show the equality holds by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \Omega(\nplus(\eta(\varphi(a)),k),\varphi(a)) \\
  &amp; = &amp; \Omega(\nplus(\zero,\zero),\varphi(a)) \\
@@ -320,7 +332,7 @@ Posted on 2018-01-19 by nbloomf
 </div>
 </div>
 <h2 id="implementation">Implementation</h2>
-<p>We have a couple of ways to implement <span class="math inline">\(\mnormrec{\ast}{\ast}{\ast}{\ast}\)</span>.</p>
+<p>We have a couple of ways to implement <span class="math inline">\(\mnormrec\)</span>.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">mnormrec,<span class="ot"> mnormrec' ::</span> (<span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> a)</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> n)</a>

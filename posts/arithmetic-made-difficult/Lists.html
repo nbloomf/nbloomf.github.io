@@ -71,9 +71,19 @@ Posted on 2017-04-23 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2017-04-23 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -229,13 +239,10 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a></code></pre></div>
-<p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec{\ast}{\ast}\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves. Here’s an example.</p>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">And</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a></code></pre></div>
+<p>In the previous post, we saw how the process of describing <span class="math inline">\(\nats\)</span> in terms of its universal map <span class="math inline">\(\natrec\)</span> can be generalized: take an endofunctor <span class="math inline">\(F\)</span>, assume it has an initial algebra, and see how it behaves. Here’s an example.</p>
 <div class="definition">
 <p>Let <span class="math inline">\(A\)</span> be a set, and define a functor <span class="math inline">\(F_A\)</span> by <span class="math inline">\(F_A(X) = 1 + A \times X\)</span>. We assume that <span class="math inline">\(F_A\)</span> has an initial algebra, which we will denote <span class="math inline">\(\lists{A}\)</span>. We denote the component maps of the isomorphism <span class="math display">\[\theta : 1 + A \times \lists{A} \rightarrow \lists{A}\]</span> by <span class="math inline">\(\const(\nil) : 1 \rightarrow \lists{A}\)</span> and <span class="math inline">\(\cons : A \times \lists{A} \rightarrow \lists{A}\)</span>. That is, <span class="math display">\[\Theta = \either(\const(\nil),\cons).\]</span></p>
 </div>
@@ -253,7 +260,7 @@ Posted on 2017-04-23 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(\lft(\ast)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-left}
-= &amp; \compose{\uncons}{\either(\const(\nil),\uncurry(\cons))}(\lft(\ast)) \\
+= &amp; \compose(\uncons)(\either(\const(\nil),\uncurry(\cons)))(\lft(\ast)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uncons(\either(\const(\nil),\uncurry(\cons))(\lft(\ast))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
@@ -266,7 +273,7 @@ Posted on 2017-04-23 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(\rgt(\tup(a)(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-left}
-= &amp; \compose{\uncons}{\either(\const(\nil),\uncurry(\cons))}(\rgt(\tup(a)(x))) \\
+= &amp; \compose(\uncons)(\either(\const(\nil),\uncurry(\cons)))(\rgt(\tup(a)(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uncons(\either(\const(\nil),\uncurry(\cons))(\rgt(\tup(a)(x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
@@ -292,7 +299,7 @@ Posted on 2017-04-23 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(z) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-right}
-= &amp; \compose{\either(\const(\nil),\uncurry(\cons))}{\uncons}(z) \\
+= &amp; \compose(\either(\const(\nil),\uncurry(\cons)))(\uncons)(z) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\nil),\uncurry(\cons))(\uncons(z)) \\
  &amp;     \hyp{\uncons(z) = \lft(\ast)}
@@ -306,7 +313,7 @@ Posted on 2017-04-23 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(z) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-uncons-inverse-right}
-= &amp; \compose{\either(\const(\nil),\uncurry(\cons))}{\uncons}(z) \\
+= &amp; \compose(\either(\const(\nil),\uncurry(\cons)))(\uncons)(z) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \either(\const(\nil),\uncurry(\cons))(\uncons(z)) \\
  &amp;     \hyp{\uncons(z) = \rgt(\tup(a)(x))}
@@ -314,7 +321,7 @@ Posted on 2017-04-23 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
 = &amp; \uncurry(\cons)(\tup(a)(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#def-uncurry}
-= &amp; \cons(a,x) \\
+= &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(\nil = \cons(a,x)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lft(\ast) \\
@@ -349,7 +356,7 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb2-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">  cons ::</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="ot">  uncons ::</span> t a <span class="ot">-&gt;</span> <span class="dt">Either</span> () (<span class="dt">Pair</span> a (t a))</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6"><span class="ot">  uncons ::</span> t a <span class="ot">-&gt;</span> <span class="dt">Union</span> () (<span class="dt">Pair</span> a (t a))</a>
 <a class="sourceLine" id="cb2-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">  list ::</span> [a] <span class="ot">-&gt;</span> t a</a></code></pre></div>
 <p>And the concrete type:</p>
@@ -388,12 +395,12 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb3-33" data-line-number="33">    return (list xs)</a>
 <a class="sourceLine" id="cb3-34" data-line-number="34"></a>
 <a class="sourceLine" id="cb3-35" data-line-number="35">  shrink  <span class="dt">N</span>      <span class="fu">=</span> []</a>
-<a class="sourceLine" id="cb3-36" data-line-number="36">  shrink (<span class="dt">C</span> a x) <span class="fu">=</span> [x]</a>
+<a class="sourceLine" id="cb3-36" data-line-number="36">  shrink (<span class="dt">C</span> _ x) <span class="fu">=</span> [x]</a>
 <a class="sourceLine" id="cb3-37" data-line-number="37"></a>
 <a class="sourceLine" id="cb3-38" data-line-number="38"></a>
 <a class="sourceLine" id="cb3-39" data-line-number="39"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a) <span class="ot">=&gt;</span> <span class="dt">CoArbitrary</span> (<span class="dt">ConsList</span> a) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb3-40" data-line-number="40">  coarbitrary <span class="dt">N</span> <span class="fu">=</span> variant <span class="dv">0</span></a>
-<a class="sourceLine" id="cb3-41" data-line-number="41">  coarbitrary (<span class="dt">C</span> a x) <span class="fu">=</span> variant <span class="dv">1</span> <span class="fu">.</span> coarbitrary x</a></code></pre></div>
+<a class="sourceLine" id="cb3-40" data-line-number="40">  coarbitrary <span class="dt">N</span> <span class="fu">=</span> variant (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb3-41" data-line-number="41">  coarbitrary (<span class="dt">C</span> _ x) <span class="fu">=</span> variant (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Integer</span>) <span class="fu">.</span> coarbitrary x</a></code></pre></div>
 <p>This business about initial algebras is nice, but it will be convenient to unpack this definition a little bit. First, we give the following more concrete description of <span class="math inline">\(F_A\)</span>-algebras:</p>
 <div class="definition">
 <p>(<span class="math inline">\(A\)</span>-inductive set.) Let <span class="math inline">\(A\)</span> be a set. An <span class="math inline">\(A\)</span>-inductive set is a set <span class="math inline">\(B\)</span> together with an element <span class="math inline">\(e\)</span> and a mapping <span class="math inline">\(f : A \times B \rightarrow B\)</span>.</p>
@@ -404,7 +411,7 @@ Posted on 2017-04-23 by nbloomf
 </div>
 <p>And finally, a more concrete description of the universal algebra from <span class="math inline">\(\lists{A}\)</span>.</p>
 <div class="axiom">
-<p><span id="def-foldr-nil"></span><span id="def-foldr-cons"></span> (Fold.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\((B,e,\varphi)\)</span> be an <span class="math inline">\(A\)</span>-inductive set. Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \rightarrow B\)</span> which solves the system of functional equations <span class="math display">\[\left\{ \begin{array}{l} \Theta(\nil) = e \\ \Theta(\cons(a,x)) = \varphi(a,\Theta(x)). \end{array} \right.\]</span> We denote this unique <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\foldr{e}{\varphi}\)</span>.</p>
+<p><span id="def-foldr-nil"></span><span id="def-foldr-cons"></span> (Fold.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\((B,e,\varphi)\)</span> be an <span class="math inline">\(A\)</span>-inductive set. Then there is a unique map <span class="math inline">\(\Theta : \lists{A} \rightarrow B\)</span> which solves the system of functional equations <span class="math display">\[\left\{ \begin{array}{l} \Theta(\nil) = e \\ \Theta(\cons(a,x)) = \varphi(a,\Theta(x)). \end{array} \right.\]</span> We denote this unique <span class="math inline">\(\Theta\)</span> by <span class="math inline">\(\foldr(e)(\varphi)\)</span>.</p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">foldr<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">foldr e phi x <span class="fu">=</span> <span class="kw">case</span> uncons x <span class="kw">of</span></a>
@@ -412,7 +419,7 @@ Posted on 2017-04-23 by nbloomf
 <a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="dt">Right</span> (<span class="dt">Pair</span> a as) <span class="ot">-&gt;</span> phi a (foldr e phi as)</a></code></pre></div>
 </div>
 <p>Note that this definition is <em>not</em> tail recursive. This turns out not to be a huge problem in practice.</p>
-<p>It’s handy to remember that this theorem says not only that <span class="math inline">\(\foldr{\ast}{\ast}\)</span> exists, but that it is unique – in some sense foldr gives the unique solution to a system of functional equations. This gives us a strategy for showing that two programs are equivalent. If one is defined as a fold, and both programs satisfy the universal property, then they have to be equal. This is nice for showing, for instance, that a <em>slow but obviously correct</em> program is equivalent to a <em>fast but not obviously correct</em> one.</p>
+<p>It’s handy to remember that this theorem says not only that <span class="math inline">\(\foldr(\ast)(\ast)\)</span> exists, but that it is unique – in some sense foldr gives the unique solution to a system of functional equations. This gives us a strategy for showing that two programs are equivalent. If one is defined as a fold, and both programs satisfy the universal property, then they have to be equal. This is nice for showing, for instance, that a <em>slow but obviously correct</em> program is equivalent to a <em>fast but not obviously correct</em> one.</p>
 <p>Now <span class="math inline">\(\lists{A}\)</span> has an inductive proof strategy.</p>
 <div class="theorem">
 <p>(List Induction.) Let <span class="math inline">\(A\)</span> be a set, and let <span class="math inline">\(f : \lists{A} \rightarrow B\)</span> be a map. Suppose <span class="math inline">\(C \subseteq B\)</span> is a subset with the property that</p>
@@ -422,18 +429,18 @@ Posted on 2017-04-23 by nbloomf
 </ol>
 <p>Then we have <span class="math inline">\(f(x) \in C\)</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.</p>
 <div class="proof">
-<p>This proof is analogous to the proof of the induction principle for <span class="math inline">\(\nats\)</span>. We first define <span class="math inline">\(T \subseteq \lists{A}\)</span> by <span class="math display">\[T = \{x \in \lists{A} \mid f(x) \in C \}.\]</span> Note that <span class="math inline">\(\nil \in T\)</span> and if <span class="math inline">\(x \in T\)</span> and <span class="math inline">\(a \in A\)</span> then <span class="math inline">\(\cons(a,x) \in T\)</span>; in particular, <span class="math inline">\((T,\nil,\cons)\)</span> is an <span class="math inline">\(A\)</span>-iterative set. We let <span class="math inline">\(\Theta = \foldr{\nil}{\cons}\)</span>. Now the inclusion map <span class="math inline">\(\iota : T \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inducive set homomorphism, since <span class="math inline">\(\iota(\nil) = \nil\)</span> and <span class="math display">\[\iota(\cons(a,x)) = \cons(a,x) = \cons(a,\iota(x)).\]</span> Thus <span class="math inline">\(\iota \circ \Theta : \lists{A} \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inductive set homomorphism, so it must be <span class="math inline">\(\id_A\)</span>. Thus if <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[x = \id(x) = \iota(\Theta(x)) = \Theta(x) \in T\]</span> so that <span class="math inline">\(f(x) \in C\)</span> as claimed.</p>
+<p>This proof is analogous to the proof of the induction principle for <span class="math inline">\(\nats\)</span>. We first define <span class="math inline">\(T \subseteq \lists{A}\)</span> by <span class="math display">\[T = \{x \in \lists{A} \mid f(x) \in C \}.\]</span> Note that <span class="math inline">\(\nil \in T\)</span> and if <span class="math inline">\(x \in T\)</span> and <span class="math inline">\(a \in A\)</span> then <span class="math inline">\(\cons(a,x) \in T\)</span>; in particular, <span class="math inline">\((T,\nil,\cons)\)</span> is an <span class="math inline">\(A\)</span>-iterative set. We let <span class="math inline">\(\Theta = \foldr(\nil)(\cons)\)</span>. Now the inclusion map <span class="math inline">\(\iota : T \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inducive set homomorphism, since <span class="math inline">\(\iota(\nil) = \nil\)</span> and <span class="math display">\[\iota(\cons(a,x)) = \cons(a,x) = \cons(a,\iota(x)).\]</span> Thus <span class="math inline">\(\iota \circ \Theta : \lists{A} \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-inductive set homomorphism, so it must be <span class="math inline">\(\id_A\)</span>. Thus if <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[x = \id(x) = \iota(\Theta(x)) = \Theta(x) \in T\]</span> so that <span class="math inline">\(f(x) \in C\)</span> as claimed.</p>
 </div>
 </div>
 <p>Here’s an example using list induction.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then we have <span class="math display">\[\foldr{\nil}{\cons}(x) = x\]</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.</p>
+<p><span id="thm-foldr-nil-cons"></span> Let <span class="math inline">\(A\)</span> be a set. Then we have <span class="math display">\[\foldr(\nil)(\cons)(x) = x\]</span> for all <span class="math inline">\(x \in \lists{A}\)</span>.</p>
 <div class="proof">
-<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr{\nil}{\cons}(\nil) = \nil\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \foldr{\nil}{\cons}(\cons(a,x)) \\
+<p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\foldr(\nil)(\cons)(\nil) = \nil\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \foldr(\nil)(\cons)(\cons(a,x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
-   = &amp; \cons(a,\foldr{\nil}{\cons}(x)) \\
- &amp;     \hyp{\foldr{\nil}{\cons}(x) = x}
+   = &amp; \cons(a,\foldr(\nil)(\cons)(x)) \\
+ &amp;     \hyp{\foldr(\nil)(\cons)(x) = x}
    = &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>

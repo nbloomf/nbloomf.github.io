@@ -71,9 +71,19 @@ Posted on 2017-03-31 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -229,18 +239,14 @@ Posted on 2017-03-31 by nbloomf
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Plus</span></a></code></pre></div>
-<p>Natural number multiplication has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define it as <span class="math inline">\(\Theta = \simprec{\varphi}{\mu}\)</span> for some appropriate <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>. Using the universal property of simple recursion and how we want multiplication to behave, note that on the one hand we want <span class="math inline">\(\Theta(\zero,m) = \zero\)</span> for all <span class="math inline">\(m\)</span>, while on the other hand we have <span class="math inline">\(\Theta(\zero,m) = \varphi(m)\)</span>. So apparently we need <span class="math inline">\(\varphi(m) = \zero\)</span> for all <span class="math inline">\(m\)</span>.</p>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">SimpleRecursion</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Plus</span></a></code></pre></div>
+<p>Natural number multiplication has signature <span class="math inline">\(\nats \times \nats \rightarrow \nats\)</span>, so we might hope to define it as <span class="math inline">\(\Theta = \simprec(\varphi)(\mu)\)</span> for some appropriate <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>. Using the universal property of simple recursion and how we want multiplication to behave, note that on the one hand we want <span class="math inline">\(\Theta(\zero,m) = \zero\)</span> for all <span class="math inline">\(m\)</span>, while on the other hand we have <span class="math inline">\(\Theta(\zero,m) = \varphi(m)\)</span>. So apparently we need <span class="math inline">\(\varphi(m) = \zero\)</span> for all <span class="math inline">\(m\)</span>.</p>
 <p>Similarly, we want <span class="math inline">\(\Theta(\next(n),m) = \nplus(\Theta(n,m),m)\)</span>, but we also have <span class="math display">\[\Theta(\next(n),m) = \mu(n,m,\Theta(n,m)).\]</span> So apparently we need <span class="math inline">\(\mu(n,m,k) = \nplus(k,m)\)</span>.</p>
 <p>With this in mind, we define a binary operation <span class="math inline">\(\ntimes\)</span> on <span class="math inline">\(\nats\)</span> as follows.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \simprec{\varphi}{\mu}.\]</span></p>
+<p>Let <span class="math inline">\(\varphi : \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\varphi(m) = \zero\)</span>, and let <span class="math inline">\(\mu : \nats \times \nats \times \nats \rightarrow \nats\)</span> be given by <span class="math inline">\(\mu(k,a,b) = \nplus(b,a)\)</span>. We then define <span class="math inline">\(\ntimes : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\ntimes = \simprec(\varphi)(\mu).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">times ::</span> (<span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">times <span class="fu">=</span> simpleRec phi mu</a>
@@ -505,12 +511,23 @@ Posted on 2017-03-31 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
 = &amp; \next(\nplus(\ntimes(a,\next(c)),c))
 \end{eqnarray*}\]</span> while <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),\zero) = \zero;\]</span> in particular, the statement <span class="math display">\[\ntimes(\next(a),\next(c)) = \ntimes(\next(a),b)\]</span> is false, so that <span class="math inline">\(\next(c) \in C(\zero)\)</span> <em>vacuously</em>. So we have <span class="math inline">\(C(\zero) = \nats\)</span>, and thus <span class="math inline">\(\zero \in B\)</span>. For the inductive step, suppose we have <span class="math inline">\(b \in B\)</span>; we wish to show that <span class="math inline">\(\next(b) \in B\)</span>, or equivalently that <span class="math inline">\(C(\next(b)) = \nats\)</span>. We proceed by induction on <span class="math inline">\(c\)</span> again. The base case <span class="math inline">\(c = \zero\)</span> holds vacuously. For the inductive step, suppose we have <span class="math inline">\(c \in C(\next(b))\)</span>. Now suppose further that <span class="math display">\[\ntimes(\next(a),\next(b)) = \ntimes(\next(a),\next(c)).\]</span> Note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \ntimes(\next(a),\next(b)) \\
- &amp; = &amp; \nplus(\ntimes(a,\next(c),\next(c))) \\
- &amp; = &amp; \next(\nplus(\ntimes(\next(c),a),c)) \\
+ &amp;   &amp; \ntimes(\next(a),\next(c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \nplus(\ntimes(a,\next(c)),\next(c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-next-right}
+= &amp; \next(\nplus(\ntimes(a,\next(c)),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
+= &amp; \next(\nplus(\ntimes(\next(c),a),c)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
 = &amp; \next(\nplus(\nplus(\ntimes(c,a),a),c)) \\
- &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)).
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
+= &amp; \next(\nplus(\nplus(\ntimes(a,c),a),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \next(\nplus(\ntimes(a,c),\nplus(a,c))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
+= &amp; \next(\nplus(\ntimes(a,c),\nplus(c,a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
+= &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a))
 \end{eqnarray*}\]</span> The analogous statement holds for <span class="math inline">\(b\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
   \next(\nplus(\nplus(\ntimes(a,b),b),a)) &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)) \\
   \nplus(\nplus(\ntimes(a,b),b),a) &amp; = &amp; \nplus(\nplus(\ntimes(a,c),c),a) \\
@@ -563,28 +580,24 @@ Posted on 2017-03-31 by nbloomf
 <h2 id="testing">Testing</h2>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">_test_times n f maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_times n f size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testLabel1 <span class="st">&quot;times&quot;</span> n</a>
 <a class="sourceLine" id="cb11-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb11-8" data-line-number="8">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb11-9" data-line-number="9">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb11-10" data-line-number="10">      }</a>
-<a class="sourceLine" id="cb11-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb11-12" data-line-number="12">  runTest args (_test_times_zero_left n f)</a>
-<a class="sourceLine" id="cb11-13" data-line-number="13">  runTest args (_test_times_next_left n f)</a>
-<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_times_zero_right n f)</a>
-<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_times_next_right n f)</a>
-<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_times_one_left n f)</a>
-<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_times_one_right n f)</a>
-<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_times_commutative n f)</a>
-<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_times_distributive_left n f)</a>
-<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_times_distributive_right n f)</a>
-<a class="sourceLine" id="cb11-21" data-line-number="21">  runTest args (_test_times_associative n f)</a>
-<a class="sourceLine" id="cb11-22" data-line-number="22">  runTest args (_test_times_cancellative_left n f)</a>
-<a class="sourceLine" id="cb11-23" data-line-number="23">  runTest args (_test_times_cancellative_right n f)</a>
-<a class="sourceLine" id="cb11-24" data-line-number="24">  runTest args (_test_times_two_left n f)</a></code></pre></div>
+<a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb11-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb11-8" data-line-number="8">  runTest args (_test_times_zero_left n f)</a>
+<a class="sourceLine" id="cb11-9" data-line-number="9">  runTest args (_test_times_next_left n f)</a>
+<a class="sourceLine" id="cb11-10" data-line-number="10">  runTest args (_test_times_zero_right n f)</a>
+<a class="sourceLine" id="cb11-11" data-line-number="11">  runTest args (_test_times_next_right n f)</a>
+<a class="sourceLine" id="cb11-12" data-line-number="12">  runTest args (_test_times_one_left n f)</a>
+<a class="sourceLine" id="cb11-13" data-line-number="13">  runTest args (_test_times_one_right n f)</a>
+<a class="sourceLine" id="cb11-14" data-line-number="14">  runTest args (_test_times_commutative n f)</a>
+<a class="sourceLine" id="cb11-15" data-line-number="15">  runTest args (_test_times_distributive_left n f)</a>
+<a class="sourceLine" id="cb11-16" data-line-number="16">  runTest args (_test_times_distributive_right n f)</a>
+<a class="sourceLine" id="cb11-17" data-line-number="17">  runTest args (_test_times_associative n f)</a>
+<a class="sourceLine" id="cb11-18" data-line-number="18">  runTest args (_test_times_cancellative_left n f)</a>
+<a class="sourceLine" id="cb11-19" data-line-number="19">  runTest args (_test_times_cancellative_right n f)</a>
+<a class="sourceLine" id="cb11-20" data-line-number="20">  runTest args (_test_times_two_left n f)</a></code></pre></div>
 <p>I used a much smaller number of test cases this time, because these run much more slowly than the tests for <code>plus</code>. The culprit is <code>_test_times_associative</code>. What’s happening is that multiplication of <code>Nat</code>s is inherently slow; it’s implemented as iterated addition, which itself is iterated <code>N</code>.</p>
 <p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_times ::</span> <span class="dt">IO</span> ()</a>

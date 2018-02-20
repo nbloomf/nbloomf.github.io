@@ -71,9 +71,19 @@ Posted on 2014-05-21 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2014-05-21 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2014-05-21 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -229,30 +239,25 @@ Posted on 2014-05-21 by nbloomf
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Functions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
-<p>So far we have defined two special <em>recursion operators</em>, <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. These act like program skeletons: fill in the slots with functions of the right signatures and get a computable function out. In this post we’ll define another operator, which we will call <em>bailout recursion</em>.</p>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<p>So far we have defined two special <em>recursion operators</em>, <span class="math inline">\(\natrec(\ast)(\ast)\)</span> and <span class="math inline">\(\simprec\)</span>. These act like program skeletons: fill in the slots with functions of the right signatures and get a computable function out. In this post we’ll define another operator, which we will call <em>bailout recursion</em>.</p>
 <div class="theorem">
 <p><span id="thm-bailrec-zero"></span><span id="thm-bailrec-next"></span> Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions with the following signatures: <span class="math display">\[\begin{eqnarray*}
 \varphi &amp; : &amp; A \rightarrow B \\
 \beta &amp; : &amp; \nats \times A \rightarrow \bool \\
 \psi &amp; : &amp; \nats \times A \rightarrow B \\
-\omega &amp; : &amp; \nats \times A \rightarrow A. \\
+\omega &amp; : &amp; \nats \times A \rightarrow A.
 \end{eqnarray*}\]</span></p>
-<p>Then there is a unique function <span class="math inline">\(\Theta : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero, a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(m), a) = \left\{ \begin{array}{ll} \psi(m,a) &amp; \mathrm{if}\ \beta(m,a) \\ \Theta(m, \omega(m,a)) &amp; \mathrm{otherwise}. \end{array}\right.\]</span></p>
-<p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\bailrec{\varphi}{\beta}{\psi}{\omega}\)</span>.</p>
+<p>Then there is a unique function <span class="math inline">\(\Theta : \nats \rightarrow A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[\Theta(\zero,a) = \varphi(a)\]</span> and <span class="math display">\[\Theta(\next(m),a) = \left\{ \begin{array}{ll} \psi(m,a) &amp; \mathrm{if}\ \beta(m,a) \\ \Theta(m, \omega(m,a)) &amp; \mathrm{otherwise}. \end{array}\right.\]</span></p>
+<p>This function <span class="math inline">\(\Theta\)</span> will be denoted <span class="math inline">\(\bailrec(\varphi)(\beta)(\psi)(\omega)\)</span>.</p>
 <div class="proof">
-<p>We define <span class="math inline">\(ε : \nats \times A \rightarrow A + (\nats \times A)\)</span> by <span class="math inline">\(ε(\tup(n)(a)) = \lft(a)\)</span> and <span class="math inline">\(\chi : (A+(\nats \times A))^{\nats \times A} \rightarrow (A + (\nats \times A))^{\nats \times A}\)</span> by <span class="math display">\[\chi(h)(\tup(n)(a)) = \bif{\beta(\prev(n),a)}{\rgt(\tup(\prev(n))(a))}{h(\prev(n),\omega(\prev(n),a))}.\]</span> Now thinking of <span class="math inline">\(((A+(\nats \times A))^{\nats \times A},ε,\chi)\)</span> as an inductive set, we define <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> by <span class="math display">\[Θ(n,a) = \either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a))).\]</span></p>
+<p>We define <span class="math inline">\(ε : \nats \times A \rightarrow A + (\nats \times A)\)</span> by <span class="math inline">\(ε(\tup(n)(a)) = \lft(a)\)</span> and <span class="math inline">\(\chi : (A + (\nats \times A))^{\nats \times A} \rightarrow (A + (\nats \times A))^{\nats \times A}\)</span> by <span class="math display">\[\chi(h)(\tup(n)(a)) = \bif{\beta(\prev(n),a)}{\rgt(\tup(\prev(n))(a))}{h(\prev(n),\omega(\prev(n),a))}.\]</span> Now thinking of <span class="math inline">\(((A+(\nats \times A))^{\nats \times A},ε,\chi)\)</span> as an inductive set, we define <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> by <span class="math display">\[Θ(n,a) = \either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a))).\]</span></p>
 <p>To see that <span class="math inline">\(Θ\)</span> has the claimed properties, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\zero,a) \\
- &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a)))}
-   = &amp; \either(\varphi,\psi)(\natrec{ε}{\chi}(\zero)(\tup(\zero)(a))) \\
+ &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a)))}
+   = &amp; \either(\varphi,\psi)(\natrec(ε)(\chi)(\zero)(\tup(\zero)(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
    = &amp; \either(\varphi,\psi)(ε(\tup(\zero)(a))) \\
  &amp;     \hyp{ε(\tup(n)(a)) = \lft(a)}
@@ -261,23 +266,23 @@ Posted on 2014-05-21 by nbloomf
    = &amp; \varphi(a)
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\next(n),a) \\
- &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a)))}
-   = &amp; \either(\varphi,\psi)(\natrec{ε}{\chi}(\next(n))(\tup(\next(n))(a))) \\
+ &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a)))}
+   = &amp; \either(\varphi,\psi)(\natrec(ε)(\chi)(\next(n))(\tup(\next(n))(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-   = &amp; \either(\varphi,\psi)(\chi(\natrec{ε}{\chi}(n))(\tup(\next(n))(a))) \\
+   = &amp; \either(\varphi,\psi)(\chi(\natrec(ε)(\chi)(n))(\tup(\next(n))(a))) \\
  &amp;     \hyp{\chi(h)(\tup(n)(a)) = \bif{\beta(\prev(n),a)}{\rgt(\tup(\prev(n))(a))}{h(\tup(\prev(n))(a))}}
-   = &amp; \either(\varphi,\psi)(\bif{\beta(\prev(\next(n)),a)}{\rgt(\tup(\prev(\next(n)))(a))}{\natrec{ε}{\chi}(n)(\tup(\prev(\next(n)))(a))}) \\
+   = &amp; \either(\varphi,\psi)(\bif{\beta(\prev(\next(n)),a)}{\rgt(\tup(\prev(\next(n)))(a))}{\natrec(ε)(\chi)(n)(\tup(\prev(\next(n)))(a))}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
-   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(\prev(\next(n)))(a))}{\natrec{ε}{\chi}(n)(\tup(\prev(\next(n)))(a))}) \\
+   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(\prev(\next(n)))(a))}{\natrec(ε)(\chi)(n)(\tup(\prev(\next(n)))(a))}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
-   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(n)(a))}{\natrec{ε}{\chi}(n)(\tup(\prev(\next(n)))(a))}) \\
+   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(n)(a))}{\natrec(ε)(\chi)(n)(\tup(\prev(\next(n)))(a))}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-prev-next}
-   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(n)(a))}{\natrec{ε}{\chi}(n)(\tup(n)(a))}) \\
+   = &amp; \either(\varphi,\psi)(\bif{\beta(n,a)}{\rgt(\tup(n)(a))}{\natrec(ε)(\chi)(n)(\tup(n)(a))}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
-   = &amp; \bif{\beta(n,a)}{\either(\varphi,\psi)(\rgt(\tup(n)(a)))}{\either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a)))} \\
+   = &amp; \bif{\beta(n,a)}{\either(\varphi,\psi)(\rgt(\tup(n)(a)))}{\either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a)))} \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-   = &amp; \bif{\beta(n,a)}{\psi(\tup(n)(a))}{\either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a)))} \\
- &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec{ε}{\chi}(n)(\tup(n)(a)))}
+   = &amp; \bif{\beta(n,a)}{\psi(\tup(n)(a))}{\either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a)))} \\
+ &amp;     \let{Θ(n,a) = \either(\varphi,\psi)(\natrec(ε)(\chi)(n)(\tup(n)(a)))}
    = &amp; \bif{\beta(n,a)}{\psi(\tup(n)(a))}{Θ(n,a)}
 \end{eqnarray*}\]</span></p>
 <p>Next suppose <span class="math inline">\(\Psi : \nats \times A \rightarrow B\)</span> is another mapping which satisfies the properties of <span class="math inline">\(\Theta\)</span>; we show that <span class="math inline">\(\Psi = \Theta\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -299,7 +304,7 @@ Posted on 2014-05-21 by nbloomf
 </div>
 <p>You might notice that in this proof, we didn’t really use <span class="math inline">\(\beta\)</span> or <span class="math inline">\(\psi\)</span>. When this happens in a proof it usually means we’ve got some unnecessary details. But in this case, we will be using <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\psi\)</span> later, and the piecewiseness of <span class="math inline">\(\Theta\)</span> will be crucial in constructing an efficient tail-recursive evaluation strategy.</p>
 <h2 id="implementation">Implementation</h2>
-<p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span> and <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\bailrec{\ast}{\ast}{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this. First, the signature.</p>
+<p>As we did with <span class="math inline">\(\natrec\)</span> and <span class="math inline">\(\simprec\)</span>, we’d like to implement <span class="math inline">\(\bailrec\)</span> in software. There are a couple of ways to go about this. First, the signature.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">bailoutRec,<span class="ot"> bailoutRec' ::</span> (<span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b)</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
@@ -323,10 +328,10 @@ Posted on 2014-05-21 by nbloomf
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">bailoutRec' phi beta psi omega n a <span class="fu">=</span></a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  either phi (uncurry psi) (naturalRec epsilon chi n (tup n a))</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    epsilon (<span class="dt">Pair</span> _ a) <span class="fu">=</span> lft a</a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">    chi h (<span class="dt">Pair</span> n a) <span class="fu">=</span> <span class="kw">if</span> beta (prev n) a</a>
-<a class="sourceLine" id="cb4-6" data-line-number="6">      <span class="kw">then</span> rgt (tup (prev n) a)</a>
-<a class="sourceLine" id="cb4-7" data-line-number="7">      <span class="kw">else</span> h (tup (prev n) (omega (prev n) a))</a></code></pre></div>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    epsilon (<span class="dt">Pair</span> _ b) <span class="fu">=</span> lft b</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    chi h (<span class="dt">Pair</span> m b) <span class="fu">=</span> <span class="kw">if</span> beta (prev m) b</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">      <span class="kw">then</span> rgt (tup (prev m) b)</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7">      <span class="kw">else</span> h (tup (prev m) (omega (prev m) b))</a></code></pre></div>
 <p>Unlike simple recursion, the naive implementation of bailout recursion is already tail recursive.</p>
 <p>We should test that these are equivalent:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_bailoutrec_equiv ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> b)</a>
@@ -340,7 +345,7 @@ Posted on 2014-05-21 by nbloomf
 <p>Bailout recursion does some cool things that simple recursion does not. The <span class="math inline">\(\omega\)</span> map lets us “mutate” the initial parameter <span class="math inline">\(a\)</span> at each step in the recursion, and the boolean-valued function <span class="math inline">\(\beta\)</span> lets us short-circuit the recursion.</p>
 <p>Also note that simple recursion and bailout recursion were carefully chosen to have <em>tail recursive</em> evaluation strategies. Roughly speaking, a recursive function is called <em>tail recursive</em> if there is “nothing left to do” after the recursive call. For example, <span class="math display">\[f(n+1) = 1 + f(n)\]</span> is <em>not</em> tail recursive, because on the right hand side there is something waiting for the result of the recursive evaluation – in this case, the <span class="math inline">\(1+\)</span>.</p>
 <p>Arbitrary recursion is dangerous because in general, every time one function uses another we have to keep track of what remains to be done afterward – if we aren’t careful, it is very easy to write recursive functions which eat up lots of memory. Even simple recursion can blow up exponentially; the classic example is the Fibonacci numbers (which we’ll see later).</p>
-<p>In contrast, a <em>tail recursive</em> function by definition doesn’t have to keep track of what remains to be done after the recursion. Our recursion operators, <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, <span class="math inline">\(\simprec{\ast}{\ast}\)</span>, and <span class="math inline">\(\bailrec{\ast}{\ast}{\ast}{\ast}\)</span>, are carefully chosen so that they have tail recursive implementations.</p>
+<p>In contrast, a <em>tail recursive</em> function by definition doesn’t have to keep track of what remains to be done after the recursion. Our recursion operators, <span class="math inline">\(\natrec(\ast)(\ast)\)</span>, <span class="math inline">\(\simprec\)</span>, and <span class="math inline">\(\bailrec\)</span>, are carefully chosen so that they have tail recursive implementations.</p>
 <p>By the way, I think it’s helpful to compare the difference between arbitrary recursion and recursion operators to the difference between arbitrary <code>GOTO</code>s and structured loops. In both cases we have a simple but dangerous primitive operation that is hidden behind a safer and more meaningful interface. A <code>for</code> loop means “repeat this some number of times”; while the meaning of simple recursion is given by its universal property.</p>
 <p>As with natural and simple recursion, the “uniqueness” part of bailout recursion is also handy. To be a little more explicit, it says the following.</p>
 <div class="corollary">
@@ -348,8 +353,8 @@ Posted on 2014-05-21 by nbloomf
 \varphi &amp; : &amp; A \rightarrow B \\
 \beta &amp; : &amp; \nats \times A \rightarrow \bool \\
 \psi &amp; : &amp; \nats \times A \rightarrow B \\
-\omega &amp; : &amp; \nats \times A \rightarrow A. \\
-\end{eqnarray*}\]</span> Then <span class="math inline">\(\bailrec{\varphi}{\beta}{\psi}{\omega}\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>: <span class="math display">\[\left\{\begin{array}{l}
+\omega &amp; : &amp; \nats \times A \rightarrow A.
+\end{eqnarray*}\]</span> Then <span class="math inline">\(\bailrec(\varphi)(\beta)(\psi)(\omega)\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>: <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,a) = \varphi(a) \\
  f(\next(k),a) = \bif{\beta(k,a)}{\psi(m,a)}{f(k,\omega(k,a))}
 \end{array}\right.\]</span></p>
@@ -361,16 +366,12 @@ Posted on 2014-05-21 by nbloomf
 <a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
 <a class="sourceLine" id="cb6-4" data-line-number="4">  , <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">CoArbitrary</span> n)</a>
 <a class="sourceLine" id="cb6-5" data-line-number="5">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">_test_bailoutrec n a b maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">_test_bailoutrec n a b size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb6-7" data-line-number="7">  testLabel3 <span class="st">&quot;bailoutRec&quot;</span> n a b</a>
 <a class="sourceLine" id="cb6-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb6-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb6-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb6-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb6-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb6-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb6-15" data-line-number="15">  runTest args (_test_bailoutrec_equiv n a b)</a></code></pre></div>
+<a class="sourceLine" id="cb6-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  runTest args (_test_bailoutrec_equiv n a b)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main_bailoutrec ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">main_bailoutrec <span class="fu">=</span> <span class="kw">do</span></a>

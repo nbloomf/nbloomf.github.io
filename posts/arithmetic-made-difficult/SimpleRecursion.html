@@ -71,9 +71,19 @@ Posted on 2014-05-07 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -229,22 +239,19 @@ Posted on 2014-05-07 by nbloomf
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Tuples</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
-<p>So far we’ve defined the natural numbers as an iterative set with a special <em>universal property</em>, which was encapsulated in the existence of a simple recursion operator <span class="math inline">\(\natrec{\ast}{\ast}\)</span>. Anything we will wish to do with the natural numbers can be done using this operator alone. However, in practice, it will be handy to define synonyms for some more complicated recursive functions; the first of these is <em>simple recursion with a parameter</em>.</p>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">NaturalNumbers</span></a></code></pre></div>
+<p>So far we’ve defined the natural numbers as an iterative set with a special <em>universal property</em>, which was encapsulated in the existence of a simple recursion operator <span class="math inline">\(\natrec\)</span>. Anything we will wish to do with the natural numbers can be done using this operator alone. However, in practice, it will be handy to define synonyms for some more complicated recursive functions; the first of these is <em>simple recursion with a parameter</em>.</p>
 <div class="theorem">
 <p><span id="def-simprec-zero"></span><span id="def-simprec-next"></span> Suppose we have sets <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> and functions <span class="math inline">\(\varphi : A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then there is a unique function <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> such that, for all <span class="math inline">\(n \in \nats\)</span> and <span class="math inline">\(a \in A\)</span>, <span class="math display">\[Θ(\zero,a) = \varphi(a)\]</span> and <span class="math display">\[Θ(\next(n),a) = \mu(n,a,Θ(n,a)).\]</span></p>
-<p>This function <span class="math inline">\(Θ\)</span> will be denoted <span class="math inline">\(\simprec{\varphi}{\mu}\)</span>.</p>
+<p>This function <span class="math inline">\(Θ\)</span> will be denoted <span class="math inline">\(\simprec(\varphi)(\mu)\)</span>.</p>
 <div class="proof">
-<p>First we establish existence. Define <span class="math inline">\(\varepsilon : A \rightarrow \nats \times B\)</span> by <span class="math inline">\(\varepsilon(a) = \tup(\zero)(\varphi(a))\)</span>, and define <span class="math inline">\(\chi : A \rightarrow \nats \times B \rightarrow \nats \times B\)</span> by <span class="math display">\[\chi(a)(\tup(n)(b)) = \tup(\next(n))(\mu(n,a,b)).\]</span> Thinking of <span class="math inline">\((\nats \times B, \varepsilon(a), \chi(a))\)</span> as an inductive set, we define <span class="math inline">\(Ω : \nats \times A \rightarrow \nats \times B\)</span> by <span class="math display">\[Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)\]</span> and <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> by <span class="math inline">\(Θ(n,a) = \snd(Ω(n,a))\)</span>.</p>
+<p>First we establish existence. Define <span class="math inline">\(\varepsilon : A \rightarrow \nats \times B\)</span> by <span class="math display">\[\varepsilon = \compose(\tup(\zero))(\varphi)\]</span> and define <span class="math inline">\(\chi : A \rightarrow \nats \times B \rightarrow \nats \times B\)</span> by <span class="math display">\[\chi(a)(\tup(n)(b)) = \tup(\next(n))(\mu(n,a,b)).\]</span> Thinking of <span class="math inline">\((\nats \times B, \varepsilon(a), \chi(a))\)</span> as an inductive set, we define <span class="math inline">\(Ω : \nats \rightarrow A \rightarrow \nats \times B\)</span> by <span class="math display">\[Ω(n,a) = \natrec(\varepsilon(a))(\chi(a))(n)\]</span> and <span class="math inline">\(Θ : \nats \times A \rightarrow B\)</span> by <span class="math inline">\(Θ(n,a) = \snd(Ω(n,a))\)</span>.</p>
 <p>Now note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\zero,a) \\
- &amp;     \let{Θ(n,a) = \snd(\natrec{\varepsilon(a)}{\chi(a)}(n))}
-   = &amp; \snd(\natrec{\varepsilon(a)}{\chi(a)}(\zero)) \\
+ &amp;     \let{Θ(n,a) = \snd(\natrec(\varepsilon(a))(\chi(a))(n))}
+   = &amp; \snd(\natrec(\varepsilon(a))(\chi(a))(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
    = &amp; \snd(\varepsilon(a)) \\
  &amp;     \hyp{\varepsilon(a) = \tup(\zero)(\varphi(a))}
@@ -254,10 +261,10 @@ Posted on 2014-05-07 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 <p>Next we show that <span class="math display">\[Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))\]</span> for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(n \in \nats\)</span> by induction on <span class="math inline">\(n\)</span>. For the base case <span class="math inline">\(n = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Ω(\next(\zero),a) \\
- &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
-   = &amp; \natrec{\varepsilon(a)}{\chi(a)}(\next(\zero)) \\
+ &amp;     \let{Ω(n,a) = \natrec(\varepsilon(a))(\chi(a))(n)}
+   = &amp; \natrec(\varepsilon(a))(\chi(a))(\next(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-   = &amp; \chi(a)(\natrec{\varepsilon(a)}{\chi(a)}(\zero)) \\
+   = &amp; \chi(a)(\natrec(\varepsilon(a))(\chi(a))(\zero)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-zero}
    = &amp; \chi(a)(\varepsilon(a)) \\
  &amp;     \hyp{\varepsilon(a) = \tup(\zero)(\varphi(a))}
@@ -268,11 +275,11 @@ Posted on 2014-05-07 by nbloomf
    = &amp; \tup(\next(\zero))(\mu(\zero,a,Θ(\zero,a)))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(n\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Ω(\next(\next(n)),a) \\
- &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
-   = &amp; \natrec{\varepsilon(a)}{\chi(a)}(\next(\next(n))) \\
+ &amp;     \let{Ω(n,a) = \natrec(\varepsilon(a))(\chi(a))(n)}
+   = &amp; \natrec(\varepsilon(a))(\chi(a))(\next(\next(n))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/natural-numbers.html#cor-natrec-next}
-   = &amp; \chi(a)(\natrec{\varepsilon(a)}{\chi(a)}(\next(n))) \\
- &amp;     \let{Ω(n,a) = \natrec{\varepsilon(a)}{\chi(a)}(n)}
+   = &amp; \chi(a)(\natrec(\varepsilon(a))(\chi(a))(\next(n))) \\
+ &amp;     \let{Ω(n,a) = \natrec(\varepsilon(a))(\chi(a))(n)}
    = &amp; \chi(a)(Ω(\next(n),a)) \\
  &amp;     \hyp{Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))}
    = &amp; \chi(a)(\tup(\next(n))(\mu(n,a,Θ(n,a)))) \\
@@ -283,7 +290,7 @@ Posted on 2014-05-07 by nbloomf
  &amp;     \hyp{Ω(\next(n),a) = \tup(\next(n))(\mu(n,a,Θ(n,a)))}
    = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,\snd(Ω(\next(n),a)))) \\
  &amp;     \hyp{Θ(n,a) = \snd(Ω(n,a))}
-   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,Θ(\next(n),a))) \\
+   = &amp; \tup(\next(\next(n)))(\mu(\next(n),a,Θ(\next(n),a)))
 \end{eqnarray*}\]</span> as needed. Thus for all <span class="math inline">\(a\)</span> and <span class="math inline">\(n\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; Θ(\next(n),a) \\
  &amp;     \hyp{Θ(n,a) = \snd(Ω(n,a))}
@@ -312,7 +319,7 @@ Posted on 2014-05-07 by nbloomf
 </div>
 <p>That proof may look complicated, but structurally it’s very simple. We defined <span class="math inline">\(Θ\)</span> and showed it has the claimed properties with induction, then we showed it is unique by induction.</p>
 <h2 id="implementation">Implementation</h2>
-<p>As we did with <span class="math inline">\(\natrec{\ast}{\ast}\)</span>, we’d like to implement <span class="math inline">\(\simprec{\ast}{\ast}\)</span> in software. There are a couple of ways to go about this.</p>
+<p>As we did with <span class="math inline">\(\natrec(\ast)(\ast)\)</span>, we’d like to implement <span class="math inline">\(\simprec(\ast)(\ast)\)</span> in software. There are a couple of ways to go about this.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">simpleRec'', simpleRec',<span class="ot"> simpleRec ::</span> (<span class="dt">Natural</span> n)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> b)</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b)</a>
@@ -326,8 +333,8 @@ Posted on 2014-05-07 by nbloomf
 <p>There’s the definition from the proof:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1">simpleRec' phi mu n a <span class="fu">=</span> snd (naturalRec (epsilon a) (chi a) n)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">where</span></a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">    epsilon a <span class="fu">=</span> tup zero (phi a)</a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">    chi a (<span class="dt">Pair</span> n b) <span class="fu">=</span> tup (next n) (mu n a b)</a></code></pre></div>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    epsilon b <span class="fu">=</span> tup zero (phi b)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    chi c (<span class="dt">Pair</span> m b) <span class="fu">=</span> tup (next m) (mu m c b)</a></code></pre></div>
 <p>And the tail recursive strategy:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">simpleRec phi mu n a <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="kw">let</span></a>
@@ -400,10 +407,10 @@ phi' a = mu Z a (phi a)</code></pre>
 == simpRec phi mu (N k) a</code></pre>
 <p>So our efficient <code>simpRec</code> is equivalent to <code>simpRec''</code>. (We will leave the equivalence of <code>simpRec'</code> and <code>simpRec</code> as an exercise.)</p>
 <h2 id="what-it-does">What it does</h2>
-<p>This page is already long enough, so I’ll save examples of simple recursion for another day. Just note what <span class="math inline">\(\simprec{\ast}{\ast}\)</span> does: given some data <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>, it produces a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span>. So whenever we encounter (or want to construct) a function with this signature, it may be worthwhile to look for a definition in terms of <span class="math inline">\(\simprec{\ast}{\ast}\)</span>. The uniqueness of simple recursion makes such functions very nice to reason about.</p>
+<p>This page is already long enough, so I’ll save examples of simple recursion for another day. Just note what <span class="math inline">\(\simprec(\ast)(\ast)\)</span> does: given some data <span class="math inline">\(\varphi\)</span> and <span class="math inline">\(\mu\)</span>, it produces a recursive function with signature <span class="math inline">\(\nats \times A \rightarrow B\)</span>. So whenever we encounter (or want to construct) a function with this signature, it may be worthwhile to look for a definition in terms of <span class="math inline">\(\simprec(\ast)(\ast)\)</span>. The uniqueness of simple recursion makes such functions very nice to reason about.</p>
 <p>As with natural recursion, the “uniqueness” part of simple recursion is also handy. To be a little more explicit, it says the following.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(\varphi : \nats \times A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then <span class="math inline">\(\simprec{\varphi}{\mu}\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(b \in B\)</span>: <span class="math display">\[\left\{\begin{array}{l}
+<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(\varphi : \nats \times A \rightarrow B\)</span> and <span class="math inline">\(\mu : \nats \times A \times B \rightarrow B\)</span>. Then <span class="math inline">\(\simprec(\varphi)(\mu)\)</span> is the unique solution <span class="math inline">\(f : \nats \times A \rightarrow B\)</span> to the following system of functional equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(b \in B\)</span>: <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,a) = \varphi(a) \\
  f(\next(k),a) = \mu(k,a,f(k,a))
 \end{array}\right.\]</span></p>
@@ -415,17 +422,13 @@ phi' a = mu Z a (phi a)</code></pre>
 <a class="sourceLine" id="cb18-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
 <a class="sourceLine" id="cb18-4" data-line-number="4">  , <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">CoArbitrary</span> n)</a>
 <a class="sourceLine" id="cb18-5" data-line-number="5">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">_test_simplerec n a b maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">_test_simplerec n a b size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb18-7" data-line-number="7">  testLabel3 <span class="st">&quot;simpleRec&quot;</span> n a b</a>
 <a class="sourceLine" id="cb18-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb18-9" data-line-number="9">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb18-10" data-line-number="10">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb18-11" data-line-number="11">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb18-12" data-line-number="12">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb18-13" data-line-number="13">      }</a>
-<a class="sourceLine" id="cb18-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb18-15" data-line-number="15">  runTest args (_test_simplerec_equiv_def n a b)</a>
-<a class="sourceLine" id="cb18-16" data-line-number="16">  runTest args (_test_simplerec_equiv_naive n a b)</a></code></pre></div>
+<a class="sourceLine" id="cb18-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb18-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb18-11" data-line-number="11">  runTest args (_test_simplerec_equiv_def n a b)</a>
+<a class="sourceLine" id="cb18-12" data-line-number="12">  runTest args (_test_simplerec_equiv_naive n a b)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">main_simplerec ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb19-2" data-line-number="2">main_simplerec <span class="fu">=</span> <span class="kw">do</span></a>

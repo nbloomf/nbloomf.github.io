@@ -71,9 +71,19 @@ Posted on 2018-01-20 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-20 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-20 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -245,14 +255,14 @@ Posted on 2018-01-20 by nbloomf
 <a class="sourceLine" id="cb1-21" data-line-number="21"><span class="kw">import</span> <span class="dt">Unique</span></a></code></pre></div>
 <p>We’ve already defined a predicate that detects when one list is a sublist of another. Today we’ll define a function that constructs a list of all sublists of a given list.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\varphi : A \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\varphi(a,z) = \cat(\map(\cons(a,-)(z)),z).\]</span> Now define <span class="math inline">\(\sublists : \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\sublists = \foldr{\cons(\nil,\nil)}{\varphi}.\]</span></p>
+<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\varphi : A \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\varphi(a,z) = \cat(\map(\cons(a,-)(z)),z).\]</span> Now define <span class="math inline">\(\sublists : \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\sublists = \foldr(\cons(\nil,\nil))(\varphi).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">sublists ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">sublists <span class="fu">=</span> foldr (cons nil nil) phi</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">where</span></a>
 <a class="sourceLine" id="cb2-4" data-line-number="4">    phi a z <span class="fu">=</span> cat (map (cons a) z) z</a></code></pre></div>
 </div>
-<p>Since <span class="math inline">\(\sublists\)</span> is defined as a <span class="math inline">\(\foldr{\ast}{\ast}\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
+<p>Since <span class="math inline">\(\sublists\)</span> is defined as a <span class="math inline">\(\foldr(\ast)(\ast)\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
 <p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\sublists\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \cons(\nil,\nil) \\
@@ -377,14 +387,17 @@ Posted on 2018-01-20 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublists(\map(f)(\nil)) \\
- &amp; = &amp; \sublists(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
+   = &amp; \sublists(\nil) \\
  &amp; = &amp; \cons(\nil,\nil) \\
  &amp; = &amp; \cons(\map(f)(\nil),\map(\map(f))(\nil)) \\
- &amp; = &amp; \map(\map(f))(\cons(\nil,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \map(\map(f))(\cons(\nil,\nil)) \\
  &amp; = &amp; \map(\map(f))(\sublists(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublists(\map(f)(\cons(a,x))) \\
- &amp; = &amp; \sublists(\cons(f(a),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \sublists(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \cat(\map(\cons(f(a),-))(\sublists(\map(f)(x))),\sublists(\map(f)(x))) \\
  &amp; = &amp; \cat(\map(\cons(f(a),-))(\map(\map(f))(\sublists(x))),\map(\map(f))(\sublists(x))) \\
  &amp; = &amp; \cat(\map(\cons(f(a),-) \circ \map(f))(\sublists(x)),\map(\map(f))(\sublists(x))) \\
@@ -409,9 +422,11 @@ Posted on 2018-01-20 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\sublists(\nil)) \\
  &amp; = &amp; \length(\cons(\nil,\nil)) \\
- &amp; = &amp; \next(\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-singleton}
+   = &amp; \next(\zero) \\
  &amp; = &amp; \npower(\next(\next(\zero)),\zero) \\
- &amp; = &amp; \npower(\next(\next(\zero)),\length(\nil))
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
+   = &amp; \npower(\next(\next(\zero)),\length(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\sublists(\cons(a,x))) \\
  &amp; = &amp; \length(\cat(\map(\cons(a,-))(\sublists(x)),\sublists(x))) \\
@@ -423,7 +438,8 @@ Posted on 2018-01-20 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-commutative}
    = &amp; \ntimes(\npower(\next(\next(\zero)),\length(x)),\next(\next(\zero))) \\
  &amp; = &amp; \npower(\next(\next(\zero)),\next(\length(x))) \\
- &amp; = &amp; \npower(\next(\next(\zero)),\length(\cons(a,x)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
+   = &amp; \npower(\next(\next(\zero)),\length(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -483,23 +499,19 @@ Posted on 2018-01-20 by nbloomf
 <a class="sourceLine" id="cb10-6" data-line-number="6">  , <span class="dt">Boolean</span> bool, <span class="dt">Arbitrary</span> bool, <span class="dt">CoArbitrary</span> bool</a>
 <a class="sourceLine" id="cb10-7" data-line-number="7">  , <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
 <a class="sourceLine" id="cb10-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t (t a) <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> bool <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-9" data-line-number="9">_test_sublists t u k p maxSize numCases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-9" data-line-number="9">_test_sublists t u k p size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">  testLabel1 <span class="st">&quot;sublists&quot;</span> t</a>
 <a class="sourceLine" id="cb10-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb10-13" data-line-number="13">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb10-14" data-line-number="14">      { maxSuccess <span class="fu">=</span> numCases</a>
-<a class="sourceLine" id="cb10-15" data-line-number="15">      , maxSize    <span class="fu">=</span> maxSize</a>
-<a class="sourceLine" id="cb10-16" data-line-number="16">      }</a>
-<a class="sourceLine" id="cb10-17" data-line-number="17"></a>
-<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_sublists_nil t u)</a>
-<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_sublists_cons t u)</a>
-<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_sublists_sublist t u)</a>
-<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args (_test_sublists_nil_elt t u)</a>
-<a class="sourceLine" id="cb10-22" data-line-number="22">  runTest args (_test_sublists_elt_sublist t u)</a>
-<a class="sourceLine" id="cb10-23" data-line-number="23">  runTest args (_test_sublists_map t u)</a>
-<a class="sourceLine" id="cb10-24" data-line-number="24">  runTest args (_test_sublists_length t k)</a>
-<a class="sourceLine" id="cb10-25" data-line-number="25">  runTest args (_test_sublists_select t k)</a></code></pre></div>
+<a class="sourceLine" id="cb10-12" data-line-number="12">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb10-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">  runTest args (_test_sublists_nil t u)</a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">  runTest args (_test_sublists_cons t u)</a>
+<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args (_test_sublists_sublist t u)</a>
+<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args (_test_sublists_nil_elt t u)</a>
+<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_sublists_elt_sublist t u)</a>
+<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_sublists_map t u)</a>
+<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_sublists_length t k)</a>
+<a class="sourceLine" id="cb10-21" data-line-number="21">  runTest args (_test_sublists_select t k)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_sublists ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">main_sublists <span class="fu">=</span> <span class="kw">do</span></a>

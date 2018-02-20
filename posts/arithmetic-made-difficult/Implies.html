@@ -71,9 +71,19 @@ Posted on 2018-01-18 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-18 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-18 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -234,7 +244,7 @@ Posted on 2018-01-18 by nbloomf
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Or</span></a></code></pre></div>
 <p>Next we define implication on booleans.</p>
 <div class="definition">
-<p><span id="def-implies"></span> We define <span class="math inline">\(\bimpl : \bool \times \bool \rightarrow \bool\)</span> by <span class="math display">\[\bimpl(p,q) = \bif{p}{q}{\btrue}.\]</span></p>
+<p><span id="def-implies"></span> We define <span class="math inline">\(\bimpl : \bool \rightarrow \bool \rightarrow \bool\)</span> by <span class="math display">\[\bimpl(p,q) = \bif{p}{q}{\btrue}.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">impl ::</span> (<span class="dt">Boolean</span> b) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">impl p q <span class="fu">=</span> ifThenElse p q true</a></code></pre></div>
@@ -572,13 +582,14 @@ Posted on 2018-01-18 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_impl_and_compatible ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">_test_impl_and_compatible b <span class="fu">=</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  testName <span class="st">&quot;if and(impl(p,r),impl(q,s)) then impl(and(p,q),and(r,s))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">  \p q r s <span class="ot">-&gt;</span> isTrue <span class="fu">$</span> ifThenElse (and (impl p r) (impl q s))</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">    (impl (and p q) (and r s))</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">    (true)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">_test_impl_and_compatible</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Boolean</span> b, <span class="dt">Equal</span> b)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">_test_impl_and_compatible _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5">  testName <span class="st">&quot;if and(impl(p,r),impl(q,s)) then impl(and(p,q),and(r,s))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">  \p q r s <span class="ot">-&gt;</span> isTrue <span class="fu">$</span> ifThenElse (and (impl p r) (impl q s))</a>
+<a class="sourceLine" id="cb13-7" data-line-number="7">    (impl (and p q) (and r s))</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8">    (true)</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\bimpl\)</span> interacts with <span class="math inline">\(\band\)</span> and <span class="math inline">\(\bif{\ast}{\ast}{\ast}\)</span>.</p>
@@ -593,7 +604,7 @@ Posted on 2018-01-18 by nbloomf
    = &amp; \bimpl(\btrue,\beq(\bif{\band(p,\btrue)}{\btrue}{r},\bif{p}{\btrue}{r})) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-right}
    = &amp; \bimpl(\btrue,\beq(\bif{p}{\btrue}{r},\bif{p}{\btrue}{r})) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
    = &amp; \bimpl(\btrue,\btrue) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Implies.html#thm-implies-true-hyp}
    = &amp; \btrue
@@ -613,7 +624,7 @@ Posted on 2018-01-18 by nbloomf
    = &amp; \bimpl(\btrue,\beq(\bfalse,\bif{p}{\bfalse}{\bfalse})) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-same}
    = &amp; \bimpl(\btrue,\beq(\bfalse,\bfalse)) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
    = &amp; \bimpl(\btrue,\btrue) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Implies.html#thm-implies-true-hyp}
    = &amp; \btrue
@@ -646,27 +657,23 @@ Posted on 2018-01-18 by nbloomf
 <div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_impl ::</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2">  ( <span class="dt">TypeName</span> b, <span class="dt">Boolean</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">Show</span> b, <span class="dt">Equal</span> b</a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">  ) <span class="ot">=&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">_test_impl p size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">_test_impl p size cases <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb15-5" data-line-number="5">  testLabel1 <span class="st">&quot;implies&quot;</span> p</a>
 <a class="sourceLine" id="cb15-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb15-8" data-line-number="8">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb15-9" data-line-number="9">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb15-10" data-line-number="10">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb15-11" data-line-number="11">      }</a>
-<a class="sourceLine" id="cb15-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb15-13" data-line-number="13">  runTest args (_test_impl_or p)</a>
-<a class="sourceLine" id="cb15-14" data-line-number="14">  runTest args (_test_impl_false_hyp p)</a>
-<a class="sourceLine" id="cb15-15" data-line-number="15">  runTest args (_test_impl_false_conc p)</a>
-<a class="sourceLine" id="cb15-16" data-line-number="16">  runTest args (_test_impl_true_hyp p)</a>
-<a class="sourceLine" id="cb15-17" data-line-number="17">  runTest args (_test_impl_true_conc p)</a>
-<a class="sourceLine" id="cb15-18" data-line-number="18">  runTest args (_test_impl_reflexive p)</a>
-<a class="sourceLine" id="cb15-19" data-line-number="19">  runTest args (_test_impl_total p)</a>
-<a class="sourceLine" id="cb15-20" data-line-number="20">  runTest args (_test_impl_antecedents_commute p)</a>
-<a class="sourceLine" id="cb15-21" data-line-number="21">  runTest args (_test_impl_transitive p)</a>
-<a class="sourceLine" id="cb15-22" data-line-number="22">  runTest args (_test_impl_distributive p)</a>
-<a class="sourceLine" id="cb15-23" data-line-number="23">  runTest args (_test_impl_and_compatible p)</a>
-<a class="sourceLine" id="cb15-24" data-line-number="24">  runTest args (_test_impl_and_if p)</a></code></pre></div>
+<a class="sourceLine" id="cb15-7" data-line-number="7">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb15-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">  runTest args (_test_impl_or p)</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10">  runTest args (_test_impl_false_hyp p)</a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">  runTest args (_test_impl_false_conc p)</a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">  runTest args (_test_impl_true_hyp p)</a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">  runTest args (_test_impl_true_conc p)</a>
+<a class="sourceLine" id="cb15-14" data-line-number="14">  runTest args (_test_impl_reflexive p)</a>
+<a class="sourceLine" id="cb15-15" data-line-number="15">  runTest args (_test_impl_total p)</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16">  runTest args (_test_impl_antecedents_commute p)</a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">  runTest args (_test_impl_transitive p)</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">  runTest args (_test_impl_distributive p)</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19">  runTest args (_test_impl_and_compatible p)</a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">  runTest args (_test_impl_and_if p)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">main_impl ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2">main_impl <span class="fu">=</span> _test_impl (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>

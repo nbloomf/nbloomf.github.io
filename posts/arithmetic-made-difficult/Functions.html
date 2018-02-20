@@ -71,9 +71,19 @@ Posted on 2018-01-30 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2018-01-30 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2018-01-30 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -224,11 +234,10 @@ Posted on 2018-01-30 by nbloomf
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Functions</span> (</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  id, compose, const, flip, _test_functions, main_functions</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  id, compose, const, apply, _test_functions, main_functions</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a></code></pre></div>
 <p>Today we’ll nail down some generic functions.</p>
 <p>Every set has an associated <em>identity</em> function.</p>
 <div class="definition">
@@ -239,29 +248,29 @@ Posted on 2018-01-30 by nbloomf
 </div>
 <p>Given two functions, one with domain <span class="math inline">\(B\)</span> and the other with codomain <span class="math inline">\(B\)</span>, we can construct their <em>composite</em>.</p>
 <div class="definition">
-<p><span id="def-compose"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. Given <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(B : B \rightarrow C\)</span>, we define <span class="math inline">\(\compose{g}{f} : A \rightarrow C\)</span> by <span class="math display">\[\compose{g}{f}(x) = g(f(x)).\]</span></p>
+<p><span id="def-compose"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. Given <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(B : B \rightarrow C\)</span>, we define <span class="math inline">\(\compose(g)(f) : A \rightarrow C\)</span> by <span class="math display">\[\compose(g)(f)(x) = g(f(x)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">compose ::</span> (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> c</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">compose g f x <span class="fu">=</span> g (f x)</a></code></pre></div>
 </div>
-<p><span class="math inline">\(\id\)</span> is neutral under <span class="math inline">\(\compose{\ast}{\ast}\)</span>.</p>
+<p><span class="math inline">\(\id\)</span> is neutral under <span class="math inline">\(\compose(\ast)(\ast)\)</span>.</p>
 <div class="theorem">
 <p><span id="thm-compose-id"></span><span id="thm-compose-id-left"></span><span id="thm-compose-id-right"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(f : A \rightarrow B\)</span>. Then we have the following.</p>
 <ol type="1">
-<li><span class="math inline">\(\compose{\id}{f} = f\)</span>.</li>
-<li><span class="math inline">\(\compose{f}{\id} = f\)</span>.</li>
+<li><span class="math inline">\(\compose(\id)(f) = f\)</span>.</li>
+<li><span class="math inline">\(\compose(f)(\id) = f\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>Let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\id}{f}(a) \\
+ &amp;   &amp; \compose(\id)(f)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \id(f(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; f(a)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{f}{\id}(a) \\
+ &amp;   &amp; \compose(f)(\id)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; f(\id(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
@@ -283,30 +292,32 @@ Posted on 2018-01-30 by nbloomf
 <a class="sourceLine" id="cb4-11" data-line-number="11">  \f a <span class="ot">-&gt;</span> eq (compose f id a) (f a)</a></code></pre></div>
 </div>
 </div>
-<p><span class="math inline">\(\compose{\ast}{\ast}\)</span> is associative.</p>
+<p><span class="math inline">\(\compose(\ast)(\ast)\)</span> is associative.</p>
 <div class="theorem">
-<p><span id="thm-compose-associative"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span> be sets. For all <span class="math inline">\(f : A \rightarrow B\)</span>, <span class="math inline">\(g : B \rightarrow C\)</span>, and <span class="math inline">\(h : C \rightarrow D\)</span>, we have <span class="math display">\[\compose{h}{\compose{g}{f}} = \compose{\compose{h}{g}}{f}.\]</span></p>
+<p><span id="thm-compose-associative"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(C\)</span>, and <span class="math inline">\(D\)</span> be sets. For all <span class="math inline">\(f : A \rightarrow B\)</span>, <span class="math inline">\(g : B \rightarrow C\)</span>, and <span class="math inline">\(h : C \rightarrow D\)</span>, we have <span class="math display">\[\compose(h)(\compose(g)(f)) = \compose(\compose(h)(g))(f).\]</span></p>
 <div class="proof">
 <p>Let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{h}{\compose{g}{f}}(a) \\
+ &amp;   &amp; \compose(h)(\compose(g)(f))(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-   = &amp; h(\compose{g}{f}(a)) \\
+   = &amp; h(\compose(g)(f)(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; h(g(f(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-   = &amp; \compose{h}{g}(f(a)) \\
+   = &amp; \compose(h)(g)(f(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-   = &amp; \compose{\compose{h}{g}}{f}(a)
+   = &amp; \compose(\compose(h)(g))(f)(a)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_compose_associative ::</span> (<span class="dt">Equal</span> d)</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d <span class="ot">-&gt;</span> <span class="dt">Test</span> ((c <span class="ot">-&gt;</span> d) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">_test_compose_associative _ _ _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;compose(h)(compose(g)(f)) == compose(compose(h)(g))(f)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  \h g f a <span class="ot">-&gt;</span> eq</a>
-<a class="sourceLine" id="cb5-6" data-line-number="6">    (compose h (compose g f) a)</a>
-<a class="sourceLine" id="cb5-7" data-line-number="7">    (compose (compose h g) f a)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1">_test_compose_associative</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Equal</span> d)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((c <span class="ot">-&gt;</span> d) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">_test_compose_associative _ _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">  testName <span class="st">&quot;compose(h)(compose(g)(f)) == compose(compose(h)(g))(f)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">  \h g f a <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    (compose h (compose g f) a)</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">    (compose (compose h g) f a)</a></code></pre></div>
 </div>
 </div>
 <p>The <span class="math inline">\(\const\)</span> function throws away its second argument.</p>
@@ -314,14 +325,14 @@ Posted on 2018-01-30 by nbloomf
 <p><span id="def-const"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\const : B \rightarrow B^A\)</span> by <span class="math display">\[\const(b)(a) = b.\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1">const<span class="ot"> ::</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">const b a <span class="fu">=</span> b</a></code></pre></div>
+<a class="sourceLine" id="cb6-2" data-line-number="2">const b _ <span class="fu">=</span> b</a></code></pre></div>
 </div>
-<p><span class="math inline">\(\const(b)\)</span> absorbs under <span class="math inline">\(\compose{\ast}{\ast}\)</span> from the left.</p>
+<p><span class="math inline">\(\const(b)\)</span> absorbs under <span class="math inline">\(\compose(\ast)(\ast)\)</span> from the left.</p>
 <div class="theorem">
-<p><span id="thm-compose-const-left"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. For all <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(c \in C\)</span> we have <span class="math display">\[\compose{\const(c)}{f} = \const(c).\]</span></p>
+<p><span id="thm-compose-const-left"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. For all <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(c \in C\)</span> we have <span class="math display">\[\compose(\const(c))(f) = \const(c).\]</span></p>
 <div class="proof">
 <p>Let <span class="math inline">\(a \in A\)</span>. Note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\const(c)}{f}(a) \\
+ &amp;   &amp; \compose(\const(c))(f)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \const(c)(f(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-const}
@@ -331,66 +342,69 @@ Posted on 2018-01-30 by nbloomf
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_compose_const_left ::</span> (<span class="dt">Equal</span> c)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (c <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">_test_compose_const_left _ _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;compose(const(c))(f) == const(c)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  \c f a <span class="ot">-&gt;</span> eq (compose (const c) f a) (const c a)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1">_test_compose_const_left</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  <span class="ot">-&gt;</span> <span class="dt">Test</span> (c <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">_test_compose_const_left _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  testName <span class="st">&quot;compose(const(c))(f) == const(c)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">  \c f a <span class="ot">-&gt;</span> eq (compose (const c) f a) (const c a)</a></code></pre></div>
 </div>
 </div>
-<p><span class="math inline">\(\flip\)</span> lets us, well, flip the arguments of a function.</p>
+<p><span class="math inline">\(\apply\)</span> is operatorized function application.</p>
 <div class="definition">
-<p><span id="def-flip"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. Given <span class="math inline">\(f : A \rightarrow C^B\)</span>, we define <span class="math inline">\(\flip(f) : B \rightarrow C^A\)</span> by <span class="math display">\[\flip(f)(b)(a) = f(a)(b).\]</span></p>
+<p><span id="def-apply"></span> Given <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(x \in A\)</span>, we define <span class="math display">\[\apply(f)(x) = f(x).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1">flip<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> c</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">flip f b a <span class="fu">=</span> f a b</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">apply ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">apply f x <span class="fu">=</span> f x</a></code></pre></div>
 </div>
-<p><span class="math inline">\(\flip\)</span> is an involution.</p>
+<p><span class="math inline">\(\apply\)</span> distributes over compose.</p>
 <div class="theorem">
-<p><span id="thm-flip-involution"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. For all <span class="math inline">\(f : A \rightarrow C^B\)</span>, we have <span class="math display">\[\flip(\flip(f)) = f.\]</span></p>
+<p><span id="thm-apply-compose-distribute"></span> If <span class="math inline">\(f : A \rightarrow B\)</span> and <span class="math inline">\(g : B \rightarrow C\)</span> we have <span class="math display">\[\apply(\compose(g)(f)) = \compose(\apply(g))(\apply(f)).\]</span></p>
 <div class="proof">
-<p>Let <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \flip(\flip(f))(a)(b) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-flip}
-   = &amp; \flip(f)(b)(a) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-flip}
-   = &amp; f(a)(b)
+<p>Let <span class="math inline">\(x \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \apply(\compose(g)(f))(x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-apply}
+   = &amp; \compose(g)(f)(x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; g(f(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-apply}
+   = &amp; \apply(g)(f(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-apply}
+   = &amp; \apply(g)(\apply(f)(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+   = &amp; \compose(\apply(g))(\apply(f))(x)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_flip_involution ::</span> (<span class="dt">Equal</span> c)</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">_test_flip_involution _ _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;flip(flip(f)) == f&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5">  \f a b <span class="ot">-&gt;</span> eq (flip (flip f) a b) (f a b)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_apply_compose_distribute ::</span> (<span class="dt">Equal</span> c)</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> ((b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">_test_apply_compose_distribute _ _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  testName <span class="st">&quot;apply(compose(g)(f)) == compose(apply(g))(apply(f))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  \g f x <span class="ot">-&gt;</span> eq (apply (compose g f) x) (compose (apply g) (apply f) x)</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">_test_functions ::</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">  ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">Equal</span> c, <span class="dt">Show</span> c, <span class="dt">Arbitrary</span> c, <span class="dt">CoArbitrary</span> c</a>
-<a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> d, <span class="dt">Show</span> d, <span class="dt">Arbitrary</span> d, <span class="dt">CoArbitrary</span> d</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">_test_functions a b c d size num <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">  ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">TypeName</span> a</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b, <span class="dt">TypeName</span> b</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">Equal</span> c, <span class="dt">Show</span> c, <span class="dt">Arbitrary</span> c, <span class="dt">CoArbitrary</span> c, <span class="dt">TypeName</span> c</a>
+<a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> d, <span class="dt">Show</span> d, <span class="dt">Arbitrary</span> d, <span class="dt">CoArbitrary</span> d, <span class="dt">TypeName</span> d</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> d <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">_test_functions size cases a b c d <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel0 <span class="st">&quot;Functions&quot;</span></a>
-<a class="sourceLine" id="cb10-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb10-11" data-line-number="11">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb10-12" data-line-number="12">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb10-13" data-line-number="13">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb10-14" data-line-number="14">      }</a>
-<a class="sourceLine" id="cb10-15" data-line-number="15"></a>
-<a class="sourceLine" id="cb10-16" data-line-number="16">  runTest args (_test_compose_id_left a b)</a>
-<a class="sourceLine" id="cb10-17" data-line-number="17">  runTest args (_test_compose_id_right a b)</a>
-<a class="sourceLine" id="cb10-18" data-line-number="18">  runTest args (_test_compose_associative a b c d)</a>
-<a class="sourceLine" id="cb10-19" data-line-number="19">  runTest args (_test_compose_const_left a b c)</a>
-<a class="sourceLine" id="cb10-20" data-line-number="20">  runTest args (_test_flip_involution a b c)</a></code></pre></div>
+<a class="sourceLine" id="cb10-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb10-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb10-11" data-line-number="11">  runTest args (_test_compose_id_left a b)</a>
+<a class="sourceLine" id="cb10-12" data-line-number="12">  runTest args (_test_compose_id_right a b)</a>
+<a class="sourceLine" id="cb10-13" data-line-number="13">  runTest args (_test_compose_associative a b c d)</a>
+<a class="sourceLine" id="cb10-14" data-line-number="14">  runTest args (_test_compose_const_left a b c)</a>
+<a class="sourceLine" id="cb10-15" data-line-number="15">  runTest args (_test_apply_compose_distribute a b c)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_functions ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">main_functions <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_functions (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_functions <span class="dv">1</span> <span class="dv">1</span> () () () ()</a></code></pre></div>
 
 
 

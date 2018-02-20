@@ -71,9 +71,19 @@ Posted on 2017-12-21 by nbloomf
 
 <!-- functions -->
 \(\newcommand{\id}{\mathsf{id}}\)
-\(\newcommand{\compose}[2]{(#1 \circ #2)}\)
+\(\newcommand{\compose}{\mathsf{compose}}\)
 \(\newcommand{\const}{\mathsf{const}}\)
+\(\newcommand{\apply}{\mathsf{apply}}\)
 \(\newcommand{\flip}{\mathsf{flip}}\)
+\(\newcommand{\flipB}{\mathsf{flip2}}\)
+\(\newcommand{\flipC}{\mathsf{flip3}}\)
+\(\newcommand{\flipD}{\mathsf{flip4}}\)
+\(\newcommand{\flipE}{\mathsf{flip5}}\)
+\(\newcommand{\clone}{\mathsf{clone}}\)
+\(\newcommand{\cloneC}{\mathsf{clone3}}\)
+\(\newcommand{\composeB}{\mathsf{compose2}}\)
+\(\newcommand{\composeC}{\mathsf{compose3}}\)
+
 
 <!-- predicates -->
 \(\newcommand{\ptrue}{\mathsf{ptrue}}\)
@@ -117,14 +127,14 @@ Posted on 2017-12-21 by nbloomf
 \(\newcommand{\prev}{\mathsf{prev}}\)
 
 <!-- natural number recursion -->
-\(\newcommand{\natrec}[2]{\mathsf{natrec}(#1,#2)}\)
-\(\newcommand{\simprec}[2]{\mathsf{simprec}(#1,#2)}\)
-\(\newcommand{\bailrec}[4]{\mathsf{bailrec}(#1,#2,#3,#4)}\)
-\(\newcommand{\mutrec}[5]{\mathsf{mutrec}(#1,#2,#3,#4,#5)}\)
-\(\newcommand{\dnatrec}[3]{\mathsf{dnatrec}(#1,#2,#3)}\)
-\(\newcommand{\normrec}[3]{\mathsf{normrec}(#1,#2,#3)}\)
-\(\newcommand{\findsmallest}[1]{\mathsf{findsmallest}(#1)}\)
-\(\newcommand{\mnormrec}[4]{\mathsf{normrec}(#1,#2,#3,#4)}\)
+\(\newcommand{\natrec}{\mathsf{natrec}}\)
+\(\newcommand{\simprec}{\mathsf{simprec}}\)
+\(\newcommand{\bailrec}{\mathsf{bailrec}}\)
+\(\newcommand{\mutrec}{\mathsf{mutrec}}\)
+\(\newcommand{\dnatrec}{\mathsf{dnatrec}}\)
+\(\newcommand{\normrec}{\mathsf{normrec}}\)
+\(\newcommand{\findsmallest}{\mathsf{findsmallest}}\)
+\(\newcommand{\mnormrec}{\mathsf{mnormrec}}\)
 
 <!-- natural number arithmetic -->
 \(\newcommand{\nequal}{\mathsf{eq}}\)
@@ -161,14 +171,14 @@ Posted on 2017-12-21 by nbloomf
 \(\newcommand{\head}{\mathsf{head}}\)
 
 <!-- list recursion -->
-\(\newcommand{\foldr}[2]{\mathsf{foldr}(#1,#2)}\)
-\(\newcommand{\foldl}[1]{\mathsf{foldl}(#1)}\)
-\(\newcommand{\tacunfoldN}[1]{\mathsf{tacunfoldN}(#1)}\)
-\(\newcommand{\unfoldN}[1]{\mathsf{unfoldN}(#1)}\)
-\(\newcommand{\dfoldr}[3]{\mathsf{dfoldr}(#1,#2,#3)}\)
-\(\newcommand{\cfoldr}[2]{\mathsf{cfoldr}(#1,#2)}\)
-\(\newcommand{\bfoldr}[4]{\mathsf{bfoldr}(#1,#2,#3,#4)}\)
-\(\newcommand{\dbfoldr}[5]{\mathsf{dbfoldr}(#1,#2,#3,#4,#5)}\)
+\(\newcommand{\foldr}{\mathsf{foldr}}\)
+\(\newcommand{\foldl}{\mathsf{foldl}}\)
+\(\newcommand{\tacunfoldN}{\mathsf{tacunfoldN}}\)
+\(\newcommand{\unfoldN}{\mathsf{unfoldN}}\)
+\(\newcommand{\dfoldr}{\mathsf{dfoldr}}\)
+\(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
+\(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
+\(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
@@ -224,17 +234,16 @@ Posted on 2017-12-21 by nbloomf
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude, ScopedTypeVariables #-}</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( lft, rgt, either, uswap, upair , uassocL, uassocR, isLft, isRgt</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( <span class="dt">Union</span>(<span class="fu">..</span>), lft, rgt, either, uswap, upair , uassocL, uassocR, isLft, isRgt</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">  , _test_disjoint_union, main_disjoint_union</a>
 <a class="sourceLine" id="cb1-5" data-line-number="5">  ) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Testing</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Not</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">And</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Or</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Implies</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Functions</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Functions</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Flip</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Clone</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Composition</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Booleans</span></a></code></pre></div>
 <p>Dual to sets of tuples are disjoint sums.</p>
 <div class="definition">
 <p><span id="def-disjoint-union"></span><span id="def-either-lft"></span><span id="def-either-rgt"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. There is a set <span class="math inline">\(A + B\)</span> together with two functions <span class="math inline">\(\lft : A \rightarrow A + B\)</span> and <span class="math inline">\(\rgt : B \rightarrow A + B\)</span> having the property that if <span class="math inline">\(X\)</span> is a set and <span class="math inline">\(\sigma : A \rightarrow X\)</span> and <span class="math inline">\(\tau : B \rightarrow X\)</span> functions then there is a unique map <span class="math inline">\(\Theta : A + B \rightarrow X\)</span> such that <span class="math inline">\(\Theta \circ \lft = \sigma\)</span> and <span class="math inline">\(\Theta \circ \rgt = \tau\)</span>. That is, there is a unique <span class="math inline">\(\Theta\)</span> such that the following diagram commutes.</p>
@@ -257,8 +266,8 @@ X @= X @= X
 </ol>
 <div class="proof">
 <ol type="1">
-<li>Suppose to the contrary that there exists some <span class="math inline">\(z \in A+B\)</span> which is not of the form <span class="math inline">\(\lft(a)\)</span> or <span class="math inline">\(\rgt(b)\)</span> for any <span class="math inline">\(a\)</span> or <span class="math inline">\(b\)</span>. Now consider <span class="math display">\[f = \const(\btrue)\]</span> and <span class="math display">\[g(x) = \\bif{\beq(x,z)}{\bfalse}{\btrue}\]</span> as functions <span class="math inline">\(A+B \rightarrow \bool\)</span>. Note in particular that if <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{f}{\lft}(a) \\
+<li>Suppose to the contrary that there exists some <span class="math inline">\(z \in A+B\)</span> which is not of the form <span class="math inline">\(\lft(a)\)</span> or <span class="math inline">\(\rgt(b)\)</span> for any <span class="math inline">\(a\)</span> or <span class="math inline">\(b\)</span>. Now consider <span class="math display">\[f = \const(\btrue)\]</span> and <span class="math display">\[g(x) = \bif{\beq(x,z)}{\bfalse}{\btrue}\]</span> as functions <span class="math inline">\(A+B \rightarrow \bool\)</span>. Note in particular that if <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \compose(f)(\lft)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; f(\lft(a)) \\
  &amp;     \let{f = \const(\btrue)}
@@ -268,9 +277,9 @@ X @= X @= X
  &amp;     \hyp{g(\lft(a)) = \btrue}
 = &amp; g(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-= &amp; \compose{g}{\lft}(a)
+= &amp; \compose(g)(\lft)(a)
 \end{eqnarray*}\]</span> since <span class="math inline">\(z \neq \lft(a)\)</span>, and if <span class="math inline">\(b \in B\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{f}{\rgt}(b) \\
+ &amp;   &amp; \compose(f)(\rgt)(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; f(\rgt(b)) \\
  &amp;     \let{f = \const(\btrue)}
@@ -280,7 +289,7 @@ X @= X @= X
  &amp;     \hyp{g(\rgt(b)) = \btrue}
 = &amp; g(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-= &amp; \compose{g}{\rgt}(b)
+= &amp; \compose(g)(\rgt)(b)
 \end{eqnarray*}\]</span> similarly. By the universal property of <span class="math inline">\(A + B\)</span>, we thus have <span class="math display">\[f = \either(\const(\btrue),\const(\btrue)) = g.\]</span> But now we have <span class="math display">\[\btrue = f(z) = g(z) = \bfalse,\]</span> which is absurd.</li>
 <li>Suppose to the contrary that we have <span class="math inline">\(z \in A + B\)</span> with <span class="math inline">\(\lft(a) = z = \rgt(b)\)</span> for some <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(b \in B\)</span>, and consider now <span class="math inline">\(f : A+B \rightarrow \bool\)</span> given by <span class="math display">\[f = \either(\const(\btrue),\const(\bfalse)).\]</span> We then have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
@@ -301,7 +310,7 @@ X @= X @= X
  &amp;   &amp; \bfalse \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
 = &amp; \bif{\btrue}{\bfalse}{\btrue} \\
- &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-eq-reflexive}
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
 = &amp; \bif{\beq(u,u)}{\bfalse}{\btrue} \\
  &amp;     \let{f(x) = \bif{\beq(x,u)}{\bfalse}{\btrue}}
 = &amp; f(u) \\
@@ -317,34 +326,53 @@ X @= X @= X
 </ol>
 </div>
 </div>
-<p>The previous results suggest that we can model <span class="math inline">\(A + B\)</span> with the Haskell type <code>Either a b</code>, and the maps in the universal property like so.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">lft ::</span> a <span class="ot">-&gt;</span> <span class="dt">Either</span> a b</a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">lft a <span class="fu">=</span> <span class="dt">Left</span> a</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4"><span class="ot">rgt ::</span> b <span class="ot">-&gt;</span> <span class="dt">Either</span> a b</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">rgt b <span class="fu">=</span> <span class="dt">Right</span> b</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">either<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> x</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">either f _ (<span class="dt">Left</span>  a) <span class="fu">=</span> f a</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">either _ g (<span class="dt">Right</span> b) <span class="fu">=</span> g b</a>
+<p>The previous results suggest that we can model <span class="math inline">\(A + B\)</span> with the Haskell type <code>Either a b</code>. For simplicity’s sake we’ll redefine this type, and the maps in the universal property, like so.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">data</span> <span class="dt">Union</span> a b</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="fu">=</span> <span class="dt">Left</span> a <span class="fu">|</span> <span class="dt">Right</span> b</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">  <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb2-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="ot">lft ::</span> a <span class="ot">-&gt;</span> <span class="dt">Union</span> a b</a>
+<a class="sourceLine" id="cb2-6" data-line-number="6">lft a <span class="fu">=</span> <span class="dt">Left</span> a</a>
+<a class="sourceLine" id="cb2-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="ot">rgt ::</span> b <span class="ot">-&gt;</span> <span class="dt">Union</span> a b</a>
+<a class="sourceLine" id="cb2-9" data-line-number="9">rgt b <span class="fu">=</span> <span class="dt">Right</span> b</a>
 <a class="sourceLine" id="cb2-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb2-11" data-line-number="11"><span class="kw">instance</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (<span class="dt">Either</span> a b) <span class="kw">where</span></a>
-<a class="sourceLine" id="cb2-12" data-line-number="12">  eq (<span class="dt">Left</span> a1)  (<span class="dt">Left</span> a2)  <span class="fu">=</span> eq a1 a2</a>
-<a class="sourceLine" id="cb2-13" data-line-number="13">  eq (<span class="dt">Left</span> a1)  (<span class="dt">Right</span> b2) <span class="fu">=</span> false</a>
-<a class="sourceLine" id="cb2-14" data-line-number="14">  eq (<span class="dt">Right</span> b1) (<span class="dt">Left</span> a2)  <span class="fu">=</span> false</a>
-<a class="sourceLine" id="cb2-15" data-line-number="15">  eq (<span class="dt">Right</span> b1) (<span class="dt">Right</span> b2) <span class="fu">=</span> eq b1 b2</a></code></pre></div>
+<a class="sourceLine" id="cb2-11" data-line-number="11">either<span class="ot"> ::</span> (a <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> x</a>
+<a class="sourceLine" id="cb2-12" data-line-number="12">either f _ (<span class="dt">Left</span>  a) <span class="fu">=</span> f a</a>
+<a class="sourceLine" id="cb2-13" data-line-number="13">either _ g (<span class="dt">Right</span> b) <span class="fu">=</span> g b</a>
+<a class="sourceLine" id="cb2-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb2-15" data-line-number="15"><span class="kw">instance</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b) <span class="ot">=&gt;</span> <span class="dt">Equal</span> (<span class="dt">Union</span> a b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-16" data-line-number="16">  eq (<span class="dt">Left</span> a1)  (<span class="dt">Left</span> a2)  <span class="fu">=</span> eq a1 a2</a>
+<a class="sourceLine" id="cb2-17" data-line-number="17">  eq (<span class="dt">Left</span> _)   (<span class="dt">Right</span> _)  <span class="fu">=</span> false</a>
+<a class="sourceLine" id="cb2-18" data-line-number="18">  eq (<span class="dt">Right</span> _)  (<span class="dt">Left</span> _)   <span class="fu">=</span> false</a>
+<a class="sourceLine" id="cb2-19" data-line-number="19">  eq (<span class="dt">Right</span> b1) (<span class="dt">Right</span> b2) <span class="fu">=</span> eq b1 b2</a>
+<a class="sourceLine" id="cb2-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb2-21" data-line-number="21"><span class="kw">instance</span> (<span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> b) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span> (<span class="dt">Union</span> a b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-22" data-line-number="22">  arbitrary <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-23" data-line-number="23">    s <span class="ot">&lt;-</span> arbitrary</a>
+<a class="sourceLine" id="cb2-24" data-line-number="24">    <span class="kw">if</span> s</a>
+<a class="sourceLine" id="cb2-25" data-line-number="25">      <span class="kw">then</span> arbitrary <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> <span class="dt">Left</span>)</a>
+<a class="sourceLine" id="cb2-26" data-line-number="26">      <span class="kw">else</span> arbitrary <span class="fu">&gt;&gt;=</span> (return <span class="fu">.</span> <span class="dt">Right</span>)</a>
+<a class="sourceLine" id="cb2-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb2-28" data-line-number="28"><span class="kw">instance</span> (<span class="dt">CoArbitrary</span> a, <span class="dt">CoArbitrary</span> b) <span class="ot">=&gt;</span> <span class="dt">CoArbitrary</span> (<span class="dt">Union</span> a b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-29" data-line-number="29">  coarbitrary (<span class="dt">Left</span>  a) <span class="fu">=</span> variant (<span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Int</span>) <span class="fu">.</span> coarbitrary a</a>
+<a class="sourceLine" id="cb2-30" data-line-number="30">  coarbitrary (<span class="dt">Right</span> b) <span class="fu">=</span> variant (<span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Int</span>) <span class="fu">.</span> coarbitrary b</a>
+<a class="sourceLine" id="cb2-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb2-32" data-line-number="32"><span class="kw">instance</span> (<span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b) <span class="ot">=&gt;</span> <span class="dt">TypeName</span> (<span class="dt">Union</span> a b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-33" data-line-number="33">  typeName _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-34" data-line-number="34">    <span class="st">&quot;Union &quot;</span> <span class="fu">++</span> typeName (undefined<span class="ot"> ::</span> a) <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> typeName (undefined<span class="ot"> ::</span> b)</a></code></pre></div>
 <p>For example, <span class="math inline">\(\id_{A + B}\)</span> is an <span class="math inline">\(\either\)</span>.</p>
 <div class="theorem">
 <p><span id="thm-either-lft-rgt"></span> Provided the types match up, we have <span class="math display">\[\either(\lft,\rgt) = \id_{A + B}.\]</span></p>
 <div class="proof">
 <p>If <span class="math inline">\(a \in A\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\id}{\lft}(a) \\
+ &amp;   &amp; \compose(\id)(\lft)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \id(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
    = &amp; \lft(a)
 \end{eqnarray*}\]</span> and likewise if <span class="math inline">\(b \in B\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\id}{\rgt}(b) \\
+ &amp;   &amp; \compose(\id)(\rgt)(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \id(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
@@ -353,7 +381,7 @@ X @= X @= X
 </div>
 <div class="test">
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_either_lft_rgt ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3">_test_either_lft_rgt _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb3-4" data-line-number="4">  testName <span class="st">&quot;either(lft,rgt) == id&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb3-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (either lft rgt x) x</a></code></pre></div>
@@ -363,7 +391,7 @@ X @= X @= X
 <div class="definition">
 <p><span id="def-uSwap"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\uSwap : A + B \rightarrow B + A\)</span> by <span class="math display">\[\uSwap = \either(\rgt,\lft).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">uswap ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> b a</a>
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">uswap ::</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Union</span> b a</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">uswap <span class="fu">=</span> either rgt lft</a></code></pre></div>
 </div>
 <p>Now <span class="math inline">\(\uSwap\)</span> effectively toggles the tag of its argument.</p>
@@ -372,7 +400,7 @@ X @= X @= X
 <ol type="1">
 <li><span class="math inline">\(\uSwap(\lft(a)) = \rgt(a)\)</span>.</li>
 <li><span class="math inline">\(\uSwap(\rgt(b)) = \lft(b)\)</span>.</li>
-<li><span class="math inline">\(\compose{\uSwap}{\uSwap} = \id\)</span>.</li>
+<li><span class="math inline">\(\compose(\uSwap)(\uSwap) = \id\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
@@ -391,7 +419,7 @@ X @= X @= X
 = &amp; \lft(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>Let <span class="math inline">\(x \in A+B\)</span>; we have two possibilities. If <span class="math inline">\(x = \lft(a)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uSwap}{\uSwap}(\lft(a)) \\
+ &amp;   &amp; \compose(\uSwap)(\uSwap)(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uSwap(\uSwap(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uSwap-lft}
@@ -399,7 +427,7 @@ X @= X @= X
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uSwap-rgt}
 = &amp; \lft(a)
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(b)\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uSwap}{\uSwap}(\rgt(b)) \\
+ &amp;   &amp; \compose(\uSwap)(\uSwap)(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uSwap(\uSwap(\rgt(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uSwap-rgt}
@@ -429,7 +457,7 @@ X @= X @= X
 <a class="sourceLine" id="cb5-17" data-line-number="17"></a>
 <a class="sourceLine" id="cb5-18" data-line-number="18"></a>
 <a class="sourceLine" id="cb5-19" data-line-number="19"><span class="ot">_test_uswap_uswap ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
-<a class="sourceLine" id="cb5-20" data-line-number="20">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb5-21" data-line-number="21">_test_uswap_uswap _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb5-22" data-line-number="22">  testName <span class="st">&quot;swap(swap(x)) == x&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb5-23" data-line-number="23">  \x <span class="ot">-&gt;</span> eq (uswap (uswap x)) x</a></code></pre></div>
@@ -437,9 +465,9 @@ X @= X @= X
 </div>
 <p>Next, the utility <span class="math inline">\(\uPair\)</span> facilitates defining functions from one disjoint union to another.</p>
 <div class="definition">
-<p><span id="def-uPair"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets. We define <span class="math inline">\(\uPair : U^A \times V^B \rightarrow (U + V)^{A + B}\)</span> by <span class="math display">\[\uPair(f,g) = \either(\compose{\lft}{f},\compose{\rgt}{g}).\]</span></p>
+<p><span id="def-uPair"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets. We define <span class="math inline">\(\uPair : U^A \times V^B \rightarrow (U + V)^{A + B}\)</span> by <span class="math display">\[\uPair(f,g) = \either(\compose(\lft)(f),\compose(\rgt)(g)).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">upair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> u v</a>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">upair ::</span> (a <span class="ot">-&gt;</span> u) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> v) <span class="ot">-&gt;</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Union</span> u v</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">upair f g <span class="fu">=</span> either (lft <span class="fu">.</span> f) (rgt <span class="fu">.</span> g)</a></code></pre></div>
 </div>
 <p><span class="math inline">\(\uPair\)</span> has some nice properties.</p>
@@ -448,30 +476,30 @@ X @= X @= X
 <ol type="1">
 <li><span class="math inline">\(\uPair(f,g)(\lft(a)) = \lft(f(a))\)</span>.</li>
 <li><span class="math inline">\(\uPair(f,g)(\rgt(b)) = \rgt(g(b))\)</span>.</li>
-<li><span class="math inline">\(\compose{\uPair(f,g)}{\uPair(h,k)} = \uPair(\compose{f}{h},\compose{g}{k})\)</span>.</li>
+<li><span class="math inline">\(\compose(\uPair(f,g))(\uPair(h,k)) = \uPair(\compose(f)(h),\compose(g)(k))\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uPair(f,g)(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uPair}
-= &amp; \either(\compose{\lft}{f},\compose{\rgt}{g})(\lft(a)) \\
+= &amp; \either(\compose(\lft)(f),\compose(\rgt)(g))(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
-= &amp; \compose{\lft}{f}(a) \\
+= &amp; \compose(\lft)(f)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \lft(f(a))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uPair(f,g)(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uPair}
-= &amp; \either(\compose{\lft}{f},\compose{\rgt}{g})(\rgt(b)) \\
+= &amp; \either(\compose(\lft)(f),\compose(\rgt)(g))(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-= &amp; \compose{\rgt}{g}(b) \\
+= &amp; \compose(\rgt)(g)(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \rgt(g(b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We consider two possibilities: note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uPair(f,g)}{\uPair(h,k)}(\lft(a)) \\
+ &amp;   &amp; \compose(\uPair(f,g))(\uPair(h,k))(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uPair(f,g)(\uPair(h,k)(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-lft}
@@ -479,11 +507,11 @@ X @= X @= X
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-lft}
 = &amp; \lft(f(h(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-= &amp; \lft(\compose{f}{h}(a)) \\
+= &amp; \lft(\compose(f)(h)(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-lft}
-= &amp; \uPair(\compose{f}{h},\compose{g}{k})(\lft(a))
+= &amp; \uPair(\compose(f)(h),\compose(g)(k))(\lft(a))
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uPair(f,g)}{\uPair(h,k)}(\rgt(b)) \\
+ &amp;   &amp; \compose(\uPair(f,g))(\uPair(h,k))(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uPair(f,g)(\uPair(h,k)(\rgt(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-rgt}
@@ -491,9 +519,9 @@ X @= X @= X
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-rgt}
 = &amp; \rgt(g(k(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
-= &amp; \rgt(\compose{g}{k}(b)) \\
+= &amp; \rgt(\compose(g)(k)(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uPair-rgt}
-= &amp; \uPair(\compose{f}{h},\compose{g}{k})(\rgt(b))
+= &amp; \uPair(\compose(f)(h),\compose(g)(k))(\rgt(b))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -519,7 +547,7 @@ X @= X @= X
 <a class="sourceLine" id="cb7-19" data-line-number="19"><span class="ot">_test_upair_upair ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b)</a>
 <a class="sourceLine" id="cb7-20" data-line-number="20">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b</a>
 <a class="sourceLine" id="cb7-21" data-line-number="21">  <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b)</a>
-<a class="sourceLine" id="cb7-22" data-line-number="22">      <span class="ot">-&gt;</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-22" data-line-number="22">      <span class="ot">-&gt;</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb7-23" data-line-number="23">_test_upair_upair _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb7-24" data-line-number="24">  testName <span class="st">&quot;upair(f,g) . upair(h,k) == upair(f . h, g . k)&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb7-25" data-line-number="25">  \f g h k x <span class="ot">-&gt;</span></a>
@@ -530,12 +558,12 @@ X @= X @= X
 </div>
 <p>Finally, note that although as sets <span class="math inline">\(A + (B + C)\)</span> and <span class="math inline">\((A + B) + C\)</span> cannot possibly be equal to each other in general, they are naturally isomorphic via <span class="math inline">\(\uAssocL\)</span> and <span class="math inline">\(\uAssocR\)</span>.</p>
 <div class="definition">
-<p><span id="def-uAssocL"></span><span id="def-uAssocR"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. We define <span class="math inline">\(\uAssocL : A + (B + C) \rightarrow (A + B) + C\)</span> by <span class="math display">\[\uAssocL = \either(\compose{\lft}{\lft},\either(\compose{\lft}{\rgt},\rgt))\]</span> and define <span class="math inline">\(\uAssocR : (A + B) + C \rightarrow A + (B + C)\)</span> by <span class="math display">\[\uAssocR = \either(\either(\lft,\compose{\rgt}{\lft}),\compose{\rgt}{\rgt}).\]</span></p>
+<p><span id="def-uAssocL"></span><span id="def-uAssocR"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets. We define <span class="math inline">\(\uAssocL : A + (B + C) \rightarrow (A + B) + C\)</span> by <span class="math display">\[\uAssocL = \either(\compose(\lft)(\lft),\either(\compose(\lft)(\rgt),\rgt))\]</span> and define <span class="math inline">\(\uAssocR : (A + B) + C \rightarrow A + (B + C)\)</span> by <span class="math display">\[\uAssocR = \either(\either(\lft,\compose(\rgt)(\lft)),\compose(\rgt)(\rgt)).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">uassocL ::</span> <span class="dt">Either</span> a (<span class="dt">Either</span> b c) <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">Either</span> a b) c</a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">uassocL ::</span> <span class="dt">Union</span> a (<span class="dt">Union</span> b c) <span class="ot">-&gt;</span> <span class="dt">Union</span> (<span class="dt">Union</span> a b) c</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">uassocL <span class="fu">=</span> either (lft <span class="fu">.</span> lft) (either (lft <span class="fu">.</span> rgt) rgt)</a>
 <a class="sourceLine" id="cb8-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">uassocR ::</span> <span class="dt">Either</span> (<span class="dt">Either</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Either</span> a (<span class="dt">Either</span> b c)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"><span class="ot">uassocR ::</span> <span class="dt">Union</span> (<span class="dt">Union</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Union</span> a (<span class="dt">Union</span> b c)</a>
 <a class="sourceLine" id="cb8-5" data-line-number="5">uassocR <span class="fu">=</span> either (either lft (rgt <span class="fu">.</span> lft)) (rgt <span class="fu">.</span> rgt)</a></code></pre></div>
 </div>
 <p>Now <span class="math inline">\(\uAssocL\)</span> and <span class="math inline">\(\uAssocR\)</span> have some nice properties.</p>
@@ -548,73 +576,73 @@ X @= X @= X
 <li><span class="math inline">\(\uAssocR(\lft(\lft(a))) = \lft(a)\)</span>.</li>
 <li><span class="math inline">\(\uAssocR(\lft(\rgt(b))) = \rgt(\lft(b))\)</span>.</li>
 <li><span class="math inline">\(\uAssocR(\rgt(c)) = \rgt(\rgt(c))\)</span>.</li>
-<li><span class="math inline">\(\compose{\uAssocR}{\uAssocL} = \id_{A + (B + C)}\)</span>.</li>
-<li><span class="math inline">\(\compose{\uAssocL}{\uAssocR} = \id_{(A + B) + C}\)</span>.</li>
+<li><span class="math inline">\(\compose(\uAssocR)(\uAssocL) = \id_{A + (B + C)}\)</span>.</li>
+<li><span class="math inline">\(\compose(\uAssocL)(\uAssocR) = \id_{(A + B) + C}\)</span>.</li>
 </ol>
 <div class="proof">
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocL(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocL}
-= &amp; \either(\compose{\lft}{\lft},\either(\compose{\lft}{\rgt},\rgt))(\lft(a)) \\
+= &amp; \either(\compose(\lft)(\lft),\either(\compose(\lft)(\rgt),\rgt))(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
-= &amp; \compose{\lft}{\lft}(a) \\
+= &amp; \compose(\lft)(\lft)(a) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \lft(\lft(a))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocL(\rgt(\lft(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocL}
-= &amp; \either(\compose{\lft}{\lft},\either(\compose{\lft}{\rgt},\rgt))(\rgt(\lft(b))) \\
+= &amp; \either(\compose(\lft)(\lft),\either(\compose(\lft)(\rgt),\rgt))(\rgt(\lft(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-= &amp; \either(\compose{\lft}{\rgt},\rgt)(\lft(b)) \\
+= &amp; \either(\compose(\lft)(\rgt),\rgt)(\lft(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
-= &amp; \compose{\lft}{\rgt}(b) \\
+= &amp; \compose(\lft)(\rgt)(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \lft(\rgt(b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocL(\rgt(\rgt(c))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocL}
-= &amp; \either(\compose{\lft}{\lft},\either(\compose{\lft}{\rgt},\rgt))(\rgt(\rgt(c))) \\
+= &amp; \either(\compose(\lft)(\lft),\either(\compose(\lft)(\rgt),\rgt))(\rgt(\rgt(c))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-= &amp; \either(\compose{\lft}{\rgt},\rgt)(\rgt(c)) \\
+= &amp; \either(\compose(\lft)(\rgt),\rgt)(\rgt(c)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
 = &amp; \rgt(c)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocR(\lft(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocR}
-= &amp; \either(\either(\lft,\compose{\rgt}{\lft}),\compose{\rgt}{\rgt})(\lft(\lft(a))) \\
+= &amp; \either(\either(\lft,\compose(\rgt)(\lft)),\compose(\rgt)(\rgt))(\lft(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
-= &amp; \either(\lft,\compose{\rgt}{\lft})(\lft(a)) \\
+= &amp; \either(\lft,\compose(\rgt)(\lft))(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
 = &amp; \lft(a)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocR(\lft(\rgt(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocR}
-= &amp; \either(\either(\lft,\compose{\rgt}{\lft}),\compose{\rgt}{\rgt})(\lft(\rgt(b))) \\
+= &amp; \either(\either(\lft,\compose(\rgt)(\lft)),\compose(\rgt)(\rgt))(\lft(\rgt(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-lft}
-= &amp; \either(\lft,\compose{\rgt}{\lft})(\rgt(b)) \\
+= &amp; \either(\lft,\compose(\rgt)(\lft))(\rgt(b)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-= &amp; \compose{\rgt}{\lft}(b) \\
+= &amp; \compose(\rgt)(\lft)(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \rgt(\lft(b))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \uAssocR(\rgt(c)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-uAssocR}
-= &amp; \either(\either(\lft,\compose{\rgt}{\lft}),\compose{\rgt}{\rgt})(\rgt(c)) \\
+= &amp; \either(\either(\lft,\compose(\rgt)(\lft)),\compose(\rgt)(\rgt))(\rgt(c)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#def-either-rgt}
-= &amp; \compose{\rgt}{\rgt}(c) \\
+= &amp; \compose(\rgt)(\rgt)(c) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \rgt(\rgt(c))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(x \in A + (B + C)\)</span>, we have three possibilities. If <span class="math inline">\(x = \lft(a)\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocR}{\uAssocL}(x) \\
+ &amp;   &amp; \compose(\uAssocR)(\uAssocL)(x) \\
  &amp;     \let{x = \lft(a)}
-= &amp; \compose{\uAssocR}{\uAssocL}(\lft(a)) \\
+= &amp; \compose(\uAssocR)(\uAssocL)(\lft(a)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocR(\uAssocL(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocL-lft}
@@ -624,9 +652,9 @@ X @= X @= X
  &amp;     \let{x = \lft(a)}
 = &amp; x
 \end{eqnarray*}\]</span> if <span class="math inline">\(x = \rgt(\lft(b))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocR}{\uAssocL}(x) \\
+ &amp;   &amp; \compose(\uAssocR)(\uAssocL)(x) \\
  &amp;     \let{x = \rgt(\lft(b))}
-= &amp; \compose{\uAssocR}{\uAssocL}(\rgt(\lft(b))) \\
+= &amp; \compose(\uAssocR)(\uAssocL)(\rgt(\lft(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocR(\uAssocL(\rgt(\lft(b)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocL-rgt-lft}
@@ -636,9 +664,9 @@ X @= X @= X
  &amp;     \let{x = \rgt(\lft(b))}
 = &amp; x
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(\rgt(c))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocR}{\uAssocL}(x) \\
+ &amp;   &amp; \compose(\uAssocR)(\uAssocL)(x) \\
  &amp;     \let{x = \rgt(\rgt(c))}
-= &amp; \compose{\uAssocR}{\uAssocL}(\rgt(\rgt(c))) \\
+= &amp; \compose(\uAssocR)(\uAssocL)(\rgt(\rgt(c))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocR(\uAssocL(\rgt(\rgt(c)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocL-rgt-rgt}
@@ -649,9 +677,9 @@ X @= X @= X
 = &amp; x
 \end{eqnarray*}\]</span> as needed.</li>
 <li>If <span class="math inline">\(x \in (A + B) + C\)</span>, we have three possibilities. If <span class="math inline">\(x = \lft(\lft(a))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocL}{\uAssocR}(x) \\
+ &amp;   &amp; \compose(\uAssocL)(\uAssocR)(x) \\
  &amp;     \let{x = \lft(\lft(a))}
-= &amp; \compose{\uAssocL}{\uAssocR}(\lft(\lft(a))) \\
+= &amp; \compose(\uAssocL)(\uAssocR)(\lft(\lft(a))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocL(\uAssocR(\lft(\lft(a)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocR-lft-lft}
@@ -661,9 +689,9 @@ X @= X @= X
  &amp;     \let{x = \lft(\lft(a))}
 = &amp; x
 \end{eqnarray*}\]</span> if <span class="math inline">\(x = \lft(\rgt(b))\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocL}{\uAssocR}(x) \\
+ &amp;   &amp; \compose(\uAssocL)(\uAssocR)(x) \\
  &amp;     \let{x = \lft(\rgt(b))}
-= &amp; \compose{\uAssocL}{\uAssocR}(\lft(\rgt(b))) \\
+= &amp; \compose(\uAssocL)(\uAssocR)(\lft(\rgt(b))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocL(\uAssocR(\lft(\rgt(b)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocR-lft-rgt}
@@ -673,9 +701,9 @@ X @= X @= X
  &amp;     \let{x = \lft(\rgt(b))}
 = &amp; x
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x = \rgt(c)\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \compose{\uAssocL}{\uAssocR}(x) \\
+ &amp;   &amp; \compose(\uAssocL)(\uAssocR)(x) \\
  &amp;     \let{x = \rgt(c)}
-= &amp; \compose{\uAssocL}{\uAssocR}(\rgt(c)) \\
+= &amp; \compose(\uAssocL)(\uAssocR)(\rgt(c)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
 = &amp; \uAssocL(\uAssocR(\rgt(c))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/DisjointUnions.html#thm-uAssocR-rgt}
@@ -751,14 +779,14 @@ X @= X @= X
 <a class="sourceLine" id="cb9-61" data-line-number="61"></a>
 <a class="sourceLine" id="cb9-62" data-line-number="62"></a>
 <a class="sourceLine" id="cb9-63" data-line-number="63"><span class="ot">_test_uassocR_uassocL ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
-<a class="sourceLine" id="cb9-64" data-line-number="64">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> a (<span class="dt">Either</span> b c) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-64" data-line-number="64">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Union</span> a (<span class="dt">Union</span> b c) <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-65" data-line-number="65">_test_uassocR_uassocL _ _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-66" data-line-number="66">  testName <span class="st">&quot;uassocR . uassocL == id&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-67" data-line-number="67">  \x <span class="ot">-&gt;</span> eq (uassocR (uassocL x)) x</a>
 <a class="sourceLine" id="cb9-68" data-line-number="68"></a>
 <a class="sourceLine" id="cb9-69" data-line-number="69"></a>
 <a class="sourceLine" id="cb9-70" data-line-number="70"><span class="ot">_test_uassocL_uassocR ::</span> (<span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c)</a>
-<a class="sourceLine" id="cb9-71" data-line-number="71">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Either</span> (<span class="dt">Either</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-71" data-line-number="71">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Test</span> (<span class="dt">Union</span> (<span class="dt">Union</span> a b) c <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
 <a class="sourceLine" id="cb9-72" data-line-number="72">_test_uassocL_uassocR _ _ _ <span class="fu">=</span></a>
 <a class="sourceLine" id="cb9-73" data-line-number="73">  testName <span class="st">&quot;uassocL . uassocR == id&quot;</span> <span class="fu">$</span></a>
 <a class="sourceLine" id="cb9-74" data-line-number="74">  \x <span class="ot">-&gt;</span> eq (uassocL (uassocR x)) x</a></code></pre></div>
@@ -768,10 +796,10 @@ X @= X @= X
 <div class="definition">
 <p><span id="dfn-isRgt"></span><span id="dfn-isLft"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. We define <span class="math inline">\(\isLft : A + B \rightarrow \bool\)</span> by <span class="math display">\[\isLft = \either(\const(\btrue),\const(\bfalse))\]</span> and <span class="math inline">\(\isRgt : A + B \rightarrow \bool\)</span> by <span class="math display">\[\isRgt = \either(\const(\bfalse),\const(\btrue)).\]</span></p>
 <p>In Haskell:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">isLft ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">isLft ::</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">isLft <span class="fu">=</span> either (const true) (const false)</a>
 <a class="sourceLine" id="cb10-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">isRgt ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4"><span class="ot">isRgt ::</span> <span class="dt">Union</span> a b <span class="ot">-&gt;</span> <span class="dt">Bool</span></a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">isRgt <span class="fu">=</span> either (const false) (const true)</a></code></pre></div>
 </div>
 <p>Now <span class="math inline">\(\isLft\)</span> and <span class="math inline">\(\isRgt\)</span> have some nice properties.</p>
@@ -855,48 +883,49 @@ X @= X @= X
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1">_test_disjoint_union</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">  ::</span> ( <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">Show</span> c</a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">     , <span class="dt">Equal</span> a, <span class="dt">Equal</span> b, <span class="dt">Equal</span> c</a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">     , <span class="dt">Arbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">Arbitrary</span> c</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">     , <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">TypeName</span> c</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">     , <span class="dt">CoArbitrary</span> a, <span class="dt">CoArbitrary</span> b )</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">  <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-8" data-line-number="8">_test_disjoint_union a b c size num <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">  testLabel3 <span class="st">&quot;Disjoint Union&quot;</span> a b c</a>
-<a class="sourceLine" id="cb12-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb12-11" data-line-number="11">  <span class="kw">let</span></a>
-<a class="sourceLine" id="cb12-12" data-line-number="12">    args <span class="fu">=</span> stdArgs</a>
-<a class="sourceLine" id="cb12-13" data-line-number="13">      { maxSuccess <span class="fu">=</span> num</a>
-<a class="sourceLine" id="cb12-14" data-line-number="14">      , maxSize <span class="fu">=</span> size</a>
-<a class="sourceLine" id="cb12-15" data-line-number="15">      }</a>
-<a class="sourceLine" id="cb12-16" data-line-number="16"></a>
-<a class="sourceLine" id="cb12-17" data-line-number="17">  runTest args (_test_either_lft_rgt a b)</a>
-<a class="sourceLine" id="cb12-18" data-line-number="18"></a>
-<a class="sourceLine" id="cb12-19" data-line-number="19">  runTest args (_test_uswap_lft a b)</a>
-<a class="sourceLine" id="cb12-20" data-line-number="20">  runTest args (_test_uswap_rgt a b)</a>
-<a class="sourceLine" id="cb12-21" data-line-number="21">  runTest args (_test_uswap_uswap a b)</a>
-<a class="sourceLine" id="cb12-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb12-23" data-line-number="23">  runTest args (_test_upair_lft a b)</a>
-<a class="sourceLine" id="cb12-24" data-line-number="24">  runTest args (_test_upair_rgt a b)</a>
-<a class="sourceLine" id="cb12-25" data-line-number="25">  runTest args (_test_upair_upair a b)</a>
-<a class="sourceLine" id="cb12-26" data-line-number="26"></a>
-<a class="sourceLine" id="cb12-27" data-line-number="27">  runTest args (_test_uassocL_lft a b c)</a>
-<a class="sourceLine" id="cb12-28" data-line-number="28">  runTest args (_test_uassocL_rgt_lft a b c)</a>
-<a class="sourceLine" id="cb12-29" data-line-number="29">  runTest args (_test_uassocL_rgt_rgt a b c)</a>
-<a class="sourceLine" id="cb12-30" data-line-number="30">  runTest args (_test_uassocR_lft_lft a b c)</a>
-<a class="sourceLine" id="cb12-31" data-line-number="31">  runTest args (_test_uassocR_lft_rgt a b c)</a>
-<a class="sourceLine" id="cb12-32" data-line-number="32">  runTest args (_test_uassocR_rgt a b c)</a>
-<a class="sourceLine" id="cb12-33" data-line-number="33">  runTest args (_test_uassocR_uassocL a b c)</a>
-<a class="sourceLine" id="cb12-34" data-line-number="34">  runTest args (_test_uassocL_uassocR a b c)</a>
-<a class="sourceLine" id="cb12-35" data-line-number="35"></a>
-<a class="sourceLine" id="cb12-36" data-line-number="36">  runTest args (_test_isLft_lft a b)</a>
-<a class="sourceLine" id="cb12-37" data-line-number="37">  runTest args (_test_isLft_rgt a b)</a>
-<a class="sourceLine" id="cb12-38" data-line-number="38">  runTest args (_test_isRgt_lft a b)</a>
-<a class="sourceLine" id="cb12-39" data-line-number="39">  runTest args (_test_isRgt_rgt a b)</a></code></pre></div>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="ot">  ::</span> ( <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">TypeName</span> a</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">     , <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b, <span class="dt">TypeName</span> b</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">     , <span class="dt">Equal</span> c, <span class="dt">Show</span> c, <span class="dt">Arbitrary</span> c, <span class="dt">CoArbitrary</span> c, <span class="dt">TypeName</span> c</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">_test_disjoint_union size cases a b c <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">  testLabel3 <span class="st">&quot;Disjoint Union&quot;</span> a b c</a>
+<a class="sourceLine" id="cb12-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb12-10" data-line-number="10">  runTest args (_test_either_lft_rgt a b)</a>
+<a class="sourceLine" id="cb12-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb12-12" data-line-number="12">  runTest args (_test_uswap_lft a b)</a>
+<a class="sourceLine" id="cb12-13" data-line-number="13">  runTest args (_test_uswap_rgt a b)</a>
+<a class="sourceLine" id="cb12-14" data-line-number="14">  runTest args (_test_uswap_uswap a b)</a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb12-16" data-line-number="16">  runTest args (_test_upair_lft a b)</a>
+<a class="sourceLine" id="cb12-17" data-line-number="17">  runTest args (_test_upair_rgt a b)</a>
+<a class="sourceLine" id="cb12-18" data-line-number="18">  runTest args (_test_upair_upair a b)</a>
+<a class="sourceLine" id="cb12-19" data-line-number="19"></a>
+<a class="sourceLine" id="cb12-20" data-line-number="20">  runTest args (_test_uassocL_lft a b c)</a>
+<a class="sourceLine" id="cb12-21" data-line-number="21">  runTest args (_test_uassocL_rgt_lft a b c)</a>
+<a class="sourceLine" id="cb12-22" data-line-number="22">  runTest args (_test_uassocL_rgt_rgt a b c)</a>
+<a class="sourceLine" id="cb12-23" data-line-number="23">  runTest args (_test_uassocR_lft_lft a b c)</a>
+<a class="sourceLine" id="cb12-24" data-line-number="24">  runTest args (_test_uassocR_lft_rgt a b c)</a>
+<a class="sourceLine" id="cb12-25" data-line-number="25">  runTest args (_test_uassocR_rgt a b c)</a>
+<a class="sourceLine" id="cb12-26" data-line-number="26">  runTest args (_test_uassocR_uassocL a b c)</a>
+<a class="sourceLine" id="cb12-27" data-line-number="27">  runTest args (_test_uassocL_uassocR a b c)</a>
+<a class="sourceLine" id="cb12-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb12-29" data-line-number="29">  runTest args (_test_isLft_lft a b)</a>
+<a class="sourceLine" id="cb12-30" data-line-number="30">  runTest args (_test_isLft_rgt a b)</a>
+<a class="sourceLine" id="cb12-31" data-line-number="31">  runTest args (_test_isRgt_lft a b)</a>
+<a class="sourceLine" id="cb12-32" data-line-number="32">  runTest args (_test_isRgt_rgt a b)</a></code></pre></div>
 <p>Main:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_disjoint_union ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">main_disjoint_union <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_disjoint_union (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_disjoint_union <span class="dv">20</span> <span class="dv">100</span></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">   (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">  <span class="kw">let</span> a <span class="fu">=</span> lft<span class="ot"> true ::</span> <span class="dt">Union</span> <span class="dt">Bool</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb13-8" data-line-number="8">  _test_functions <span class="dv">20</span> <span class="dv">100</span> a a a a</a>
+<a class="sourceLine" id="cb13-9" data-line-number="9">  _test_flip      <span class="dv">20</span> <span class="dv">100</span> a a a a a a a</a>
+<a class="sourceLine" id="cb13-10" data-line-number="10">  _test_clone     <span class="dv">20</span> <span class="dv">100</span> a a</a>
+<a class="sourceLine" id="cb13-11" data-line-number="11">  _test_compose   <span class="dv">20</span> <span class="dv">100</span> a a a a a a a</a></code></pre></div>
 
 
 
