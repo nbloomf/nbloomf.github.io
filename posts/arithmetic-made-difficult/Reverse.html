@@ -81,8 +81,12 @@ Posted on 2017-04-24 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-04-24 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -234,16 +240,17 @@ Posted on 2017-04-24 by nbloomf
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">Reverse</span></a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  ( revcat, rev, _test_rev, main_rev</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( revcat, rev, last, _test_rev, main_rev</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
 <a class="sourceLine" id="cb1-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-7" data-line-number="7"><span class="kw">import</span> <span class="dt">Flip</span></a>
-<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">Unary</span></a>
-<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Lists</span></a>
-<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">LeftFold</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Snoc</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-8" data-line-number="8"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Lists</span></a>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">HeadAndTail</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">LeftFold</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Snoc</span></a></code></pre></div>
 <p>Today we’ll define a function that takes a list and reverses the order of its elements; say, to turn <span class="math inline">\((a,b,c)\)</span> into <span class="math inline">\((c,b,a)\)</span> and vice versa.</p>
 <p>First we define a utility as follows.</p>
 <div class="definition">
@@ -541,24 +548,31 @@ Posted on 2017-04-24 by nbloomf
  &amp; = &amp; \beq(\rev(x),\rev(y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),y) \\
- &amp; = &amp; \beq(\cons(a,x),\nil) \\
+ &amp;     \hyp{y = \nil}
+= &amp; \beq(\cons(a,x),\nil) \\
  &amp; = &amp; \isnil(\cons(a,x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-isnil-rev}
 = &amp; \isnil(\rev(\cons(a,x))) \\
  &amp; = &amp; \beq(\rev(\cons(a,x)),\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
 = &amp; \beq(\rev(\cons(a,x)),\rev(\nil)) \\
- &amp; = &amp; \beq(\rev(\cons(a,x)),\rev(y))
+ &amp;     \hyp{y = \nil}
+= &amp; \beq(\rev(\cons(a,x)),\rev(y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(y = \cons(b,u)\)</span>. Using the inductive hypothsis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),y) \\
- &amp; = &amp; \beq(\cons(a,x),\cons(b,u)) \\
- &amp; = &amp; \band(\beq(a,b),\beq(x,u)) \\
+ &amp;     \hyp{y = \cons(b,u)}
+= &amp; \beq(\cons(a,x),\cons(b,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+= &amp; \band(\beq(a,b),\beq(x,u)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-beq-rev}
 = &amp; \band(\beq(a,b),\beq(\rev(x),\rev(u))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-snoc-eq}
 = &amp; \beq(\snoc(a,\rev(x)),\snoc(b,\rev(u))) \\
- &amp; = &amp; \beq(\rev(\cons(a,x)),\rev(\cons(b,u))) \\
- &amp; = &amp; \beq(\rev(\cons(a,x)),\rev(y))
+ &amp; = &amp; \beq(\rev(\cons(a,x)),\snoc(b,\rev(u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \beq(\rev(\cons(a,x)),\rev(\cons(b,u))) \\
+ &amp;     \hyp{y = \cons(b,u)}
+= &amp; \beq(\rev(\cons(a,x)),\rev(y))
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -625,35 +639,116 @@ Posted on 2017-04-24 by nbloomf
 <p>This proof is analogous to that of the ordinary list induction principle. Define <span class="math inline">\(T \subseteq \lists{A}\)</span> by <span class="math display">\[T = \{ x \in \lists{A} \mid f(x) \in C \}.\]</span> Note that <span class="math inline">\(\nil \in T\)</span> and if <span class="math inline">\(x \in T\)</span> and <span class="math inline">\(a \in A\)</span> then <span class="math inline">\(\snoc(a,x) \in T\)</span>; that is, <span class="math inline">\((T,\nil,\snoc)\)</span> is an <span class="math inline">\(A\)</span>-iterative set. We define <span class="math inline">\(\Theta : \lists{A} \rightarrow T\)</span> to be the fold <span class="math display">\[\Theta = \foldr(\nil)(\snoc).\]</span> Now <span class="math inline">\(\rev : T \rightarrow \lists{A}\)</span> is an <span class="math inline">\(A\)</span>-iterative homomorphism since <span class="math display">\[\rev(\cons(a,x)) = \snoc(a,\rev(x)).\]</span> Thus <span class="math inline">\(\rev \circ \Theta\)</span> is an <span class="math inline">\(A\)</span>-inductive homomorphism, which by uniqueness must be the identity on <span class="math inline">\(\lists{A}\)</span>. If <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[x = \rev(\rev(x)) = \rev(\id(\rev(x))) = \rev(\rev(\Theta(\rev(x)))) = \Theta(\rev(x)) \in T,\]</span> so that <span class="math inline">\(T = \lists{A}\)</span> as claimed.</p>
 </div>
 </div>
+<p>We can define an analog to <span class="math inline">\(\head\)</span> in terms of <span class="math inline">\(\rev\)</span>:</p>
+<div class="definition">
+<p><span id="def-last"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\last : \lists{A} \rightarrow 1 + A\)</span> by <span class="math display">\[\last(x) = \head(\rev(x)).\]</span></p>
+<p>In Haskell:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1">last<span class="ot"> ::</span> (<span class="dt">List</span> t) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Union</span> () a</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">last <span class="fu">=</span> head <span class="fu">.</span> rev</a></code></pre></div>
+</div>
+<p>And <span class="math inline">\(\last\)</span> has some nice properties.</p>
+<div class="theorem">
+<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have the following.</p>
+<ol type="1">
+<li><span class="math inline">\(\last(\nil) = \lft(\ast)\)</span>.</li>
+<li><span class="math inline">\(\last(\cons(a,\nil)) = \rgt(a)\)</span>.</li>
+<li><span class="math inline">\(\last(\cons(a,\cons(b,x))) = \last(\cons(b,x))\)</span>.</li>
+</ol>
+<div class="proof">
+<ol type="1">
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \last(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#def-last}
+= &amp; \head(\rev(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+= &amp; \head(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-nil}
+= &amp; \lft(\ast)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>We have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \last(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#def-last}
+= &amp; \head(\rev(\cons(a,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \head(\snoc(a,\rev(\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+= &amp; \head(\snoc(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+= &amp; \head(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+= &amp; \rgt(a)
+\end{eqnarray*}\]</span> as claimed.</li>
+<li>Note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \last(\cons(a,\cons(b,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#def-last}
+= &amp; \head(\rev(\cons(a,\cons(b,x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \head(\snoc(a,\rev(\cons(b,x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \head(\snoc(a,\snoc(b,\rev(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-snoc-head}
+= &amp; \head(\snoc(b,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
+= &amp; \head(\rev(\cons(b,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#def-last}
+= &amp; \last(\cons(b,x))
+\end{eqnarray*}\]</span> as claimed.</li>
+</ol>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">_test_last_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">_test_last_nil l <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">  testName <span class="st">&quot;eq(last(nil),lft(*))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">  eq (last (nil <span class="ot">`withTypeOf`</span> l)) (lft ())</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb14-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8"><span class="ot">_test_last_one ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb14-10" data-line-number="10">_test_last_one l <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-11" data-line-number="11">  testName <span class="st">&quot;eq(last(cons(a,xs)),rgt(a))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-12" data-line-number="12">  \a <span class="ot">-&gt;</span> eq (last (cons a (nil <span class="ot">`withTypeOf`</span> l))) (rgt a)</a>
+<a class="sourceLine" id="cb14-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb14-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb14-15" data-line-number="15"><span class="ot">_test_cons_last ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb14-16" data-line-number="16">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb14-17" data-line-number="17">_test_cons_last _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb14-18" data-line-number="18">  testName <span class="st">&quot;eq(last(cons(a,cons(b,xs))),last(cons(b,xs)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb14-19" data-line-number="19">  \a b x <span class="ot">-&gt;</span> eq (last (cons a (cons b x))) (last (cons b x))</a></code></pre></div>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">_test_rev ::</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">_test_rev t size cases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">  testLabel1 <span class="st">&quot;rev&quot;</span> t</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">  runTest args (_test_revcat_nil t)</a>
-<a class="sourceLine" id="cb13-10" data-line-number="10">  runTest args (_test_revcat_cons t)</a>
-<a class="sourceLine" id="cb13-11" data-line-number="11">  runTest args (_test_revcat_snoc_left t)</a>
-<a class="sourceLine" id="cb13-12" data-line-number="12">  runTest args (_test_revcat_snoc_right t)</a>
-<a class="sourceLine" id="cb13-13" data-line-number="13">  runTest args (_test_rev_foldr t)</a>
-<a class="sourceLine" id="cb13-14" data-line-number="14">  runTest args (_test_rev_nil t)</a>
-<a class="sourceLine" id="cb13-15" data-line-number="15">  runTest args (_test_rev_cons t)</a>
-<a class="sourceLine" id="cb13-16" data-line-number="16">  runTest args (_test_rev_single t)</a>
-<a class="sourceLine" id="cb13-17" data-line-number="17">  runTest args (_test_rev_double t)</a>
-<a class="sourceLine" id="cb13-18" data-line-number="18">  runTest args (_test_rev_snoc t)</a>
-<a class="sourceLine" id="cb13-19" data-line-number="19">  runTest args (_test_rev_involution t)</a>
-<a class="sourceLine" id="cb13-20" data-line-number="20">  runTest args (_test_rev_isnil t)</a>
-<a class="sourceLine" id="cb13-21" data-line-number="21">  runTest args (_test_rev_eq t)</a>
-<a class="sourceLine" id="cb13-22" data-line-number="22">  runTest args (_test_rev_foldl t)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">_test_rev ::</span></a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">_test_rev size cases t <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  testLabel1 <span class="st">&quot;rev&quot;</span> t</a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb15-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb15-9" data-line-number="9">  runTest args (_test_revcat_nil t)</a>
+<a class="sourceLine" id="cb15-10" data-line-number="10">  runTest args (_test_revcat_cons t)</a>
+<a class="sourceLine" id="cb15-11" data-line-number="11">  runTest args (_test_revcat_snoc_left t)</a>
+<a class="sourceLine" id="cb15-12" data-line-number="12">  runTest args (_test_revcat_snoc_right t)</a>
+<a class="sourceLine" id="cb15-13" data-line-number="13">  runTest args (_test_rev_foldr t)</a>
+<a class="sourceLine" id="cb15-14" data-line-number="14">  runTest args (_test_rev_nil t)</a>
+<a class="sourceLine" id="cb15-15" data-line-number="15">  runTest args (_test_rev_cons t)</a>
+<a class="sourceLine" id="cb15-16" data-line-number="16">  runTest args (_test_rev_single t)</a>
+<a class="sourceLine" id="cb15-17" data-line-number="17">  runTest args (_test_rev_double t)</a>
+<a class="sourceLine" id="cb15-18" data-line-number="18">  runTest args (_test_rev_snoc t)</a>
+<a class="sourceLine" id="cb15-19" data-line-number="19">  runTest args (_test_rev_involution t)</a>
+<a class="sourceLine" id="cb15-20" data-line-number="20">  runTest args (_test_rev_isnil t)</a>
+<a class="sourceLine" id="cb15-21" data-line-number="21">  runTest args (_test_rev_eq t)</a>
+<a class="sourceLine" id="cb15-22" data-line-number="22">  runTest args (_test_rev_foldl t)</a>
+<a class="sourceLine" id="cb15-23" data-line-number="23">  runTest args (_test_last_nil t)</a>
+<a class="sourceLine" id="cb15-24" data-line-number="24">  runTest args (_test_last_one t)</a>
+<a class="sourceLine" id="cb15-25" data-line-number="25">  runTest args (_test_cons_last t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="ot">main_rev ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">main_rev <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  _test_rev (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">  _test_rev (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">main_rev ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2">main_rev <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  _test_rev <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  _test_rev <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

@@ -81,8 +81,12 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-09 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -264,7 +270,7 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\lcp\)</span> is defined as a double fold, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\lcp\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-lcp-nil"></span><span id="cor-lcp-cons-nil"></span><span id="cor-lcp-cons-cons"></span> Let <span class="math inline">\(A\)</span> be a set. Then <span class="math inline">\(\lcp\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \nil \\
  f(\cons(a,x),\nil) = \nil \\
  f(\cons(a,x),\cons(b,y)) = \bif{\beq(a,b)}{\cons(a,f(x,y))}{\nil}
@@ -295,7 +301,7 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p>Now <span class="math inline">\(\lcp\)</span> lives up to the name (the <em>universal property</em> of <span class="math inline">\(\lcp\)</span>):</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
+<p><span id="thm-lcp-prefix-left"></span><span id="thm-lcp-prefix-right"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\prefix(\lcp(x,y),x)\)</span> and <span class="math inline">\(\prefix(\lcp(x,y),y)\)</span>.</li>
 <li>If <span class="math inline">\(\prefix(z,x)\)</span> and <span class="math inline">\(\prefix(z,y)\)</span>, then <span class="math inline">\(\prefix(z,\lcp(x,y))\)</span>.</li>
@@ -304,34 +310,45 @@ Posted on 2017-05-09 by nbloomf
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(x,y),x) \\
- &amp; = &amp; \prefix(\lcp(\nil,y),\nil) \\
+ &amp;     \let{x = \nil}
+= &amp; \prefix(\lcp(\nil,y),\nil) \\
  &amp; = &amp; \prefix(\nil,\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(x,y),y) \\
- &amp; = &amp; \prefix(\lcp(\nil,y),y) \\
+ &amp;     \hyp{x = \nil}
+= &amp; \prefix(\lcp(\nil,y),y) \\
  &amp; = &amp; \prefix(\nil,y) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equalities hold for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. We consider two cases for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),\cons(a,x)) \\
- &amp; = &amp; \prefix(\lcp(\cons(a,x),\nil),\cons(a,x)) \\
+ &amp;     \hyp{y = \nil}
+= &amp; \prefix(\lcp(\cons(a,x),\nil),\cons(a,x)) \\
  &amp; = &amp; \prefix(\nil,\cons(a,x)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),y) \\
- &amp; = &amp; \prefix(\lcp(\cons(a,x),\nil),\nil) \\
+ &amp;     \let{y = \nil}
+= &amp; \prefix(\lcp(\cons(a,x),\nil),\nil) \\
  &amp; = &amp; \prefix(\nil,\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed. Suppose now that <span class="math inline">\(y = \cons(b,w)\)</span>. If <span class="math inline">\(b = a\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),\cons(a,x)) \\
- &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(a,x)) \\
+ &amp;     \let{y = \cons(b,w)}
+= &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(a,x)) \\
  &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(a,w)),\cons(a,x)) \\
  &amp; = &amp; \prefix(\cons(a,\lcp(x,w)),\cons(a,x)) \\
  &amp; = &amp; \prefix(\lcp(x,w),x) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-prefix-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),y) \\
- &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(b,w)) \\
+ &amp;     \let{y = \cons(b,w)}
+= &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(b,w)) \\
  &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(a,w)),\cons(a,w)) \\
  &amp; = &amp; \prefix(\cons(a,\lcp(x,w)),\cons(a,w)) \\
  &amp; = &amp; \prefix(\lcp(x,w),w) \\
@@ -340,12 +357,14 @@ Posted on 2017-05-09 by nbloomf
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),\cons(a,x)) \\
  &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(a,x)) \\
  &amp; = &amp; \prefix(\nil,\cons(a,x)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\lcp(\cons(a,x),y),y) \\
  &amp; = &amp; \prefix(\lcp(\cons(a,x),\cons(b,w)),\cons(b,w)) \\
  &amp; = &amp; \prefix(\nil,\cons(b,w)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, note that <span class="math inline">\(\prefix(\nil,x)\)</span>, <span class="math inline">\(\prefix(\nil,y)\)</span>, and <span class="math inline">\(\prefix(\nil,\lcp(x,y))\)</span> are all <span class="math inline">\(\btrue\)</span>. For the inductive step, suppose the result holds for all <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> for some <span class="math inline">\(z\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,z),x)\)</span> and <span class="math inline">\(\prefix(\cons(a,z),y)\)</span>. Then we must have <span class="math inline">\(x = \cons(a,u)\)</span> and <span class="math inline">\(y = \cons(a,v)\)</span>, and thus <span class="math inline">\(\prefix(z,u)\)</span> and <span class="math inline">\(\prefix(z,v)\)</span> are both <span class="math inline">\(\btrue\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\cons(a,z),\lcp(x,y)) \\
@@ -375,17 +394,19 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcp\)</span> is idempotent.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,x) = x\)</span>.</p>
+<p><span id="thm-lcp-idempotent"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,x) = x\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,x) \\
  &amp; = &amp; \lcp(\nil,\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-nil}
+   = &amp; \nil \\
  &amp; = &amp; x
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\cons(a,x),\cons(a,x)) \\
  &amp; = &amp; \cons(a,\lcp(x,x)) \\
- &amp; = &amp; \cons(a,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-idempotent}
+   = &amp; \cons(a,x)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -398,19 +419,22 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcp\)</span> is commutative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,y) = \lcp(y,x)\)</span>.</p>
+<p><span id="thm-lcp-commutative"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(x,y) = \lcp(y,x)\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,y) \\
  &amp; = &amp; \lcp(\nil,y) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-nil}
+   = &amp; \nil \\
  &amp; = &amp; \lcp(y,\nil) \\
  &amp; = &amp; \lcp(y,x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now we consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\cons(a,x),y) \\
  &amp; = &amp; \lcp(\cons(a,x),\nil) \\
- &amp; = &amp; \nil \\
- &amp; = &amp; \lcp(\nil,\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-cons-nil}
+   = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-nil}
+   = &amp; \lcp(\nil,\cons(a,x)) \\
  &amp; = &amp; \lcp(y,\cons(a,x))
 \end{eqnarray*}\]</span> as needed. Now suppose <span class="math inline">\(y = \cons(b,w)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\cons(a,x),y) \\
@@ -431,7 +455,7 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcp\)</span> is associative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(\lcp(x,y),z) = \lcp(x,\lcp(y,z))\)</span>.</p>
+<p><span id="thm-lcp-associative"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcp(\lcp(x,y),z) = \lcp(x,\lcp(y,z))\)</span>.</p>
 <div class="proof">
 <p>Let <span class="math inline">\(h = \lcp(\lcp(x,y),z)\)</span>, <span class="math inline">\(k = \lcp(x,\lcp(y,z))\)</span>, <span class="math inline">\(u = \lcp(x,y)\)</span>, and <span class="math inline">\(v = \lcp(y,z)\)</span>. First we show that <span class="math inline">\(\prefix(h,k)\)</span>. Note that <span class="math inline">\(\prefix(h,u)\)</span>, so that <span class="math inline">\(\prefix(h,x)\)</span> and <span class="math inline">\(\prefix(h,y)\)</span>. Now <span class="math inline">\(\prefix(h,z)\)</span>, so that <span class="math inline">\(\prefix(h,v)\)</span>. Thus <span class="math inline">\(\prefix(h,k)\)</span>. The proof that <span class="math inline">\(\prefix(k,h)\)</span> is similar; thus <span class="math inline">\(h = k\)</span> as claimed.</p>
 </div>
@@ -445,15 +469,17 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\cat\)</span> distributes over <span class="math inline">\(\lcp\)</span> from the left.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(x,\lcp(y,z)) = \lcp(\cat(x,y),\cat(x,z))\)</span>.</p>
+<p><span id="thm-lcp-cat-dist"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(x,\lcp(y,z)) = \lcp(\cat(x,y),\cat(x,z))\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\lcp(y,z)) \\
- &amp; = &amp; \cat(\nil,\lcp(y,z)) \\
+ &amp;     \hyp{x = \nil}
+   = &amp; \cat(\nil,\lcp(y,z)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
    = &amp; \lcp(y,z) \\
  &amp; = &amp; \lcp(\cat(\nil,y),\cat(\nil,z)) \\
- &amp; = &amp; \lcp(\cat(x,y),\cat(x,z))
+ &amp;     \let{x = \nil}
+   = &amp; \lcp(\cat(x,y),\cat(x,z))
 \end{eqnarray*}\]</span> as needed. Suppose now that the equality holds for all <span class="math inline">\(y\)</span> and <span class="math inline">\(z\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\cons(a,x),\lcp(y,z)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
@@ -478,8 +504,10 @@ Posted on 2017-05-09 by nbloomf
 <p>To see the “if” part, suppose <span class="math inline">\(\prefix(x,y)\)</span>. Then we have <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(x,y) \\
  &amp; = &amp; \lcp(\cat(x,\nil),\cat(x,z)) \\
- &amp; = &amp; \cat(x,\lcp(\nil,z)) \\
- &amp; = &amp; \cat(x,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-cat-dist}
+   = &amp; \cat(x,\lcp(\nil,z)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-nil}
+   = &amp; \cat(x,\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#thm-cat-nil-right}
    = &amp; x
 \end{eqnarray*}\]</span> as claimed. To see the “only if” part, suppose we have <span class="math inline">\(\lcp(x,y) = x\)</span>; using the universal property of <span class="math inline">\(\lcp\)</span>, we have <span class="math display">\[\begin{eqnarray*}
@@ -498,45 +526,62 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p>And <span class="math inline">\(\lcp\)</span> interacts with <span class="math inline">\(\zip\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(u,v \in \lists{B}\)</span>. Then <span class="math display">\[\lcp(\zip(x,u),\zip(y,v)) = \zip(\lcp(x,y),\lcp(u,v)).\]</span></p>
+<p><span id="thm-lcp-zip-abide"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x,y \in \lists{A}\)</span> and <span class="math inline">\(u,v \in \lists{B}\)</span>. Then <span class="math display">\[\lcp(\zip(x,u),\zip(y,v)) = \zip(\lcp(x,y),\lcp(u,v)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\zip(x,u),\zip(y,v)) \\
- &amp; = &amp; \lcp(\zip(\nil,u),\zip(y,v)) \\
- &amp; = &amp; \lcp(\nil,\zip(y,v)) \\
+ &amp;     \hyp{x = \nil}
+   = &amp; \lcp(\zip(\nil,u),\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \lcp(\nil,\zip(y,v)) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \zip(\nil,\lcp(u,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \zip(\nil,\lcp(u,v)) \\
  &amp; = &amp; \zip(\lcp(\nil,y),\lcp(u,v)) \\
- &amp; = &amp; \zip(\lcp(x,y),\lcp(u,v))
+ &amp;     \hyp{x = \nil}
+   = &amp; \zip(\lcp(x,y),\lcp(u,v))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\zip(\cons(a,x),u),\zip(y,v)) \\
- &amp; = &amp; \lcp(\zip(\cons(a,x),u),\zip(\nil,v)) \\
- &amp; = &amp; \lcp(\zip(\cons(a,x),u),\nil) \\
+ &amp;     \hyp{y = \nil}
+   = &amp; \lcp(\zip(\cons(a,x),u),\zip(\nil,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \lcp(\zip(\cons(a,x),u),\nil) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \zip(\nil,\lcp(u,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \zip(\nil,\lcp(u,v)) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),\nil),\lcp(u,v)) \\
- &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
+ &amp;     \hyp{y = \nil}
+   = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(u = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\zip(\cons(a,x),u),\zip(y,v)) \\
- &amp; = &amp; \lcp(\zip(\cons(a,x),\nil),\zip(y,v)) \\
- &amp; = &amp; \lcp(\nil,\zip(y,v)) \\
+ &amp;     \let{u = \nil}
+   = &amp; \lcp(\zip(\cons(a,x),\nil),\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-nil}
+   = &amp; \lcp(\nil,\zip(y,v)) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \zip(\lcp(\cons(a,x),y),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \zip(\lcp(\cons(a,x),y),\nil) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(\nil,v)) \\
- &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
+ &amp;     \let{u = \nil}
+   = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(v = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\zip(\cons(a,x),u),\zip(y,v)) \\
- &amp; = &amp; \lcp(\zip(\cons(a,x),u),\zip(y,\nil)) \\
- &amp; = &amp; \lcp(\zip(\cons(a,x),u),\nil) \\
+ &amp;     \let{v = \nil}
+   = &amp; \lcp(\zip(\cons(a,x),u),\zip(y,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \lcp(\zip(\cons(a,x),u),\nil) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \zip(\lcp(\cons(a,x),y),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \zip(\lcp(\cons(a,x),y),\nil) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,\nil)) \\
- &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
+ &amp;     \let{v = \nil}
+   = &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v))
 \end{eqnarray*}\]</span> as claimed. Thus we can say <span class="math inline">\(y = \cons(c,w)\)</span>, <span class="math inline">\(u = \cons(b,h)\)</span>, and <span class="math inline">\(v = \cons(d,k)\)</span>. If <span class="math inline">\(a \neq c\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v)) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),\cons(c,w)),\lcp(u,v)) \\
  &amp; = &amp; \zip(\nil,\lcp(u,v)) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \nil \\
  &amp; = &amp; \lcp(\cons((a,b),\zip(x,h)),\cons((c,d),\zip(w,k))) \\
  &amp; = &amp; \lcp(\zip(\cons(a,x),\cons(b,h)),\zip(\cons(c,w),\cons(d,k))) \\
  &amp; = &amp; \lcp(\zip(\cons(a,x),u),\zip(y,v))
@@ -544,7 +589,8 @@ Posted on 2017-05-09 by nbloomf
  &amp;   &amp; \zip(\lcp(\cons(a,x),y),\lcp(u,v)) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),y),\lcp(\cons(c,h),\cons(d,k))) \\
  &amp; = &amp; \zip(\lcp(\cons(a,x),y),\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \nil \\
  &amp; = &amp; \lcp(\cons((a,b),\zip(x,h)),\cons((c,d),\zip(w,k))) \\
  &amp; = &amp; \lcp(\zip(\cons(a,x),\cons(b,h)),\zip(\cons(c,w),\cons(d,k))) \\
  &amp; = &amp; \lcp(\zip(\cons(a,x),u),\zip(y,v))
@@ -576,7 +622,8 @@ Posted on 2017-05-09 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\lcp(x,y)) \\
  &amp; = &amp; \map(f)(\lcp(\nil,y)) \\
- &amp; = &amp; \map(f)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-nil}
+   = &amp; \map(f)(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
  &amp; = &amp; \lcp(\nil,\map(f)(y)) \\
@@ -586,7 +633,8 @@ Posted on 2017-05-09 by nbloomf
 \end{eqnarray*}\]</span> as needed. Suppose now the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possitiblities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\lcp(\cons(a,x),y)) \\
  &amp; = &amp; \map(f)(\lcp(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(f)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#cor-lcp-cons-nil}
+   = &amp; \map(f)(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
  &amp; = &amp; \lcp(\map(f)(\cons(a,x)),\nil) \\
@@ -655,14 +703,14 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p>We can define the dual operation, longest common suffix, in terms of <span class="math inline">\(\lcp\)</span> like so.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\lcs : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcs(x,y) = \rev(\lcp(\rev(x),\rev(y))).\]</span></p>
+<p><span id="def-lcs"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\lcs : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> by <span class="math display">\[\lcs(x,y) = \rev(\lcp(\rev(x),\rev(y))).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">lcs ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">lcs x y <span class="fu">=</span> rev (lcp (rev x) (rev y))</a></code></pre></div>
 </div>
 <p>Many properties of <span class="math inline">\(\lcp\)</span> have analogues for <span class="math inline">\(\lcs\)</span>.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
+<p><span id="cor-lcs-nil"></span><span id="cor-lcs-snoc-nil"></span><span id="cor-lcs-snoc-snoc"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\lcs(\nil,y) = \nil\)</span>.</li>
 <li><span class="math inline">\(\lcs(\snoc(a,x),\nil) = \nil\)</span>.</li>
@@ -704,14 +752,16 @@ Posted on 2017-05-09 by nbloomf
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\lcs(x,y),x) \\
  &amp; = &amp; \prefix(\rev(\lcs(x,y)),\rev(x)) \\
- &amp; = &amp; \prefix(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+= &amp; \prefix(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
 = &amp; \prefix(\lcp(\rev(x),\rev(y)),\rev(x)) \\
  &amp; = &amp; \btrue,
 \end{eqnarray*}\]</span> and likewise <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\lcs(x,y),y) \\
  &amp; = &amp; \prefix(\rev(\lcs(x,y)),\rev(y)) \\
- &amp; = &amp; \prefix(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+= &amp; \prefix(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
 = &amp; \prefix(\lcp(\rev(x),\rev(y)),\rev(y)) \\
  &amp; = &amp; \btrue,
@@ -753,12 +803,14 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcs\)</span> is idempotent.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,x) = x\)</span>.</p>
+<p><span id="thm-lcs-idempotent"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,x) = x\)</span>.</p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(x,x) \\
- &amp; = &amp; \rev(\lcp(\rev(x),\rev(x))) \\
- &amp; = &amp; \rev(\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \rev(\lcp(\rev(x),\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-idempotent}
+   = &amp; \rev(\rev(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; x
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -773,13 +825,16 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcs\)</span> is commutative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,y) = \lcs(y,x)\)</span>.</p>
+<p><span id="thm-lcs-commutative"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(x,y) = \lcs(y,x)\)</span>.</p>
 <div class="proof">
 <p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(x,y) \\
- &amp; = &amp; \rev(\lcp(\rev(x),\rev(y))) \\
- &amp; = &amp; \rev(\lcp(\rev(y),\rev(x))) \\
- &amp; = &amp; \lcs(y,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \rev(\lcp(\rev(x),\rev(y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-commutative}
+   = &amp; \rev(\lcp(\rev(y),\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \lcs(y,x)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -792,19 +847,22 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\lcs\)</span> is associative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(\lcs(x,y),z) = \lcs(x,\lcs(y,z))\)</span>.</p>
+<p><span id="thm-lcs-associative"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\lcs(\lcs(x,y),z) = \lcs(x,\lcs(y,z))\)</span>.</p>
 <div class="proof">
 <p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(\lcs(x,y),z) \\
- &amp; = &amp; \lcs(\rev(\lcp(\rev(x),\rev(y))),z) \\
- &amp; = &amp; \rev(\lcp(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \lcs(\rev(\lcp(\rev(x),\rev(y))),z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \rev(\lcp(\rev(\rev(\lcp(\rev(x),\rev(y)))),\rev(z))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; \rev(\lcp(\lcp(\rev(x),\rev(y)),\rev(z))) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\lcp(\rev(y),\rev(z)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; \rev(\lcp(\rev(x),\rev(\rev(\lcp(\rev(y),\rev(z)))))) \\
  &amp; = &amp; \rev(\lcp(\rev(x),\rev(\lcs(y,z)))) \\
- &amp; = &amp; \lcs(x,\lcs(y,z))
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \lcs(x,\lcs(y,z))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -817,13 +875,15 @@ Posted on 2017-05-09 by nbloomf
 </div>
 <p><span class="math inline">\(\cat\)</span> distributes over <span class="math inline">\(\lcs\)</span> from the right.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(\lcs(x,y),z) = \lcs(\cat(x,z),\cat(y,z))\)</span>.</p>
+<p><span id="thm-lcs-cat-dist"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y,z \in \lists{A}\)</span> we have <span class="math inline">\(\cat(\lcs(x,y),z) = \lcs(\cat(x,z),\cat(y,z))\)</span>.</p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcs(\cat(x,z),\cat(y,z)) \\
- &amp; = &amp; \rev(\lcp(\rev(\cat(x,z)),\rev(\cat(y,z)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \rev(\lcp(\rev(\cat(x,z)),\rev(\cat(y,z)))) \\
  &amp; = &amp; \rev(\lcp(\cat(\rev(z),\rev(x)),\cat(\rev(z),\rev(y)))) \\
- &amp; = &amp; \rev(\cat(\rev(z),\lcp(\rev(x),\rev(y)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-cat-dist}
+   = &amp; \rev(\cat(\rev(z),\lcp(\rev(x),\rev(y)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#thm-rev-cat-antidistribute}
    = &amp; \cat(\rev(\lcp(\rev(x),\rev(y))),\rev(\rev(z))) \\
  &amp; = &amp; \cat(\lcs(x,y),z)
@@ -857,12 +917,14 @@ Posted on 2017-05-09 by nbloomf
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(f)(\lcs(x,y)) \\
- &amp; = &amp; \map(f)(\rev(\lcp(\rev(x),\rev(y)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \map(f)(\rev(\lcp(\rev(x),\rev(y)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-rev}
    = &amp; \rev(\map(f)(\lcp(\rev(x),\rev(y)))) \\
  &amp; = &amp; \rev(\lcp(\map(f)(\rev(x)),\map(f)(\rev(y)))) \\
  &amp; = &amp; \rev(\lcp(\rev(\map(f)(x)),\rev(\map(f)(y)))) \\
- &amp; = &amp; \lcs(\map(f)(x),\map(f)(y))
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#def-lcs}
+   = &amp; \lcs(\map(f)(x),\map(f)(y))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 </div>
@@ -873,8 +935,8 @@ Posted on 2017-05-09 by nbloomf
 <a class="sourceLine" id="cb20-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb20-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
 <a class="sourceLine" id="cb20-5" data-line-number="5">  , <span class="dt">Arbitrary</span> (t (t a)), <span class="dt">Show</span> (t (t a)), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb20-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb20-7" data-line-number="7">_test_lcp t size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb20-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb20-7" data-line-number="7">_test_lcp size cases t <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb20-8" data-line-number="8">  testLabel1 <span class="st">&quot;lcp &amp; lcs&quot;</span> t</a>
 <a class="sourceLine" id="cb20-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
 <a class="sourceLine" id="cb20-10" data-line-number="10"></a>
@@ -904,8 +966,8 @@ Posted on 2017-05-09 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="ot">main_lcp ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb21-2" data-line-number="2">main_lcp <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb21-3" data-line-number="3">  _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb21-4" data-line-number="4">  _test_lcp (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb21-3" data-line-number="3">  _test_lcp <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb21-4" data-line-number="4">  _test_lcp <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

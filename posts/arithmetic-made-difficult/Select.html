@@ -81,8 +81,12 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-25 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -250,7 +256,7 @@ Posted on 2017-05-25 by nbloomf
 <a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">Sublist</span></a></code></pre></div>
 <p>Today we’ll define a function, <span class="math inline">\(\select\)</span>, which takes a natural number <span class="math inline">\(n\)</span> and a list <span class="math inline">\(x\)</span> and constructs the list of all length <span class="math inline">\(n\)</span> sublists of <span class="math inline">\(x\)</span>. The signature of <span class="math inline">\(\select\)</span> should be <span class="math display">\[\nats \times \lists{A} \rightarrow \lists{\lists{A}},\]</span> which matches several of our recursion operators. After trying a few, we’ll use double bailout fold.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\delta(n) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\nil},\]</span> <span class="math inline">\(\beta : A \times \lists{A} \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\beta(a,x,n) = \iszero(n),\]</span> <span class="math inline">\(\psi : A \times \lists{A} \times \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\psi(a,x,n) = \cons(\nil,\nil),\]</span> and <span class="math inline">\(\chi : A \times \lists{A} \times \nats \times \lists{\lists{A}} \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\chi(a,x,n,u,v) = \cat(\map(\cons(a,-))(v),u).\]</span> Now define <span class="math inline">\(\select : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\select(n,x) = \dbfoldr(\delta)(\beta)(\prev)(\psi)(\chi)(x,n).\]</span></p>
+<p>Let <span class="math inline">\(A\)</span> be a set. Define <span class="math inline">\(\delta : \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\delta(n) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\nil},\]</span> <span class="math inline">\(\beta : A \times \lists{A} \times \nats \rightarrow \bool\)</span> by <span class="math display">\[\beta(a,x,n) = \iszero(n),\]</span> <span class="math inline">\(\psi : A \times \lists{A} \times \nats \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\psi(a,x,n) = \cons(\nil,\nil),\]</span> and <span class="math inline">\(\chi : A \times \lists{A} \times \nats \times \lists{\lists{A}} \times \lists{\lists{A}} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\chi(a,x,n,u,v) = \cat(\map(\cons(a))(v),u).\]</span> Now define <span class="math inline">\(\select : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> by <span class="math display">\[\select(n,x) = \dbfoldr(\delta)(\beta)(\prev)(\psi)(\chi)(x,n).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">select ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t (t a)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">select n x <span class="fu">=</span> dbfoldr delta beta prev psi chi x n</a>
@@ -262,11 +268,11 @@ Posted on 2017-05-25 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\select\)</span> is defined as a double bailout fold, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\select\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(n \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-select-nil"></span><span id="cor-select-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\select\)</span> is the unique map <span class="math inline">\(f : \nats \times \lists{A} \rightarrow \lists{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(n \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(n,\nil) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\nil} \\
- f(n,\cons(a,x)) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\cat(\map(\cons(a,-))(f(\prev(n),x)),f(n,x))}
+ f(n,\cons(a,x)) = \bif{\iszero(n)}{\cons(\nil,\nil)}{\cat(\map(\cons(a))(f(\prev(n),x)),f(n,x))}
 \end{array}\right.\]</span></p>
-<p>In particular, we have <span class="math display">\[\select(\zero,\cons(a,x)) = \cons(\nil,\nil)\]</span> and <span class="math display">\[\select(\next(n),\cons(a,x)) = \cat(\map(\cons(a,-))(\select(n,x)),\select(\next(n),x)).\]</span></p>
+<p>In particular, we have <span class="math display">\[\select(\zero,\cons(a,x)) = \cons(\nil,\nil)\]</span> and <span class="math display">\[\select(\next(n),\cons(a,x)) = \cat(\map(\cons(a))(\select(n,x)),\select(\next(n),x)).\]</span></p>
 <div class="test">
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_select_nil ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> a, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Equal</span> (t (t a)))</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (n <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
@@ -292,11 +298,13 @@ Posted on 2017-05-25 by nbloomf
 <div class="proof">
 <p>If <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \select(\zero,\nil) \\
- &amp; = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\nil} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Select.html#cor-select-nil}
+   = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\nil} \\
  &amp; = &amp; \cons(\nil,\nil),
 \end{eqnarray*}\]</span> and if <span class="math inline">\(x = \cons(a,u)\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \select(\zero,\cons(a,u)) \\
- &amp; = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\cat(\map(\cons(a,-))(\select(\prev(\zero),u)),\select(\zero,u))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Select.html#cor-select-cons}
+   = &amp; \bif{\iszero(\zero)}{\cons(\nil,\nil)}{\cat(\map(\cons(a))(\select(\prev(\zero),u)),\select(\zero,u))} \\
  &amp; = &amp; \cons(\nil,\nil)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
@@ -321,9 +329,9 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \map(\cons(-,\nil))(x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \select(\next(\zero),\cons(a,x)) \\
- &amp; = &amp; \cat(\map(\cons(a,-))(\select(\zero,x)),\select(\next(\zero),x)) \\
- &amp; = &amp; \cat(\map(\cons(a,-))(\cons(\nil,\nil)),\map(\cons(-,\nil))(x)) \\
- &amp; = &amp; \cat(\cons(\cons(a,\nil),\map(\cons(a,-))(\nil)),\map(\cons(-,\nil))(x)) \\
+ &amp; = &amp; \cat(\map(\cons(a))(\select(\zero,x)),\select(\next(\zero),x)) \\
+ &amp; = &amp; \cat(\map(\cons(a))(\cons(\nil,\nil)),\map(\cons(-,\nil))(x)) \\
+ &amp; = &amp; \cat(\cons(\cons(a,\nil),\map(\cons(a))(\nil)),\map(\cons(-,\nil))(x)) \\
  &amp; = &amp; \cat(\cons(\cons(a,\nil),\nil),\map(\cons(-,\nil))(x)) \\
  &amp; = &amp; \cat(\snoc(\cons(a,\nil),\nil),\map(\cons(-,\nil))(x)) \\
  &amp; = &amp; \cat(\nil,\cons(\cons(a,\nil),\map(\cons(-,\nil))(x))) \\
@@ -349,7 +357,8 @@ Posted on 2017-05-25 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\select(k,x)) \\
  &amp; = &amp; \length(\select(k,\nil)) \\
- &amp; = &amp; \length(\bif{\iszero(k)}{\cons(\nil,\nil)}{\nil}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Select.html#cor-select-nil}
+   = &amp; \length(\bif{\iszero(k)}{\cons(\nil,\nil)}{\nil}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
    = &amp; \bif{\iszero(k)}{\length(\cons(\nil,\nil))}{\length(\nil)} \\
  &amp; = &amp; \bif{\iszero(k)}{\next(\zero)}{\zero} \\
@@ -368,9 +377,11 @@ Posted on 2017-05-25 by nbloomf
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(k = \next(m)\)</span>, then using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\select(k,\cons(a,x))) \\
  &amp; = &amp; \length(\select(\next(m),\cons(a,x))) \\
- &amp; = &amp; \length(\cat(\map(\cons(a,-))(\select(m,x)),\select(\next(m),x))) \\
- &amp; = &amp; \nplus(\length(\map(\cons(a,-))(\select(m,x))),\length(\select(\next(m),x))) \\
- &amp; = &amp; \nplus(\length(\select(m,x)),\length(\select(\next(m),x))) \\
+ &amp; = &amp; \length(\cat(\map(\cons(a))(\select(m,x)),\select(\next(m),x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-cat}
+   = &amp; \nplus(\length(\map(\cons(a))(\select(m,x))),\length(\select(\next(m),x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-length-map}
+   = &amp; \nplus(\length(\select(m,x)),\length(\select(\next(m),x))) \\
  &amp; = &amp; \nplus(\nchoose(\length(x),m),\nchoose(\length(x),\next(m))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-commutative}
    = &amp; \nplus(\nchoose(\length(x),\next(m)),\nchoose(\length(x),m)) \\
@@ -394,12 +405,14 @@ Posted on 2017-05-25 by nbloomf
  &amp;   &amp; \sublist(\select(k,x),\select(k,y)) \\
  &amp; = &amp; \sublist(\select(\zero,x),\select(\zero,y)) \\
  &amp; = &amp; \sublist(\cons(\nil,\nil),\cons(\nil,\nil)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Sublist.html#thm-sublist-reflexive}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for some <span class="math inline">\(k\)</span>. We now proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span>, suppose <span class="math display">\[\btrue = \sublist(x,y) = \sublist(x,\nil);\]</span> then we must have <span class="math inline">\(x = \nil\)</span>. In this case we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\select(\next(k),x),\select(\next(k),y)) \\
  &amp; = &amp; \sublist(\select(\next(k),\nil),\select(\next(k),\nil)) \\
  &amp; = &amp; \sublist(\nil,\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Sublist.html#thm-sublist-reflexive}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for <span class="math inline">\(\next(k)\)</span> and all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span>, and let <span class="math inline">\(b \in A\)</span>. Suppose further that <span class="math inline">\(\sublist(x,\cons(b,y)) = \btrue\)</span>. We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \sublist(\select(\next(k),x),\select(\next(k),\cons(b,y))) \\
  &amp; = &amp; \sublist(\select(\next(k),\nil),\select(\next(k),\cons(b,y))) \\
@@ -413,7 +426,7 @@ Posted on 2017-05-25 by nbloomf
  &amp;   &amp; \btrue \\
  &amp; = &amp; \sublist(u,y) \\
  &amp; = &amp; \sublist(\select(k,u),\select(k,y)) \\
- &amp; = &amp; \sublist(\map(\cons(a,-))(\select(k,u)),\map(\cons(a,-))(\select(k,y))) \\
+ &amp; = &amp; \sublist(\map(\cons(a))(\select(k,u)),\map(\cons(a))(\select(k,y))) \\
  &amp; = &amp; \sublist(H,K)
 \end{eqnarray*}\]</span> and similarly using the inductive hypothesis on <span class="math inline">\(y\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
@@ -424,7 +437,7 @@ Posted on 2017-05-25 by nbloomf
  &amp;   &amp; \sublist(\select(\next(k),x),\select(\next(k),\cons(b,y))) \\
  &amp; = &amp; \sublist(\select(\next(k),\cons(a,u)),\select(\next(k),\cons(b,y))) \\
  &amp; = &amp; \sublist(\select(\next(k),\cons(a,u)),\select(\next(k),\cons(a,y))) \\
- &amp; = &amp; \sublist(\cat(\map(\cons(a,-))(\select(k,u)),\select(\next(k),u)),\cat(\map(\cons(a,-))(\select(k,y)),\select(\next(k),y))) \\
+ &amp; = &amp; \sublist(\cat(\map(\cons(a))(\select(k,u)),\select(\next(k),u)),\cat(\map(\cons(a))(\select(k,y)),\select(\next(k),y))) \\
  &amp; = &amp; \sublist(\cat(H,P),\cat(K,Q)) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
@@ -457,9 +470,9 @@ Posted on 2017-05-25 by nbloomf
  &amp; = &amp; \all(\sublist(-,\nil),\nil) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \all(\sublist(-,\cons(a,x)),\map(\cons(a,-))(\select(m,x))) \\
- &amp; = &amp; \all(\sublist(-,\cons(a,x)) \circ \cons(a,-),\select(m,x)) \\
- &amp; = &amp; \all(\sublist(\cons(a,-),\cons(a,x)),\select(m,x)) \\
+ &amp;   &amp; \all(\sublist(-,\cons(a,x)),\map(\cons(a))(\select(m,x))) \\
+ &amp; = &amp; \all(\sublist(-,\cons(a,x)) \circ \cons(a),\select(m,x)) \\
+ &amp; = &amp; \all(\sublist(\cons(a),\cons(a,x)),\select(m,x)) \\
  &amp; = &amp; \all(\sublist(-,x),\select(m,x)) \\
  &amp; = &amp; \btrue.
 \end{eqnarray*}\]</span> Also using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
@@ -471,8 +484,8 @@ Posted on 2017-05-25 by nbloomf
 \end{eqnarray*}\]</span> Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\sublist(-,\cons(a,x)),\select(k,\cons(a,x))) \\
  &amp; = &amp; \all(\sublist(-,\cons(a,x)),\select(\next(m),\cons(a,x))) \\
- &amp; = &amp; \all(\sublist(-,\cons(a,x)),\cat(\map(\cons(a,-))(\select(m,x)),\select(\next(m),x))) \\
- &amp; = &amp; \band(\all(\sublist(-,\cons(a,x)),\map(\cons(a,-))(\select(m,x))),\all(\sublist(-,\cons(a,x)),\select(\next(m),x))) \\
+ &amp; = &amp; \all(\sublist(-,\cons(a,x)),\cat(\map(\cons(a))(\select(m,x)),\select(\next(m),x))) \\
+ &amp; = &amp; \band(\all(\sublist(-,\cons(a,x)),\map(\cons(a))(\select(m,x))),\all(\sublist(-,\cons(a,x)),\select(\next(m),x))) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
    = &amp; \btrue
@@ -508,12 +521,12 @@ Posted on 2017-05-25 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis (twice!) we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\beq(k,\length(-)),\select(k,\cons(a,x))) \\
  &amp; = &amp; \all(\beq(k,\length(-)),\select(\next(m),\cons(a,x))) \\
- &amp; = &amp; \all(\beq(k,\length(-)),\cat(\map(\cons(a,-))(\select(m,x)),\select(\next(m),x))) \\
- &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a,-))(\select(m,x))),\all(\beq(k,\length(-)),\select(\next(m),x))) \\
- &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a,-))(\select(m,x))),\all(\beq(k,\length(-)),\select(k,x))) \\
- &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a,-))(\select(m,x))),\btrue) \\
- &amp; = &amp; \band(\all(\beq(k,\length(-) \circ \cons(a,-)),\select(m,x)),\btrue) \\
- &amp; = &amp; \band(\all(\beq(k,\length(\cons(a,-))),\select(m,x)),\btrue) \\
+ &amp; = &amp; \all(\beq(k,\length(-)),\cat(\map(\cons(a))(\select(m,x)),\select(\next(m),x))) \\
+ &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a))(\select(m,x))),\all(\beq(k,\length(-)),\select(\next(m),x))) \\
+ &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a))(\select(m,x))),\all(\beq(k,\length(-)),\select(k,x))) \\
+ &amp; = &amp; \band(\all(\beq(k,\length(-)),\map(\cons(a))(\select(m,x))),\btrue) \\
+ &amp; = &amp; \band(\all(\beq(k,\length(-) \circ \cons(a)),\select(m,x)),\btrue) \\
+ &amp; = &amp; \band(\all(\beq(k,\length(\cons(a))),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\all(\beq(\next(m),\next(\length(-))),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\all(\beq(m,\length(-)),\select(m,x)),\btrue) \\
  &amp; = &amp; \band(\btrue,\btrue) \\
@@ -536,8 +549,8 @@ Posted on 2017-05-25 by nbloomf
 <a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">_test_select t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">_test_select size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel1 <span class="st">&quot;select&quot;</span> t</a>
 <a class="sourceLine" id="cb10-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -553,8 +566,8 @@ Posted on 2017-05-25 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_select ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">main_select <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_select (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">30</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  _test_select (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">30</span></a></code></pre></div>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_select <span class="dv">20</span> <span class="dv">30</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  _test_select <span class="dv">20</span> <span class="dv">30</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

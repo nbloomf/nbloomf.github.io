@@ -81,8 +81,12 @@ Posted on 2017-05-08 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-08 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -264,7 +270,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\prefix\)</span> is defined as a double fold, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\prefix\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \bool\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-prefix-nil-left"></span><span id="cor-prefix-cons-nil"></span><span id="cor-prefix-cons-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\prefix\)</span> is the unique map <span class="math inline">\(f : \lists{A} \times \lists{A} \rightarrow \bool\)</span> satisfying the following equations for all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \btrue \\
  f(\cons(a,x),\nil) = \bfalse \\
  f(\cons(a,x),\cons(b,y)) = \bif{\beq(a,b)}{f(x,y)}{\bfalse}
@@ -295,7 +301,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p>Now <span class="math inline">\(\prefix\)</span> is analogous to <span class="math inline">\(\nleq\)</span> in that it detects the existence of solutions <span class="math inline">\(z\)</span> to the equation <span class="math inline">\(y = \cat(x,z)\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
+<p><span id="thm-prefix-cat-self"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\prefix(x,\cat(x,y)) = \btrue\)</span>.</li>
 <li>If <span class="math inline">\(\prefix(x,y) = \btrue\)</span>, then <span class="math inline">\(y = \cat(x,z)\)</span> for some <span class="math inline">\(z \in \lists{A}\)</span>.</li>
@@ -304,21 +310,35 @@ Posted on 2017-05-08 by nbloomf
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, certainly we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(x,\cat(x,y)) \\
- &amp; = &amp; \prefix(\nil,\cat(\nil,y)) \\
+ &amp;     \let{x = \nil}
+= &amp; \prefix(\nil,\cat(\nil,y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-nil}
 = &amp; \prefix(\nil,y) \\
- &amp; = &amp; \btrue.
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
 \end{eqnarray*}\]</span> For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\cons(a,x),\cat(\cons(a,x),y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
 = &amp; \prefix(\cons(a,x),\cons(a,\cat(x,y))) \\
- &amp; = &amp; \prefix(x,\cat(x,y)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-cons-cons}
+= &amp; \bif{\beq(a,a)}{\prefix(x,\cat(x,y))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
+= &amp; \bif{\btrue}{\prefix(x,\cat(x,y))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+= &amp; \prefix(x,\cat(x,y)) \\
+ &amp;     \hyp{\prefix(x,\cat(x,y)) = \btrue}
+= &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</li>
-<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\prefix(\nil,y) = \btrue,\]</span> and <span class="math display">\[y = \cat(\nil,y).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now suppose <span class="math inline">\(\prefix(\cons(a,x),y) = \btrue\)</span>; in particular, we must have <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and <span class="math inline">\(\prefix(x,w) = \btrue\)</span>. By the induction hypothesis we have <span class="math inline">\(w = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>, and thus <span class="math display">\[\begin{eqnarray*}
+<li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \prefix(\nil,y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \btrue
+\end{eqnarray*}\]</span> and <span class="math display">\[y = \cat(\nil,y).\]</span> For the inductive step, suppose the result holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now suppose <span class="math inline">\(\prefix(\cons(a,x),y) = \btrue\)</span>; in particular, we must have <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and <span class="math inline">\(\prefix(x,w) = \btrue\)</span>. By the induction hypothesis we have <span class="math inline">\(w = \cat(x,z)\)</span> for some <span class="math inline">\(z\)</span>, and thus <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; y \\
- &amp; = &amp; \cons(a,w) \\
- &amp; = &amp; \cons(a,\cat(x,z)) \\
+ &amp;     \let{y = \cons(a,w)}
+= &amp; \cons(a,w) \\
+ &amp;     \hyp{w = \cat(x,z)}
+= &amp; \cons(a,\cat(x,z)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
 = &amp; \cat(\cons(a,x),z)
 \end{eqnarray*}\]</span> as needed.</li>
@@ -350,7 +370,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p><span class="math inline">\(\prefix\)</span> is a partial order.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
+<p><span id="thm-prefix-reflexive"></span> Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\prefix(x,x) = \btrue\)</span>.</li>
 <li>If <span class="math inline">\(\prefix(x,y)\)</span> and <span class="math inline">\(\prefix(y,x)\)</span>, then <span class="math inline">\(x = y\)</span>.</li>
@@ -360,11 +380,12 @@ Posted on 2017-05-08 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
- &amp; = &amp; \prefix(x,\cat(x,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-prefix-cat-self}
+= &amp; \prefix(x,\cat(x,\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#thm-cat-nil-right}
 = &amp; \prefix(x,x)
 \end{eqnarray*}\]</span> as claimed.</li>
-<li>If <span class="math inline">\(\prefix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(x,u)\)</span> for some <span class="math inline">\(u\)</span>. Similarly, if <span class="math inline">\(\prefix(y,x)\)</span> then <span class="math inline">\(x = \cat(y,v)\)</span> for some $v. Now <span class="math display">\[\begin{eqnarray*}
+<li>If <span class="math inline">\(\prefix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(x,u)\)</span> for some <span class="math inline">\(u\)</span>. Similarly, if <span class="math inline">\(\prefix(y,x)\)</span> then <span class="math inline">\(x = \cat(y,v)\)</span> for some <span class="math inline">\(v\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(x,\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#thm-cat-nil-right}
 = &amp; x \\
@@ -408,15 +429,17 @@ Posted on 2017-05-08 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(x,y) \\
- &amp; = &amp; \prefix(\nil,y) \\
- &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> and <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \prefix(\map(f)(x),\map(f)(y)) \\
- &amp; = &amp; \prefix(\map(f)(\nil),\map(f)(y)) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
+ &amp;     \let{x = \nil}
+   = &amp; \prefix(\nil,y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
    = &amp; \prefix(\nil,\map(f)(y)) \\
- &amp; = &amp; \btrue
-\end{eqnarray*}\]</span> as claimed. Suppose now the implication holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y)\)</span>. Now <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
+   = &amp; \prefix(\map(f)(\nil),\map(f)(y)) \\
+ &amp;     \let{x = \nil}
+   = &amp; \prefix(\map(f)(x),\map(f)(y))
+\end{eqnarray*}\]</span> as claimed. Suppose now the implication holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y) = \btrue\)</span>. Now <span class="math inline">\(y = \cons(a,w)\)</span> for some <span class="math inline">\(w\)</span>, and we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
  &amp; = &amp; \prefix(\cons(a,x),y) \\
  &amp; = &amp; \prefix(\cons(a,x),\cons(a,w)) \\
@@ -445,20 +468,46 @@ Posted on 2017-05-08 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math inline">\(\prefix(x,y) = \btrue\)</span>. Suppose further that <span class="math inline">\(\prefix(u,v) = \btrue\)</span>; now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\zip(x,u),\zip(y,v)) \\
- &amp; = &amp; \prefix(\zip(\nil,u),\zip(y,v)) \\
- &amp; = &amp; \prefix(\nil,\zip(y,v)) \\
- &amp; = &amp; \btrue
+ &amp;     \let{x = \nil}
+   = &amp; \prefix(\zip(\nil,u),\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \prefix(\nil,\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the implication holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y)\)</span> and <span class="math inline">\(\prefix(u,v)\)</span>; in particular we must have <span class="math inline">\(y = \cons(a,k)\)</span> for some <span class="math inline">\(k \in \lists{A}\)</span> with <span class="math inline">\(\prefix(x,k)\)</span>, as otherwise <span class="math inline">\(\prefix(\cons(a,x),y) = \bfalse\)</span>. Now we have two possibilities for <span class="math inline">\(u\)</span>. If <span class="math inline">\(u = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\zip(\cons(a,x),u),\zip(y,v)) \\
- &amp; = &amp; \prefix(\zip(\cons(a,x),\nil),\zip(y,v)) \\
- &amp; = &amp; \prefix(\nil,\zip(y,v)) \\
- &amp; = &amp; \btrue
+ &amp;     \let{u = \nil}
+   = &amp; \prefix(\zip(\cons(a,x),\nil),\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-nil}
+   = &amp; \prefix(\nil,\zip(y,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(u = \cons(b,w)\)</span>. Again we must have <span class="math inline">\(v = \cons(b,h)\)</span> with <span class="math inline">\(h \in \lists{B}\)</span> and <span class="math inline">\(\prefix(w,h)\)</span>, since otherwise we have <span class="math inline">\(\prefix(u,v) = \bfalse\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\zip(\cons(a,x),u),\zip(y,v)) \\
- &amp; = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\zip(\cons(a,k),\cons(b,h))) \\
- &amp; = &amp; \prefix(\cons((a,b),\zip(x,w)),\cons((a,b),\zip(k,h))) \\
- &amp; = &amp; \prefix(\zip(x,w),\zip(k,h)) \\
- &amp; = &amp; \btrue
+ &amp;     \let{u = \cons(b,w)}
+   = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\zip(y,v)) \\
+ &amp;     \let{v = \cons(b,h)}
+   = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\zip(y,\cons(b,h))) \\
+ &amp;     \let{y = \cons(a,k)}
+   = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\zip(\cons(a,k),\cons(b,h))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \prefix(\zip(\cons(a,x),\cons(b,w)),\cons(\tup(a)(b),\zip(k,h))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \prefix(\cons(\tup(a)(b),\zip(x,w)),\cons(\tup(a)(b),\zip(k,h))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-cons-cons}
+   = &amp; \bif{\beq(\tup(a)(b),\tup(a)(b))}{\prefix(\zip(x,w))(\zip(k,h))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tup-eq}
+   = &amp; \bif{\band(\beq(a,a),\beq(b,b))}{\prefix(\zip(x,w))(\zip(k,h))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
+   = &amp; \bif{\band(\btrue,\beq(b,b))}{\prefix(\zip(x,w))(\zip(k,h))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
+   = &amp; \bif{\band(\btrue,\btrue)}{\prefix(\zip(x,w))(\zip(k,h))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-eval-true-true}
+   = &amp; \bif{\btrue}{\prefix(\zip(x,w))(\zip(k,h))}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
+   = &amp; \prefix(\zip(x,w),\zip(k,h)) \\
+ &amp;     \hyp{\prefix(\zip(x,w),\zip(k,h)) = \btrue}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -481,7 +530,8 @@ Posted on 2017-05-08 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-cat}
    = &amp; \nleq(\length(x),\nplus(\length(x),\length(z))) \\
  &amp; = &amp; \nleq(\zero,\length(z)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-zero}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -503,7 +553,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p>Not surprisingly, we can characterize <span class="math inline">\(\prefix\)</span> in terms of <span class="math inline">\(\suffix\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\prefix(x,y) = \suffix(\rev(x),\rev(y)).\]</span></p>
+<p><span id="thm-prefix-rev"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\prefix(x,y) = \suffix(\rev(x),\rev(y)).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\rev(x),\rev(y)) \\
@@ -521,7 +571,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p>Many theorems about <span class="math inline">\(\prefix\)</span> has an analogue for <span class="math inline">\(\suffix\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
+<p><span id="thm-suffix-nil-left"></span><span id="thm-suffix-snoc-nil"></span><span id="thm-suffix-snoc-snoc"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\suffix(\nil,y) = \btrue\)</span>.</li>
 <li><span class="math inline">\(\suffix(\snoc(a,x),\nil) = \bfalse\)</span>.</li>
@@ -540,7 +590,8 @@ Posted on 2017-05-08 by nbloomf
  &amp;   &amp; \suffix(\snoc(a,x),\nil) \\
  &amp; = &amp; \prefix(\rev(\snoc(a,x)),\rev(\nil)) \\
  &amp; = &amp; \prefix(\cons(a,\rev(x)),\nil) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-cons-nil}
+= &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>First suppose <span class="math inline">\(a = b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\snoc(a,x),\snoc(b,y)) \\
@@ -582,7 +633,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p><span class="math inline">\(\suffix\)</span> also detects the existence of solutions <span class="math inline">\(z\)</span> to the equation <span class="math inline">\(y = \cat(z,x)\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
+<p><span id="thm-suffix-cat-self"></span> Let <span class="math inline">\(A\)</span> be a set. The following hold for all <span class="math inline">\(x,y \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\suffix(x,\cat(y,x)) = \btrue\)</span>.</li>
 <li>If <span class="math inline">\(\suffix(x,y) = \btrue\)</span>, then <span class="math inline">\(y = \cat(z,x)\)</span> for some <span class="math inline">\(z \in \lists{A}\)</span>.</li>
@@ -641,7 +692,7 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p><span class="math inline">\(\suffix\)</span> is a partial order:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
+<p><span id="thm-suffix-reflexive"></span> Let <span class="math inline">\(A\)</span> be a set. Then we have the following for all <span class="math inline">\(x,y,z \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li><span class="math inline">\(\suffix(x,x) = \btrue\)</span>.</li>
 <li>If <span class="math inline">\(\suffix(x,y)\)</span> and <span class="math inline">\(\suffix(y,x)\)</span>, then <span class="math inline">\(x = y\)</span>.</li>
@@ -651,7 +702,8 @@ Posted on 2017-05-08 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \btrue \\
- &amp; = &amp; \prefix(\rev(x),\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-prefix-reflexive}
+= &amp; \prefix(\rev(x),\rev(x)) \\
  &amp; = &amp; \suffix(x,x)
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>If <span class="math inline">\(\suffix(x,y)\)</span>, we have <span class="math inline">\(y = \cat(u,x)\)</span> for some <span class="math inline">\(u\)</span>. Similarly, if <span class="math inline">\(\suffix(y,x)\)</span> then <span class="math inline">\(x = \cat(v,y)\)</span> for some <span class="math inline">\(v\)</span>. Now <span class="math display">\[\begin{eqnarray*}
@@ -735,19 +787,21 @@ Posted on 2017-05-08 by nbloomf
 </div>
 <p>As a special case, the prefixes and suffixes of a one-element list coincide.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\prefix(x,\cons(a,\nil)) = \suffix(x,\cons(a,\nil)).\]</span></p>
+<p><span id="thm-prefix-suffix-one"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\prefix(x,\cons(a,\nil)) = \suffix(x,\cons(a,\nil)).\]</span></p>
 <div class="proof">
 <p>We consider three possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(x,\cons(a,\nil)) \\
  &amp; = &amp; \prefix(\nil,\cons(a,\nil)) \\
- &amp; = &amp; \btrue \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue \\
  &amp; = &amp; \suffix(\nil,\cons(a,\nil)) \\
  &amp; = &amp; \suffix(x,\cons(a,\nil))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(x = \cons(b,\nil)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(x,\cons(a,\nil)) \\
  &amp; = &amp; \prefix(\cons(b,\nil),\cons(a,\nil)) \\
  &amp; = &amp; \bif{\beq(a,b)}{\prefix(\nil,\nil)}{\bfalse} \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
  &amp; = &amp; \bif{\beq(a,b)}{\suffix(\nil,\nil)}{\bfalse} \\
  &amp; = &amp; \suffix(\snoc(b,\nil),\snoc(a,\nil)) \\
  &amp; = &amp; \suffix(\cons(b,\nil),\cons(a,\nil)) \\
@@ -756,8 +810,12 @@ Posted on 2017-05-08 by nbloomf
  &amp;   &amp; \nleq(\next(\length(\cons(a,\nil))),\length(x)) \\
  &amp; = &amp; \nleq(\next(\next(\zero)),\length(\cons(b,\cons(c,u)))) \\
  &amp; = &amp; \nleq(\next(\next(\zero)),\next(\next(\length(u)))) \\
- &amp; = &amp; \nleq(\zero,\length(u)) \\
- &amp; = &amp; \btrue,
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+   = &amp; \nleq(\next(\zero),\next(\length(u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-next-cancel}
+   = &amp; \nleq(\zero,\length(u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LessThanOrEqualTo.html#thm-leq-zero}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> so that <span class="math inline">\(\prefix(x,\cons(a,\nil)) = \bfalse\)</span>. Similarly, <span class="math display">\[\nleq(\next(\length(\cons(a,\nil))),\length(x)) = \btrue\]</span> so that <span class="math inline">\(\suffix(x,\cons(a,\nil)) = \bfalse\)</span> as needed.</p>
 </div>
 <div class="test">
@@ -775,8 +833,8 @@ Posted on 2017-05-08 by nbloomf
 <a class="sourceLine" id="cb19-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb19-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
 <a class="sourceLine" id="cb19-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb19-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb19-7" data-line-number="7">_test_prefix_suffix t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb19-7" data-line-number="7">_test_prefix_suffix size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb19-8" data-line-number="8">  testLabel2 <span class="st">&quot;prefix &amp; suffix&quot;</span> t n</a>
 <a class="sourceLine" id="cb19-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb19-10" data-line-number="10">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -809,8 +867,8 @@ Posted on 2017-05-08 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="ot">main_prefix_suffix ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb20-2" data-line-number="2">main_prefix_suffix <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb20-3" data-line-number="3">  _test_prefix_suffix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb20-4" data-line-number="4">  _test_prefix_suffix (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb20-3" data-line-number="3">  _test_prefix_suffix <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb20-4" data-line-number="4">  _test_prefix_suffix <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

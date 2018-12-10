@@ -6,7 +6,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nbloomf.blog - On Boring and Repetitive Proofs</title>
+<title>nbloomf.blog - Delimiter Separated Values</title>
 <link rel="stylesheet" type="text/css" href="../../css/default.css" />
 <link rel="icon" href="../../raw/gfx/icon/favicon-32.png" />
 <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../../raw/gfx/icon/favicon-57.png" />
@@ -30,16 +30,16 @@
 </div>
 
 <div id="content">
-<h1>On Boring and Repetitive Proofs</h1>
+<h1>Delimiter Separated Values</h1>
 <!-- BEGIN CONTENT -->
 
 
 <div class="info">
-Posted on 2017-06-01 by nbloomf
+Posted on 2018-07-19 by nbloomf
 </div>
 
 
-<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a></div>
+<div class="info tags">Tags: <a href="../../tag/arithmetic-made-difficult.html">arithmetic-made-difficult</a>, <a href="../../tag/literate-haskell.html">literate-haskell</a></div>
 
 
 <!-- LaTeX Macros for Arithmetic Made Difficult -->
@@ -234,19 +234,40 @@ Posted on 2017-06-01 by nbloomf
 
 <p class="post-info">This page is part of a series on <a href="../../pages/amd.html">Arithmetic Made Difficult</a>.</p>
 
+<p class="post-info">This post is literate Haskell; you can load <a href="https://raw.githubusercontent.com/nbloomf/nbloomf.md/master/posts/arithmetic-made-difficult/DSV.lhs">the source</a> into GHCi and play along.</p>
+
 <hr />
 
-<p>So far in this series we’ve defined two basic “data types”, the natural numbers and lists. Both types nailed down some kind of recursive structure and each came with an induction principle, which we used to establish a kind of computational algebra. On <span class="math inline">\(\nats\)</span> the computational algebra was just arithmetic, while on lists it was… different, but still turns out to be useful. But in both cases recursion and induction make it possible to</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">module</span> <span class="dt">DSV</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  ( main_dsv</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4">  ) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">import</span> <span class="dt">Testing</span></a></code></pre></div>
+<p>We’ve been developing an algebra of lists for a while – now let’s try to do something interesting with it.</p>
+<p>In unix-like environments files are lists of bytes. Many of the standard unix utilities are designed to manipulate files as lists of bytes. And text-based ‘formats’ like YAML and JSON are essentially encodings of some abstract structures as lists of characters. To what extent can text based tools and formats be reasoned about using the algebra of lists?</p>
+<p>In this post we’ll explore this idea a bit for one of the oldest and simplest textual “formats”: <a href="https://en.wikipedia.org/wiki/Delimiter-separated_values">delimiter separated values</a>. DSV is just barely a format at all. Simple as it is, DSV even has a registered <a href="https://www.iana.org/assignments/media-types/text/tab-separated-values">MIME type</a>.</p>
+<p>Typically a DSV file is one or more lines, called <em>records</em>, each consisting of one or more <em>fields</em>, which are separated by a <em>delimiter</em> character, usually tab but sometimes comma, semicolon, or pipe. DSV is a simple encoding for data stored as a two-dimensional array. For example:</p>
+<pre><code>field1    --&gt;|field2    --&gt;|field3    --&gt;|field4
+field1    --&gt;|field2    --&gt;|field3    --&gt;|field4</code></pre>
+<p>The ‘standard’ for DSV, such as it is, suggests that the first line consists of ‘column labels’ for the records, and that each record must have the same number of fields. But in practice this is not really enforced. Also, in the simplest implementation of DSV, the fields cannot include literal newlines or delimiter characters; this weakness is one of the reasons the more complicated CSV is used, where the fields are optionally quoted.</p>
+<p>DSV is a kind of <em>encoding</em>: a map from some set (the things being encoded) to the set of strings over an alphabet. It’s tempting to think of the encoding and the encoded thing as being the same, but they are not!</p>
+<p>So what kind of things does DSV encode? A DSV file is literally defined as a list of records, where each record is a list of fields, and each field is a list of characters. So we can say that DSV is a “function” <span class="math display">\[\mathsf{DSV} : \lists{\lists{\lists{U}}} \rightarrow \lists{U},\]</span> where <span class="math inline">\(U\)</span> is the set of unicode code points.</p>
+<p>By casting DSV in this language, we can ask some interesting questions.</p>
 <ol type="1">
-<li>Compute stuff, and</li>
-<li>Prove things about the stuff we compute.</li>
+<li>Does the DSV encoding really represent a function? That is, does every list of records have a unique encoding?</li>
+<li>If encoding really is a function, is it surjective? This is a very practical question. If not, then there is some list of characters that cannot be decoded, so DSV files would be subject to validation. If encoding is surjective, on the other hand, then we never have to worry about “parse errors” because every list of characters is the encoding of some list of records.</li>
+<li>If DSV encoding really is a function, is it injective? This is also a practical question. If not, then the encoding process is destructive – there are distinct lists of records with the same encoding.</li>
 </ol>
-<p>Something else we might notice about these proofs is that they are <em>super boring and repetitive</em>. The induction proofs are essentially all the same, and the definitions are set up so that really no nonobvious leaps of logic are needed. From a mathematician’s perspective, this is awful! I shouldn’t presume to speak to the aesthetic judgments of other people, but I will anyway. My guess is that most people would say that as a whole, the proofs in this series of posts so far lack that special something called <em>elegance</em>. An elegant proof is one that’s particularly short, or has a high ratio of power to effort, or draws together otherwise far-flung ideas. To my eye none of that is happening here.</p>
-<p>On the other hand, I find it comforting that such pedestrian techniques can go so far. Because elegant proofs also require us to be <em>really clever</em> before we can find them! And I for one am not really that clever even on my best days. But this combination of <strong>initial algebra</strong> and <strong>induction principle</strong> is a set of dependable tools. Once we’re comfortable with them, using them to make provably correct programs is a matter of putting in the effort.</p>
-<h2 id="whats-next">What’s Next</h2>
-<p>We’ve seen several different functions on <span class="math inline">\(\bool\)</span>, <span class="math inline">\(\nats\)</span>, and <span class="math inline">\(\lists{A}\)</span> so far which have some properties in common. For example, <span class="math inline">\(\band : \bool \times \bool \rightarrow \bool\)</span> satisfies <span class="math display">\[\band(\band(a,b),c) = \band(a,\band(b,c)).\]</span> But also <span class="math inline">\(\nplus : \nats \times \nats \rightarrow \nats\)</span> satisfies <span class="math display">\[\nplus(\nplus(a,b),c) = \nplus(a,\nplus(b,c)),\]</span> and <span class="math inline">\(\cat : \lists{A} \times \lists{A} \rightarrow \lists{A}\)</span> satisfies <span class="math display">\[\cat(\cat(a,b),c) = \cat(a,\cat(b,c)).\]</span></p>
-<p>In mathematics, when two or more different “objects” which are known to be interesting share some common <em>behavior</em>, experience has shown that it is useful to abstract out the essence of commonality. In the above examples the common behavior is that we have a function <span class="math inline">\(f : A \times A \rightarrow A\)</span> which satisfies <span class="math display">\[f(f(a,b),c) = f(a,f(b,c)).\]</span> Of course functions with this property are called <em>associative</em>. Any theorem we can prove about an abstract <span class="math inline">\(f\)</span> using only the assumption that <span class="math inline">\(f\)</span> is associative immediately applies to <em>all</em> associative functions.</p>
-<p>In the next few posts we will draw out, from our examples so far, some abstractions which are known to be particularly useful.</p>
+<p>The IANA definition of DSV encoding is not a function from lists of lists of strings to strings, because not every such list can be encoded – in particular, any fields including literal tabs. The usual way to get around this restriction is with an <a href="https://en.wikipedia.org/wiki/Escape_character"><em>escaping</em> mechanism</a>: a special character indicating that the character after it is not to be interpreted literally. In unix this is usually the backslash, and usually a backslash <em>always</em> escapes the character it precedes.</p>
+<p>We can think of the escape character as letting us augment the character set at the expense of an additional tokenization step.</p>
+<p>Say we try to fix the IANA DSV definition by introducing an escape character – <code>@</code> – and say that <code>@</code> followed by tab is not a field separator, but represents a literal tab. Same for newlines. Now our encoding really is a function on arbitrary records, since we can now encode any character. But we also have to decide what <code>@</code> means if it isn’t followed by a tab or newline. Maybe there’s a number of other escape sequences with special meanings; maybe <code>@</code> followed by a non-delimiter character represents that character; maybe an escape character that isn’t part of an escape sequence is an error. Each of these choices requires making our encoding function either not surjective (if escape sequences have to be validated) or not injective (if some characters have both raw and escaped representations). Moreover, encoding is <em>badly</em> not surjective or injective.</p>
+<p>Another way to deal with the escape character is to decree that it is only meaningful when followed by a delimiter, and otherwise just represents itself. This might seem strange at first – it did to me, anyway – but it turns out this lets us recover encoding surjectivity and near-injectivity (with only one exception).</p>
+<p>Enough motivation, let’s define an encoding.</p>
+<p>Rather than defining a full on DSV-like encoding in one go, we’re going to start with an encoding for single records. With our escape convention, this will be enough to bootstrap an encoding for lists of lists of … of lists of strings, to any depth.</p>
+<p>(@@@)</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">main_dsv ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">main_dsv <span class="fu">=</span> return ()</a></code></pre></div>
 
 
 

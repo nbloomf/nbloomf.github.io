@@ -81,8 +81,12 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2018-01-01 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -347,8 +353,8 @@ Posted on 2018-01-01 by nbloomf
 <div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_dnaturalRec ::</span></a>
 <a class="sourceLine" id="cb6-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Show</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">CoArbitrary</span> n, <span class="dt">Natural</span> n</a>
 <a class="sourceLine" id="cb6-3" data-line-number="3">  , <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">TypeName</span> a</a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">_test_dnaturalRec n a size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">_test_dnaturalRec size cases n a <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb6-6" data-line-number="6">  testLabel2 <span class="st">&quot;dnaturalRec&quot;</span> n a</a>
 <a class="sourceLine" id="cb6-7" data-line-number="7"></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -357,10 +363,10 @@ Posted on 2018-01-01 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">main_dnaturalRec ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">main_dnaturalRec <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">10</span> <span class="dv">50</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">10</span> <span class="dv">50</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">10</span> <span class="dv">50</span></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">  _test_dnaturalRec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">10</span> <span class="dv">50</span></a></code></pre></div>
+<a class="sourceLine" id="cb7-3" data-line-number="3">  _test_dnaturalRec <span class="dv">10</span> <span class="dv">50</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  _test_dnaturalRec <span class="dv">10</span> <span class="dv">50</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  _test_dnaturalRec <span class="dv">10</span> <span class="dv">50</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">  _test_dnaturalRec <span class="dv">10</span> <span class="dv">50</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)</a></code></pre></div>
 
 
 

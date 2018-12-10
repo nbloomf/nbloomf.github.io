@@ -81,8 +81,12 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-04-12 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -248,14 +254,14 @@ Posted on 2017-04-12 by nbloomf
 <p>Recall the following property of <span class="math inline">\(\nmax\)</span>: if <span class="math inline">\(\nleq(c,a)\)</span> and <span class="math inline">\(\nleq(c,b)\)</span>, then <span class="math inline">\(\nleq(c,\nmax(a,b))\)</span>. This statement fell out of the definition of <span class="math inline">\(\nmax\)</span> without much fuss, and may seem anticlimactic. But compare it to this analogous statement about <span class="math inline">\(\ngcd\)</span>: if <span class="math inline">\(\ndiv(c,a)\)</span> and <span class="math inline">\(\ndiv(c,b)\)</span>, then <span class="math inline">\(\ndiv(c,\ngcd(a,b))\)</span>. Now <span class="math inline">\(\nmax\)</span> and <span class="math inline">\(\ngcd\)</span> seem to play very similar roles. Where <span class="math inline">\(\nleq\)</span> is a kind of “additive order” on <span class="math inline">\(\nats\)</span> and <span class="math inline">\(\nmax\)</span> gives an additive ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>, <span class="math inline">\(\ndiv\)</span> is a kind of “multiplicative order” and <span class="math inline">\(\ngcd\)</span> gives a multiplicative ceiling to <span class="math inline">\(a\)</span> and <span class="math inline">\(b\)</span>. When an analogy this strong holds between two concepts in mathematics, it is frequently useful to see how far the analogy goes. To that end, today we will define the multiplicative counterpart to <span class="math inline">\(\nmin\)</span>.</p>
 <p>We don’t need recursion for this.</p>
 <div class="definition">
-<p>Define <span class="math inline">\(\nlcm : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nlcm(a,b) = \nquo(\ntimes(a,b),\ngcd(a,b)).\]</span></p>
+<p><span id="def-lcm"></span> Define <span class="math inline">\(\nlcm : \nats \times \nats \rightarrow \nats\)</span> by <span class="math display">\[\nlcm(a,b) = \nquo(\ntimes(a,b),\ngcd(a,b)).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1">lcm<span class="ot"> ::</span> (<span class="dt">Natural</span> n, <span class="dt">Equal</span> n) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">lcm a b <span class="fu">=</span> quo (times a b) (gcd a b)</a></code></pre></div>
 </div>
 <p>woo special cases!</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
+<p><span id="thm-lcm-zero"></span><span id="thm-lcm-one"></span> For all <span class="math inline">\(a \in \nats\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nlcm(a,\zero) = \zero\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,\next(\zero)) = a\)</span>.</li>
@@ -264,13 +270,15 @@ Posted on 2017-04-12 by nbloomf
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,\zero) \\
- &amp; = &amp; \nquo(\ntimes(a,\zero),\ngcd(a,\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,\zero),\ngcd(a,\zero)) \\
  &amp; = &amp; \nquo(\zero,a) \\
  &amp; = &amp; \zero.
 \end{eqnarray*}\]</span></li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,\next(\zero)) \\
- &amp; = &amp; \nquo(\ntimes(a,\next(\zero)),\ngcd(a,\next(\zero))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,\next(\zero)),\ngcd(a,\next(\zero))) \\
  &amp; = &amp; \nquo(a,\next(\zero)) \\
  &amp; = &amp; a.
 \end{eqnarray*}\]</span></li>
@@ -293,7 +301,7 @@ Posted on 2017-04-12 by nbloomf
 </div>
 <p>As we might expect, <span class="math inline">\(\nlcm\)</span> enjoys many properties analogous to those of <span class="math inline">\(\ngcd\)</span>. It is idempotent and commutative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-lcm-idempotent"></span><span id="thm-lcm-commutative"></span> Let <span class="math inline">\(a,b \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\nlcm(a,a) = a\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,b) = \nlcm(b,a)\)</span>.</li>
@@ -302,21 +310,26 @@ Posted on 2017-04-12 by nbloomf
 <ol type="1">
 <li>We consider two cases: <span class="math inline">\(a = \zero\)</span> and <span class="math inline">\(a \neq \zero\)</span>. If <span class="math inline">\(a = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,a) \\
- &amp; = &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
  &amp; = &amp; \nquo(\zero,\zero) \\
  &amp; = &amp; \zero \\
  &amp; = &amp; a
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(a \neq \zero\)</span>, say <span class="math inline">\(a = \next(t)\)</span>, then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,a) \\
- &amp; = &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
- &amp; = &amp; \nquo(\ntimes(a,a),a) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,a),\ngcd(a,a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-idempotent}
+= &amp; \nquo(\ntimes(a,a),a) \\
  &amp; = &amp; a
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,b) \\
- &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
  &amp; = &amp; \nquo(\ntimes(b,a),\ngcd(b,a)) \\
- &amp; = &amp; \nlcm(b,a)
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nlcm(b,a)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -346,12 +359,14 @@ Posted on 2017-04-12 by nbloomf
 <ol type="1">
 <li>We consider two cases: <span class="math inline">\(\ngcd(a,b) = \zero\)</span> and <span class="math inline">\(\ngcd(a,b) \neq \zero\)</span>. If <span class="math inline">\(\ngcd(a,b) = \zero\)</span>, then we have <span class="math inline">\(a = b = \zero\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\zero,\zero) \\
- &amp; = &amp; \nquo(\ntimes(\zero,\zero),\ngcd(\zero,\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(\zero,\zero),\ngcd(\zero,\zero)) \\
  &amp; = &amp; \nquo(\zero,\zero) \\
  &amp; = &amp; \zero
 \end{eqnarray*}\]</span> and <span class="math inline">\(\ndiv(\zero,\zero)\)</span> as needed. Suppose instead that <span class="math inline">\(\ngcd(a,b) \neq \zero\)</span>. Say <span class="math inline">\(b = \ntimes(k,\ngcd(a,b))\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,b) \\
- &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
  &amp; = &amp; \nquo(\ntimes(\ntimes(a,k),\ngcd(a,b)),\ngcd(a,b)) \\
  &amp; = &amp; \ntimes(a,k),
 \end{eqnarray*}\]</span> so that <span class="math inline">\(\ndiv(a,\nlcm(a,b))\)</span>. A similar argument shows that <span class="math inline">\(\ndiv(b,\nlcm(a,b))\)</span> as claimed.</li>
@@ -363,7 +378,8 @@ c &amp; = &amp; c \\
 \ntimes(s,u) &amp; = &amp; \ntimes(t,v).
 \end{eqnarray*}\]</span> That is, <span class="math inline">\(\ndiv(t,\ntimes(s,u))\)</span>. By Euclid’s lemma, we have <span class="math inline">\(\ndiv(t,u)\)</span>. Next, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,b) \\
- &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+= &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
  &amp; = &amp; \nquo(\ntimes(a,\ntimes(t,d)),d) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-associative}
 = &amp; \nquo(\ntimes(\ntimes(a,t),d),d) \\
@@ -407,7 +423,7 @@ c &amp; = &amp; c \\
 </div>
 <p><span class="math inline">\(\nlcm\)</span> is associative:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then <span class="math inline">\(\nlcm(\nlcm(a,b),c) = \nlcm(a,\nlcm(b,c))\)</span>.</p>
+<p><span id="thm-lcm-associative"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then <span class="math inline">\(\nlcm(\nlcm(a,b),c) = \nlcm(a,\nlcm(b,c))\)</span>.</p>
 <div class="proof">
 <p>Note that <span class="math inline">\(\ndiv(a,\nlcm(a,\nlcm(b,c)))\)</span>. We also have <span class="math inline">\(\ndiv(b,\nlcm(b,c))\)</span>, so that <span class="math display">\[\ndiv(b,\nlcm(a,\nlcm(b,c)))\]</span> by transitivity; similarly, <span class="math display">\[\ndiv(c,\nlcm(a,\nlcm(b,c))).\]</span> By the universal property of <span class="math inline">\(\nlcm\)</span>, we thus have <span class="math display">\[\ndiv(\nlcm(a,b),\nlcm(a,\nlcm(b,c))),\]</span> so that <span class="math display">\[\ndiv(\nlcm(\nlcm(a,b),c),\nlcm(a,\nlcm(b,c))).\]</span> A similar argument shows that <span class="math display">\[\ndiv(\nlcm(a,\nlcm(b,c)),\nlcm(\nlcm(a,b),c)).\]</span> By antisymmetry, we thus have <span class="math display">\[\nlcm(a,\nlcm(b,c)) = \nlcm(\nlcm(a,b),c)\]</span> as claimed.</p>
 </div>
@@ -428,7 +444,8 @@ c &amp; = &amp; c \\
  &amp;     \href{/posts/arithmetic-made-difficult/Times.html#thm-times-one-right}
    = &amp; a \\
  &amp; = &amp; \nlcm(a,b) \\
- &amp; = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+   = &amp; \nquo(\ntimes(a,b),\ngcd(a,b)) \\
  &amp; = &amp; \nquo(\ntimes(\ntimes(a,k),d),d) \\
  &amp; = &amp; \ntimes(a,k).
 \end{eqnarray*}\]</span> Since <span class="math inline">\(a \neq \zero\)</span>, we have <span class="math inline">\(k = \next(\zero)\)</span>, and thus <span class="math inline">\(b = \ngcd(a,b)\)</span>. Hence <span class="math inline">\(\ndiv(b,a)\)</span> as claimed.</p>
@@ -443,22 +460,25 @@ c &amp; = &amp; c \\
 </div>
 <p><span class="math inline">\(\ntimes\)</span> distributes over <span class="math inline">\(\nlcm\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have <span class="math display">\[\nlcm(\ntimes(c,a),ntimes(c,b)) = \ntimes(c,\nlcm(a,b)).\]</span></p>
+<p><span id="thm-lcm-times"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have <span class="math display">\[\nlcm(\ntimes(c,a),ntimes(c,b)) = \ntimes(c,\nlcm(a,b)).\]</span></p>
 <div class="proof">
 <p>We consider two cases: either <span class="math inline">\(c = \zero\)</span> or <span class="math inline">\(c \neq \zero\)</span>. If <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
  &amp; = &amp; \nlcm(\zero,\zero) \\
- &amp; = &amp; \zero \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#thm-lcm-zero}
+   = &amp; \zero \\
  &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-zero}
    = &amp; \ntimes(\zero,\nlcm(a,b)) \\
  &amp; = &amp; \ntimes(c,\nlcm(a,b))
 \end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(c \neq \zero\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(\ntimes(c,a),\ntimes(c,b)) \\
- &amp; = &amp; \nquo(\ntimes(\ntimes(c,a),\ntimes(c,b)),\ngcd(\ntimes(c,a),\ntimes(c,b))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+   = &amp; \nquo(\ntimes(\ntimes(c,a),\ntimes(c,b)),\ngcd(\ntimes(c,a),\ntimes(c,b))) \\
  &amp; = &amp; \nquo(\ntimes(\ntimes(c,\ntimes(a,b)),c),\ngcd(\ntimes(a,b),c)) \\
  &amp; = &amp; \nquo(\ntimes(c,\ntimes(a,b)),\ngcd(a,b)) \\
  &amp; = &amp; \ntimes(c,\nquo(\ntimes(a,b),\ngcd(a,b))) \\
- &amp; = &amp; \ntimes(c,\nlcm(a,b))
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#def-lcm}
+   = &amp; \ntimes(c,\nlcm(a,b))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -491,7 +511,7 @@ c &amp; = &amp; c \\
 </div>
 <p>Finally, <span class="math inline">\(\ngcd\)</span> and <span class="math inline">\(\nlcm\)</span> distribute over each other.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-lcm-gcd-dist"></span><span id="thm-gcd-lcm-dist"></span> Let <span class="math inline">\(a,b,c \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\ngcd(a,\nlcm(b,c)) = \nlcm(\ngcd(a,b),\ngcd(a,c))\)</span>.</li>
 <li><span class="math inline">\(\nlcm(a,\ngcd(b,c)) = \ngcd(\nlcm(a,b),\nlcm(a,c))\)</span>.</li>
@@ -509,15 +529,19 @@ c &amp; = &amp; c \\
  &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
  &amp; = &amp; \ngcd(a,\nlcm(\zero,c)) \\
  &amp; = &amp; \ngcd(a,\zero) \\
- &amp; = &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-zero}
+= &amp; a \\
  &amp; = &amp; \nlcm(\ngcd(a,b),a) \\
- &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,\zero)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-zero}
+= &amp; \nlcm(\ngcd(a,b),\ngcd(a,\zero)) \\
  &amp; = &amp; \nlcm(\ngcd(a,b),\ngcd(a,c))
 \end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \ngcd(a,\nlcm(b,c)) \\
  &amp; = &amp; \ngcd(a,\nlcm(b,\zero)) \\
- &amp; = &amp; \ngcd(a,\zero) \\
- &amp; = &amp; a \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#thm-lcm-zero}
+= &amp; \ngcd(a,\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-zero}
+= &amp; a \\
  &amp; = &amp; \nlcm(a,\ngcd(a,c)) \\
  &amp; = &amp; \nlcm(\ngcd(a,\zero),\ngcd(b,c)) \\
  &amp; = &amp; \nlcm(\ngcd(a,c),\ngcd(b,c))
@@ -548,7 +572,8 @@ c &amp; = &amp; c \\
  &amp;   &amp; \nlcm(a,\ngcd(b,c)) \\
  &amp; = &amp; \nlcm(\zero,\ngcd(b,c)) \\
  &amp; = &amp; \zero \\
- &amp; = &amp; \ngcd(\zero,\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-idempotent}
+= &amp; \ngcd(\zero,\zero) \\
  &amp; = &amp; \ngcd(\nlcm(\zero,b),\nlcm(\zero,c)) \\
  &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
 \end{eqnarray*}\]</span> as claimed. Next suppose <span class="math inline">\(b = \zero\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
@@ -556,13 +581,16 @@ c &amp; = &amp; c \\
  &amp; = &amp; \nlcm(a,\ngcd(\zero,c)) \\
  &amp; = &amp; \nlcm(a,c) \\
  &amp; = &amp; \ngcd(\zero,\nlcm(a,c)) \\
- &amp; = &amp; \ngcd(\nlcm(a,\zero),\nlcm(a,c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LeastCommonMultiple.html#thm-lcm-zero}
+= &amp; \ngcd(\nlcm(a,\zero),\nlcm(a,c)) \\
  &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
 \end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(c = \zero\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nlcm(a,\ngcd(b,c)) \\
  &amp; = &amp; \nlcm(a,\ngcd(b,\zero)) \\
- &amp; = &amp; \nlcm(a,b) \\
- &amp; = &amp; \ngcd(\nlcm(a,b),\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-zero}
+= &amp; \nlcm(a,b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/GreatestCommonDivisor.html#thm-gcd-zero}
+= &amp; \ngcd(\nlcm(a,b),\zero) \\
  &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,\zero)) \\
  &amp; = &amp; \ngcd(\nlcm(a,b),\nlcm(a,c))
 \end{eqnarray*}\]</span> as claimed. We can now assume that <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(c\)</span> are not zero; in particular, <span class="math inline">\(\ngcd(a,b)\ngcd(a,c)\)</span> and <span class="math inline">\(\ngcd(a,\ngcd(b,c))\)</span> are not zero; in particular, <span class="math inline">\(\ngcd(a,b)\ngcd(a,c)\)</span> and <span class="math inline">\(\ngcd(a,\ngcd(b,c))\)</span> are not zero. We begin with a sub-result. Note that <span class="math display">\[\begin{eqnarray*}
@@ -610,8 +638,8 @@ c &amp; = &amp; c \\
 <p>Suite:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_lcm ::</span></a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  ) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">_test_lcm n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">_test_lcm size cases n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb11-5" data-line-number="5">  testLabel1 <span class="st">&quot;lcm&quot;</span> n</a>
 <a class="sourceLine" id="cb11-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb11-7" data-line-number="7">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -631,7 +659,7 @@ c &amp; = &amp; c \\
 <p>Main:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_lcm ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_lcm <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_lcm (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_lcm <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

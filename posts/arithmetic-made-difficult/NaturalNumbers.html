@@ -81,8 +81,12 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2014-05-23 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -242,9 +248,13 @@ Posted on 2014-05-23 by nbloomf
 <a class="sourceLine" id="cb1-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb1-9" data-line-number="9"><span class="kw">import</span> <span class="dt">Testing</span></a>
 <a class="sourceLine" id="cb1-10" data-line-number="10"><span class="kw">import</span> <span class="dt">Functions</span></a>
-<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Booleans</span></a>
-<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
-<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
+<a class="sourceLine" id="cb1-11" data-line-number="11"><span class="kw">import</span> <span class="dt">Flip</span></a>
+<a class="sourceLine" id="cb1-12" data-line-number="12"><span class="kw">import</span> <span class="dt">Clone</span></a>
+<a class="sourceLine" id="cb1-13" data-line-number="13"><span class="kw">import</span> <span class="dt">Composition</span></a>
+<a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">Booleans</span></a>
+<a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">Tuples</span></a>
+<a class="sourceLine" id="cb1-16" data-line-number="16"><span class="kw">import</span> <span class="dt">DisjointUnions</span></a>
+<a class="sourceLine" id="cb1-17" data-line-number="17"><span class="kw">import</span> <span class="dt">Unary</span></a></code></pre></div>
 <p>We have assumed the existence of a set <span class="math inline">\(\nats\)</span> such that there is a unique inductive set homomorphism from <span class="math inline">\(\nats\)</span> to any other inductive set. But it turns out that this set is not <em>unique</em> with this property; any other inductive set which is <em>isomorphic</em> to <span class="math inline">\(\nats\)</span> enjoys it as well. In fact we’ve already seen one such set, namely <span class="math inline">\(1 + \nats\)</span>.</p>
 <p>Here’s a handwavy proof. Let <span class="math inline">\((A,\varphi,e)\)</span> be an inductive set, and suppose the unique map <span class="math inline">\(\theta : \nats \rightarrow A\)</span> is bijective. Then there is a unique inductive set homomorphism <span class="math inline">\(\omega : A \rightarrow \nats\)</span>; namely, <span class="math inline">\(\omega = \theta^{-1}\)</span>. Now any homomorphism from <span class="math inline">\(A\)</span> factors through the (unique) map <span class="math inline">\(\omega\)</span>.</p>
 <p>From a mathematical point of view, isomorphic objects are interchangeable. But as we’ll eventually see, from a <em>computational</em> point of view, isomorphic objects can behave very differently. For this reason we will think of the properties of <span class="math inline">\(\nats\)</span> as a kind of interface, and write our programs against that. Specifically, every element of a <span class="math inline">\(\nats\)</span>-like set is either the zero or the successor of some other element, and <span class="math inline">\(\unnext\)</span> discriminates between the two.</p>
@@ -334,8 +344,8 @@ Posted on 2014-05-23 by nbloomf
 <a class="sourceLine" id="cb6-46" data-line-number="46">  \m <span class="ot">-&gt;</span> eq (isZero (next m)) false</a></code></pre></div>
 <p>Suite.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_nats ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">_test_nats n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_nats size cases n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4">  testLabel1 <span class="st">&quot;nats&quot;</span> n</a>
 <a class="sourceLine" id="cb7-5" data-line-number="5">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
 <a class="sourceLine" id="cb7-6" data-line-number="6"></a>
@@ -348,7 +358,24 @@ Posted on 2014-05-23 by nbloomf
 <p>Main.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">main_nats ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb8-2" data-line-number="2">main_nats <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  _test_nats (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  _test_nats <span class="dv">100</span> <span class="dv">100</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="kw">let</span> a <span class="fu">=</span><span class="ot"> zero ::</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  <span class="kw">let</span> b <span class="fu">=</span><span class="ot"> true ::</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">  <span class="kw">let</span> c <span class="fu">=</span> tup zero<span class="ot"> zero ::</span> <span class="dt">Pair</span> <span class="dt">Unary</span> <span class="dt">Unary</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">  _test_functions      <span class="dv">20</span> <span class="dv">200</span> a a a a</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  _test_functions      <span class="dv">20</span> <span class="dv">200</span> a b a b</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">  _test_flip           <span class="dv">20</span> <span class="dv">200</span> a a a a a a a</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">  _test_flip           <span class="dv">20</span> <span class="dv">200</span> a b c a b c a</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">  _test_clone          <span class="dv">20</span> <span class="dv">200</span> a a</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">  _test_clone          <span class="dv">20</span> <span class="dv">200</span> a c</a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">  _test_compose        <span class="dv">20</span> <span class="dv">200</span> a a a a a a a</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">  _test_compose        <span class="dv">20</span> <span class="dv">200</span> a b c a b c a</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">  _test_tuple          <span class="dv">20</span> <span class="dv">200</span> a a a</a>
+<a class="sourceLine" id="cb8-18" data-line-number="18">  _test_tuple          <span class="dv">20</span> <span class="dv">200</span> a b c</a>
+<a class="sourceLine" id="cb8-19" data-line-number="19">  _test_disjoint_union <span class="dv">20</span> <span class="dv">200</span> a a a</a>
+<a class="sourceLine" id="cb8-20" data-line-number="20">  _test_disjoint_union <span class="dv">20</span> <span class="dv">200</span> a b c</a></code></pre></div>
 
 
 

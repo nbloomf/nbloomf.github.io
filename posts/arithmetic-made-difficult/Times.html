@@ -81,8 +81,12 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-03-31 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -497,7 +503,7 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <p><span class="math inline">\(\ntimes\)</span> is <em>almost</em> cancellative.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have the following.</p>
+<p><span id="thm-times-left-cancel"></span><span id="thm-times-right-cancel"></span> For all <span class="math inline">\(a,b,c \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\ntimes(\next(a),b) = \ntimes(\next(a),c)\)</span> then <span class="math inline">\(b = c\)</span>.</li>
 <li>If <span class="math inline">\(\ntimes(b,\next(a)) = \ntimes(c,\next(a))\)</span> then <span class="math inline">\(b = c\)</span>.</li>
@@ -529,11 +535,17 @@ Posted on 2017-03-31 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-associative}
 = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a))
 \end{eqnarray*}\]</span> The analogous statement holds for <span class="math inline">\(b\)</span>. So we have <span class="math display">\[\begin{eqnarray*}
-  \next(\nplus(\nplus(\ntimes(a,b),b),a)) &amp; = &amp; \next(\nplus(\nplus(\ntimes(a,c),c),a)) \\
-  \nplus(\nplus(\ntimes(a,b),b),a) &amp; = &amp; \nplus(\nplus(\ntimes(a,c),c),a) \\
-  \nplus(\ntimes(a,b),b) &amp; = &amp; \nplus(\ntimes(a,c),c) \\
-  \ntimes(\next(a),b) &amp; = &amp; \ntimes(\next(a),c) \\
-  b &amp; = &amp; c
+ &amp;   &amp; \beq(\next(\nplus(\nplus(\ntimes(a,b),b),a)),\next(\nplus(\nplus(\ntimes(a,c),c),a))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unary.html#thm-next-injective}
+= &amp; \beq(\nplus(\nplus(\ntimes(a,b),b),a),\nplus(\nplus(\ntimes(a,c),c),a)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Plus.html#thm-plus-right-cancel}
+= &amp; \beq(\nplus(\ntimes(a,b),b),\nplus(\ntimes(a,c),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \beq(\ntimes(\next(a),b),\nplus(\ntimes(a,c),c)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Times.html#cor-times-up-next}
+= &amp; \beq(\ntimes(\next(a),b),\ntimes(\next(a),c)) \\
+ &amp;     \hyp{\beq(\ntimes(\next(a),b),\ntimes(\next(a),c)) = \beq(b,c)}
+= &amp; \beq(b,c)
 \end{eqnarray*}\]</span> as needed.</li>
 <li>Suppose <span class="math display">\[\ntimes(b,\next(a)) = \ntimes(c,\next(a)).\]</span> Then we have <span class="math display">\[\ntimes(\next(a),b) = \ntimes(\next(a),c),\]</span> so that b = c$ as claimed.</li>
 </ol>
@@ -579,8 +591,8 @@ Posted on 2017-03-31 by nbloomf
 </div>
 <h2 id="testing">Testing</h2>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">_test_times ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Show</span> n)</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">_test_times n f size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2">  <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> (n <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> n) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-3" data-line-number="3">_test_times size cases n f <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  testLabel1 <span class="st">&quot;times&quot;</span> n</a>
 <a class="sourceLine" id="cb11-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb11-6" data-line-number="6">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -602,7 +614,7 @@ Posted on 2017-03-31 by nbloomf
 <p>The problem lies in our <em>representation</em> of the natural numbers. A better representation might make a more efficient <code>times</code> possible.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_times ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_times <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_times (<span class="ot">zero ::</span> <span class="dt">Unary</span>) times <span class="dv">40</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_times <span class="dv">40</span> <span class="dv">100</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) times</a></code></pre></div>
 
 
 

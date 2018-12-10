@@ -81,8 +81,12 @@ Posted on 2018-01-06 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2018-01-06 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -259,10 +265,10 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\zipPad(u,v)\)</span> is defined as a <span class="math inline">\(\dfoldr\)</span>, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-zippad-nil-left"></span><span id="cor-zippad-cons-nil"></span><span id="cor-zippad-cons-cons"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \map(\tup(u))(y) \\
- f(\cons(a,x),\nil) = \cons((a,v),f(x,nil)) \\
- f(\cons(a,x),\cons(b,y)) = \cons((a,b),f(x,y))
+ f(\cons(a,x),\nil) = \cons(\tup(a)(v),f(x,nil)) \\
+ f(\cons(a,x),\cons(b,y)) = \cons(\tup(a)(b),f(x,y))
 \end{array}\right.\]</span></p>
 <div class="test">
 <div class="sourceCode" id="cb3"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="ot">_test_zipPad_nil_list ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)))</a>
@@ -290,21 +296,24 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p><span class="math inline">\(\zipPad\)</span> with a nil right argument is a <span class="math inline">\(\map\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(u \in A\)</span> and <span class="math inline">\(v \in B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have $<span class="math inline">\(\zipPad(u,v)(x,\nil) = \map(\flip(\tup)(v))(x)\)</span>.</p>
+<p><span id="thm-zippad-nil-right"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(u \in A\)</span> and <span class="math inline">\(v \in B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have $<span class="math inline">\(\zipPad(u,v)(x,\nil) = \map(\flip(\tup)(v))(x)\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zipPad(u,v)(\nil,\nil) \\
- &amp; = &amp; \map(\tup(u))(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-nil-left}
+   = &amp; \map(\tup(u))(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
-   = &amp; \map(\flip(\tup)(v))(\nil) \\
- &amp; = &amp; \map(\flip(\tup)(v))(x)
+   = &amp; \map(\flip(\tup)(v))(\nil)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zipPad(u,v)(\cons(a,x),\nil) \\
- &amp; = &amp; \cons((a,v),\zipPad(u,v)(x,\nil)) \\
- &amp; = &amp; \cons(\flip(\tup)(v)(a),\zipPad(u,v)(x,\nil)) \\
- &amp; = &amp; \cons(\flip(\tup)(v)(a),\map(\flip(\tup)(v))(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-cons-nil}
+   = &amp; \cons(\tup(a)(v),\zipPad(u,v)(x,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Flip.html#def-flip}
+   = &amp; \cons(\flip(\tup)(v)(a),\zipPad(u,v)(x,\nil)) \\
+ &amp;     \hyp{\zipPad(u,v)(x,\nil) = \map(\flip(\tup)(v))(x)}
+   = &amp; \cons(\flip(\tup)(v)(a),\map(\flip(\tup)(v))(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
    = &amp; \map(\flip(\tup)(v))(\cons(a,x))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -319,36 +328,43 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p><span class="math inline">\(\zipPad\)</span> interacts with <span class="math inline">\(\tSwap\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zipPad(u,v)(x,y)) = \zipPad(v,u)(y,x).\]</span></p>
+<p><span id="thm-zippad-tSwap"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zipPad(u,v)(x,y)) = \zipPad(v,u)(y,x).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \map(\tSwap)(\zipPad(u,v)(x,y)) \\
- &amp; = &amp; \map(\tSwap)(\zipPad(u,v)(\nil,y)) \\
- &amp; = &amp; \map(\tSwap)(\map(\tup(u))(y)) \\
+ &amp;   &amp; \map(\tSwap)(\zipPad(u,v)(\nil,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-nil-left}
+   = &amp; \map(\tSwap)(\map(\tup(u))(y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \compose(\map(\tSwap))(\map(\tup(u)))(y) \\
- &amp; = &amp; \map(\compose(\tSwap)(\tup(u)))(y) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-compose}
+   = &amp; \map(\compose(\tSwap)(\tup(u)))(y) \\
  &amp; = &amp; \map(\flip(\tup)(u))(y) \\
- &amp; = &amp; \zipPad(v,u)(y,\nil) \\
- &amp; = &amp; \zipPad(v,u)(y,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+   = &amp; \zipPad(v,u)(y,\nil)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now we consider two cases for <span class="math inline">\(y\)</span>; either <span class="math inline">\(y = \nil\)</span> or <span class="math inline">\(y = \cons(b,w)\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tSwap)(\zipPad(u,v)(\cons(a,x),y)) \\
  &amp; = &amp; \map(\tSwap)(\zipPad(u,v)(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tSwap)(\map(\flip(\tup)(v))(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+   = &amp; \map(\tSwap)(\map(\flip(\tup)(v))(\cons(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \compose(\map(\tSwap))(\map(\flip(\tup)(v)))(\cons(a,x)) \\
  &amp; = &amp; \map(\compose(\tSwap)(\flip(\tup)(v)))(\cons(a,x)) \\
  &amp; = &amp; \map(\tup(v))(\cons(a,x)) \\
- &amp; = &amp; \zipPad(u,v)(\nil,\cons(a,x)) \\
- &amp; = &amp; \zipPad(u,v)(y,\cons(a,x))
+ &amp; = &amp; \zipPad(u,v)(\nil,\cons(a,x))
 \end{eqnarray*}\]</span> as needed. Finally, suppose <span class="math inline">\(y = \cons(b,w)\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tSwap)(\zipPad(u,v)(\cons(a,x),y)) \\
- &amp; = &amp; \map(\tSwap)(\zipPad(u,v)(\cons(a,x),\cons(b,w))) \\
- &amp; = &amp; \map(\tSwap)(\cons((a,b),\zipPad(u,v)(x,w))) \\
- &amp; = &amp; \cons(\tSwap((a,b)),\map(\tSwap)(\zipPad(u,v)(x,w))) \\
- &amp; = &amp; \cons((b,a),\zipPad(v,u)(w,x)) \\
- &amp; = &amp; \zipPad(v,u)(\cons(b,w),\cons(a,x)) \\
- &amp; = &amp; \zipPad(v,u)(y,\cons(a,x))
+ &amp;     \let{y = \cons(b,w)}
+   = &amp; \map(\tSwap)(\zipPad(u,v)(\cons(a,x),\cons(b,w))) \\
+ &amp; = &amp; \map(\tSwap)(\cons(\tup(a)(b),\zipPad(u,v)(x,w))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \cons(\tSwap(\tup(a)(b)),\map(\tSwap)(\zipPad(u,v)(x,w))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tSwap-swap}
+   = &amp; \cons(\tup(b)(a),\map(\tSwap)(\zipPad(u,v)(x,w))) \\
+ &amp; = &amp; \cons(\tup(b)(a),\zipPad(v,u)(w,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-cons-cons}
+   = &amp; \zipPad(v,u)(\cons(b,w),\cons(a,x)) \\
+ &amp;     \let{y = \cons(b,w)}
+   = &amp; \zipPad(v,u)(y,\cons(a,x))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -361,29 +377,33 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p><span class="math inline">\(\zipPad\)</span> interacts with <span class="math inline">\(\tPair\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zipPad(u,v)(x,y)) = \zipPad(f(u),g(v))(\map(f)(x),\map(g)(y)).\]</span></p>
+<p><span id="thm-zippad-map-tPair"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zipPad(u,v)(x,y)) = \zipPad(f(u),g(v))(\map(f)(x),\map(g)(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tPair(f,g))(\zipPad(u,v)(x,y)) \\
- &amp; = &amp; \map(\tPair(f,g))(\zipPad(u,v)(\nil,y)) \\
+ &amp;     \let{x = \nil}
+   = &amp; \map(\tPair(f,g))(\zipPad(u,v)(\nil,y)) \\
  &amp; = &amp; \map(\tPair(f,g))(\map(\tup(u))(y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \compose(\map(\tPair(f,g)))(\map(\tup(u)))(y) \\
  &amp; = &amp; \map(\compose(\tPair(f,g))(\tup(u)))(y) \\
  &amp; = &amp; \map(\compose(\tup(f(u)))(g))(y) \\
  &amp; = &amp; \map(\tup(f(u)))(\map(g)(y)) \\
- &amp; = &amp; \zipPad(f(u),g(v))(\nil,\map(g)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-nil-left}
+   = &amp; \zipPad(f(u),g(v))(\nil,\map(g)(y)) \\
  &amp; = &amp; \zipPad(f(u),g(v))(x,\map(g)(y))
 \end{eqnarray*}\]</span> as needed. Now suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two cases for <span class="math inline">\(y\)</span>; either <span class="math inline">\(y = \nil\)</span> or <span class="math inline">\(y = \cons(b,w)\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tPair(f,g))(\zipPad(u,v)(\cons(a,x),y)) \\
  &amp; = &amp; \map(\tPair(f,g))(\zipPad(u,v)(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tPair(f,g))(\map(\flip(\tup)(v))(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+   = &amp; \map(\tPair(f,g))(\map(\flip(\tup)(v))(\cons(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
    = &amp; \compose(\map(\tPair(f,g)))(\map(\flip(\tup)(v)))(\cons(a,x)) \\
  &amp; = &amp; \map(\compose(\tPair(f,g))(\flip(\tup)(v)))(\cons(a,x)) \\
  &amp; = &amp; \map(\compose(\flip(\tup)(g(v)))(f))(\cons(a,x)) \\
  &amp; = &amp; \map(\flip(\tup)(g(v)))(\map(f)(\cons(a,x))) \\
- &amp; = &amp; \zipPad(f(u),g(v))(\map(f)(\cons(a,x)),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+   = &amp; \zipPad(f(u),g(v))(\map(f)(\cons(a,x)),\nil) \\
  &amp; = &amp; \zipPad(f(u),g(v))(\map(f)(\cons(a,x)),y)
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(y = \cons(b,w)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tPair(f,g))(\zipPad(u,v)(\cons(a,x),\cons(b,w))) \\
@@ -407,12 +427,13 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p><span class="math inline">\(\zipPad\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zipPad(u,v)(x,y)) = \nmax(\length(x),\length(y)).\]</span></p>
+<p><span id="thm-zippad-length"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zipPad(u,v)(x,y)) = \nmax(\length(x),\length(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\zipPad(u,v)(x,y)) \\
  &amp; = &amp; \length(\zipPad(u,v)(\nil,y)) \\
- &amp; = &amp; \length(\map(\tup(u))(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#cor-zippad-nil-left}
+   = &amp; \length(\map(\tup(u))(y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-length-map}
    = &amp; \length(y) \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-max-zero-left}
@@ -422,7 +443,8 @@ Posted on 2018-01-06 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possibilities for <span class="math inline">\(y\)</span>: either <span class="math inline">\(y = \nil\)</span> or <span class="math inline">\(y = \cons(b,w)\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\zipPad(u,v)(\cons(a,x),y)) \\
  &amp; = &amp; \length(\zipPad(u,v)(\cons(a,x),\nil)) \\
- &amp; = &amp; \length(\map(\flip(\tup)(v))(\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+   = &amp; \length(\map(\flip(\tup)(v))(\cons(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-length-map}
    = &amp; \length(\cons(a,x)) \\
  &amp; = &amp; \nmax(\length(\cons(a,x)),\zero) \\
@@ -434,7 +456,8 @@ Posted on 2018-01-06 by nbloomf
  &amp; = &amp; \length(\zipPad(u,v)(\cons(a,x),\cons(b,w))) \\
  &amp; = &amp; \length(\cons((a,b),\zipPad(u,v)(x,w))) \\
  &amp; = &amp; \next(\length(\zipPad(u,v)(x,w))) \\
- &amp; = &amp; \next(\nmax(\length(x),\length(w))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-length}
+   = &amp; \next(\nmax(\length(x),\length(w))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-next-max-distribute}
    = &amp; \nmax(\next(\length(x)),\next(\length(w))) \\
  &amp; = &amp; \nmax(\length(\cons(a,x)),\length(\cons(b,w))) \\
@@ -453,13 +476,13 @@ Posted on 2018-01-06 by nbloomf
 </div>
 <p><span class="math inline">\(\zipPad\)</span> is also kind of associative:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(w \in C\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
+<p><span id="thm-zippad-assocL"></span><span id="thm-zippad-assocR"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(u \in A\)</span>, <span class="math inline">\(v \in B\)</span>, <span class="math inline">\(w \in C\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
 <ol type="1">
-<li>Note that <span class="math display">\[\begin{eqnarray*}
+<li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zipPad((u,v),w)(\zipPad(u,v)(x,y),z) \\
  &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z))).
 \end{eqnarray*}\]</span></li>
-<li>Note that <span class="math display">\[\begin{eqnarray*}
+<li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zipPad(u,(v,w))(x,\zipPad(v,w)(y,z)) \\
  &amp; = &amp; \map(\tAssocR)(\zipPad((u,v),w)(\zipPad(u,v)(x,y),z)).
 \end{eqnarray*}\]</span></li>
@@ -486,14 +509,12 @@ Posted on 2018-01-06 by nbloomf
  &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(\cons(a,x),\zipPad(v,w)(\nil,z))) \\
  &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(\cons(a,x),\zipPad(v,w)(y,z)))
 \end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \zipPad((u,v),w)(\zipPad(u,v)(\cons(a,x),y),z) \\
- &amp; = &amp; \zipPad((u,v),w)(\zipPad(u,v)(\cons(a,x),y),\nil) \\
- &amp; = &amp; \nil \\
- &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
-= &amp; \map(\tAssocL)(\nil) \\
- &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(\cons(a,x),\zipPad(v,w)(y,\nil))) \\
- &amp; = &amp; \map(\tAssocL)(\zipPad(u,(v,w))(\cons(a,x),\zipPad(v,w)(y,z)))
+ &amp;   &amp; \zipPad(\tup(u)(v),w)(\zipPad(u,v)(\cons(a,x),y),z) \\
+ &amp;     \let{z = \nil}
+= &amp; \zipPad(\tup(u)(v),w)(\zipPad(u,v)(\cons(a,x),y),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/ZipPad.html#thm-zippad-nil-right}
+= &amp; \map(\flip(\tup)(w))(\zipPad(u,v)(\cons(a,x),y)) \\
+ &amp; = &amp; (@@@)
 \end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span> and <span class="math inline">\(z = \cons(c,v)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zipPad((u,v),w)(\zipPad(u,v)(\cons(a,x),y),z) \\
  &amp; = &amp; \zipPad((u,v),w)(\zipPad(u,v)(\cons(a,x),\cons(b,u)),\cons(c,v)) \\
@@ -509,7 +530,7 @@ Posted on 2018-01-06 by nbloomf
  &amp;   &amp; \zipPad(u,(v,w))(x,\zipPad(v,w)(y,z)) \\
  &amp; = &amp; \id(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z))) \\
  &amp; = &amp; \map(\id)(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z))) \\
- &amp; = &amp; \map(\tAssocR \circ \tAssocL)(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z))) \\
+ &amp; = &amp; \map(\compose(\tAssocR)(\tAssocL))(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z))) \\
  &amp; = &amp; \map(\tAssocR)(\map(\tAssocL)(\zipPad(u,(v,w))(x,\zipPad(v,w)(y,z)))) \\
  &amp; = &amp; \map(\tAssocR)(\zipPad((u,v),w)(\zipPad(u,v)(x,y),z))
 \end{eqnarray*}\]</span> as claimed.</li>
@@ -543,8 +564,8 @@ Posted on 2018-01-06 by nbloomf
 <a class="sourceLine" id="cb9-5" data-line-number="5">  , <span class="dt">TypeName</span> (t a), <span class="dt">TypeName</span> (t b), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
 <a class="sourceLine" id="cb9-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> b a))</a>
 <a class="sourceLine" id="cb9-7" data-line-number="7">  , <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a (<span class="dt">Pair</span> a a))), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> (<span class="dt">Pair</span> a a) a))</a>
-<a class="sourceLine" id="cb9-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb9-9" data-line-number="9">_test_zipPad t u n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">_test_zipPad size cases t u n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb9-10" data-line-number="10">  testLabel3 <span class="st">&quot;zipPad&quot;</span> t u n</a>
 <a class="sourceLine" id="cb9-11" data-line-number="11"></a>
 <a class="sourceLine" id="cb9-12" data-line-number="12">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -561,8 +582,8 @@ Posted on 2018-01-06 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">main_zipPad ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb10-2" data-line-number="2">main_zipPad <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">  _test_zipPad (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">  _test_zipPad (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  _test_zipPad <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  _test_zipPad <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

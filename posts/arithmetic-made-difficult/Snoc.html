@@ -81,8 +81,12 @@ Posted on 2018-01-05 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2018-01-05 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -296,7 +302,8 @@ Posted on 2018-01-05 by nbloomf
    = &amp; \foldr(e)(\varphi)(\cons(b,\snoc(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
    = &amp; \varphi(b,\foldr(e)(\varphi)(\snoc(a,x))) \\
- &amp; = &amp; \varphi(b,\foldr(\varphi(a,e))(\varphi)(x)) \\
+ &amp;     \hyp{\foldr(e)(\varphi)(\snoc(a,x)) = \foldr(\varphi(a,e))(\varphi)(x)}
+   = &amp; \varphi(b,\foldr(\varphi(a,e))(\varphi)(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-cons}
    = &amp; \foldr(\varphi(a,e))(\varphi)(\cons(b,x))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -320,28 +327,38 @@ Posted on 2018-01-05 by nbloomf
 <p><span id="thm-snoc-eq"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span>. Then <span class="math display">\[\beq(\snoc(a,x),\snoc(b,y)) = \band(\beq(a,b),\beq(x,y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case, set <span class="math inline">\(x = \nil\)</span>. We consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \beq(\snoc(a,x),\snoc(b,y)) \\
- &amp; = &amp; \beq(\snoc(a,\nil),\snoc(b,\nil)) \\
- &amp; = &amp; \beq(\cons(a,\nil),\cons(b,\nil)) \\
- &amp; = &amp; \band(\beq(a,b),\beq(\nil,\nil)) \\
- &amp; = &amp; \band(\beq(a,b),\beq(x,y))
+ &amp;   &amp; \beq(\snoc(a,\nil),\snoc(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \beq(\cons(a,\nil),\snoc(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \beq(\cons(a,\nil),\cons(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(a,b),\beq(\nil,\nil))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(y = \cons(c,u)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \beq(\snoc(a,x),\snoc(b,y)) \\
- &amp; = &amp; \beq(\snoc(a,\nil),\snoc(b,\cons(c,u))) \\
- &amp; = &amp; \beq(\cons(a,\nil),\cons(c,\snoc(b,u))) \\
- &amp; = &amp; \band(\beq(a,c),\beq(\nil,\snoc(b,u))) \\
+ &amp;   &amp; \beq(\snoc(a,\nil),\snoc(b,y)) \\
+ &amp;     \let{y = \cons(c,u)}
+   = &amp; \beq(\snoc(a,\nil),\snoc(b,\cons(c,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \beq(\snoc(a,\nil),\cons(c,\snoc(b,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \beq(\cons(a,\nil),\cons(c,\snoc(b,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(a,c),\beq(\nil,\snoc(b,u))) \\
  &amp; = &amp; \band(\beq(a,c),\bfalse) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
    = &amp; \bfalse \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
    = &amp; \band(\beq(a,b),\bfalse) \\
- &amp; = &amp; \band(\beq(a,b),\beq(\nil,\cons(c,u))) \\
- &amp; = &amp; \band(\beq(a,b),\beq(x,y))
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-nil}
+   = &amp; \band(\beq(a,b),\beq(\nil,\cons(c,u))) \\
+ &amp;     \let{y = \cons(c,u)}
+   = &amp; \band(\beq(a,b),\beq(\nil,y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span>, <span class="math inline">\(b\)</span>, and <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(d \in A\)</span>. We again consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,y)) \\
  &amp; = &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,\nil)) \\
  &amp; = &amp; \beq(\cons(d,\snoc(a,x)),\cons(b,\nil)) \\
- &amp; = &amp; \band(\beq(d,b),\beq(\snoc(a,x),\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(d,b),\beq(\snoc(a,x),\nil)) \\
  &amp; = &amp; \band(\beq(d,b),\bfalse) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
    = &amp; \bfalse \\
@@ -351,14 +368,24 @@ Posted on 2018-01-05 by nbloomf
  &amp; = &amp; \band(\beq(a,b),\beq(\cons(d,x),y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(y = \cons(c,u)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,y)) \\
- &amp; = &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,\cons(c,u))) \\
- &amp; = &amp; \beq(\cons(d,\snoc(a,x)),\cons(c,\snoc(b,u))) \\
- &amp; = &amp; \band(\beq(d,c),\beq(\snoc(a,x),\snoc(b,u))) \\
- &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#thm-snoc-eq}
+ &amp;     \hyp{y = \cons(c,u)}
+   = &amp; \beq(\snoc(a,\cons(d,x)),\snoc(b,\cons(c,u))) \\
+ &amp; = &amp; \beq(\cons(d,\snoc(a,x)),\snoc(b,\cons(c,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \beq(\cons(d,\snoc(a,x)),\cons(c,\snoc(b,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(d,c),\beq(\snoc(a,x),\snoc(b,u))) \\
+ &amp;     \hyp{\beq(\snoc(a,x),\snoc(b,u)) = \band(\beq(a,b),\beq(x,u))}
    = &amp; \band(\beq(d,c),\band(\beq(a,b),\beq(x,u))) \\
- &amp; = &amp; \band(\beq(a,b),\band(\beq(d,c),\beq(x,u))) \\
- &amp; = &amp; \band(\beq(a,b),\band(\cons(d,x),\cons(c,u))) \\
- &amp; = &amp; \band(\beq(a,b),\band(\cons(d,x),y))
+ &amp; = &amp; \band(\band(\beq(d,c),\beq(a,b)),\beq(x,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-commutative}
+   = &amp; \band(\band(\beq(a,b),\beq(d,c)),\beq(x,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-associative}
+   = &amp; \band(\beq(a,b),\band(\beq(d,c),\beq(x,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(a,b),\beq(\cons(d,x),\cons(c,u))) \\
+ &amp;     \let{y = \cons(c,u)}
+   = &amp; \band(\beq(a,b),\beq(\cons(d,x),y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -443,21 +470,17 @@ Posted on 2018-01-05 by nbloomf
 <div class="proof">
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \foldl(\psi)(e,\cons(a,\nil)) \\
- &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
-= &amp; \foldl(\psi)(\psi(e,a),\nil) \\
- &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
-= &amp; \psi(e,a) \\
- &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-nil}
-= &amp; \psi(\foldl(\psi)(e,\nil),a) \\
- &amp; = &amp; \foldl(\psi)(e,\snoc(a,\nil))
+ &amp;   &amp; \foldl(\psi)(e)(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+= &amp; \foldl(\psi)(e)(\snoc(a,\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(e\)</span> and <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \foldl(\psi)(e,\snoc(a,\cons(b,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
 = &amp; \foldl(\psi)(e,\cons(b,\snoc(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
 = &amp; \foldl(\psi)(\psi(e,b),\snoc(a,x)) \\
- &amp; = &amp; \foldl(\psi)(\psi(e,b),\cons(a,x)) \\
+ &amp;     \hyp{\foldl(\psi)(w)(\cons(a,x)) = \foldl(\psi)(w)(\snoc(a,x))}
+= &amp; \foldl(\psi)(\psi(e,b),\cons(a,x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/LeftFold.html#def-foldl-cons}
 = &amp; \foldl(\psi)(\psi(\psi(e,b),a),x) \\
  &amp; = &amp; \foldl(\psi)(\varphi(a,\varphi(b,e)),x) \\
@@ -486,27 +509,70 @@ Posted on 2018-01-05 by nbloomf
 </ol>
 </div>
 </div>
+<p><span class="math inline">\(\snoc\)</span> interacts with <span class="math inline">\(\head\)</span>.</p>
+<div class="theorem">
+<p><span id="thm-snoc-head"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\head(\snoc(a,\snoc(b,x))) = \head(\snoc(b,x)).\]</span></p>
+<div class="proof">
+<p>We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \head(\snoc(a,\snoc(b,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \head(\snoc(a,\cons(b,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \head(\cons(b,\snoc(a,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+   = &amp; \rgt(b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+   = &amp; \head(\cons(b,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+   = &amp; \head(\snoc(b,\nil))
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \cons(c,y)\)</span> we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \head(\snoc(a,\snoc(b,x))) \\
+ &amp;     \let{x = \cons(c,y)}
+   = &amp; \head(\snoc(a,\snoc(b,\cons(c,y)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \head(\snoc(a,\cons(c,\snoc(b,y)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \head(\cons(c,\snoc(a,\snoc(b,y)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+   = &amp; \rgt(c) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/HeadAndTail.html#thm-head-cons}
+   = &amp; \head(\cons(c,\snoc(b,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \head(\snoc(b,\cons(c,y))) \\
+ &amp;     \let{x = \cons(c,y)}
+   = &amp; \head(\snoc(b,x))
+\end{eqnarray*}\]</span> as needed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_snoc_head ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Equal</span> a)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_snoc_head _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;eq(head(snoc(a,snoc(b,xs))),head(snoc(b,xs)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \a b x <span class="ot">-&gt;</span> eq (head (snoc a (snoc b x))) (head (snoc b x))</a></code></pre></div>
+</div>
+</div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_snoc ::</span></a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">_test_snoc t size cases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb7-6" data-line-number="6">  testLabel1 <span class="st">&quot;snoc&quot;</span> t</a>
-<a class="sourceLine" id="cb7-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb7-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
-<a class="sourceLine" id="cb7-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb7-10" data-line-number="10">  runTest args (_test_snoc_nil t)</a>
-<a class="sourceLine" id="cb7-11" data-line-number="11">  runTest args (_test_snoc_cons t)</a>
-<a class="sourceLine" id="cb7-12" data-line-number="12">  runTest args (_test_snoc_eq t)</a>
-<a class="sourceLine" id="cb7-13" data-line-number="13">  runTest args (_test_snoc_foldl t)</a>
-<a class="sourceLine" id="cb7-14" data-line-number="14">  runTest args (_test_snoc_isnil t)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_snoc ::</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Show</span> (t a)</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">_test_snoc size cases t <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">  testLabel1 <span class="st">&quot;snoc&quot;</span> t</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">  runTest args (_test_snoc_nil t)</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">  runTest args (_test_snoc_cons t)</a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">  runTest args (_test_snoc_eq t)</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">  runTest args (_test_snoc_foldl t)</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14">  runTest args (_test_snoc_isnil t)</a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">  runTest args (_test_snoc_head t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">main_snoc ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">main_snoc <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  _test_snoc (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  _test_snoc (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">main_snoc ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">main_snoc <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  _test_snoc <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  _test_snoc <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

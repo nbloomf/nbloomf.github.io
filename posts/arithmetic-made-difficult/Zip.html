@@ -81,8 +81,12 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-06 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -264,7 +270,7 @@ Posted on 2017-05-06 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\zip\)</span> is defined in terms of <span class="math inline">\(\dfoldr\)</span>, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-zip-nil-left"></span><span id="cor-zip-cons-nil"></span><span id="cor-zip-cons-cons"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then <span class="math inline">\(\zip\)</span> is the unique solution <span class="math inline">\(f : \lists{A} \times \lists{B} \rightarrow \lists{A \times B}\)</span> to the following equations for all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(b \in B\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(y \in \lists{B}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil,y) = \nil \\
  f(\cons(a,x),\nil) = \nil \\
  f(\cons(a,x),\cons(b,y)) = \cons((a,b),f(x,y))
@@ -291,137 +297,193 @@ Posted on 2017-05-06 by nbloomf
 <a class="sourceLine" id="cb3-19" data-line-number="19">  \a x b y <span class="ot">-&gt;</span> eq (zip (cons a x) (cons b y)) (cons (tup a b) (zip x y))</a></code></pre></div>
 </div>
 </div>
-<p>Now <span class="math inline">\(\map(\tSwap) \circ \zip = \zip \circ \tSwap\)</span>.</p>
+<p>Implicit in the universal property is that <span class="math inline">\(\nil\)</span> is a right zero for <span class="math inline">\(\zip\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zip(x,y)) = \zip(y,x).\]</span></p>
+<p><span id="thm-zip-nil-right"></span> For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math inline">\(\zip(x,\nil) = \nil\)</span>.</p>
+<div class="proof">
+<p>We have two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\nil,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \nil
+\end{eqnarray*}\]</span> and if <span class="math inline">\(x = \cons(a,y)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
+ &amp;   &amp; \zip(\cons(a,y),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-nil}
+   = &amp; \nil
+\end{eqnarray*}\]</span> as claimed.</p>
+</div>
+<div class="test">
+<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_zip_nil_right ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)))</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">_test_zip_nil_right _ tb <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;zip(x,nil) == nil&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">  \x <span class="ot">-&gt;</span> eq (zip x (nil <span class="ot">`withTypeOf`</span> tb)) nil</a></code></pre></div>
+</div>
+</div>
+<p>Now <span class="math inline">\(\compose(\map(\tSwap))(\zip) = \compose(\zip)(\tSwap)\)</span>.</p>
+<div class="theorem">
+<p><span id="thm-zip-tSwap"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span> we have <span class="math display">\[\map(\tSwap)(\zip(x,y)) = \zip(y,x).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \map(\tSwap)(\zip(x,y)) \\
- &amp; = &amp; \map(\tSwap)(\zip(\nil,y)) \\
- &amp; = &amp; \map(\tSwap)(\nil) \\
+ &amp;   &amp; \map(\tSwap)(\zip(\nil,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \map(\tSwap)(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
- &amp; = &amp; \zip(y,\nil) \\
- &amp; = &amp; \zip(y,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \zip(y,\nil)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y \in \lists{B}\)</span> for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. Now we consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tSwap)(\zip(\cons(a,x),y)) \\
- &amp; = &amp; \map(\tSwap)(\zip(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tSwap)(\nil) \\
+ &amp;     \let{y = \nil}
+   = &amp; \map(\tSwap)(\zip(\cons(a,x),\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \map(\tSwap)(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
- &amp; = &amp; \zip(\nil,\cons(a,x)) \\
- &amp; = &amp; \zip(y,\cons(a,x))
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \zip(\nil,\cons(a,x)) \\
+ &amp;     \let{y = \nil}
+   = &amp; \zip(y,\cons(a,x))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(y = \cons(b,z)\)</span>, using the induction hypotheses, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tSwap)(\zip(\cons(a,x),y)) \\
- &amp; = &amp; \map(\tSwap)(\zip(\cons(a,x),\cons(b,z))) \\
- &amp; = &amp; \map(\tSwap)(\cons((a,b),\zip(x,z))) \\
- &amp; = &amp; \cons(\tSwap(a,b),\map(\tSwap)(\zip(x,z))) \\
- &amp; = &amp; \cons((b,a),\zip(z,x)) \\
- &amp; = &amp; \zip(\cons(b,z),\cons(a,x)) \\
- &amp; = &amp; \zip(y,\cons(a,x))
+ &amp;     \let{y = \cons(b,z)}
+   = &amp; \map(\tSwap)(\zip(\cons(a,x),\cons(b,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \map(\tSwap)(\cons(\tup(a)(b),\zip(x,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \cons(\tSwap(\tup(a)(b)),\map(\tSwap)(\zip(x,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tSwap-swap}
+   = &amp; \cons(\tup(b)(a),\map(\tSwap)(\zip(x,z))) \\
+ &amp;     \hyp{\map(\tSwap)(\zip(x,z)) = \zip(z,x)}
+   = &amp; \cons(\tup(b)(a),\zip(z,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \zip(\cons(b,z),\cons(a,x)) \\
+ &amp;     \let{y = \cons(b,z)}
+   = &amp; \zip(y,\cons(a,x))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb4"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="ot">_test_zip_tswap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> b a)))</a>
-<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb4-3" data-line-number="3">_test_zip_tswap _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb4-4" data-line-number="4">  testName <span class="st">&quot;map(tswap)(zip(x,y)) == zip(y,x)&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb4-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (map tswap (zip x y)) (zip y x)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_zip_tswap ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> b a)))</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">_test_zip_tswap _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;map(tswap)(zip(x,y)) == zip(y,x)&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq (map tswap (zip x y)) (zip y x)</a></code></pre></div>
 </div>
 </div>
 <p>And <span class="math inline">\(\map(\tPair(f,g)) \circ \zip = \zip \circ \tPair(\map(f),\map(g))\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zip(x,y)) = \zip(\map(f)(x),\map(g)(y)).\]</span></p>
+<p><span id="thm-map-tPair"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, <span class="math inline">\(U\)</span>, and <span class="math inline">\(V\)</span> be sets, with functions <span class="math inline">\(f : A \rightarrow U\)</span> and <span class="math inline">\(g : B \rightarrow V\)</span>. Then for all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>, we have <span class="math display">\[\map(\tPair(f,g))(\zip(x,y)) = \zip(\map(f)(x),\map(g)(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \map(\tPair(f,g))(\zip(x,y)) \\
- &amp; = &amp; \map(\tPair(f,g))(\zip(\nil,y)) \\
- &amp; = &amp; \map(\tPair(f,g))(\nil) \\
+ &amp;   &amp; \map(\tPair(f,g))(\zip(\nil,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \map(\tPair(f,g))(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
- &amp; = &amp; \zip(\nil,\map(g)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \zip(\nil,\map(g)(y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
-   = &amp; \zip(\map(f)(\nil),\map(g)(y)) \\
- &amp; = &amp; \zip(\map(f)(x),\map(g)(y))
+   = &amp; \zip(\map(f)(\nil),\map(g)(y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the result holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x \in \lists{A}\)</span>, and let <span class="math inline">\(a \in A\)</span>. We now consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \map(\tPair(f,g))(\zip(\cons(a,x),y)) \\
- &amp; = &amp; \map(\tPair(f,g))(\zip(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tPair(f,g))(\nil) \\
+ &amp;   &amp; \map(\tPair(f,g))(\zip(\cons(a,x),\nil)) \\
+ &amp;     \let{y = \nil}
+   = &amp; \map(\tPair(f,g))(\zip(\cons(a,x),\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-nil}
+   = &amp; \map(\tPair(f,g))(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \nil \\
- &amp; = &amp; \zip(\map(f)(\cons(a,x)),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \zip(\map(f)(\cons(a,x)),\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(\nil)) \\
- &amp; = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(y))
+ &amp;     \let{y = \nil}
+   = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(y))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(y = \cons(b,z)\)</span>, using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\tPair(f,g))(\zip(\cons(a,x),y)) \\
- &amp; = &amp; \map(\tPair(f,g))(\zip(\cons(a,x),\cons(b,z))) \\
- &amp; = &amp; \map(\tPair(f,g))(\cons((a,b),\zip(x,z))) \\
- &amp; = &amp; \cons(\tPair(f,g)(a,b),\map(\tPair(f,g))(\zip(x,z))) \\
- &amp; = &amp; \cons(\tPair(f,g)(a,b),\zip(\map(f)(x),\map(g)(z))) \\
- &amp; = &amp; \cons((f(a),g(b)),\zip(\map(f)(x),\map(g)(z))) \\
- &amp; = &amp; \zip(\cons(f(a),\map(f)(x)),\cons(g(b),\map(g)(z))) \\
- &amp; = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(\cons(b,z))) \\
- &amp; = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(y))
+ &amp;     \let{y = \cons(b,z)}
+   = &amp; \map(\tPair(f,g))(\zip(\cons(a,x),\cons(b,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \map(\tPair(f,g))(\cons(\tup(a)(b),\zip(x,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \cons(\tPair(f,g)(\tup(a)(b)),\map(\tPair(f,g))(\zip(x,z))) \\
+ &amp;     \hyp{\map(\tPair(f,g))(\zip(x,y)) = \zip(\map(f)(x))(\map(g)(y))}
+   = &amp; \cons(\tPair(f,g)(\tup(a)(b)),\zip(\map(f)(x),\map(g)(z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tPair-tup}
+   = &amp; \cons(\tup(f(a))(g(b)),\zip(\map(f)(x),\map(g)(z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \zip(\cons(f(a),\map(f)(x)),\cons(g(b),\map(g)(z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \zip(\map(f)(\cons(a,x)),\cons(g(b),\map(g)(z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(\cons(b,z))) \\
+ &amp;     \let{y = \cons(b,z)}
+   = &amp; \zip(\map(f)(\cons(a,x)),\map(g)(y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb5"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="ot">_test_zip_tpair ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)))</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">_test_zip_tpair _ _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">  testName <span class="st">&quot;map(tpair(f,g))(zip(x,y)) == zip(map(f)(x),map(g)(y))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb5-5" data-line-number="5">  \f g x y <span class="ot">-&gt;</span> eq (map (tpair f g) (zip x y)) (zip (map f x) (map g y))</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_zip_tpair ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)))</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Test</span> ((a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">_test_zip_tpair _ _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;map(tpair(f,g))(zip(x,y)) == zip(map(f)(x),map(g)(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">  \f g x y <span class="ot">-&gt;</span> eq (map (tpair f g) (zip x y)) (zip (map f x) (map g y))</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\zip\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zip(x,y)) = \nmin(\length(x),\length(y)).\]</span></p>
+<p><span id="thm-length-zip"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(y \in \lists{B}\)</span>. Then <span class="math display">\[\length(\zip(x,y)) = \nmin(\length(x),\length(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(y\)</span>. For the base case <span class="math inline">\(y = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \length(\zip(x,y)) \\
- &amp; = &amp; \length(\zip(x,\nil)) \\
- &amp; = &amp; \length(\nil) \\
+ &amp;   &amp; \length(\zip(x,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \length(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
    = &amp; \zero \\
  &amp; = &amp; \nmin(\length(x),\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
-   = &amp; \nmin(\length(x),\length(\nil)) \\
- &amp; = &amp; \nmin(\length(x),\length(y))
+   = &amp; \nmin(\length(x),\length(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(y\)</span> and let <span class="math inline">\(b \in B\)</span>. We consider two cases: either <span class="math inline">\(x = \nil\)</span> or <span class="math inline">\(x = \cons(a,z)\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\zip(x,\cons(b,y))) \\
  &amp; = &amp; \length(\zip(\nil,\cons(b,y))) \\
- &amp; = &amp; \length(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \length(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
    = &amp; \zero \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
    = &amp; \nmin(\zero,\length(\cons(b,y))) \\
  &amp; = &amp; \nmin(\length(\nil),\length(\cons(b,y))) \\
  &amp; = &amp; \nmin(\length(x),\length(\cons(b,y)))
-\end{eqnarray*}\]</span> as needed. Suppose <span class="math inline">\(x = \cons(b,z)\)</span>; now we have <span class="math display">\[\begin{eqnarray*}
+\end{eqnarray*}\]</span> as needed. Suppose <span class="math inline">\(x = \cons(a,z)\)</span>; now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\zip(x,\cons(b,y))) \\
- &amp; = &amp; \length(\zip(\cons(a,z),\cons(b,y))) \\
- &amp; = &amp; \length(\cons((a,b),\zip(z,y))) \\
- &amp; = &amp; \next(\length(\zip(z,y))) \\
- &amp; = &amp; \next(\nmin(\length(z),\length(y))) \\
+ &amp;     \let{x = \cons(a,z)}
+   = &amp; \length(\zip(\cons(a,z),\cons(b,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+   = &amp; \length(\cons(\tup(a)(b),\zip(z,y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
+   = &amp; \next(\length(\zip(z)(y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-length-zip}
+   = &amp; \next(\nmin(\length(z),\length(y))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-next-min-distribute}
    = &amp; \nmin(\next(\length(z)),\next(\length(y))) \\
- &amp; = &amp; \nmin(\length(\cons(a,z)),\length(\cons(b,y))) \\
- &amp; = &amp; \nmin(x,\length(\cons(b,y)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
+   = &amp; \nmin(\length(\cons(a,z)),\next(\length(y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
+   = &amp; \nmin(\length(\cons(a,z)),\length(\cons(b,y))) \\
+ &amp;     \let{x = \cons(a,z)}
+   = &amp; \nmin(\length(x),\length(\cons(b,y)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb6"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="ot">_test_zip_length ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
-<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb6-3" data-line-number="3">_test_zip_length _ _ n <span class="fu">=</span></a>
-<a class="sourceLine" id="cb6-4" data-line-number="4">  testName <span class="st">&quot;length(zip(x,y)) == min(length(x),length(y))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb6-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq</a>
-<a class="sourceLine" id="cb6-6" data-line-number="6">    ((length (zip x y)) <span class="ot">`withTypeOf`</span> n)</a>
-<a class="sourceLine" id="cb6-7" data-line-number="7">    (min (length x) (length y))</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_zip_length ::</span> (<span class="dt">List</span> t, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n)</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">_test_zip_length _ _ n <span class="fu">=</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;length(zip(x,y)) == min(length(x),length(y))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">  \x y <span class="ot">-&gt;</span> eq</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">    ((length (zip x y)) <span class="ot">`withTypeOf`</span> n)</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    (min (length x) (length y))</a></code></pre></div>
 </div>
 </div>
 <p><span class="math inline">\(\zip\)</span> is kind of associative.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
+<p><span id="thm-zip-assocL"></span><span id="thm-zip-assocR"></span> Let <span class="math inline">\(A\)</span>, <span class="math inline">\(B\)</span>, and <span class="math inline">\(C\)</span> be sets, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(z \in \lists{C}\)</span>. Then the following hold.</p>
 <ol type="1">
 <li><span class="math inline">\(\zip(\zip(x,y),z) = \map(\tAssocL)(\zip(x,\zip(y,z)))\)</span>.</li>
 <li><span class="math inline">\(\zip(x,\zip(y,z)) = \map(\tAssocR)(\zip(\zip(x,y),z))\)</span>.</li>
@@ -429,96 +491,131 @@ Posted on 2017-05-06 by nbloomf
 <div class="proof">
 <ol type="1">
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \zip(\zip(x,y),z) \\
- &amp; = &amp; \zip(\zip(\nil,y),z) \\
- &amp; = &amp; \zip(\nil,z) \\
- &amp; = &amp; \nil \\
+ &amp;   &amp; \zip(\zip(\nil,y),z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+= &amp; \zip(\nil,z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+= &amp; \nil \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
 = &amp; \map(\tAssocL)(\nil) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\nil,\zip(y,z)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+= &amp; \map(\tAssocL)(\zip(\nil,\zip(y,z)))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
- &amp; = &amp; \zip(\zip(\cons(a,x),\nil),z) \\
- &amp; = &amp; \zip(\nil,z) \\
- &amp; = &amp; \nil \\
+ &amp;     \let{y = \nil}
+= &amp; \zip(\zip(\cons(a,x),\nil),z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-nil}
+= &amp; \zip(\nil,z) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+= &amp; \nil \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
 = &amp; \map(\tAssocL)(\nil) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(\nil,z))) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(\nil,z))) \\
+ &amp;     \let{y = \nil}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
 \end{eqnarray*}\]</span> as claimed. Similarly, if <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
- &amp; = &amp; \zip(\zip(\cons(a,x),y),\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \let{z = \nil}
+= &amp; \zip(\zip(\cons(a,x),y),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+= &amp; \nil \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
 = &amp; \map(\tAssocL)(\nil) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\nil)) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,\nil))) \\
+ &amp;     \let{z = \nil}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
 \end{eqnarray*}\]</span> as claimed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span> and <span class="math inline">\(z = \cons(c,v)\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\zip(\cons(a,x),y),z) \\
- &amp; = &amp; \zip(\zip(\cons(a,x),\cons(b,u)),\cons(c,v)) \\
- &amp; = &amp; \zip(\cons((a,b),\zip(x,u)),\cons(c,v)) \\
- &amp; = &amp; \cons(((a,b),c),\zip(\zip(x,u),v)) \\
- &amp; = &amp; \cons(\tAssocL(a,(b,c)),\map(\tAssocL)(\zip(x,\zip(u,v)))) \\
- &amp; = &amp; \map(\tAssocL)(\cons((a,(b,c)),\zip(x,\zip(u,v)))) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\cons((b,c),\zip(u,v)))) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(\cons(b,u),\cons(c,v)))) \\
- &amp; = &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
+ &amp;     \let{y = \cons(b,u)}
+= &amp; \zip(\zip(\cons(a,x),\cons(b,u)),z) \\
+ &amp;     \let{z = \cons(c,v)}
+= &amp; \zip(\zip(\cons(a,x),\cons(b,u)),\cons(c,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+= &amp; \zip(\cons(\tup(a)(b),\zip(x,u)),\cons(c,v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+= &amp; \cons(\tup(\tup(a)(b))(c),\zip(\zip(x,u),v)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tAssocL-tup}
+= &amp; \cons(\tAssocL(\tup(a)(\tup(b)(c))),\zip(\zip(x,u),v)) \\
+ &amp;     \hyp{\zip(\zip(x,u),v) = \map(\tAssocL)(\zip(x,\zip(u,v)))}
+= &amp; \cons(\tAssocL(\tup(a)(\tup(b)(c))),\map(\tAssocL)(\zip(x,\zip(u,v)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+= &amp; \map(\tAssocL)(\cons(\tup(a)(\tup(b)(c)),\zip(x,\zip(u,v)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\cons(\tup(b)(c),\zip(u,v)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-cons-cons}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(\cons(b,u),\cons(c,v)))) \\
+ &amp;     \let{y = \cons(b,u)}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,\cons(c,v)))) \\
+ &amp;     \let{z = \cons(c,v)}
+= &amp; \map(\tAssocL)(\zip(\cons(a,x),\zip(y,z)))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(x,\zip(y,z)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-id}
 = &amp; \id(\zip(x,\zip(y,z))) \\
- &amp; = &amp; \map(\id)(\zip(x,\zip(y,z))) \\
- &amp; = &amp; \map(\tAssocR \circ \tAssocL)(\zip(x,\zip(y,z))) \\
- &amp; = &amp; \map(\tAssocR)(\map(\tAssocL)(\zip(x,\zip(y,z)))) \\
- &amp; = &amp; \map(\tAssocR)(\zip(\zip(x,y),z)) 
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-id}
+= &amp; \map(\id)(\zip(x,\zip(y,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Tuples.html#thm-tAssocR-tAssocL}
+= &amp; \map(\compose(\tAssocR)(\tAssocL))(\zip(x,\zip(y,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-compose}
+= &amp; \compose(\map(\tAssocR))(\map(\tAssocL))(\zip(x,\zip(y,z))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Functions.html#def-compose}
+= &amp; \map(\tAssocR)(\map(\tAssocL)(\zip(x,\zip(y,z)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-assocL}
+= &amp; \map(\tAssocR)(\zip(\zip(x,y),z)) 
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
 <div class="test">
-<div class="sourceCode" id="cb7"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="ot">_test_zip_zip_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> (<span class="dt">Pair</span> a a) a)))</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-3" data-line-number="3">_test_zip_zip_left _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">  testName <span class="st">&quot;zip(zip(x,y),z) == map(tassocL)(zip(x,zip(y,z)))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (zip (zip x y) z) (map tassocL (zip x (zip y z)))</a>
-<a class="sourceLine" id="cb7-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb7-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="ot">_test_zip_zip_right ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a (<span class="dt">Pair</span> a a))))</a>
-<a class="sourceLine" id="cb7-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
-<a class="sourceLine" id="cb7-10" data-line-number="10">_test_zip_zip_right _ <span class="fu">=</span></a>
-<a class="sourceLine" id="cb7-11" data-line-number="11">  testName <span class="st">&quot;zip(zip(x,y),z) == map(tassocR)(zip(x,zip(y,z)))&quot;</span> <span class="fu">$</span></a>
-<a class="sourceLine" id="cb7-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> eq (zip x (zip y z)) (map tassocR (zip (zip x y) z))</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_zip_zip_left ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> (<span class="dt">Pair</span> a a) a)))</a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">_test_zip_zip_left _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">  testName <span class="st">&quot;zip(zip(x,y),z) == map(tassocL)(zip(x,zip(y,z)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">  \x y z <span class="ot">-&gt;</span> eq (zip (zip x y) z) (map tassocL (zip x (zip y z)))</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"><span class="ot">_test_zip_zip_right ::</span> (<span class="dt">List</span> t, <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a (<span class="dt">Pair</span> a a))))</a>
+<a class="sourceLine" id="cb8-9" data-line-number="9">  <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Test</span> (t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">_test_zip_zip_right _ <span class="fu">=</span></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11">  testName <span class="st">&quot;zip(zip(x,y),z) == map(tassocR)(zip(x,zip(y,z)))&quot;</span> <span class="fu">$</span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">  \x y z <span class="ot">-&gt;</span> eq (zip x (zip y z)) (map tassocR (zip (zip x y) z))</a></code></pre></div>
 </div>
 </div>
 <h2 id="testing">Testing</h2>
 <p>Suite:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="ot">_test_zip ::</span></a>
-<a class="sourceLine" id="cb8-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3">  , <span class="dt">TypeName</span> b, <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">  , <span class="dt">TypeName</span> (t a), <span class="dt">TypeName</span> (t b), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb8-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> b a))</a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">  , <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a (<span class="dt">Pair</span> a a))), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> (<span class="dt">Pair</span> a a) a))</a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">_test_zip t u n size cases <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb8-10" data-line-number="10">  testLabel3 <span class="st">&quot;zip&quot;</span> t u n</a>
-<a class="sourceLine" id="cb8-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb8-12" data-line-number="12">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
-<a class="sourceLine" id="cb8-13" data-line-number="13"></a>
-<a class="sourceLine" id="cb8-14" data-line-number="14">  runTest args (_test_zip_nil_list t u)</a>
-<a class="sourceLine" id="cb8-15" data-line-number="15">  runTest args (_test_zip_cons_nil t u)</a>
-<a class="sourceLine" id="cb8-16" data-line-number="16">  runTest args (_test_zip_cons_cons t u)</a>
-<a class="sourceLine" id="cb8-17" data-line-number="17">  runTest args (_test_zip_tswap t u)</a>
-<a class="sourceLine" id="cb8-18" data-line-number="18">  runTest args (_test_zip_tpair t u)</a>
-<a class="sourceLine" id="cb8-19" data-line-number="19">  runTest args (_test_zip_length t u n)</a>
-<a class="sourceLine" id="cb8-20" data-line-number="20">  runTest args (_test_zip_zip_left t)</a>
-<a class="sourceLine" id="cb8-21" data-line-number="21">  runTest args (_test_zip_zip_right t)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">_test_zip ::</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3">  , <span class="dt">TypeName</span> b, <span class="dt">Equal</span> b, <span class="dt">Show</span> b, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">  , <span class="dt">TypeName</span> (t a), <span class="dt">TypeName</span> (t b), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b)), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> b a))</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7">  , <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a (<span class="dt">Pair</span> a a))), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> (<span class="dt">Pair</span> a a) a))</a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">_test_zip size cases t u n <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">  testLabel3 <span class="st">&quot;zip&quot;</span> t u n</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">  runTest args (_test_zip_nil_list t u)</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">  runTest args (_test_zip_cons_nil t u)</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16">  runTest args (_test_zip_cons_cons t u)</a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">  runTest args (_test_zip_nil_right t u)</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">  runTest args (_test_zip_tswap t u)</a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">  runTest args (_test_zip_tpair t u)</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20">  runTest args (_test_zip_length t u n)</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">  runTest args (_test_zip_zip_left t)</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">  runTest args (_test_zip_zip_right t)</a></code></pre></div>
 <p>Main:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="ot">main_zip ::</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">main_zip <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3">  _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">  _test_zip (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ot">main_zip ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">main_zip <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">  _test_zip <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">  _test_zip <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

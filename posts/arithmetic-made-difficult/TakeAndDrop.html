@@ -81,8 +81,12 @@ Posted on 2017-05-29 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-29 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -271,7 +277,7 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\take\)</span> is defined as an <span class="math inline">\(\unfoldN(\ast)\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\take\)</span> is the unique map <span class="math inline">\(f : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(n \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-take-zero"></span><span id="cor-take-next-nil"></span><span id="cor-take-next-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\take\)</span> is the unique map <span class="math inline">\(f : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(n \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,x) = \nil \\
  f(\next(n),\nil) = \nil \\
  f(\next(n),\cons(a,x)) = \cons(a,f(n,x))
@@ -302,22 +308,28 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take(n)\)</span> is a prefix.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\take(k,x),x) = \btrue.\]</span></p>
+<p><span id="thm-take-prefix"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\take(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\take(k,x),x) \\
- &amp; = &amp; \prefix(\take(\zero,x),x) \\
+ &amp;     \hyp{k = \zero}
+   = &amp; \prefix(\take(\zero,x),x) \\
  &amp; = &amp; \prefix(\nil,x) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the result holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We now proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\take(\next(k),\nil),\nil) \\
- &amp; = &amp; \prefix(\nil,\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \prefix(\nil,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the result holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\take(\next(k),\cons(a,x)),\cons(a,x)) \\
- &amp; = &amp; \prefix(\cons(a,\take(k,x)),\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \prefix(\cons(a,\take(k,x)),\cons(a,x)) \\
  &amp; = &amp; \prefix(\take(k,x),x) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-prefix}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -344,12 +356,13 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take\)</span> has bounded length:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\length(\take(k,x)) = \nmin(k,\length(x)).\]</span></p>
+<p><span id="thm-take-length"></span> Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\length(\take(k,x)) = \nmin(k,\length(x)).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\take(k,x)) \\
  &amp; = &amp; \length(\take(\zero,x)) \\
- &amp; = &amp; \length(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-zero}
+   = &amp; \length(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
    = &amp; \zero \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
@@ -358,7 +371,8 @@ Posted on 2017-05-29 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We now proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\take(\next(k),x)) \\
  &amp; = &amp; \length(\take(\next(k),\nil)) \\
- &amp; = &amp; \length(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \length(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
    = &amp; \zero \\
  &amp; = &amp; \nmin(\next(k),\zero) \\
@@ -367,7 +381,8 @@ Posted on 2017-05-29 by nbloomf
  &amp; = &amp; \nmin(\next(k),\length(x))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\take(\next(k),\cons(a,x))) \\
- &amp; = &amp; \length(\cons(a,\take(k,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \length(\cons(a,\take(k,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
    = &amp; \next(\length(\take(k,x))) \\
  &amp; = &amp; \next(\nmin(k,\length(x))) \\
@@ -386,30 +401,37 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take\)</span> “distributes over” <span class="math inline">\(\zip\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\zip(\take(k,x),\take(k,y)) = \take(k,\zip(x,y)).\]</span></p>
+<p><span id="thm-take-zip"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(y \in \lists{B}\)</span>, and <span class="math inline">\(k \in \nats\)</span>. Then <span class="math display">\[\zip(\take(k,x),\take(k,y)) = \take(k,\zip(x,y)).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\take(k,x),\take(k,y)) \\
  &amp; = &amp; \zip(\take(\zero,x),\take(\zero,y)) \\
  &amp; = &amp; \zip(\nil,\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \nil \\
  &amp; = &amp; \take(\zero,\zip(x,y)) \\
  &amp; = &amp; \take(k,\zip(x,y))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> for some <span class="math inline">\(k\)</span>. We consider two possibilities for <span class="math inline">\(x\)</span>. If <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\take(\next(k),x),\take(\next(k),y)) \\
  &amp; = &amp; \zip(\take(\next(k),\nil),\take(\next(k),y)) \\
- &amp; = &amp; \zip(\nil,\take(\next(k),y)) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \zip(\nil,\take(\next(k),y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \nil \\
  &amp; = &amp; \take(\next(k),\nil) \\
- &amp; = &amp; \take(\next(k),\zip(\nil,y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#cor-zip-nil-left}
+   = &amp; \take(\next(k),\zip(\nil,y)) \\
  &amp; = &amp; \take(\next(k),\zip(x,y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(x = \cons(a,u)\)</span> for some <span class="math inline">\(u\)</span>. We now consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\take(\next(k),x),\take(\next(k),y)) \\
  &amp; = &amp; \zip(\take(\next(k),x),\take(\next(k),\nil)) \\
- &amp; = &amp; \zip(\take(\next(k),x),\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \zip(\take(\next(k),x),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \nil \\
  &amp; = &amp; \take(\next(k),\nil) \\
- &amp; = &amp; \take(\next(k),\zip(x,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Zip.html#thm-zip-nil-right}
+   = &amp; \take(\next(k),\zip(x,\nil)) \\
  &amp; = &amp; \take(\next(k),\zip(x,y))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(y = \cons(b,v)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \zip(\take(\next(k),x),\take(\next(k),y)) \\
@@ -433,12 +455,13 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take\)</span> interacts with <span class="math inline">\(\range\)</span>.</p>
 <div class="theorem">
-<p>For all <span class="math inline">\(a,b,k \in \nats\)</span>, we have <span class="math display">\[\take(k,\range(a,b)) = \range(a,\nmin(k,b)).\]</span></p>
+<p><span id="thm-take-range"></span> For all <span class="math inline">\(a,b,k \in \nats\)</span>, we have <span class="math display">\[\take(k,\range(a,b)) = \range(a,\nmin(k,b)).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \take(k,\range(a,b)) \\
  &amp; = &amp; \take(\zero,\range(a,b)) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-zero}
+   = &amp; \nil \\
  &amp; = &amp; \range(a,\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-min-zero-left}
    = &amp; \range(a,\nmin(\zero,b)) \\
@@ -447,7 +470,8 @@ Posted on 2017-05-29 by nbloomf
  &amp;   &amp; \take(\next(k),\range(a,b)) \\
  &amp; = &amp; \take(\next(k),\range(a,\zero)) \\
  &amp; = &amp; \take(\next(k),\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \nil \\
  &amp; = &amp; \range(a,\zero) \\
  &amp; = &amp; \range(a,\nmin(\next(k),\zero)) \\
  &amp; = &amp; \range(a,\nmin(\next(k),b))
@@ -455,8 +479,10 @@ Posted on 2017-05-29 by nbloomf
  &amp;   &amp; \take(\next(k),\range(a,b)) \\
  &amp; = &amp; \take(\next(k),\range(a,\next(m))) \\
  &amp; = &amp; \take(\next(k),\cons(a,\range(\next(a),m))) \\
- &amp; = &amp; \cons(a,\take(k,\range(\next(a),m))) \\
- &amp; = &amp; \cons(a,\range(\next(a),\nmin(k,m))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \cons(a,\take(k,\range(\next(a),m))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-range}
+   = &amp; \cons(a,\range(\next(a),\nmin(k,m))) \\
  &amp; = &amp; \range(a,\next(\nmin(k,m))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/MaxAndMin.html#thm-next-min-distribute}
    = &amp; \range(a,\nmin(\next(k),\next(m))) \\
@@ -475,26 +501,33 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take\)</span> is idempotent.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\take(k,\take(k,x)) = \take(k,x).\]</span></p>
+<p><span id="thm-take-idempotent"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\take(k,\take(k,x)) = \take(k,x).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \take(k,\take(k,x)) \\
  &amp; = &amp; \take(\zero,\take(k,x)) \\
- &amp; = &amp; \nil \\
- &amp; = &amp; \take(\zero,x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-zero}
+   = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-zero}
+   = &amp; \take(\zero,x) \\
  &amp; = &amp; \take(k,x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We now consider two possibilities. If <span class="math inline">\(x = \nil\)</span>, then <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \take(\next(k),\take(\next(k),x)) \\
  &amp; = &amp; \take(\next(k),\take(\next(k),\nil)) \\
- &amp; = &amp; \take(\next(k),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-nil}
+   = &amp; \take(\next(k),\nil) \\
  &amp; = &amp; \take(\next(k),x)
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(x = \cons(a,u)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \take(\next(k),\take(\next(k),x)) \\
  &amp; = &amp; \take(\next(k),\take(\next(k),\cons(a,u))) \\
- &amp; = &amp; \take(\next(k),\cons(a,\take(k,u))) \\
- &amp; = &amp; \cons(a,\take(k,\take(k,u))) \\
- &amp; = &amp; \cons(a,\take(k,u)) \\
- &amp; = &amp; \take(\next(k),\cons(a,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \take(\next(k),\cons(a,\take(k,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \cons(a,\take(k,\take(k,u))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-idempotent}
+   = &amp; \cons(a,\take(k,u)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+   = &amp; \take(\next(k),\cons(a,u)) \\
  &amp; = &amp; \take(\next(k),x)
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -519,7 +552,7 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\drop\)</span> is defined in terms of bailout recursion, it can be characterized as the unique solution of a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\drop\)</span> is the unique map <span class="math inline">\(f : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-drop-zero"></span><span id="cor-drop-next-nil"></span><span id="cor-drop-next-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\drop\)</span> is the unique map <span class="math inline">\(f : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> satisfying the following equations for all <span class="math inline">\(k \in \nats\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\zero,x) = x \\
  f(\next(n),\nil) = \nil \\
  f(\next(n),\cons(a,x)) = f(n,x)
@@ -550,21 +583,26 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\drop\)</span> gives a <span class="math inline">\(\suffix\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\drop(k,x),x) = \btrue.\]</span></p>
+<p><span id="thm-drop-suffix"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\drop(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\drop(k,x),x) \\
  &amp; = &amp; \suffix(\drop(\zero,x),x) \\
- &amp; = &amp; \suffix(x,x) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-zero}
+   = &amp; \suffix(x,x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-suffix-reflexive}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> for some <span class="math inline">\(k\)</span>. We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\drop(\next(k),x),x) \\
  &amp; = &amp; \suffix(\drop(\next(k),\nil),\nil) \\
- &amp; = &amp; \suffix(\nil,\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-next-nil}
+   = &amp; \suffix(\nil,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-suffix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. By the inductive hypothesis, we have <span class="math display">\[\suffix(\drop(k,x),x) = \btrue\]</span> and note also that <span class="math display">\[\suffix(x,\cons(a,x)) = \btrue.\]</span> Since <span class="math inline">\(\suffix\)</span> is transitive, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\drop(\next(k),\cons(a,x)),\cons(a,x)) \\
- &amp; = &amp; \suffix(\drop(k,x),\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-next-cons}
+   = &amp; \suffix(\drop(k,x),\cons(a,x)) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -578,7 +616,7 @@ Posted on 2017-05-29 by nbloomf
 </div>
 <p><span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span> give a kind of <span class="math inline">\(\cat\)</span>-factorization.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\take(k,x),\drop(k,x)).\]</span></p>
+<p><span id="thm-take-drop-cat"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\take(k,x),\drop(k,x)).\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(k\)</span>. For the base case <span class="math inline">\(k = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\take(k,x),\drop(k,x)) \\
@@ -618,8 +656,8 @@ Posted on 2017-05-29 by nbloomf
 <a class="sourceLine" id="cb14-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
 <a class="sourceLine" id="cb14-6" data-line-number="6">  , <span class="dt">Equal</span> (t b), <span class="dt">Show</span> (t b), <span class="dt">Arbitrary</span> (t b), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a b))</a>
 <a class="sourceLine" id="cb14-7" data-line-number="7">  , <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
-<a class="sourceLine" id="cb14-8" data-line-number="8">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb14-9" data-line-number="9">_test_take_drop t u k size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t b <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">_test_take_drop size cases t u k <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb14-10" data-line-number="10">  testLabel1 <span class="st">&quot;take &amp; drop&quot;</span> t</a>
 <a class="sourceLine" id="cb14-11" data-line-number="11"></a>
 <a class="sourceLine" id="cb14-12" data-line-number="12">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -643,10 +681,10 @@ Posted on 2017-05-29 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="ot">main_take_drop ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb15-2" data-line-number="2">main_take_drop <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3">  _test_take_drop (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">200</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4">  _test_take_drop (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">200</span></a>
-<a class="sourceLine" id="cb15-5" data-line-number="5">  _test_take_drop (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">200</span></a>
-<a class="sourceLine" id="cb15-6" data-line-number="6">  _test_take_drop (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">200</span></a></code></pre></div>
+<a class="sourceLine" id="cb15-3" data-line-number="3">  _test_take_drop <span class="dv">50</span> <span class="dv">200</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4">  _test_take_drop <span class="dv">50</span> <span class="dv">200</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb15-5" data-line-number="5">  _test_take_drop <span class="dv">50</span> <span class="dv">200</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb15-6" data-line-number="6">  _test_take_drop <span class="dv">50</span> <span class="dv">200</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

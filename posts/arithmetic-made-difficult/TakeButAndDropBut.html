@@ -81,8 +81,12 @@ Posted on 2017-12-15 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-12-15 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -249,7 +255,7 @@ Posted on 2017-12-15 by nbloomf
 <a class="sourceLine" id="cb1-15" data-line-number="15"><span class="kw">import</span> <span class="dt">TakeAndDrop</span></a></code></pre></div>
 <p>Today we’ll define two functions, <span class="math inline">\(\takeBut\)</span> and <span class="math inline">\(\dropBut\)</span>, analogous to <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, but acting from the end of the list rather than from the beginning. We’d like <span class="math inline">\(\takeBut\)</span> to have a signature like <span class="math display">\[\takeBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\]</span> such that <span class="math inline">\(\takeBut(k)(x)\)</span> is obtained by lopping off the last <span class="math inline">\(k\)</span> items in <span class="math inline">\(x\)</span>, and similarly <span class="math inline">\(\dropBut(k)(x)\)</span> lops off all but the last <span class="math inline">\(k\)</span> items. The simplest way to do this is with <span class="math inline">\(\take\)</span>, <span class="math inline">\(\drop\)</span>, and <span class="math inline">\(\rev\)</span>; explicit recursion is not required.</p>
 <div class="definition">
-<p>Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\takeBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\takeBut(k)(x) = \rev(\drop(k)(\rev(x)))\]</span> and define <span class="math inline">\(\dropBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\dropBut(k)(x) = \rev(\take(k)(\rev(x))).\]</span></p>
+<p><span id="def-takebut"></span><span id="def-dropbut"></span> Let <span class="math inline">\(A\)</span> be a set. We define <span class="math inline">\(\takeBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\takeBut(k)(x) = \rev(\drop(k)(\rev(x)))\]</span> and define <span class="math inline">\(\dropBut : \nats \rightarrow {\lists{A}}^{\lists{A}}\)</span> by <span class="math display">\[\dropBut(k)(x) = \rev(\take(k)(\rev(x))).\]</span></p>
 <p>In Haskell:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="ot">takeBut ::</span> (<span class="dt">Natural</span> n, <span class="dt">List</span> t) <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> t a</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">takeBut k x <span class="fu">=</span> rev (drop k (rev x))</a>
@@ -259,7 +265,7 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p>The defining equations for <span class="math inline">\(\drop\)</span> have <span class="math inline">\(\takeBut\)</span> equivalents.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(k \in \nats\)</span>. Then we have the following.</p>
+<p><span id="thm-takebut-zero"></span><span id="thm-takebut-next-nil"></span><span id="thm-takebut-next-snoc"></span> Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span>, <span class="math inline">\(a \in A\)</span>, and <span class="math inline">\(k \in \nats\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\takeBut(\zero)(x) = x\)</span>.</li>
 <li><span class="math inline">\(\takeBut(\next(k))(\nil) = \nil\)</span>.</li>
@@ -269,27 +275,34 @@ Posted on 2017-12-15 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \takeBut(\zero)(x) \\
- &amp; = &amp; \rev(\drop(\zero)(\rev(x))) \\
- &amp; = &amp; \rev(\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+= &amp; \rev(\drop(\zero)(\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-zero}
+= &amp; \rev(\rev(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
 = &amp; x
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \takeBut(\next(k))(\nil) \\
- &amp; = &amp; \rev(\drop(\next(k))(\rev(\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+= &amp; \rev(\drop(\next(k))(\rev(\nil))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
 = &amp; \rev(\drop(\next(k))(\nil)) \\
- &amp; = &amp; \rev(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-next-nil}
+= &amp; \rev(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
 = &amp; \nil
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \takeBut(\next(k))(\snoc(a,x)) \\
- &amp; = &amp; \rev(\drop(\next(k))(\rev(\snoc(a,x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+= &amp; \rev(\drop(\next(k))(\rev(\snoc(a,x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-snoc}
 = &amp; \rev(\drop(\next(k))(\cons(a,\rev(x)))) \\
- &amp; = &amp; \rev(\drop(k)(\rev(x))) \\
- &amp; = &amp; \takeBut(k,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-drop-next-cons}
+= &amp; \rev(\drop(k)(\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+= &amp; \takeBut(k,x)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -319,15 +332,17 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p><span class="math inline">\(\takeBut\)</span> is a prefix.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue.\]</span></p>
+<p><span id="thm-takebut-prefix"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
 <p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\takeBut(k,x),x) \\
- &amp; = &amp; \prefix(\rev(\drop(k,\rev(x))),x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+   = &amp; \prefix(\rev(\drop(k,\rev(x))),x) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; \prefix(\rev(\drop(k,\rev(x))),\rev(\rev(x))) \\
  &amp; = &amp; \suffix(\drop(k,\rev(x)),\rev(x)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-drop-suffix}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -340,7 +355,7 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p>So <span class="math inline">\(\takeBut\)</span> is a sublist:</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue.\]</span></p>
+<p><span id="thm-takebut-sublist"></span> Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>. Then we have <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
 <p>We have <span class="math display">\[\prefix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\infix(\takeBut(k,x),x) = \btrue,\]</span> so <span class="math display">\[\sublist(\takeBut(k,x),x) = \btrue\]</span> as claimed.</p>
 </div>
@@ -354,7 +369,7 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p>Now for <span class="math inline">\(\dropBut\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(k \in \nats\)</span>, we have the following.</p>
+<p><span id="thm-dropbut-zero"></span><span id="thm-dropbut-next-nil"></span><span id="thm-dropbut-next-snoc"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span>, <span class="math inline">\(x \in \lists{A}\)</span>, and <span class="math inline">\(k \in \nats\)</span>, we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\dropBut(\zero,x) = \nil\)</span>.</li>
 <li><span class="math inline">\(\dropBut(\next(k),\nil) = \nil\)</span>.</li>
@@ -364,14 +379,17 @@ Posted on 2017-12-15 by nbloomf
 <ol type="1">
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(\zero,x) \\
- &amp; = &amp; \rev(\take(\zero,\rev(x))) \\
- &amp; = &amp; \rev(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+= &amp; \rev(\take(\zero,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-zero}
+= &amp; \rev(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
 = &amp; \nil
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(k,\nil) \\
- &amp; = &amp; \rev(\take(k,\rev(\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+= &amp; \rev(\take(k,\rev(\nil))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
 = &amp; \rev(\take(k,\nil)) \\
  &amp; = &amp; \rev(\nil) \\
@@ -380,13 +398,16 @@ Posted on 2017-12-15 by nbloomf
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(\next(k),\snoc(a,x)) \\
- &amp; = &amp; \rev(\take(\next(k),\rev(\snoc(a,x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+= &amp; \rev(\take(\next(k),\rev(\snoc(a,x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-snoc}
 = &amp; \rev(\take(\next(k),\cons(a,\rev(x)))) \\
- &amp; = &amp; \rev(\cons(a,\take(k,\rev(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#cor-take-next-cons}
+= &amp; \rev(\cons(a,\take(k,\rev(x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
 = &amp; \snoc(a,\rev(\take(k,\rev(x)))) \\
- &amp; = &amp; \snoc(a,\dropBut(k,x))
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+= &amp; \snoc(a,\dropBut(k,x))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -416,15 +437,18 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p><span class="math inline">\(\dropBut\)</span> is a <span class="math inline">\(\suffix\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\dropBut(k,x),x) = \btrue.\]</span></p>
+<p><span id="thm-dropbut-suffix"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[\suffix(\dropBut(k,x),x) = \btrue.\]</span></p>
 <div class="proof">
 <p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \suffix(\dropBut(k,x),x) \\
- &amp; = &amp; \suffix(\rev(\take(k,\rev(x))),x) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+   = &amp; \suffix(\rev(\take(k,\rev(x))),x) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; \suffix(\rev(\take(k,\rev(x))),\rev(\rev(x))) \\
- &amp; = &amp; \prefix(\take(k,\rev(x)),\rev(x)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-prefix-rev}
+   = &amp; \prefix(\take(k,\rev(x)),\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-prefix}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -437,16 +461,20 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p><span class="math inline">\(\dropBut\)</span> is idempotent.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\dropBut(k,\dropBut(k,x)) = \dropBut(k,x).\]</span></p>
+<p><span id="thm-dropbut-idempotent"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(k \in \nats\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\dropBut(k,\dropBut(k,x)) = \dropBut(k,x).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dropBut(k,\dropBut(k,x)) \\
- &amp; = &amp; \dropBut(k,\rev(\take(k,\rev(x)))) \\
- &amp; = &amp; \rev(\take(k,\rev(\rev(\take(k,\rev(x)))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+   = &amp; \dropBut(k,\rev(\take(k,\rev(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+   = &amp; \rev(\take(k,\rev(\rev(\take(k,\rev(x)))))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; \rev(\take(k,\take(k,\rev(x)))) \\
- &amp; = &amp; \rev(\take(k,\rev(x))) \\
- &amp; = &amp; \dropBut(k,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-idempotent}
+   = &amp; \rev(\take(k,\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+   = &amp; \dropBut(k,x)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -459,14 +487,18 @@ Posted on 2017-12-15 by nbloomf
 </div>
 <p>Like <span class="math inline">\(\take\)</span> and <span class="math inline">\(\drop\)</span>, <span class="math inline">\(\takeBut\)</span> and <span class="math inline">\(\dropBut\)</span> give a kind of <span class="math inline">\(\cat\)</span>-factorization.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\takeBut(k,x),\dropBut(k,x)).\]</span></p>
+<p><span id="thm-takebut-dropbut-cat"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(k \in \nats\)</span>, we have <span class="math display">\[x = \cat(\takeBut(k,x),\dropBut(k,x)).\]</span></p>
 <div class="proof">
 <p>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \cat(\takeBut(k,x),\dropBut(k,x)) \\
- &amp; = &amp; \cat(\rev(\drop(k,\rev(x))),\rev(\take(k,\rev(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-takebut}
+   = &amp; \cat(\rev(\drop(k,\rev(x))),\dropBut(k,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeButAndDropBut.html#def-dropbut}
+   = &amp; \cat(\rev(\drop(k,\rev(x))),\rev(\take(k,\rev(x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#thm-rev-cat-antidistribute}
    = &amp; \rev(\cat(\take(k,\rev(x)),\drop(k,\rev(x)))) \\
- &amp; = &amp; \rev(\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TakeAndDrop.html#thm-take-drop-cat}
+   = &amp; \rev(\rev(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-involution}
    = &amp; x
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -486,8 +518,8 @@ Posted on 2017-12-15 by nbloomf
 <a class="sourceLine" id="cb10-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb10-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb10-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb10-7" data-line-number="7">_test_takebut_dropbut t k size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb10-7" data-line-number="7">_test_takebut_dropbut size cases t k <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb10-8" data-line-number="8">  testLabel1 <span class="st">&quot;takeBut &amp; dropBut&quot;</span> t</a>
 <a class="sourceLine" id="cb10-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb10-10" data-line-number="10">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -508,8 +540,8 @@ Posted on 2017-12-15 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="ot">main_takebut_dropbut ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb11-2" data-line-number="2">main_takebut_dropbut <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_takebut_dropbut (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">  _test_takebut_dropbut (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb11-3" data-line-number="3">  _test_takebut_dropbut <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb11-4" data-line-number="4">  _test_takebut_dropbut <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

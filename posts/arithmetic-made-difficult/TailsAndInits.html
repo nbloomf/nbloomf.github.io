@@ -81,8 +81,12 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-12 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -261,7 +267,7 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\tails\)</span> is defined as a <span class="math inline">\(\cfoldr(\ast)(\ast)\)</span>, it is the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\tails\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{\lists{A}}\)</span> which satisfies the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-tails-nil"></span><span id="cor-tails-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\tails\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{\lists{A}}\)</span> which satisfies the following equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \cons(\nil,\nil) \\
  f(\cons(a,x)) = \cons(\cons(a,x),f(x))
 \end{array}\right.\]</span></p>
@@ -282,7 +288,7 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p>Special cases.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a sets. For all <span class="math inline">\(a,b \in A\)</span> we have the following.</p>
+<p><span id="thm-tails-one"></span><span id="thm-tails-two"></span> Let <span class="math inline">\(A\)</span> be a sets. For all <span class="math inline">\(a,b \in A\)</span> we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\tails(\cons(a,\nil)) = \cons(\cons(a,\nil),\cons(\nil,\nil))\)</span>.</li>
 <li><span class="math inline">\(\tails(\cons(a,\cons(b,\nil))) = \cons(\cons(a,\cons(b,\nil)),\cons(\cons(b,\nil),\cons(\nil,\nil)))\)</span>.</li>
@@ -291,12 +297,15 @@ Posted on 2017-05-12 by nbloomf
 <ol type="1">
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tails(\cons(a,\nil)) \\
- &amp; = &amp; \cons(\cons(a,\nil),\tails(\nil)) \\
- &amp; = &amp; \cons(\cons(a,\nil),\cons(\nil,\nil))
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+= &amp; \cons(\cons(a,\nil),\tails(\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+= &amp; \cons(\cons(a,\nil),\cons(\nil,\nil))
 \end{eqnarray*}\]</span> as claimed.</li>
 <li>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tails(\cons(a,\cons(b,\nil))) \\
- &amp; = &amp; \cons(\cons(a,\cons(b,\nil)),\tails(\cons(b,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+= &amp; \cons(\cons(a,\cons(b,\nil)),\tails(\cons(b,\nil))) \\
  &amp; = &amp; \cons(\cons(a,\cons(b,\nil)),\cons(\cons(a,\nil),\cons(\nil,\nil)))
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
@@ -322,12 +331,13 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\map\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\tails(\map(f)(x)) = \map(\map(f))(\tails(x)).\]</span></p>
+<p><span id="thm-tails-map"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\tails(\map(f)(x)) = \map(\map(f))(\tails(x)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tails(\map(f)(\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \tails(\nil) \\
+ &amp; = &amp; (@@@) \\
  &amp; = &amp; \nil \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \map(\map(f))(\nil) \\
@@ -337,7 +347,8 @@ Posted on 2017-05-12 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
    = &amp; \tails(\cons(f(a),\map(f)(x))) \\
  &amp; = &amp; \cons(\cons(f(a),\map(f)(x)),\tails(\map(f)(x))) \\
- &amp; = &amp; \cons(\cons(f(a),\map(f)(x)),\map(\map(f))(\tails(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-tails-map}
+   = &amp; \cons(\cons(f(a),\map(f)(x)),\map(\map(f))(\tails(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
    = &amp; \cons(\map(f)(\cons(a,x)),\map(\map(f))(\tails(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
@@ -355,18 +366,20 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\length(\tails(x)) = \next(\length(x)).\]</span> In particular, <span class="math inline">\(\tails{x} \neq \nil\)</span>.</p>
+<p><span id="thm-length-tails"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\length(\tails(x)) = \next(\length(x)).\]</span> In particular, <span class="math inline">\(\tails{x} \neq \nil\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\tails(\nil)) \\
- &amp; = &amp; \length(\cons(\nil,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+   = &amp; \length(\cons(\nil,\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-singleton}
    = &amp; \next(\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
    = &amp; \next(\length(\nil))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\tails(\cons(a,x))) \\
- &amp; = &amp; \length(\cons(\cons(a,x),\tails(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+   = &amp; \length(\cons(\cons(a,x),\tails(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
    = &amp; \next(\length(\tails(x))) \\
  &amp; = &amp; \next(\next(\length(x))) \\
@@ -385,18 +398,22 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\tails\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\tails(\snoc(a,x)) = \snoc(\nil,\map(\snoc(a,-))(\tails(x))).\]</span></p>
+<p><span id="thm-tails-snoc"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> and <span class="math inline">\(a \in A\)</span> we have <span class="math display">\[\tails(\snoc(a,x)) = \snoc(\nil,\map(\snoc(a))(\tails(x))).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
- &amp;   &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(x))) \\
- &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(\nil))) \\
- &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\cons(\nil,\nil))) \\
- &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\map(\snoc(a,-))(\nil))) \\
- &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\nil)) \\
+ &amp;   &amp; \snoc(\nil,\map(\snoc(a))(\tails(x))) \\
+ &amp; = &amp; \snoc(\nil,\map(\snoc(a))(\tails(\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+   = &amp; \snoc(\nil,\map(\snoc(a))(\cons(\nil,\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\map(\snoc(a))(\nil))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
+   = &amp; \snoc(\nil,\cons(\snoc(a,\nil),\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
    = &amp; \cons(\snoc(a,\nil),\snoc(\nil,\nil)) \\
  &amp; = &amp; \cons(\cons(a,\nil),\cons(\nil,\nil)) \\
- &amp; = &amp; \tails(\cons(a,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-tails-one}
+   = &amp; \tails(\cons(a,\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
    = &amp; \tails(\snoc(a,\nil)) \\
  &amp; = &amp; \tails(\snoc(a,x))
@@ -405,11 +422,16 @@ Posted on 2017-05-12 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
    = &amp; \tails(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\tails(\snoc(a,x))) \\
- &amp; = &amp; \cons(\cons(b,\snoc(a,x)),\snoc(\nil,\map(\snoc(a,-))(\tails(x)))) \\
- &amp; = &amp; \snoc(\nil,\cons(\cons(b,\snoc(a,x)),\map(\snoc(a,-))(\tails(x)))) \\
- &amp; = &amp; \snoc(\nil,\cons(\snoc(a,\cons(b,x)),\map(\snoc(a,-))(\tails(x)))) \\
- &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\cons(\cons(b,x),\tails(x)))) \\
- &amp; = &amp; \snoc(\nil,\map(\snoc(a,-))(\tails(\cons(b,x))))
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-tails-snoc}
+   = &amp; \cons(\cons(b,\snoc(a,x)),\snoc(\nil,\map(\snoc(a))(\tails(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \snoc(\nil,\cons(\cons(b,\snoc(a,x)),\map(\snoc(a))(\tails(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+   = &amp; \snoc(\nil,\cons(\snoc(a,\cons(b,x)),\map(\snoc(a))(\tails(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
+   = &amp; \snoc(\nil,\map(\snoc(a))(\cons(\cons(b,x),\tails(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+   = &amp; \snoc(\nil,\map(\snoc(a))(\tails(\cons(b,x))))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -422,7 +444,7 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p>And <span class="math inline">\(\tails(x)\)</span> consists of suffixes.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(\suffix(-,x),\tails(x)) = \btrue.\]</span></p>
+<p><span id="thm-tails-suffix"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(\flip(\suffix)(x),\tails(x)) = \btrue.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\suffix(-,x),\tails(x)) \\
@@ -458,14 +480,14 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p>And likewise, <span class="math inline">\(\tails\)</span> has an expression in terms of <span class="math inline">\(\inits\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\tails(x) = \map(\rev)(\rev(\inits(\rev(x)))).\]</span></p>
+<p><span id="thm-tails-rev"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\tails(x) = \map(\rev)(\rev(\inits(\rev(x)))).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \map(\rev) \circ \rev \circ \inits \circ \rev \\
  &amp; = &amp; \map(\rev) \circ \rev \circ \rev \circ \map(\rev) \circ \tails \circ \rev \circ \rev \\
  &amp; = &amp; \map(\rev) \circ \map(\rev) \circ \tails \\
- &amp; = &amp; \map(\rev \circ \rev) \circ \tails \\
- &amp; = &amp; \map(\id) \circ \tails \\
+ &amp; = &amp; \compose(\map(\compose(\rev)(\rev)))(\tails) \\
+ &amp; = &amp; \compose(\map(\id))(\tails) \\
  &amp; = &amp; \tails
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -479,22 +501,26 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\inits\)</span> interacts with <span class="math inline">\(\cons\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\cons(a,x)) = \cons(\nil,\map(\cons(a,-))(\inits(x))).\]</span></p>
+<p><span id="thm-inits-cons"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\cons(a,x)) = \cons(\nil,\map(\cons(a))(\inits(x))).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \inits(\cons(a,x)) \\
  &amp; = &amp; \rev(\map(\rev)(\tails(\rev(\cons(a,x))))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
    = &amp; \rev(\map(\rev)(\tails(\snoc(a,\rev(x))))) \\
- &amp; = &amp; \rev(\map(\rev)(\snoc(\nil,\map(\snoc(a,-))(\tails(\rev(a)))))) \\
- &amp; = &amp; \rev(\snoc(\rev(\nil),\map(\rev)(\map(\snoc(a,-))(\tails(\rev(a)))))) \\
- &amp; = &amp; \rev(\snoc(\nil,\map(\rev)(\map(\snoc(a,-))(\tails(\rev(a)))))) \\
- &amp; = &amp; \rev(\snoc(\nil,\map(\rev \circ \snoc(a,-))(\tails(\rev(a))))) \\
- &amp; = &amp; \rev(\snoc(\nil,\map(\cons(a,-) \circ \rev)(\tails(\rev(a))))) \\
- &amp; = &amp; \rev(\snoc(\nil,\map(\cons(a,-))(\map(\rev)(\tails(\rev(a)))))) \\
- &amp; = &amp; \cons(\nil,\rev(\map(\cons(a,-))(\map(\rev)(\tails(\rev(a)))))) \\
- &amp; = &amp; \cons(\nil,\map(\cons(a,-))(\rev(\map(\rev)(\tails(\rev(a)))))) \\
- &amp; = &amp; \cons(\nil,\map(\cons(a,-))(\inits(x)))
+ &amp; = &amp; \rev(\map(\rev)(\snoc(\nil,\map(\snoc(a))(\tails(\rev(a)))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-snoc}
+   = &amp; \rev(\snoc(\rev(\nil),\map(\rev)(\map(\snoc(a))(\tails(\rev(a)))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-nil}
+   = &amp; \rev(\snoc(\nil,\map(\rev)(\map(\snoc(a))(\tails(\rev(a)))))) \\
+ &amp; = &amp; \rev(\snoc(\nil,\map(\compose(\rev)(\snoc(a)))(\tails(\rev(a))))) \\
+ &amp; = &amp; \rev(\snoc(\nil,\map(\cons(a) \circ \rev)(\tails(\rev(a))))) \\
+ &amp; = &amp; \rev(\snoc(\nil,\map(\cons(a))(\map(\rev)(\tails(\rev(a)))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#thm-rev-snoc}
+   = &amp; \cons(\nil,\rev(\map(\cons(a))(\map(\rev)(\tails(\rev(a)))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-rev}
+   = &amp; \cons(\nil,\map(\cons(a))(\rev(\map(\rev)(\tails(\rev(a)))))) \\
+ &amp; = &amp; \cons(\nil,\map(\cons(a))(\inits(x)))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -507,7 +533,7 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\inits\)</span> interacts with <span class="math inline">\(\map\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\map(f)(x)) = \map(\map(f))(\inits(x)).\]</span></p>
+<p><span id="thm-inits-map"></span> Let <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> be sets with <span class="math inline">\(f : A \rightarrow B\)</span>. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\map(f)(x)) = \map(\map(f))(\inits(x)).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \inits(\map(f)(x)) \\
@@ -515,8 +541,8 @@ Posted on 2017-05-12 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-rev}
    = &amp; \rev(\map(\rev)(\tails(\map(f)(\rev(x))))) \\
  &amp; = &amp; \rev(\map(\rev)(\map(\map(f))(\tails(\rev(x))))) \\
- &amp; = &amp; \rev(\map(\rev \circ \map(f))(\tails(\rev(x)))) \\
- &amp; = &amp; \rev(\map(\map(f) \circ \rev)(\tails(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\compose(\rev)(\map(f)))(\tails(\rev(x)))) \\
+ &amp; = &amp; \rev(\map(\compose(\map(f))(\rev))(\tails(\rev(x)))) \\
  &amp; = &amp; \rev(\map(\map(f))(\map(\rev)(\tails(\rev(x))))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-rev}
    = &amp; \map(\map(f))(\rev(\map(\rev)(\tails(\rev(x))))) \\
@@ -533,7 +559,7 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\inits\)</span> interacts with <span class="math inline">\(\length\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\length(\inits(x)) = \next(\length(x)).\]</span></p>
+<p><span id="thm-length-inits"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\length(\inits(x)) = \next(\length(x)).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \length(\inits(x)) \\
@@ -541,7 +567,8 @@ Posted on 2017-05-12 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-rev}
    = &amp; \length(\map(\rev)(\tails(\rev(x)))) \\
  &amp; = &amp; \length(\tails(\rev(x))) \\
- &amp; = &amp; \next(\length(\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-length-tails}
+   = &amp; \next(\length(\rev(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-rev}
    = &amp; \next(\length(x))
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -556,13 +583,14 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p><span class="math inline">\(\inits\)</span> distributes over <span class="math inline">\(\lcp\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\lcp(x,y)) = \lcp(\inits(x),\inits(y)).\]</span></p>
+<p><span id="thm-inits-lcp"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\inits(\lcp(x,y)) = \lcp(\inits(x),\inits(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\inits(x),\inits(y)) \\
  &amp; = &amp; \lcp(\inits(\nil),\inits(\nil)) \\
  &amp; = &amp; \lcp(\cons(\nil,\nil),\cons(\nil,\nil)) \\
- &amp; = &amp; \cons(\nil,\nil)
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-idempotent}
+   = &amp; \cons(\nil,\nil)
 \end{eqnarray*}\]</span> and if <span class="math inline">\(y = \cons(a,u)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\inits(x),\inits(y)) \\
  &amp; = &amp; \lcp(\inits(\nil),\inits(\cons(a,u))) \\
@@ -571,9 +599,11 @@ Posted on 2017-05-12 by nbloomf
  &amp; = &amp; \cons(\nil,\nil)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(a \in A\)</span>. We have two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \inits(\lcp(\cons(a,x),\nil)) \\
- &amp; = &amp; \inits(\lcp(\nil,\cons(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-commutative}
+   = &amp; \inits(\lcp(\nil,\cons(a,x))) \\
  &amp; = &amp; \lcp(\tails(\nil),\tails(\cons(a,x))) \\
- &amp; = &amp; \lcp(\tails(\cons(a,x)),\tails(\nil))
+ &amp;     \href{/posts/arithmetic-made-difficult/LongestCommonPrefix.html#thm-lcp-commutative}
+   = &amp; \lcp(\tails(\cons(a,x)),\tails(\nil))
 \end{eqnarray*}\]</span> as needed. Suppose then that <span class="math inline">\(y = \cons(b,u)\)</span>. If <span class="math inline">\(b = a\)</span>, note that <span class="math inline">\(\cons(a,-)\)</span> is injective, so that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \lcp(\tails(\cons(a,x)),\tails(y)) \\
  &amp; = &amp; \lcp(\tails(\cons(a,x)),\tails(\cons(b,u))) \\
@@ -592,7 +622,8 @@ Posted on 2017-05-12 by nbloomf
  &amp; = &amp; \lcp(\cons(\nil,\map(\cons(a,-))(\tails(x))),\cons(\nil,\map(\cons(b,-))(\tails(u)))) \\
  &amp; = &amp; \cons(\nil,\lcp(\map(\cons(a,-))(\tails(x)),\map(\cons(b,-))(\tails(u)))) \\
  &amp; = &amp; \cons(\nil,\nil) \\
- &amp; = &amp; \tails(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+   = &amp; \tails(\nil) \\
  &amp; = &amp; \tails(\lcp(\cons(a,x),\cons(b,u))) \\
  &amp; = &amp; \tails(\lcp(\cons(a,x),y))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -607,13 +638,15 @@ Posted on 2017-05-12 by nbloomf
 </div>
 <p>And <span class="math inline">\(\tails\)</span> distributes over <span class="math inline">\(\lcs\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\tails(\lcs(x,y)) = \lcs(\tails(x),\tails(y)).\]</span></p>
+<p><span id="thm-tails-lcs"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(x,y \in \lists{A}\)</span>, we have <span class="math display">\[\tails(\lcs(x,y)) = \lcs(\tails(x),\tails(y)).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math inline">\(\rev\)</span> is injective, so that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \tails(\lcs(x,y)) \\
- &amp; = &amp; \map(\rev)(\rev(\inits(\rev(\lcs(x,y))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-tails-rev}
+   = &amp; \map(\rev)(\rev(\inits(\rev(\lcs(x,y))))) \\
  &amp; = &amp; \map(\rev)(\rev(\inits(\lcp(\rev(x),\rev(y))))) \\
- &amp; = &amp; \map(\rev)(\rev(\lcp(\inits(\rev(x)),\inits(\rev(y))))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#thm-inits-lcp}
+   = &amp; \map(\rev)(\rev(\lcp(\inits(\rev(x)),\inits(\rev(y))))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#thm-map-rev}
    = &amp; \rev(\map(\rev)(\lcp(\inits(\rev(x)),\inits(\rev(y))))) \\
  &amp; = &amp; \rev(\lcp(\map(\rev)(\inits(\rev(x))),\map(\rev)(\inits(\rev(y))))) \\
@@ -636,8 +669,8 @@ Posted on 2017-05-12 by nbloomf
 <a class="sourceLine" id="cb16-3" data-line-number="3">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb16-5" data-line-number="5">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a)), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb16-7" data-line-number="7">_test_tails_inits t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-7" data-line-number="7">_test_tails_inits size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb16-8" data-line-number="8">  testLabel2 <span class="st">&quot;tails &amp; inits&quot;</span> t n</a>
 <a class="sourceLine" id="cb16-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb16-10" data-line-number="10">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -661,8 +694,8 @@ Posted on 2017-05-12 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">main_tails_inits ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb17-2" data-line-number="2">main_tails_inits <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_tails_inits (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_tails_inits <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_tails_inits <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

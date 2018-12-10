@@ -81,8 +81,12 @@ Posted on 2017-05-28 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-28 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -324,7 +330,8 @@ Posted on 2017-05-28 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\dedupeL(\nil)) \\
  &amp; = &amp; \unique(\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#cor-unique-nil}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis, we have <span class="math inline">\(\unique(\dedupeL(x)) = \btrue\)</span>, so that <span class="math inline">\(\unique(\delete(a,\dedupeL(x))) = \btrue\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\dedupeL(\cons(a,x))) \\
  &amp; = &amp; \unique(\cons(a,\delete(a,\dedupeL(x)))) \\
@@ -351,7 +358,8 @@ Posted on 2017-05-28 by nbloomf
  &amp;   &amp; \prefix(\dedupeL(x),\dedupeL(y)) \\
  &amp; = &amp; \prefix(\dedupeL(\nil),\dedupeL(y)) \\
  &amp; = &amp; \prefix(\nil,\dedupeL(y)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\prefix(\cons(a,x),y) = \btrue\)</span>. Now we must have <span class="math inline">\(y = \cons(a,u)\)</span> where <span class="math inline">\(\prefix(x,u) = \btrue\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\prefix(\dedupeL(x),\dedupeL(u)) = \btrue,\]</span> so that <span class="math display">\[\prefix(\delete(a,\dedupeL(x)),\delete(a,\dedupeL(u))) = \btrue.\]</span> Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \prefix(\dedupeL(\cons(a,x)),\dedupeL(y)) \\
  &amp; = &amp; \prefix(\dedupeL(\cons(a,x)),\dedupeL(\cons(a,u))) \\
@@ -385,7 +393,8 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),\dedupeL(\cons(a,x))) \\
  &amp; = &amp; \beq(\cons(a,x),\cons(a,\delete(a,\dedupeL(x)))) \\
- &amp; = &amp; \band(\beq(a,a),\beq(x,\delete(a,\dedupeL(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \band(\beq(a,a),\beq(x,\delete(a,\dedupeL(x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
    = &amp; \band(\btrue,\beq(x,\delete(a,\dedupeL(x)))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-left}
@@ -487,12 +496,14 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\dedupeL(\cons(b,x))) \\
  &amp; = &amp; \elt(a,\cons(b,\delete(b)(\dedupeL(x)))) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\delete(b)(\dedupeL(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\delete(b)(\dedupeL(x)))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bif{\beq(a,b)}{\bfalse}{\elt(a,\dedupeL(x))}} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-prune-false}
    = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\dedupeL(x))} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
- &amp; = &amp; \elt(a,\cons(b,x))
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \elt(a,\cons(b,x))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -509,14 +520,17 @@ Posted on 2017-05-28 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \dedupeL(\filter(p)(\nil)) \\
- &amp; = &amp; \dedupeL(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \dedupeL(\nil) \\
  &amp; = &amp; \nil \\
- &amp; = &amp; \filter(p)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(p)(\nil) \\
  &amp; = &amp; \filter(p)(\dedupeL(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equation holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider the two possibilities for <span class="math inline">\(p(a)\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\dedupeL(\cons(a,x))) \\
  &amp; = &amp; \filter(p)(\cons(a,\delete(a)(\dedupeL(x)))) \\
- &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
  &amp; = &amp; \bif{\btrue}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
    = &amp; \cons(a,\filter(p)(\delete(a)(\dedupeL(x)))) \\
@@ -529,7 +543,8 @@ Posted on 2017-05-28 by nbloomf
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\dedupeL(\cons(a,x))) \\
  &amp; = &amp; \filter(p)(\cons(a,\delete(a)(\dedupeL(x)))) \\
- &amp; = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \bif{p(a)}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
  &amp; = &amp; \bif{\bfalse}{\cons(a,\filter(p)(\delete(a)(\dedupeL(x))))}{\filter(p)(\delete(a)(\dedupeL(x)))} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
    = &amp; \filter(p)(\delete(a)(\dedupeL(x))) \\
@@ -539,7 +554,8 @@ Posted on 2017-05-28 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
    = &amp; \dedupeL(\bif{\bfalse}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \dedupeL(\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
- &amp; = &amp; \dedupeL(\filter(p)(\cons(a,x)))
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \dedupeL(\filter(p)(\cons(a,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
 <div class="test">
@@ -610,7 +626,8 @@ Posted on 2017-05-28 by nbloomf
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\dedupeR(x)) \\
  &amp; = &amp; \unique(\rev(\dedupeL(\rev(x)))) \\
- &amp; = &amp; \unique(\dedupeL(\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#thm-unique-rev}
+   = &amp; \unique(\dedupeL(\rev(x))) \\
  &amp; = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
@@ -648,8 +665,8 @@ Posted on 2017-05-28 by nbloomf
 <a class="sourceLine" id="cb16-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
 <a class="sourceLine" id="cb16-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6">_test_dedupe t size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-5" data-line-number="5">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-6" data-line-number="6">_test_dedupe size cases t <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb16-7" data-line-number="7">  testLabel1 <span class="st">&quot;dedupeL &amp; dedupeR&quot;</span> t</a>
 <a class="sourceLine" id="cb16-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb16-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -672,8 +689,8 @@ Posted on 2017-05-28 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="ot">main_dedupe ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb17-2" data-line-number="2">main_dedupe <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">50</span> <span class="dv">500</span></a>
-<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_dedupe (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">50</span> <span class="dv">500</span></a></code></pre></div>
+<a class="sourceLine" id="cb17-3" data-line-number="3">  _test_dedupe <span class="dv">50</span> <span class="dv">500</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">  _test_dedupe <span class="dv">50</span> <span class="dv">500</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

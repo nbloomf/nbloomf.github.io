@@ -81,8 +81,12 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-13 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -248,7 +254,8 @@ Posted on 2017-05-13 by nbloomf
 <a class="sourceLine" id="cb1-14" data-line-number="14"><span class="kw">import</span> <span class="dt">AllAndAny</span></a></code></pre></div>
 <p>Today we’ll nail down <span class="math inline">\(\filter\)</span>, which takes a list and a predicate on the items and “filters out” the items which satisfy the predicate. <span class="math inline">\(\filter\)</span> should have a signature like <span class="math display">\[\bool^A \times \lists{A} \rightarrow \lists{A}.\]</span> As usual, we want to define <span class="math inline">\(\filter\)</span> as a fold; say <span class="math display">\[\filter(p)(x) = \foldr(\varepsilon)(\varphi)(x).\]</span> Where on the right hand side of that equation should the <span class="math inline">\(p\)</span> parameter go? Lets think out loud for a moment. On the one hand, we want <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \nil \\
- &amp; = &amp; \filter(p)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(p)(\nil) \\
  &amp; = &amp; \foldr(\varepsilon)(\varphi)(\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#def-foldr-nil}
    = &amp; \varepsilon
@@ -271,7 +278,7 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\filter(p)\)</span> is defined as a <span class="math inline">\(\foldr(\ast)(\ast)\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. <span class="math inline">\(\filter(p)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{ll}
+<p><span id="cor-filter-nil"></span><span id="cor-filter-cons"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. <span class="math inline">\(\filter(p)\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \lists{A}\)</span> satisfying the following for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{ll}
  f(\nil) = \nil \\
  f(\cons(a,x)) = \bif{p(a)}{\cons(a,f(x))}{f(x)}
 \end{array}\right.\]</span></p>
@@ -294,11 +301,12 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p>As we might expect, the items in <span class="math inline">\(\filter(p)(x)\)</span> all satisfy <span class="math inline">\(p\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(p,\filter(p)(x)) = \btrue.\]</span></p>
+<p><span id="thm-filter-all"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\all(p,\filter(p)(x)) = \btrue.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p)(\nil)) \\
- &amp; = &amp; \all(p,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \all(p,\nil) \\
  &amp; = &amp; \nil
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p)(\cons(a,x))) \\
@@ -310,7 +318,8 @@ Posted on 2017-05-13 by nbloomf
 \end{eqnarray*}\]</span> as claimed, while if <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(p,\filter(p)(\cons(a,x))) \\
  &amp; = &amp; \all(p,\filter(p)(x)) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#thm-filter-all}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -323,14 +332,15 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p><span class="math inline">\(\filter\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\snoc(a,x)) = \bif{p(a)}{\snoc(a,\filter(p)(x))}{\filter(p)(x)}.\]</span></p>
+<p><span id="thm-filter-snoc"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\snoc(a,x)) = \bif{p(a)}{\snoc(a,\filter(p)(x))}{\filter(p)(x)}.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, if <span class="math inline">\(p(a) = \btrue\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\snoc(a,\nil)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
    = &amp; \filter(p)(\cons(a,\nil)) \\
  &amp; = &amp; \cons(a,\filter(p)(\nil)) \\
- &amp; = &amp; \cons(a,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \cons(a,\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
    = &amp; \snoc(a,\nil)
 \end{eqnarray*}\]</span> as claimed, while if <span class="math inline">\(p(a) = \bfalse\)</span> we have <span class="math display">\[\begin{eqnarray*}
@@ -338,7 +348,8 @@ Posted on 2017-05-13 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
    = &amp; \filter(p)(\cons(a,\nil)) \\
  &amp; = &amp; \filter(p)(\nil) \\
- &amp; = &amp; \nil
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \nil
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. If <span class="math inline">\(p(a) = p(b) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\snoc(a,\cons(b,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
@@ -383,7 +394,7 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p><span class="math inline">\(\filter\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\rev(x)) = \rev(\filter(p)(x)).\]</span></p>
+<p><span id="thm-filter-rev"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\filter(p)(\rev(x)) = \rev(\filter(p)(x)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\rev(\nil)) \\
@@ -405,7 +416,8 @@ Posted on 2017-05-13 by nbloomf
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(p(a) = \bfalse\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rev(\filter(p)(\cons(a,x))) \\
  &amp; = &amp; \rev(\filter(p)(x)) \\
- &amp; = &amp; \filter(p)(\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#thm-filter-rev}
+   = &amp; \filter(p)(\rev(x)) \\
  &amp; = &amp; \filter(p)(\snoc(a,\rev(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
    = &amp; \filter(p)(\rev(\cons(a,x)))
@@ -421,7 +433,7 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p><span class="math inline">\(\filter(p)\)</span> distributes over <span class="math inline">\(\cat\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\cat(x,y)) = \cat(\filter(p)(x),\filter(p)(y)).\]</span></p>
+<p><span id="thm-filter-cat"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\cat(x,y)) = \cat(\filter(p)(x),\filter(p)(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\cat(x,y)) \\
@@ -437,7 +449,8 @@ Posted on 2017-05-13 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
    = &amp; \filter(p)(\cons(a,\cat(x,y))) \\
  &amp; = &amp; \cons(a,\filter(p)(\cat(x,y))) \\
- &amp; = &amp; \cons(a,\cat(\filter(p)(x),\filter(p)(y))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#thm-filter-cat}
+   = &amp; \cons(a,\cat(\filter(p)(x),\filter(p)(y))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
    = &amp; \cat(\cons(a,\filter(p)(x)),\filter(p)(y)) \\
  &amp; = &amp; \cat(\filter(p)(\cons(a,x)),\filter(p)(y))
@@ -446,7 +459,8 @@ Posted on 2017-05-13 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
    = &amp; \filter(p)(\cons(a,\cat(x,y))) \\
  &amp; = &amp; \filter(p)(\cat(x,y)) \\
- &amp; = &amp; \cat(\filter(p)(x),\filter(p)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#thm-filter-cat}
+   = &amp; \cat(\filter(p)(x),\filter(p)(y)) \\
  &amp; = &amp; \cat(\filter(p)(\cons(a,x)),\filter(p)(y))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -460,17 +474,20 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p><span class="math inline">\(\filter(p)\)</span> is idempotent.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(p)(x)) = \filter(p)(x).\]</span></p>
+<p><span id="thm-filter-idempotent"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(p)(x)) = \filter(p)(x).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\filter(p)(x)) \\
  &amp; = &amp; \filter(p)(\filter(p)(\nil)) \\
- &amp; = &amp; \filter(p)(\nil) \\
- &amp; = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(p)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \nil \\
  &amp; = &amp; x
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\filter(p)(\cons(a,x))) \\
- &amp; = &amp; \filter(p)(\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \filter(p)(\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
    = &amp; \bif{p(a)}{\filter(p)(\cons(a,\filter(p)(x)))}{\filter(p)(\filter(p)(x))} \\
  &amp; = &amp; \bif{p(a)}{\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}}{\filter(p)(x)} \\
@@ -489,19 +506,22 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p>A list <span class="math inline">\(x\)</span> is invariant under <span class="math inline">\(\filter(p)\)</span> if and only if <span class="math inline">\(\all(p)(x)\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate with <span class="math inline">\(x \in \lists{A}\)</span>. We have <span class="math display">\[\beq(x,\filter(p)(x)) = \all(p,x).\]</span></p>
+<p><span id="thm-filter-fix"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate with <span class="math inline">\(x \in \lists{A}\)</span>. We have <span class="math display">\[\beq(x,\filter(p)(x)) = \all(p,x).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(x,\filter(p)(x)) \\
  &amp; = &amp; \beq(\nil,\filter(p)(\nil)) \\
- &amp; = &amp; \beq(\nil,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \beq(\nil,\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Testing.html#thm-eq-reflexive}
    = &amp; \btrue \\
  &amp; = &amp; \all(p,\nil) \\
- &amp; = &amp; \all(p,x)
+ &amp;     \hyp{x = \nil}
+   = &amp; \all(p,x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. We consider two possibilities. If <span class="math inline">\(p(a) = \btrue\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x))) \\
- &amp; = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{\btrue}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
    = &amp; \beq(\cons(a,x),\cons(a,\filter(p)(x))) \\
@@ -517,7 +537,8 @@ Posted on 2017-05-13 by nbloomf
  &amp; = &amp; \all(p,\cons(a,x))
 \end{eqnarray*}\]</span> as needed. Suppose instead that <span class="math inline">\(p(a) = \bfalse\)</span>. Now <span class="math inline">\(\sublist(\filter(p)(x),x) = \btrue\)</span>, and using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \beq(\cons(a,x),\filter(p)(\cons(a,x))) \\
- &amp; = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \beq(\cons(a,x),\bif{p(a)}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp; = &amp; \beq(\cons(a,x),\bif{\bfalse}{\cons(a,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
    = &amp; \beq(\cons(a,x),\filter(p)(x)) \\
@@ -538,17 +559,22 @@ Posted on 2017-05-13 by nbloomf
 </div>
 <p><span class="math inline">\(\filter(p)\)</span> and <span class="math inline">\(\filter(q)\)</span> commute.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p,q : A \rightarrow \bool\)</span> predicates. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(q)(x)) = \filter(q)(\filter(p)(x)).\]</span></p>
+<p><span id="thm-filter-commutative"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p,q : A \rightarrow \bool\)</span> predicates. For all <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\filter(p)(\filter(q)(x)) = \filter(q)(\filter(p)(x)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\filter(q)(\nil)) \\
- &amp; = &amp; \filter(p)(\nil) \\
- &amp; = &amp; \nil \\
- &amp; = &amp; \filter(q)(\nil) \\
- &amp; = &amp; \filter(q)(\filter(p)(\nil))
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(p)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \nil \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(q)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \filter(q)(\filter(p)(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \filter(p)(\filter(q)(\cons(a,x))) \\
- &amp; = &amp; \filter(p)(\bif{q(a)}{\cons(a,\filter(q)(x))}{\filter(q)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \filter(p)(\bif{q(a)}{\cons(a,\filter(q)(x))}{\filter(q)(x)}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
    = &amp; \bif{q(a)}{\filter(p)(\cons(a,\filter(q)(x)))}{\filter(p)(\filter(q)(x))} \\
  &amp; = &amp; \bif{q(a)}{\bif{p(a)}{\cons(a),\filter(p)(\filter(q)(x))}{\filter(p)(\filter(q)(x))}}{\filter(p)(\filter(q)(x))} \\
@@ -573,8 +599,8 @@ Posted on 2017-05-13 by nbloomf
 <a class="sourceLine" id="cb11-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Equal</span> a, <span class="dt">Show</span> a, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a</a>
 <a class="sourceLine" id="cb11-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t</a>
 <a class="sourceLine" id="cb11-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">_test_filter t size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" data-line-number="5">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb11-6" data-line-number="6">_test_filter size cases t <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb11-7" data-line-number="7">  testLabel1 <span class="st">&quot;filter&quot;</span> t</a>
 <a class="sourceLine" id="cb11-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb11-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -591,8 +617,8 @@ Posted on 2017-05-13 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="ot">main_filter ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb12-2" data-line-number="2">main_filter <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_filter (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">  _test_filter (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb12-3" data-line-number="3">  _test_filter <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  _test_filter <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

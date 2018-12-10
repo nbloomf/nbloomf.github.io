@@ -81,8 +81,12 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-20 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -257,7 +263,8 @@ Posted on 2017-05-20 by nbloomf
 <a class="sourceLine" id="cb1-23" data-line-number="23"><span class="kw">import</span> <span class="dt">Filter</span></a></code></pre></div>
 <p>Today we’ll define a boolean function, <span class="math inline">\(\elt\)</span>, which detects whether or not a given <span class="math inline">\(a\)</span> is an item in a list. As usual we want to define <span class="math inline">\(\elt\)</span> as a fold: should we use a right fold or a left fold? Recall that the tradeoff between the two is that foldl is tail recursive, but foldr does not necessarily have to process the entire list. In this case, <span class="math inline">\(\elt(a)(x)\)</span> should be able to return early once it sees an <span class="math inline">\(a\)</span>. So lets say <span class="math display">\[\elt(a)(x) = \foldr(\varepsilon)(\varphi)(x).\]</span> Now what should <span class="math inline">\(\varepsilon\)</span> and <span class="math inline">\(\varphi\)</span> be? Well, we want <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \bfalse \\
- &amp; = &amp; \elt(a)(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \elt(a)(\nil) \\
  &amp; = &amp; \foldr(\varepsilon)(\varphi)(x) \\
  &amp; = &amp; \varepsilon,
 \end{eqnarray*}\]</span> and if <span class="math inline">\(a = b\)</span> we want <span class="math display">\[\begin{eqnarray*}
@@ -285,7 +292,7 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\elt\)</span> is defined as a <span class="math inline">\(\foldr(\ast)(\ast)\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. <span class="math inline">\(\elt\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \bool\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-elt-nil"></span><span id="cor-elt-cons"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a \in A\)</span>. <span class="math inline">\(\elt\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \bool\)</span> satisfying the following equations for all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \bfalse \\
  f(\cons(b,x)) = \bif{\beq(a,b)}{\btrue}{f(x)}
 \end{array}\right.\]</span></p>
@@ -308,12 +315,14 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p>Special cases.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span>, we have <span class="math display">\[\elt(a,\cons(b,\nil)) = \beq(a,b).\]</span></p>
+<p><span id="thm-elt-one"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a,b \in A\)</span>, we have <span class="math display">\[\elt(a,\cons(b,\nil)) = \beq(a,b).\]</span></p>
 <div class="proof">
 <p>Note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\cons(b,\nil)) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\nil)} \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,\nil)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\bfalse} \\
  &amp; = &amp; \beq(a,b)
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
@@ -329,7 +338,7 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\cat\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(\cat(x,y)) = \bor(\elt(a)(x),\elt(a)(y)).\]</span></p>
+<p><span id="thm-elt-cat"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x,y \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(\cat(x,y)) = \bor(\elt(a)(x),\elt(a)(y)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(x,y)) \\
@@ -339,7 +348,8 @@ Posted on 2017-05-20 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-false-left}
    = &amp; \bor(\bfalse,\elt(a)(y)) \\
  &amp; = &amp; \bor(\elt(a)(\nil),\elt(a)(y)) \\
- &amp; = &amp; \bor(\elt(a)(x),\elt(a)(y))
+ &amp;     \hyp{x = \nil}
+   = &amp; \bor(\elt(a)(x),\elt(a)(y))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. If <span class="math inline">\(b = a\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(\cons(b,x),y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
@@ -349,14 +359,16 @@ Posted on 2017-05-20 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-true-left}
    = &amp; \bor(\btrue,\elt(a)(y)) \\
  &amp; = &amp; \bor(\bif{\beq(a,b)}{\btrue}{\elt(a)(x)},\elt(a)(y)) \\
- &amp; = &amp; \bor(\elt(a)(\cons(b,x)),\elt(a)(y))
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bor(\elt(a)(\cons(b,x)),\elt(a)(y))
 \end{eqnarray*}\]</span> as claimed. If <span class="math inline">\(b \neq a\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cat(\cons(b,x),y)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Cat.html#cor-cat-cons}
    = &amp; \elt(a)(\cons(b,\cat(x,y))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\cat(x,y))} \\
  &amp; = &amp; \elt(a)(\cat(x,y)) \\
- &amp; = &amp; \bor(\elt(a)(x),\elt(a)(y)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-cat}
+   = &amp; \bor(\elt(a)(x),\elt(a)(y)) \\
  &amp; = &amp; \bor(\bif{\beq(a,b)}{\btrue}{\elt(a)(x)},\elt(a)(y)) \\'
  &amp; = &amp; \bor(\elt(a)(\cons(b,x)),\elt(a)(y))
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -371,7 +383,7 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(\snoc(b,x)) = \bif{\beq(a,b)}{\btrue}{\elt(a)(x)}.\]</span></p>
+<p><span id="thm-elt-snoc"></span> Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span>. For all <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(\snoc(b,x)) = \bif{\beq(a,b)}{\btrue}{\elt(a)(x)}.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\snoc(b,\nil)) \\
@@ -383,7 +395,8 @@ Posted on 2017-05-20 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
    = &amp; \elt(a)(\cons(c,\snoc(b,x))) \\
  &amp; = &amp; \bif{\beq(a,c)}{\btrue}{\elt(a)(\snoc(b,x))} \\
- &amp; = &amp; \bif{\beq(a,c)}{\btrue}{\bif{\beq(a,b)}{\btrue}{\elt(a)(x)}} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-snoc}
+   = &amp; \bif{\beq(a,c)}{\btrue}{\bif{\beq(a,b)}{\btrue}{\elt(a)(x)}} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-if-commute-false}
    = &amp; \bif{\beq(a,b)}{\btrue}{\bif{\beq(a,c)}{\btrue}{\elt(a)(x)}} \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\cons(c,x))}
@@ -399,7 +412,7 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(x) = \elt(a)(\rev(x)).\]</span></p>
+<p><span id="thm-elt-rev"></span> Let <span class="math inline">\(A\)</span> be a set. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span> we have <span class="math display">\[\elt(a)(x) = \elt(a)(\rev(x)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\rev(x)) \\
@@ -412,8 +425,10 @@ Posted on 2017-05-20 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
    = &amp; \elt(a)(\snoc(b,\rev(x))) \\
  &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(\rev(x))} \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
- &amp; = &amp; \elt(a)(\cons(b,x))
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-rev}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \elt(a)(\cons(b,x))
 \end{eqnarray*}\]</span> as claimed.</p>
 </div>
 <div class="test">
@@ -430,15 +445,19 @@ Posted on 2017-05-20 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\nil) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \elt(f(a),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \elt(f(a),\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \elt(f(a),\map(f)(\nil))
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for all <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Note that <span class="math inline">\(\beq(a,b) = \beq(f(a),f(b))\)</span>. Then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cons(b,x)) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \bif{\beq(f(a),f(b))}{\btrue}{\elt(f(a),\map(f)(x))} \\
- &amp; = &amp; \elt(f(a),\cons(f(b),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \elt(f(a),\cons(f(b),\map(f)(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
    = &amp; \elt(f(a),\map(f)(\cons(b,x)))
 \end{eqnarray*}\]</span> as claimed.</p>
@@ -446,7 +465,7 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p>As a special case, the items in <span class="math inline">\(\tails(x)\)</span> and <span class="math inline">\(\inits(x)\)</span> are precisely the suffixes and prefixes of <span class="math inline">\(x\)</span>, respectively.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. We have the following.</p>
+<p><span id="thm-elt-tails"></span><span id="thm-elt-inits"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x,y \in \lists{A}\)</span>. We have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\elt(y,\tails(x)) = \suffix(y,x)\)</span>.</li>
 <li><span class="math inline">\(\elt(y,\inits(x)) = \prefix(y,x)\)</span>.</li>
@@ -456,32 +475,40 @@ Posted on 2017-05-20 by nbloomf
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we consider two cases. If <span class="math inline">\(y = \nil\)</span> we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(y,\tails(x)) \\
  &amp; = &amp; \elt(\nil,\tails(\nil)) \\
- &amp; = &amp; \elt(\nil,\cons(\nil,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+= &amp; \elt(\nil,\cons(\nil,\nil)) \\
  &amp; = &amp; \bif{\beq(\nil,\nil)}{\btrue}{\elt(\nil,\nil)} \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \prefix(\nil,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#cor-prefix-nil-left}
+= &amp; \prefix(\nil,\nil) \\
  &amp; = &amp; \prefix(\rev(\nil),\rev(\nil)) \\
  &amp; = &amp; \suffix(\nil,\nil) \\
  &amp; = &amp; \suffix(y,x)
 \end{eqnarray*}\]</span> as claimed. Suppose <span class="math inline">\(y \neq \nil\)</span>; then we have <span class="math inline">\(y = \snoc(b,u)\)</span> for some <span class="math inline">\(b \in A\)</span> and <span class="math inline">\(u \in \lists{A}\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(y,\tails(x)) \\
  &amp; = &amp; \elt(y,\tails(\nil)) \\
- &amp; = &amp; \elt(y,\cons(\nil,\nil)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-nil}
+= &amp; \elt(y,\cons(\nil,\nil)) \\
  &amp; = &amp; \bif{\beq(y,\nil)}{\btrue}{\elt(y,\nil)} \\
  &amp; = &amp; \elt(y,\nil) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \suffix(\snoc(b,u),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+= &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-suffix-snoc-nil}
+= &amp; \suffix(\snoc(b,u),\nil) \\
  &amp; = &amp; \suffix(y,x)
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Again we consider two possibilities for <span class="math inline">\(y\)</span>. If <span class="math inline">\(y = \cons(a,x)\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(y,\tails(\cons(a,x))) \\
- &amp; = &amp; \elt(y,\cons(\cons(a,x),\tails(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+= &amp; \elt(y,\cons(\cons(a,x),\tails(x))) \\
  &amp; = &amp; \bif{\beq(y,\cons(a,x))}{\btrue}{\elt(y,\tails(x))} \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \suffix(\cons(a,x),\cons(a,x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-suffix-reflexive}
+= &amp; \suffix(\cons(a,x),\cons(a,x)) \\
  &amp; = &amp; \suffix(y,\cons(a,x))
 \end{eqnarray*}\]</span> as claimed. Suppose <span class="math inline">\(y \neq \cons(a,x)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(y,\tails(\cons(a,x))) \\
- &amp; = &amp; \elt(y,\cons(\cons(a,x),\tails(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/TailsAndInits.html#cor-tails-cons}
+= &amp; \elt(y,\cons(\cons(a,x),\tails(x))) \\
  &amp; = &amp; \bif{\beq(y,\cons(a,x))}{\btrue}{\elt(y,\tails(x))} \\
  &amp; = &amp; \elt(y,tails(x)) \\
  &amp; = &amp; \suffix(y,x) \\
@@ -490,12 +517,15 @@ Posted on 2017-05-20 by nbloomf
 <li>We have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(y,\inits(x)) \\
  &amp; = &amp; \elt(y,\rev(\map(\rev)(\tails(\rev(x))))) \\
- &amp; = &amp; \elt(y,\map(\rev)(\tails(\rev(x)))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-rev}
+= &amp; \elt(y,\map(\rev)(\tails(\rev(x)))) \\
  &amp; = &amp; \elt(\rev(y),\map(\rev)(\map(\rev)(\tails(\rev(x))))) \\
  &amp; = &amp; \elt(\rev(y),\map(\rev \circ \rev)(\tails(\rev(x)))) \\
  &amp; = &amp; \elt(\rev(y),\tails(\rev(x))) \\
- &amp; = &amp; \suffix(\rev(y),\rev(x)) \\
- &amp; = &amp; \prefix(y,x)
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-tails}
+= &amp; \suffix(\rev(y),\rev(x)) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/PrefixAndSuffix.html#thm-prefix-rev}
+= &amp; \prefix(y,x)
 \end{eqnarray*}\]</span> as claimed.</li>
 </ol>
 </div>
@@ -516,18 +546,20 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p><span class="math inline">\(\elt\)</span> interacts with <span class="math inline">\(\filter\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\elt(a,\filter(p)(x)) = \band(p(a),\elt(a,x)).\]</span></p>
+<p><span id="thm-elt-filter"></span> Let <span class="math inline">\(A\)</span> be a set and <span class="math inline">\(p : A \rightarrow \bool\)</span> a predicate. For all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>, we have <span class="math display">\[\elt(a,\filter(p)(x)) = \band(p(a),\elt(a,x)).\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\filter(p)(\nil)) \\
- &amp; = &amp; \elt(a,\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-nil}
+   = &amp; \elt(a,\nil) \\
  &amp; = &amp; \bfalse \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
    = &amp; \band(p(a),\bfalse) \\
  &amp; = &amp; \band(p(a),\elt(a,\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. Note that if <span class="math inline">\(a = b\)</span>, then <span class="math inline">\(p(a) = p(b)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\filter(p)(\cons(b,x))) \\
- &amp; = &amp; \elt(a,\bif{p(b)}{\cons(b,\filter(p)(x))}{\filter(p)(x)}) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Filter.html#cor-filter-cons}
+   = &amp; \elt(a,\bif{p(b)}{\cons(b,\filter(p)(x))}{\filter(p)(x)}) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#thm-iffunc}
    = &amp; \bif{p(b)}{\elt(a,\cons(b,\filter(p)(x)))}{\elt(a,\filter(p)(x))} \\
  &amp; = &amp; \bif{p(b)}{\bif{\beq(a,b)}{\btrue}{\elt(a,\filter(p)(x))}}{\elt(a,\filter(p)(x))} \\
@@ -557,12 +589,13 @@ Posted on 2017-05-20 by nbloomf
 </div>
 <p>As a special case, if we filter <span class="math inline">\(a\)</span> out of a list, it is no longer an item there.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\elt(a)(\filter(\bnot(\beq(a,-)),x)) = \bfalse.\]</span></p>
+<p>Let <span class="math inline">\(A\)</span> be a set, with <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math display">\[\elt(a)(\filter(\bnot(\beq(a)),x)) = \bfalse.\]</span></p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\filter(\bnot(\beq(a,-)),\nil)) \\
  &amp; = &amp; \elt(a)(\nil) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as claimed. For the inductive step, suppose the equality holds for <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. We have two possibilities. If <span class="math inline">\(b = a\)</span> (that is, <span class="math inline">\(\bnot(\beq(a,b)) = \bfalse\)</span>), we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\filter(\bnot(\beq(a,-)),\cons(b,x))) \\
  &amp; = &amp; \elt(a)(\filter(\bnot(\beq(a,-)),x)) \\
@@ -589,12 +622,14 @@ Posted on 2017-05-20 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(x) \\
  &amp; = &amp; \elt(a)(\nil) \\
- &amp; = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse \\
  &amp; = &amp; \any(\beq(a,-),\nil) \\
  &amp; = &amp; \any(\beq(a,-),x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(b \in A\)</span>. We consider two possibilities. If <span class="math inline">\(a = b\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cons(b,x)) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \bif{\btrue}{\btrue}{\elt(a)(x)} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-true}
    = &amp; \btrue \\
@@ -603,7 +638,8 @@ Posted on 2017-05-20 by nbloomf
  &amp; = &amp; \any(\beq(a,-),\cons(b,x))
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(a \neq b\)</span>, using the inductive hypothesis we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a)(\cons(b,x)) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a)(x)} \\
  &amp; = &amp; \bif{\bfalse}{\btrue}{\elt(a)(x)} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Booleans.html#cor-if-false}
    = &amp; \elt(a)(x) \\
@@ -643,15 +679,19 @@ Posted on 2017-05-20 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\nil) \\
- &amp; = &amp; \bfalse \\
- &amp; = &amp; \elt(f(a),\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \elt(f(a),\nil) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-nil}
    = &amp; \elt(f(a),\map(f)(\nil))
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Note that <span class="math inline">\(\beq(a,b) = \beq(f(a),f(b))\)</span>, so we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\cons(b,x)) \\
- &amp; = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,b)}{\btrue}{\elt(a,x)} \\
  &amp; = &amp; \bif{\beq(f(a),f(b))}{\btrue}{\elt(f(a),\map(f)(x))} \\
- &amp; = &amp; \elt(f(a),\cons(f(b),\map(f)(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \elt(f(a),\cons(f(b),\map(f)(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Map.html#cor-map-cons}
    = &amp; \elt(f(a),\map(f)(\cons(b,x)))
 \end{eqnarray*}\]</span> as needed.</p>
@@ -664,11 +704,13 @@ Posted on 2017-05-20 by nbloomf
 <p>We proceed by induction on <span class="math inline">\(b\)</span>. If <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\range(\next(c),\zero)) \\
  &amp; = &amp; \elt(a,\nil) \\
- &amp; = &amp; \bfalse
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equation holds for all <span class="math inline">\(a\)</span> and <span class="math inline">\(c\)</span> for some <span class="math inline">\(b\)</span>. Suppose <span class="math inline">\(\nleq(a,c)\)</span>; then <span class="math inline">\(\nleq(a,\next(c))\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(a,\range(\next(c),\next(b))) \\
  &amp; = &amp; \elt(a,\cons(\next(c),\range(\next(\next(c)),b))) \\
- &amp; = &amp; \bif{\beq(a,\next(c))}{\btrue}{\elt(a,\range(\next(\next(c)),b))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \bif{\beq(a,\next(c))}{\btrue}{\elt(a,\range(\next(\next(c)),b))} \\
  &amp; = &amp; \elt(a,\range(\next(\next(c)),b)) \\
  &amp; = &amp; \bfalse
 \end{eqnarray*}\]</span> as needed.</p>
@@ -690,7 +732,8 @@ Posted on 2017-05-20 by nbloomf
 <p>We proceed by list induction on <span class="math inline">\(z\)</span>. For the base case <span class="math inline">\(z = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \elt(\cons(a,x),\map(\cons(b,-))(\nil)) \\
  &amp; = &amp; \elt(\cons(a,x),\nil) \\
- &amp; = &amp; \bfalse \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-nil}
+   = &amp; \bfalse \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-false-right}
    = &amp; \band(\beq(a,b),\bfalse) \\
  &amp; = &amp; \band(\beq(a,b),\elt(x,\nil))
@@ -699,7 +742,8 @@ Posted on 2017-05-20 by nbloomf
  &amp; = &amp; \elt(\cons(a,x),\cons(\cons(b,u),\map(\cons(b,-))(z))) \\
  &amp; = &amp; \bif{\beq(\cons(a,x),\cons(b,u))}{\btrue}{\elt(\cons(a,x),\map(\cons(b,-))(z))} \\
  &amp; = &amp; \bif{\beq(\cons(a,x),\cons(b,u))}{\btrue}{\band(\beq(a,b),\elt(x,z))} \\
- &amp; = &amp; \bif{\band(\beq(a,b),\beq(x,u))}{\btrue}{\band(\beq(a,b),\elt(x,z))} \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Lists.html#thm-list-eq-cons}
+   = &amp; \bif{\band(\beq(a,b),\beq(x,u))}{\btrue}{\band(\beq(a,b),\elt(x,z))} \\
  &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-or-is-if}
    = &amp; \bor(\band(\beq(a,b),\beq(x,u)),\band(\beq(a,b),\elt(x,z))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-and-or-distribute}
@@ -727,8 +771,8 @@ Posted on 2017-05-20 by nbloomf
 <a class="sourceLine" id="cb15-4" data-line-number="4">  , <span class="dt">Show</span> (t a), <span class="dt">Equal</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (<span class="dt">Pair</span> a a))</a>
 <a class="sourceLine" id="cb15-5" data-line-number="5">  , <span class="dt">TypeName</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Natural</span> n</a>
 <a class="sourceLine" id="cb15-6" data-line-number="6">  , <span class="dt">Arbitrary</span> (t (t a)), <span class="dt">Show</span> (t (t a)), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb15-7" data-line-number="7">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb15-8" data-line-number="8">_test_elt t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb15-7" data-line-number="7">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb15-8" data-line-number="8">_test_elt size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb15-9" data-line-number="9">  testLabel1 <span class="st">&quot;elt&quot;</span> t</a>
 <a class="sourceLine" id="cb15-10" data-line-number="10"></a>
 <a class="sourceLine" id="cb15-11" data-line-number="11">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -750,8 +794,8 @@ Posted on 2017-05-20 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="ot">main_elt ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb16-2" data-line-number="2">main_elt <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">  _test_elt (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb16-3" data-line-number="3">  _test_elt <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb16-4" data-line-number="4">  _test_elt <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

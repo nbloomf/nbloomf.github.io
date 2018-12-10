@@ -81,8 +81,12 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2014-05-07 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -421,8 +427,8 @@ phi' a = mu Z a (phi a)</code></pre>
 <a class="sourceLine" id="cb18-2" data-line-number="2"><span class="ot">  ::</span> (<span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
 <a class="sourceLine" id="cb18-3" data-line-number="3">  , <span class="dt">Equal</span> b, <span class="dt">Arbitrary</span> a, <span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b, <span class="dt">CoArbitrary</span> b</a>
 <a class="sourceLine" id="cb18-4" data-line-number="4">  , <span class="dt">Show</span> a, <span class="dt">Show</span> b, <span class="dt">TypeName</span> a, <span class="dt">TypeName</span> b, <span class="dt">CoArbitrary</span> n)</a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">  <span class="ot">=&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb18-6" data-line-number="6">_test_simplerec n a b size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb18-5" data-line-number="5">  <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb18-6" data-line-number="6">_test_simplerec size cases n a b <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb18-7" data-line-number="7">  testLabel3 <span class="st">&quot;simpleRec&quot;</span> n a b</a>
 <a class="sourceLine" id="cb18-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb18-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -432,10 +438,10 @@ phi' a = mu Z a (phi a)</code></pre>
 <p>Main:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="ot">main_simplerec ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb19-2" data-line-number="2">main_simplerec <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb19-3" data-line-number="3">  _test_simplerec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">100</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb19-4" data-line-number="4">  _test_simplerec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  <span class="dv">100</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb19-5" data-line-number="5">  _test_simplerec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb19-6" data-line-number="6">  _test_simplerec (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">100</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb19-3" data-line-number="3">  _test_simplerec <span class="dv">100</span> <span class="dv">200</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">true ::</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">  _test_simplerec <span class="dv">100</span> <span class="dv">200</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)</a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">  _test_simplerec <span class="dv">100</span> <span class="dv">200</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">true ::</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">  _test_simplerec <span class="dv">100</span> <span class="dv">200</span> (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

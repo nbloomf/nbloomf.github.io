@@ -81,8 +81,12 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-04-28 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -444,7 +450,7 @@ Posted on 2017-04-28 by nbloomf
 </div>
 <p><span class="math inline">\(\at\)</span> interacts with <span class="math inline">\(\snoc\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>.</p>
+<p><span id="thm-at-snoc-cons"></span><span id="thm-at-snoc-length"></span> Let <span class="math inline">\(A\)</span> be a set. Let <span class="math inline">\(a,b \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>.</p>
 <ol type="1">
 <li>If <span class="math inline">\(\nleq(k,\length(x))\)</span> then <span class="math inline">\(\at(\snoc(a,\cons(b,x)),k) = \at(\cons(b,x),k)\)</span>.</li>
 <li><span class="math inline">\(\at(\snoc(a,x),\length(x)) = \rgt(a)\)</span>.</li>
@@ -455,31 +461,42 @@ Posted on 2017-04-28 by nbloomf
  &amp;   &amp; \at(\snoc(a,\cons(b,x)),\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
 = &amp; \at(\cons(b,\snoc(a,x)),\zero) \\
- &amp; = &amp; \rgt(b) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-zero}
+= &amp; \rgt(b) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-zero}
 = &amp; \at(\cons(b,x),\zero)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(x\)</span>, <span class="math inline">\(a\)</span>, and <span class="math inline">\(b\)</span> for some <span class="math inline">\(k\)</span>, and suppose further that <span class="math inline">\(\nleq(\next(k),\length(x))\)</span>. In particular, we must have <span class="math inline">\(x = \cons(c,u)\)</span> for some <span class="math inline">\(c \in A\)</span> and <span class="math inline">\(u \in \lists{A}\)</span>, and <span class="math inline">\(\nleq(k,\length(u))\)</span>. Now we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\snoc(a,\cons(b,x)),\next(k)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
 = &amp; \at(\cons(b,\snoc(a,x)),\next(k)) \\
- &amp; = &amp; \at(\snoc(a,x),k) \\
- &amp; = &amp; \at(\snoc(a,\cons(c,u)),k) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-next}
+= &amp; \at(\snoc(a,x),k) \\
+ &amp;     \hyp{x = \cons(c,u)}
+= &amp; \at(\snoc(a,\cons(c,u)),k) \\
  &amp; = &amp; \at(\cons(c,u),k) \\
- &amp; = &amp; \at(x,k) \\
+ &amp;     \hyp{x = \cons(c,u)}
+= &amp; \at(x,k) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-next}
 = &amp; \at(\cons(b,x),\next(k))
 \end{eqnarray*}\]</span> as needed.</li>
 <li>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\snoc(a,\nil),\length(\nil)) \\
- &amp; = &amp; \at(\cons(a,\nil),\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-nil}
+= &amp; \at(\snoc(a,\nil),\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-nil}
+= &amp; \at(\cons(a,\nil),\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-zero}
 = &amp; \rgt(a)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(x\)</span>, and let <span class="math inline">\(b \in A\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\snoc(a,\cons(b,x)),\length(\cons(b,x))) \\
- &amp; = &amp; \at(\cons(b,\snoc(a,x)),\next(\length(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
+= &amp; \at(\cons(b,\snoc(a,x)),\length(\cons(b,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Length.html#cor-length-cons}
+= &amp; \at(\cons(b,\snoc(a,x)),\next(\length(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-next}
 = &amp; \at(\snoc(a,x),\length(x)) \\
- &amp; = &amp; \rgt(a)
+ &amp;     \hyp{\at(\snoc(a,x),\length(x)) = \rgt(a)}
+= &amp; \rgt(a)
 \end{eqnarray*}\]</span> as needed.</li>
 </ol>
 </div>
@@ -508,18 +525,22 @@ Posted on 2017-04-28 by nbloomf
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math inline">\(\length(x) = \zero\)</span>, so that <span class="math inline">\(\next(\nplus(u,v)) = \length(x)\)</span> is false for all <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span>, and thus the implication holds vacuously. For the inductive step, suppose the implication holds for all <span class="math inline">\(u\)</span> and <span class="math inline">\(v\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\next(\nplus(u,v)) = \length(\cons(a,x))\)</span>. We have two possibilities for <span class="math inline">\(u\)</span>. If <span class="math inline">\(u = \zero\)</span>, we have <span class="math inline">\(\next(v) = \length(\cons(a,x))\)</span> and thus <span class="math inline">\(v = \length(x)\)</span>. In this case, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),u) \\
- &amp; = &amp; \at(\cons(a,x),\zero) \\
+ &amp;     \let{u = \zero}
+   = &amp; \at(\cons(a,x),\zero) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-zero}
    = &amp; \rgt(a) \\
- &amp; = &amp; \at(\snoc(a,\rev(x)),\length(\rev(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-snoc-length}
+   = &amp; \at(\snoc(a,\rev(x)),\length(\rev(x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Length.html#thm-length-rev}
    = &amp; \at(\snoc(a,\rev(x)),\length(x)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Reverse.html#cor-rev-cons}
    = &amp; \at(\rev(\cons(a,x)),\length(x)) \\
- &amp; = &amp; \at(\rev(\cons(a,x)),v)
+ &amp;     \hyp{v = \length(x)}
+   = &amp; \at(\rev(\cons(a,x)),v)
 \end{eqnarray*}\]</span> as needed. If <span class="math inline">\(u = \next(w)\)</span>, then we have <span class="math inline">\(\next(\nplus(w,v)) = \length(x)\)</span>. In particular, we have <span class="math inline">\(x \neq \nil\)</span> and thus <span class="math inline">\(\rev(x) \neq \nil\)</span>; say <span class="math inline">\(\rev(x) = \cons(c,y)\)</span>. Now <span class="math inline">\(\nleq(v,\length(y))\)</span>, and moreover <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),u) \\
- &amp; = &amp; \at(\cons(a,x),\next(w)) \\
+ &amp;     \let{u = \next(w)}
+   = &amp; \at(\cons(a,x),\next(w)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-next}
    = &amp; \at(x,w) \\
  &amp; = &amp; \at(\rev(x),v) \\
@@ -613,7 +634,8 @@ Posted on 2017-04-28 by nbloomf
 = &amp; \lft(\ast)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the implication holds for all <span class="math inline">\(k\)</span> for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Suppose further that <span class="math inline">\(\nleq(\length(\cons(a,x),k))\)</span>; we then have <span class="math inline">\(k = \next(m)\)</span> for some <span class="math inline">\(m\)</span>, where <span class="math inline">\(\nleq(\length(x),m)\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \at(\cons(a,x),k) \\
- &amp; = &amp; \at(\cons(a,x),\next(m)) \\
+ &amp;     \hyp{k = \next(m)}
+= &amp; \at(\cons(a,x),\next(m)) \\
  &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-next}
 = &amp; \at(x,m) \\
  &amp; = &amp; \lft(\ast)
@@ -660,10 +682,13 @@ Posted on 2017-04-28 by nbloomf
 <div class="proof">
 <p>The “only if” direction is clear. We show the “if” part by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, suppose we have <span class="math inline">\(\at(x,k) = \at(y,k)\)</span> for all <span class="math inline">\(k \in \nats\)</span>. If <span class="math inline">\(y = \cons(a,z)\)</span> for some <span class="math inline">\(z\)</span>, then we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(a) \\
- &amp; = &amp; \at(\cons(a,z),\next(\zero)) \\
- &amp; = &amp; \at(y,\next(\zero)) \\
- &amp; = &amp; \at(x,\next(\zero)) \\
- &amp; = &amp; \lft(\ast),
+ &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-cons-zero}
+   = &amp; \at(\cons(a,z),\zero) \\
+ &amp; = &amp; \at(y,\zero) \\
+ &amp; = &amp; \at(x,\zero) \\
+ &amp; = &amp; \at(\nil,\zero) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/At.html#thm-at-nil}
+   = &amp; \lft(\ast)
 \end{eqnarray*}\]</span> a contradiction. So <span class="math inline">\(y = \nil = x\)</span> as claimed.</p>
 <p>For the inductive step, suppose the implication holds for all <span class="math inline">\(y\)</span> for some <span class="math inline">\(x\)</span>, let <span class="math inline">\(a \in A\)</span>, and suppose we have <span class="math inline">\(\at(\cons(a,x),k) = \at(y,k)\)</span> for all <span class="math inline">\(k \in \nats\)</span>. If <span class="math inline">\(y = \nil\)</span>, then again we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \rgt(a) \\
@@ -698,8 +723,8 @@ Posted on 2017-04-28 by nbloomf
 <a class="sourceLine" id="cb12-2" data-line-number="2">  ( <span class="dt">TypeName</span> a, <span class="dt">Show</span> a, <span class="dt">Equal</span> a, <span class="dt">Arbitrary</span> a</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Equal</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n</a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a)</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">_test_at t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">_test_at size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb12-7" data-line-number="7">  testLabel2 <span class="st">&quot;at&quot;</span> t n</a>
 <a class="sourceLine" id="cb12-8" data-line-number="8"></a>
 <a class="sourceLine" id="cb12-9" data-line-number="9">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -723,8 +748,8 @@ Posted on 2017-04-28 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_at ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">main_at <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_at (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_at (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_at <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_at <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 

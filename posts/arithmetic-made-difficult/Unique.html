@@ -81,8 +81,12 @@ Posted on 2017-05-26 by nbloomf
 \(\newcommand{\flipE}{\mathsf{flip5}}\)
 \(\newcommand{\clone}{\mathsf{clone}}\)
 \(\newcommand{\cloneC}{\mathsf{clone3}}\)
-\(\newcommand{\composeB}{\mathsf{compose2}}\)
-\(\newcommand{\composeC}{\mathsf{compose3}}\)
+\(\newcommand{\composeAonB}{\mathsf{compose1on2}}\)
+\(\newcommand{\composeAonC}{\mathsf{compose1on3}}\)
+\(\newcommand{\composeAonD}{\mathsf{compose1on4}}\)
+\(\newcommand{\composeBonA}{\mathsf{compose2on1}}\)
+\(\newcommand{\composeBonB}{\mathsf{compose2on2}}\)
+\(\newcommand{\composeConA}{\mathsf{compose3on1}}\)
 
 
 <!-- predicates -->
@@ -179,11 +183,13 @@ Posted on 2017-05-26 by nbloomf
 \(\newcommand{\cfoldr}{\mathsf{cfoldr}}\)
 \(\newcommand{\bfoldr}{\mathsf{bfoldr}}\)
 \(\newcommand{\dbfoldr}{\mathsf{dbfoldr}}\)
+\(\newcommand{\lfoldr}{\mathsf{lfoldr}}\)
 
 <!-- list arithmetic -->
 \(\newcommand{\snoc}{\mathsf{snoc}}\)
 \(\newcommand{\revcat}{\mathsf{revcat}}\)
 \(\newcommand{\rev}{\mathsf{rev}}\)
+\(\newcommand{\last}{\mathsf{last}}\)
 \(\newcommand{\cat}{\mathsf{cat}}\)
 \(\newcommand{\addlength}{\mathsf{addlength}}\)
 \(\newcommand{\length}{\mathsf{length}}\)
@@ -269,7 +275,7 @@ Posted on 2017-05-26 by nbloomf
 </div>
 <p>Since <span class="math inline">\(\unique\)</span> is defined as a <span class="math inline">\(\cfoldr(\ast)(\ast)\)</span>, it can be characterized as the unique solution to a system of functional equations.</p>
 <div class="corollary">
-<p>Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\unique\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \bool\)</span> satisfying the following system of equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
+<p><span id="cor-unique-nil"></span><span id="cor-unique-cons"></span> Let <span class="math inline">\(A\)</span> be a set. <span class="math inline">\(\unique\)</span> is the unique map <span class="math inline">\(f : \lists{A} \rightarrow \bool\)</span> satisfying the following system of equations for all <span class="math inline">\(a \in A\)</span> and <span class="math inline">\(x \in \lists{A}\)</span>. <span class="math display">\[\left\{\begin{array}{l}
  f(\nil) = \btrue \\
  f(\cons(a,x)) = \band(\bnot(\elt(a,x)),f(x))
 \end{array}\right.\]</span></p>
@@ -290,7 +296,7 @@ Posted on 2017-05-26 by nbloomf
 </div>
 <p>Special cases.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span>. Then we have the following.</p>
+<p><span id="thm-unique-one"></span><span id="thm-unique-two"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(a,b \in A\)</span>. Then we have the following.</p>
 <ol type="1">
 <li><span class="math inline">\(\unique(\cons(a,\nil)) = \btrue\)</span>.</li>
 <li><span class="math inline">\(\unique(\cons(a,\cons(b,\nil))) = \bnot(\beq(a,b))\)</span>.</li>
@@ -416,7 +422,8 @@ Posted on 2017-05-26 by nbloomf
  &amp;     \href{/posts/arithmetic-made-difficult/Snoc.html#cor-snoc-cons}
    = &amp; \unique(\cons(b,\snoc(a,x))) \\
  &amp; = &amp; \band(\bnot(\elt(b,\snoc(a,x))),\unique(\snoc(a,x))) \\
- &amp; = &amp; \band(\bnot(\bif{\beq(b,a)}{\btrue}{\elt(b,x)}),\unique(\snoc(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#thm-elt-snoc}
+   = &amp; \band(\bnot(\bif{\beq(b,a)}{\btrue}{\elt(b,x)}),\unique(\snoc(a,x))) \\
  &amp; = &amp; \band(\bnot(\elt(b,\cons(a,x))),\band(\bnot(\elt(a,x))),\unique(x)) \\
  &amp; = &amp; \band(\bnot(\bif{\beq(b,a)}{\btrue}{\elt(b,x)}),\band(\bnot(\elt(a,x)),\unique(x))) \\
  &amp; = &amp; \band(\bif{\beq(b,a)}{\bfalse}{\bnot(\elt(b,x))},\band(\bnot(\elt(a,x)),\unique(x))) \\
@@ -430,7 +437,8 @@ Posted on 2017-05-26 by nbloomf
    = &amp; \bif{\beq(a,b)}{\band(\bfalse,\band(\bnot(\elt(b,x)),\unique(x)))}{\band(\bnot(\elt(a,x)),\band(\bnot(\elt(b,x)),\unique(x)))} \\
  &amp; = &amp; \band(\bif{\beq(a,b)}{\bfalse}{\bnot(\elt(a,x))},\band(\bnot(\elt(b,x)),\unique(x))) \\
  &amp; = &amp; \band(\bnot(\bif{\beq(a,b)}{\btrue}{\elt(a,x)}),\band(\bnot(\elt(b,x)),\unique(x))) \\
- &amp; = &amp; \band(\bnot(\elt(a,\cons(b,x))),\band(\bnot(\elt(b,x)),\unique(x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Elt.html#cor-elt-cons}
+   = &amp; \band(\bnot(\elt(a,\cons(b,x))),\band(\bnot(\elt(b,x)),\unique(x))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\cons(b,x))),\unique(\cons(b,x)))
 \end{eqnarray*}\]</span> as needed.</p>
 </div>
@@ -444,7 +452,7 @@ Posted on 2017-05-26 by nbloomf
 </div>
 <p><span class="math inline">\(\unique\)</span> interacts with <span class="math inline">\(\rev\)</span>.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math inline">\(\unique(x) = \unique(\rev(x))\)</span>.</p>
+<p><span id="thm-unique-rev"></span> Let <span class="math inline">\(A\)</span> be a set with <span class="math inline">\(x \in \lists{A}\)</span>. Then <span class="math inline">\(\unique(x) = \unique(\rev(x))\)</span>.</p>
 <div class="proof">
 <p>We proceed by list induction on <span class="math inline">\(x\)</span>. For the base case <span class="math inline">\(x = \nil\)</span>, note that <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\rev(x)) \\
@@ -471,17 +479,19 @@ Posted on 2017-05-26 by nbloomf
 </div>
 <p><span class="math inline">\(\range\)</span>s are unique.</p>
 <div class="theorem">
-<p>Let <span class="math inline">\(a,b \in \nats\)</span>. We have <span class="math display">\[\unique(\range(a,b)) = \btrue.\]</span></p>
+<p><span id="thm-unique-range"></span> Let <span class="math inline">\(a,b \in \nats\)</span>. We have <span class="math display">\[\unique(\range(a,b)) = \btrue.\]</span></p>
 <div class="proof">
 <p>We proceed by induction on <span class="math inline">\(b\)</span>. For the base case <span class="math inline">\(b = \zero\)</span>, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(\range(a,\zero)) \\
  &amp; = &amp; \unique(\nil) \\
- &amp; = &amp; \btrue
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#cor-unique-nil}
+   = &amp; \btrue
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for all <span class="math inline">\(a\)</span> for some <span class="math inline">\(b\)</span>. Now <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \unique(a,\next(b)) \\
  &amp; = &amp; \unique(\cons(a,\range(\next(a),b))) \\
  &amp; = &amp; \band(\bnot(\elt(a,\range(\next(a),b))),\unique(\range(\next(a),b))) \\
- &amp; = &amp; \band(\bnot(\elt(a,\range(\next(a),b))),\btrue) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#thm-unique-range}
+   = &amp; \band(\bnot(\elt(a,\range(\next(a),b))),\btrue) \\
  &amp;     \href{/posts/arithmetic-made-difficult/And.html#thm-and-true-right}
    = &amp; \bnot(\elt(a,\range(\next(a),b))) \\
  &amp; = &amp; \bnot(\bfalse) \\
@@ -513,7 +523,8 @@ Posted on 2017-05-26 by nbloomf
  &amp; = &amp; \all(\unique)(\cons(\cons(a,\cons(b,\nil)),\map(\cons(a,\cons(-,\nil)))(x))) \\
  &amp; = &amp; \band(\unique(\cons(a,\cons(b,\nil))),\all(\unique)(\map(\cons(a,\cons(-,\nil)))(x))) \\
  &amp; = &amp; \band(\unique(\cons(a,\cons(b,\nil))),\bnot(\elt(a,x))) \\
- &amp; = &amp; \band(\bnot(\beq(a,b)),\bnot(\elt(a,x))) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#thm-unique-two}
+   = &amp; \band(\bnot(\beq(a,b)),\bnot(\elt(a,x))) \\
  &amp;     \href{/posts/arithmetic-made-difficult/Or.html#thm-demorgan-not-or}
    = &amp; \bnot(\bor(\beq(a,b),\elt(a,x))) \\
  &amp; = &amp; \bnot(\elt(a,\cons(b,x)))
@@ -538,7 +549,8 @@ Posted on 2017-05-26 by nbloomf
  &amp; = &amp; \all(\unique)(\select(\next(\next(\zero)),\nil)) \\
  &amp; = &amp; \all(\unique)(\nil) \\
  &amp; = &amp; \btrue \\
- &amp; = &amp; \unique(\nil) \\
+ &amp;     \href{/posts/arithmetic-made-difficult/Unique.html#cor-unique-nil}
+   = &amp; \unique(\nil) \\
  &amp; = &amp; \unique(x)
 \end{eqnarray*}\]</span> as needed. For the inductive step, suppose the equality holds for some <span class="math inline">\(x\)</span> and let <span class="math inline">\(a \in A\)</span>. Using the inductive hypothesis, we have <span class="math display">\[\begin{eqnarray*}
  &amp;   &amp; \all(\unique)(\select(\next(\next(\zero)),\cons(a,x))) \\
@@ -568,8 +580,8 @@ Posted on 2017-05-26 by nbloomf
 <a class="sourceLine" id="cb12-3" data-line-number="3">  , <span class="dt">TypeName</span> (t a), <span class="dt">List</span> t, <span class="dt">Arbitrary</span> (t n), <span class="dt">Show</span> (t n), <span class="dt">Equal</span> (t n)</a>
 <a class="sourceLine" id="cb12-4" data-line-number="4">  , <span class="dt">TypeName</span> n, <span class="dt">Natural</span> n, <span class="dt">Show</span> n, <span class="dt">Arbitrary</span> n, <span class="dt">Equal</span> n</a>
 <a class="sourceLine" id="cb12-5" data-line-number="5">  , <span class="dt">Equal</span> (t a), <span class="dt">Show</span> (t a), <span class="dt">Arbitrary</span> (t a), <span class="dt">Equal</span> (t (t a))</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">  ) <span class="ot">=&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7">_test_unique t n size cases <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">  ) <span class="ot">=&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> t a <span class="ot">-&gt;</span> n <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-7" data-line-number="7">_test_unique size cases t n <span class="fu">=</span> <span class="kw">do</span></a>
 <a class="sourceLine" id="cb12-8" data-line-number="8">  testLabel1 <span class="st">&quot;unique&quot;</span> t</a>
 <a class="sourceLine" id="cb12-9" data-line-number="9"></a>
 <a class="sourceLine" id="cb12-10" data-line-number="10">  <span class="kw">let</span> args <span class="fu">=</span> testArgs size cases</a>
@@ -588,8 +600,8 @@ Posted on 2017-05-26 by nbloomf
 <p>Main:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="ot">main_unique ::</span> <span class="dt">IO</span> ()</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2">main_unique <span class="fu">=</span> <span class="kw">do</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_unique (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_unique (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>) <span class="dv">20</span> <span class="dv">100</span></a></code></pre></div>
+<a class="sourceLine" id="cb13-3" data-line-number="3">  _test_unique <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Bool</span>)  (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">  _test_unique <span class="dv">20</span> <span class="dv">100</span> (<span class="ot">nil ::</span> <span class="dt">ConsList</span> <span class="dt">Unary</span>) (<span class="ot">zero ::</span> <span class="dt">Unary</span>)</a></code></pre></div>
 
 
 
